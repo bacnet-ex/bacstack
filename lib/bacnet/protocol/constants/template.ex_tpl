@@ -1,0 +1,7 @@
+defmodule BACnet.Protocol.Constants.Name do
+  @moduledoc false
+
+  use BACnet.Macro, exception: BACnet.Protocol.Constants.ConstantError
+
+
+end
