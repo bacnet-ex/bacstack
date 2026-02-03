@@ -269,8 +269,8 @@ defmodule BACnet.Stack.Client do
 
   # Validate outgoing APDUs, but only if not in prod env or prod compilation enabled
   if Application.compile_env(:bacstack, :client_prod_compilation, Mix.env() == :prod) do
-    @compile {:inline, do_validate: 4}
-    defp do_validate(server, msg, _body, _opts), do: GenServer.call(server, msg, @call_timeout)
+    @compile {:inline, do_validate: 3}
+    defp do_validate(server, msg, _body), do: GenServer.call(server, msg, @call_timeout)
   else
     defp do_validate(server, msg, %type{} = body) do
       if function_exported?(type, :to_service, 1) do
