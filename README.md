@@ -126,19 +126,14 @@ config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 
 Some parts of this library can be extended at compile-time to provide additional value. Let's explore them.
 
-### Property Identifiers
+### Errors
 
-The known property identifiers can be extended at compile-time by the library user.
-This can be done to add new properties or even proprietary property identifiers.
+Abort Reason, Error Class, Error Code and Reject Reason can be extended at compile-time by the library user.
+This allows to provide forward compatibility for new revisions at early stages.
 
-Simply configure the key `:additional_property_identifiers` of the application `:bacstack`
+Simply configure the key `:additional_abort_reason`, `:additional_error_class`,
+`:additional_error_code`  and/or `:additional_reject_reason` of the application `:bacstack`
 to be a keyword or map and use the name as key and the integer protocol value as value.
-
-For example:
-
-```elixir
-config :bacstack, :additional_property_identifiers, loop_enable: 523, loop_mode: 524
-```
 
 ### Object Properties
 
@@ -184,6 +179,20 @@ to be a keyword or map and use the name as key and the integer protocol value as
 You'll also want to extend object types supported through `:additional_object_types_supported`.
 The struct `BACnet.Protocol.Device.ObjectTypesSupported` is automatically adjusted and up-to-date at compile time.
 
+### Property Identifiers
+
+The known property identifiers can be extended at compile-time by the library user.
+This can be done to add new properties or even proprietary property identifiers.
+
+Simply configure the key `:additional_property_identifiers` of the application `:bacstack`
+to be a keyword or map and use the name as key and the integer protocol value as value.
+
+For example:
+
+```elixir
+config :bacstack, :additional_property_identifiers, loop_enable: 523, loop_mode: 524
+```
+
 ### Services
 
 Both confirmed and unconfirmed service choices known can be extended at compile-time by the library user.
@@ -195,15 +204,6 @@ of the application `:bacstack` to be a keyword or map and use the name as key an
 
 You'll also want to extend services supported through `:additional_services_supported`.
 The struct `BACnet.Protocol.Device.ServicesSupported` is automatically adjusted and up-to-date at compile time.
-
-### Errors
-
-Abort Reason, Error Class, Error Code and Reject Reason can be extended at compile-time by the library user.
-This allows to provide forward compatibility for new revisions at early stages.
-
-Simply configure the key `:additional_abort_reason`, `:additional_error_class`,
-`:additional_error_code`  and/or `:additional_reject_reason` of the application `:bacstack`
-to be a keyword or map and use the name as key and the integer protocol value as value.
 
 ## Status of BACnet objects implementation
 
