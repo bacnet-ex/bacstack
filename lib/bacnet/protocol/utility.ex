@@ -100,4 +100,29 @@ defmodule BACnet.Protocol.Utility do
       end
     end
   end
+
+  def float_validator_fun(value, %{min_present_value: min, max_present_value: max})
+      when not is_nil(min) and not is_nil(max) do
+    min_ok =
+      case min do
+        :NaN -> true
+        :inf -> false
+        :infn -> true
+        min when is_float(min) -> min <= value
+      end
+
+    max_ok =
+      case max do
+        :NaN -> true
+        :inf -> true
+        :infn -> false
+        max when is_float(max) -> value <= max
+      end
+
+    min_ok and max_ok
+  end
+
+  def float_validator_fun(_value, _obj) do
+    true
+  end
 end
