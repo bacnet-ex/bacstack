@@ -69,6 +69,30 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AnalogValueTest do
                AnalogValue.update_property(obj, unquote(property), 0.0)
     end
 
+    test "verify update_property/3 for #{property} working within configured infinite min/max" do
+      {:ok, %AnalogValue{unquote(property) => +0.0} = obj} =
+        AnalogValue.create(1, "TEST", %{
+          unquote(property) => 0.0,
+          max_present_value: :inf,
+          min_present_value: :infn
+        })
+
+      assert {:ok, %AnalogValue{unquote(property) => 20.0}} =
+               AnalogValue.update_property(obj, unquote(property), 20.0)
+
+      assert {:ok, %AnalogValue{unquote(property) => -20.0}} =
+               AnalogValue.update_property(obj, unquote(property), -20.0)
+
+      assert {:ok, %AnalogValue{unquote(property) => :inf}} =
+               AnalogValue.update_property(obj, unquote(property), :inf)
+
+      assert {:ok, %AnalogValue{unquote(property) => :infn}} =
+               AnalogValue.update_property(obj, unquote(property), :infn)
+
+      assert {:ok, %AnalogValue{unquote(property) => :NaN}} =
+               AnalogValue.update_property(obj, unquote(property), :NaN)
+    end
+
     test "verify update_property/3 for #{property} fails on value lower than min" do
       {:ok, %AnalogValue{unquote(property) => +0.0} = obj} =
         AnalogValue.create(1, "TEST", %{

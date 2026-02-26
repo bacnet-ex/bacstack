@@ -68,6 +68,30 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AnalogOutputTest do
              AnalogOutput.update_property(obj, :present_value, 0.0)
   end
 
+  test "verify update_property/3 for present_value working within configured infinite min/max" do
+    {:ok, %AnalogOutput{:present_value => +0.0} = obj} =
+      AnalogOutput.create(1, "TEST", %{
+        max_present_value: :inf,
+        min_present_value: :infn,
+        out_of_service: true
+      })
+
+    assert {:ok, %AnalogOutput{:present_value => 20.0}} =
+             AnalogOutput.update_property(obj, :present_value, 20.0)
+
+    assert {:ok, %AnalogOutput{:present_value => -20.0}} =
+             AnalogOutput.update_property(obj, :present_value, -20.0)
+
+    assert {:ok, %AnalogOutput{:present_value => :inf}} =
+             AnalogOutput.update_property(obj, :present_value, :inf)
+
+    assert {:ok, %AnalogOutput{:present_value => :infn}} =
+             AnalogOutput.update_property(obj, :present_value, :infn)
+
+    assert {:ok, %AnalogOutput{:present_value => :NaN}} =
+             AnalogOutput.update_property(obj, :present_value, :NaN)
+  end
+
   test "verify update_property/3 for present_value fails on value lower than min" do
     {:ok, %AnalogOutput{present_value: +0.0} = obj} =
       AnalogOutput.create(1, "TEST", %{
@@ -150,6 +174,29 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AnalogOutputTest do
 
     assert {:ok, %AnalogOutput{present_value: +0.0}} =
              AnalogOutput.update_property(obj, :relinquish_default, 0.0)
+  end
+
+  test "verify update_property/3 for relinquish_default working within configured infinite min/max" do
+    {:ok, %AnalogOutput{:present_value => +0.0} = obj} =
+      AnalogOutput.create(1, "TEST", %{
+        max_present_value: :inf,
+        min_present_value: :infn
+      })
+
+    assert {:ok, %AnalogOutput{:present_value => 20.0}} =
+             AnalogOutput.update_property(obj, :relinquish_default, 20.0)
+
+    assert {:ok, %AnalogOutput{:present_value => -20.0}} =
+             AnalogOutput.update_property(obj, :relinquish_default, -20.0)
+
+    assert {:ok, %AnalogOutput{:present_value => :inf}} =
+             AnalogOutput.update_property(obj, :relinquish_default, :inf)
+
+    assert {:ok, %AnalogOutput{:present_value => :infn}} =
+             AnalogOutput.update_property(obj, :relinquish_default, :infn)
+
+    assert {:ok, %AnalogOutput{:present_value => :NaN}} =
+             AnalogOutput.update_property(obj, :relinquish_default, :NaN)
   end
 
   test "verify update_property/3 for relinquish_default fails on value lower than min" do

@@ -101,25 +101,28 @@ defmodule BACnet.Protocol.Utility do
     end
   end
 
+  @doc """
+  Reusable property validator function for float values.
+  It considers the NaN, inf/infn cases.
+  """
+  @spec float_validator_fun(ApplicationTags.ieee_float(), %{
+          optional(:min_present_value) => ApplicationTags.ieee_float() | nil,
+          optional(:max_present_value) => ApplicationTags.ieee_float() | nil
+        }) :: boolean()
+  def float_validator_fun(value, object)
+
   def float_validator_fun(value, %{min_present_value: min, max_present_value: max})
-      when not is_nil(min) and not is_nil(max) do
-    min_ok =
-      case min do
-        :NaN -> true
-        :inf -> false
-        :infn -> true
-        min when is_float(min) -> min <= value
-      end
+      when min not in [nil, :NaN] and max not in [nil, :NaN] and value != :NaN do
+    leq = fn
+      :inf, :inf -> true
+      :inf, _ -> false
+      :infn, _ -> true
+      _, :inf -> true
+      _, :infn -> false
+      a, b when is_float(a) and is_float(b) -> a <= b
+    end
 
-    max_ok =
-      case max do
-        :NaN -> true
-        :inf -> true
-        :infn -> false
-        max when is_float(max) -> value <= max
-      end
-
-    min_ok and max_ok
+    leq.(min, value) and leq.(value, max)
   end
 
   def float_validator_fun(_value, _obj) do
