@@ -67,6 +67,39 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AnalogValueTest do
 
       assert {:ok, %AnalogValue{unquote(property) => +0.0}} =
                AnalogValue.update_property(obj, unquote(property), 0.0)
+
+      assert {:ok, %AnalogValue{unquote(property) => :NaN}} =
+               AnalogValue.update_property(obj, unquote(property), :NaN)
+
+      assert {:error, {:value_failed_property_validation, unquote(property)}} =
+               AnalogValue.update_property(obj, unquote(property), :inf)
+
+      assert {:error, {:value_failed_property_validation, unquote(property)}} =
+               AnalogValue.update_property(obj, unquote(property), :infn)
+    end
+
+    test "verify update_property/3 for #{property} working within configured infinite min/max" do
+      {:ok, %AnalogValue{unquote(property) => +0.0} = obj} =
+        AnalogValue.create(1, "TEST", %{
+          unquote(property) => 0.0,
+          max_present_value: :inf,
+          min_present_value: :infn
+        })
+
+      assert {:ok, %AnalogValue{unquote(property) => 20.0}} =
+               AnalogValue.update_property(obj, unquote(property), 20.0)
+
+      assert {:ok, %AnalogValue{unquote(property) => -20.0}} =
+               AnalogValue.update_property(obj, unquote(property), -20.0)
+
+      assert {:ok, %AnalogValue{unquote(property) => :inf}} =
+               AnalogValue.update_property(obj, unquote(property), :inf)
+
+      assert {:ok, %AnalogValue{unquote(property) => :infn}} =
+               AnalogValue.update_property(obj, unquote(property), :infn)
+
+      assert {:ok, %AnalogValue{unquote(property) => :NaN}} =
+               AnalogValue.update_property(obj, unquote(property), :NaN)
     end
 
     test "verify update_property/3 for #{property} fails on value lower than min" do
@@ -82,6 +115,9 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AnalogValueTest do
 
       assert {:error, {:value_failed_property_validation, unquote(property)}} =
                AnalogValue.update_property(obj, unquote(property), -32_767.0)
+
+      assert {:error, {:value_failed_property_validation, unquote(property)}} =
+               AnalogValue.update_property(obj, unquote(property), :infn)
     end
 
     test "verify update_property/3 for #{property} fails on value higher than max" do
@@ -97,6 +133,9 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AnalogValueTest do
 
       assert {:error, {:value_failed_property_validation, unquote(property)}} =
                AnalogValue.update_property(obj, unquote(property), 32_767.0)
+
+      assert {:error, {:value_failed_property_validation, unquote(property)}} =
+               AnalogValue.update_property(obj, unquote(property), :inf)
     end
   end
 
@@ -160,6 +199,8 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AnalogValueTest do
              AnalogValue.set_priority(obj, 16, 50.0)
 
     assert {:ok, %AnalogValue{present_value: +0.0}} = AnalogValue.set_priority(obj, 16, 0.0)
+
+    assert {:ok, %AnalogValue{present_value: :NaN}} = AnalogValue.set_priority(obj, 16, :NaN)
   end
 
   test "verify set_priority/3 fails on value lower than min" do
@@ -175,6 +216,9 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AnalogValueTest do
 
     assert {:error, {:value_failed_property_validation, :priority_array}} =
              AnalogValue.set_priority(obj, 16, -32_767.0)
+
+    assert {:error, {:value_failed_property_validation, :priority_array}} =
+             AnalogValue.set_priority(obj, 16, :infn)
   end
 
   test "verify set_priority/3 fails on value higher than max" do
@@ -190,5 +234,8 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AnalogValueTest do
 
     assert {:error, {:value_failed_property_validation, :priority_array}} =
              AnalogValue.set_priority(obj, 16, 32_767.0)
+
+    assert {:error, {:value_failed_property_validation, :priority_array}} =
+             AnalogValue.set_priority(obj, 16, :inf)
   end
 end

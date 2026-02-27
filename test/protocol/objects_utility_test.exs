@@ -124,6 +124,160 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
     end
   end
 
+  test "Validate float range with empty object succeeds" do
+    assert ObjectsUtility.validate_float_range(:NaN, %{})
+    assert ObjectsUtility.validate_float_range(:inf, %{})
+    assert ObjectsUtility.validate_float_range(:infn, %{})
+    assert ObjectsUtility.validate_float_range(3.14, %{})
+  end
+
+  test "Validate float range with missing min present value succeeds" do
+    assert ObjectsUtility.validate_float_range(:NaN, %{max_present_value: 1})
+    assert ObjectsUtility.validate_float_range(:inf, %{max_present_value: 1})
+    assert ObjectsUtility.validate_float_range(:infn, %{max_present_value: 1})
+    assert ObjectsUtility.validate_float_range(3.14, %{max_present_value: 1})
+  end
+
+  test "Validate float range with missing max present value succeeds" do
+    assert ObjectsUtility.validate_float_range(:NaN, %{max_present_value: 10})
+    assert ObjectsUtility.validate_float_range(:inf, %{max_present_value: 10})
+    assert ObjectsUtility.validate_float_range(:infn, %{max_present_value: 10})
+    assert ObjectsUtility.validate_float_range(3.14, %{max_present_value: 10})
+  end
+
+  test "Validate float range with min/max present value floats" do
+    assert ObjectsUtility.validate_float_range(3.0, %{
+             min_present_value: 2.0,
+             max_present_value: 4.0
+           })
+
+    refute ObjectsUtility.validate_float_range(1.0, %{
+             min_present_value: 2.0,
+             max_present_value: 4.0
+           })
+
+    refute ObjectsUtility.validate_float_range(5.0, %{
+             min_present_value: 2.0,
+             max_present_value: 4.0
+           })
+  end
+
+  test "Validate float range with min present value special atoms" do
+    refute ObjectsUtility.validate_float_range(3.0, %{
+             min_present_value: :inf,
+             max_present_value: 4.0
+           })
+
+    refute ObjectsUtility.validate_float_range(:inf, %{
+             min_present_value: :inf,
+             max_present_value: 4.0
+           })
+
+    assert ObjectsUtility.validate_float_range(:NaN, %{
+             min_present_value: :inf,
+             max_present_value: 4.0
+           })
+
+    assert ObjectsUtility.validate_float_range(3.0, %{
+             min_present_value: :infn,
+             max_present_value: 4.0
+           })
+
+    assert ObjectsUtility.validate_float_range(:infn, %{
+             min_present_value: :infn,
+             max_present_value: 4.0
+           })
+
+    assert ObjectsUtility.validate_float_range(:NaN, %{
+             min_present_value: :infn,
+             max_present_value: 4.0
+           })
+
+    assert ObjectsUtility.validate_float_range(3.0, %{
+             min_present_value: :NaN,
+             max_present_value: 4.0
+           })
+
+    assert ObjectsUtility.validate_float_range(:inf, %{
+             min_present_value: :NaN,
+             max_present_value: 4.0
+           })
+
+    assert ObjectsUtility.validate_float_range(:infn, %{
+             min_present_value: :NaN,
+             max_present_value: 4.0
+           })
+
+    assert ObjectsUtility.validate_float_range(:NaN, %{
+             min_present_value: :NaN,
+             max_present_value: 4.0
+           })
+  end
+
+  test "Validate float range with max present value special atoms" do
+    assert ObjectsUtility.validate_float_range(3.0, %{
+             min_present_value: 2.0,
+             max_present_value: :inf
+           })
+
+    refute ObjectsUtility.validate_float_range(3.0, %{
+             min_present_value: 2.0,
+             max_present_value: :infn
+           })
+
+    refute ObjectsUtility.validate_float_range(:infn, %{
+             min_present_value: 2.0,
+             max_present_value: :infn
+           })
+
+    assert ObjectsUtility.validate_float_range(:NaN, %{
+             min_present_value: 2.0,
+             max_present_value: :infn
+           })
+
+    assert ObjectsUtility.validate_float_range(3.0, %{
+             min_present_value: 2.0,
+             max_present_value: :NaN
+           })
+
+    assert ObjectsUtility.validate_float_range(:inf, %{
+             min_present_value: 2.0,
+             max_present_value: :NaN
+           })
+
+    assert ObjectsUtility.validate_float_range(:infn, %{
+             min_present_value: 2.0,
+             max_present_value: :NaN
+           })
+
+    assert ObjectsUtility.validate_float_range(:NaN, %{
+             min_present_value: 2.0,
+             max_present_value: :NaN
+           })
+  end
+
+  test "Validate float range with min/max present value special atoms" do
+    assert ObjectsUtility.validate_float_range(3.0, %{
+             min_present_value: :infn,
+             max_present_value: :inf
+           })
+
+    assert ObjectsUtility.validate_float_range(:inf, %{
+             min_present_value: :infn,
+             max_present_value: :inf
+           })
+
+    assert ObjectsUtility.validate_float_range(:infn, %{
+             min_present_value: :infn,
+             max_present_value: :inf
+           })
+
+    assert ObjectsUtility.validate_float_range(:NaN, %{
+             min_present_value: :infn,
+             max_present_value: :inf
+           })
+  end
+
   test "get object type mappings" do
     # Assert we always start with a fresh state
     :persistent_term.erase({ObjectsUtility, :object_type_mappings})

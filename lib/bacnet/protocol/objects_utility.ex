@@ -13,6 +13,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
 
   alias __MODULE__.Internal.ReadPropertyAckTransformOptions, as: RPATransformOptions
   alias BACnet.BeamTypes
+  alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.BACnetArray
   alias BACnet.Protocol.Constants
@@ -538,6 +539,45 @@ defmodule BACnet.Protocol.ObjectsUtility do
     pow = Integer.pow(10, precision)
     trunc(float * pow) / pow
   end
+
+  @doc """
+  Validates that the given value is within the `min_present_value` and `max_present_value` (range).
+
+  It verifies that the given value is within the configured `min` and `max`, which can also be
+  `:NaN`, `:inf` and `:infn`.
+
+  The given value can not be larger than the configured `max` or smaller than the configured `min`.
+  In particular, `:NaN` is always allowed as value, regardless of the configured range.
+
+  No validation is done if either `min` or `max` is missing (or `nil`).
+  """
+  @spec validate_float_range(ApplicationTags.ieee_float(), %{
+          optional(:min_present_value) => ApplicationTags.ieee_float() | nil,
+          optional(:max_present_value) => ApplicationTags.ieee_float() | nil
+        }) :: boolean()
+  def validate_float_range(value, object)
+
+  def validate_float_range(value, %{min_present_value: min, max_present_value: max})
+      when min not in [nil, :NaN] and max not in [nil, :NaN] and value != :NaN do
+    do_validate_float_range(min, value) and do_validate_float_range(value, max)
+  end
+
+  def validate_float_range(_value, _obj) do
+    true
+  end
+
+  # `value` can not be larger than `value2`
+  @spec do_validate_float_range(float() | :inf | :infn, float() | :inf | :infn) :: boolean()
+  defp do_validate_float_range(value, value2)
+
+  defp do_validate_float_range(:inf, :inf), do: true
+  defp do_validate_float_range(:inf, _value2), do: false
+  defp do_validate_float_range(:infn, _value2), do: true
+  defp do_validate_float_range(_value, :inf), do: true
+  defp do_validate_float_range(_value, :infn), do: false
+
+  defp do_validate_float_range(value, value2) when is_float(value) and is_float(value),
+    do: value <= value2
 
   @doc """
   Casts a property from application tag `Encoding` to a more sane data type.

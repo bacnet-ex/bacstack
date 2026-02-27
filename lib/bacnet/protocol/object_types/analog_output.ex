@@ -11,6 +11,7 @@ defmodule BACnet.Protocol.ObjectTypes.AnalogOutput do
   # TODO: Docs
 
   alias BACnet.Protocol.Constants
+  alias BACnet.Protocol.ObjectsUtility
   alias BACnet.Protocol.PriorityArray
 
   require Constants
@@ -47,14 +48,7 @@ defmodule BACnet.Protocol.ObjectTypes.AnalogOutput do
     field(:present_value, float(),
       required: true,
       default: 0.0,
-      validator_fun: fn
-        value, %{min_present_value: min, max_present_value: max}
-        when not is_nil(min) and not is_nil(max) ->
-          min <= value and value <= max
-
-        _value, _obj ->
-          true
-      end
+      validator_fun: &ObjectsUtility.validate_float_range/2
     )
 
     field(:priority_array, PriorityArray.t(float()), required: true, readonly: true)
@@ -62,14 +56,7 @@ defmodule BACnet.Protocol.ObjectTypes.AnalogOutput do
     field(:relinquish_default, float(),
       required: true,
       default: 0.0,
-      validator_fun: fn
-        value, %{min_present_value: min, max_present_value: max}
-        when not is_nil(min) and not is_nil(max) ->
-          min <= value and value <= max
-
-        _value, _obj ->
-          true
-      end
+      validator_fun: &ObjectsUtility.validate_float_range/2
     )
 
     field(:reliability, Constants.reliability(),

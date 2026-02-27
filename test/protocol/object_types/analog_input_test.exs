@@ -62,6 +62,39 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AnalogInputTest do
 
     assert {:ok, %AnalogInput{present_value: +0.0}} =
              AnalogInput.update_property(obj, :present_value, 0.0)
+
+    assert {:ok, %AnalogInput{present_value: :NaN}} =
+             AnalogInput.update_property(obj, :present_value, :NaN)
+
+    assert {:error, {:value_failed_property_validation, :present_value}} =
+             AnalogInput.update_property(obj, :present_value, :inf)
+
+    assert {:error, {:value_failed_property_validation, :present_value}} =
+             AnalogInput.update_property(obj, :present_value, :infn)
+  end
+
+  test "verify update_property/3 for present_value working within configured infinite min/max" do
+    {:ok, %AnalogInput{:present_value => +0.0} = obj} =
+      AnalogInput.create(1, "TEST", %{
+        :present_value => 0.0,
+        max_present_value: :inf,
+        min_present_value: :infn
+      })
+
+    assert {:ok, %AnalogInput{:present_value => 20.0}} =
+             AnalogInput.update_property(obj, :present_value, 20.0)
+
+    assert {:ok, %AnalogInput{:present_value => -20.0}} =
+             AnalogInput.update_property(obj, :present_value, -20.0)
+
+    assert {:ok, %AnalogInput{:present_value => :inf}} =
+             AnalogInput.update_property(obj, :present_value, :inf)
+
+    assert {:ok, %AnalogInput{:present_value => :infn}} =
+             AnalogInput.update_property(obj, :present_value, :infn)
+
+    assert {:ok, %AnalogInput{:present_value => :NaN}} =
+             AnalogInput.update_property(obj, :present_value, :NaN)
   end
 
   test "verify update_property/3 for present_value fails on value lower than min" do
@@ -73,6 +106,9 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AnalogInputTest do
 
     assert {:error, {:value_failed_property_validation, :present_value}} =
              AnalogInput.update_property(obj, :present_value, -32_767.0)
+
+    assert {:error, {:value_failed_property_validation, :present_value}} =
+             AnalogInput.update_property(obj, :present_value, :infn)
   end
 
   test "verify update_property/3 for present_value fails on value higher than max" do
@@ -84,6 +120,9 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AnalogInputTest do
 
     assert {:error, {:value_failed_property_validation, :present_value}} =
              AnalogInput.update_property(obj, :present_value, 32_767.0)
+
+    assert {:error, {:value_failed_property_validation, :present_value}} =
+             AnalogInput.update_property(obj, :present_value, :inf)
   end
 
   test "verify update_property/3 only checks present_value for min/max" do
