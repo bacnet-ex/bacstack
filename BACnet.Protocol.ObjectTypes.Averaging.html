@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.1">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>BACnet.Protocol.ObjectTypes.Averaging — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-YJO4MOOW.css" />
+
+    <script defer src="dist/sidebar_items-C7FAD1DE.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-YU4BZFVS.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>Averaging</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0)</small>
+
+    </h1>
+
+<a href="BACnet.Protocol.ObjectTypes.Averaging.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>The Averaging object type defines a standardized object whose properties represent
+the externally visible characteristics of a value that is sampled periodically over
+a specified time interval. The Averaging object records the minimum, maximum and
+average value over the interval, and makes these values visible as properties of
+the Averaging object. The sampled value may be the value of any BOOLEAN, INTEGER,
+Unsigned, Enumerated or REAL property value of any object within the BACnet
+Device in which the object resides. Optionally, the object property to be sampled
+may exist in a different BACnet Device.</p><p>The Averaging object shall use a &quot;sliding window&quot; technique that maintains a buffer
+of N samples distributed over the specified interval. Every (time interval/N) seconds
+a new sample is recorded displacing the oldest sample from the buffer. At this time,
+the minimum, maximum and average are recalculated. The buffer shall maintain an
+indication for each sample that permits the average calculation and minimum/maximum
+algorithm to determine the number of valid samples in the buffer.</p><p>(ASHRAE 135 - Clause 12.5)</p><hr class="thin"/><p>The following part has been automatically generated.</p><details><summary>Click to expand</summary>
+
+This module defines a BACnet object of the type `averaging`. The following properties are defined:
+
+| Property | Revision | Required | Readonly | Protected | Intrinsic |
+|----------|----------|----------|----------|-----------|-----------|
+| attempted_samples |  | X |  |  |  |
+| average_value |  | X | X |  |  |
+| description |  |  |  |  |  |
+| max_value |  | X | X |  |  |
+| max_value_timestamp |  |  | X |  |  |
+| min_value |  | X | X |  |  |
+| min_value_timestamp |  |  | X |  |  |
+| object_instance |  | X | X |  |  |
+| object_name |  | X | X |  |  |
+| object_property_reference |  | X |  |  |  |
+| profile_name |  |  |  |  |  |
+| valid_samples |  | X | X |  |  |
+| variance_value |  |  | X |  |  |
+| window_interval |  | X |  |  |  |
+| window_samples |  | X |  |  |  |
+
+The following properties have additional semantics:
+
+| Property | Has Default | Has Init | Implicit Relationships | Validators | Annotations |
+|----------|-------------|----------|------------------------|------------|-------------|
+| attempted_samples | X |  |  |  |  |
+| average_value | X |  |  |  |  |
+| max_value | X |  |  |  |  |
+| max_value_timestamp | X |  |  |  |  |
+| min_value | X |  |  |  |  |
+| min_value_timestamp | X |  |  |  |  |
+| object_property_reference | X |  |  |  |  |
+| valid_samples | X |  |  |  |  |
+| variance_value | X |  |  |  |  |
+| window_samples | X |  |  |  |  |
+
+The following table shows the default values and/or init functions:
+
+| Property | Default Value | Init Function |
+|----------|---------------|---------------|
+| attempted_samples | `0` |  |
+| average_value | `:NaN` |  |
+| max_value | `:infn` |  |
+| max_value_timestamp | <a title="%BACnet.Protocol.BACnetDateTime{date: %BACnet.Protocol.BACnetDate{year: :unspecified, month: :unspecified, day: :unspecified, weekday: :unspecified}, time: %BACnet.Protocol.BACnetTime{hour: :unspecified, minute: :unspecified, second: :unspecified, hundredth: :unspecified}}">`%BACnet.Protocol.BACnetDateTime{...}`</a> |  |
+| min_value | `:inf` |  |
+| min_value_timestamp | <a title="%BACnet.Protocol.BACnetDateTime{date: %BACnet.Protocol.BACnetDate{year: :unspecified, month: :unspecified, day: :unspecified, weekday: :unspecified}, time: %BACnet.Protocol.BACnetTime{hour: :unspecified, minute: :unspecified, second: :unspecified, hundredth: :unspecified}}">`%BACnet.Protocol.BACnetDateTime{...}`</a> |  |
+| object_property_reference | <a title="%BACnet.Protocol.DeviceObjectPropertyRef{object_identifier: %BACnet.Protocol.ObjectIdentifier{type: :binary_input, instance: 4194303}, property_identifier: 4194303, property_array_index: nil, device_identifier: nil}">`%BACnet.Protocol.DeviceObjectPropertyRef{...}`</a> |  |
+| valid_samples | `0` |  |
+| variance_value | `:NaN` |  |
+| window_samples | `0` |  |</details>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-types summary">
+  <h3>
+    <a href="#types">Types</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:common_object_opts/0" data-no-tooltip="" translate="no">common_object_opts()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Common object options for creation - all are optional.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:object_opts/0" data-no-tooltip="" translate="no">object_opts()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Available object options.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:property_name/0" data-no-tooltip="" translate="no">property_name()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Available property names for this object.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:property_update_error/0" data-no-tooltip="" translate="no">property_update_error()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>The structure for property errors.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:t/0" data-no-tooltip="" translate="no">t()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents an Averaging object. All keys should be treated as read-only,
+all updates should go only through <a href="#update_property/3"><code class="inline">update_property/3</code></a>.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#add_property/3" data-no-tooltip="" translate="no">add_property(object, property, value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Adds an optional property to an object.
+Remote objects can not be mutated using this operation.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#create/4" data-no-tooltip="" translate="no">create(instance_number, object_name, properties \\ %{}, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Creates a new object struct with the defined properties. Optional properties are not
+created when not given, only required, given and dependency properties are created.
+Properties with a value of <code class="inline">nil</code> are ignored.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_all_properties/0" data-no-tooltip="" translate="no">get_all_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of all properties this object supports.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_annotation/1" data-no-tooltip="" translate="no">get_annotation(name)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the annotations for the given property name.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_annotations/0" data-no-tooltip="" translate="no">get_annotations()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the list of annotations for each property.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_cov_properties/0" data-no-tooltip="" translate="no">get_cov_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of properties used for COV reporting.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_intrinsic_properties/0" data-no-tooltip="" translate="no">get_intrinsic_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of intrinsic properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_object_identifier/1" data-no-tooltip="" translate="no">get_object_identifier(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the BACnet object identifier.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_optional_properties/0" data-no-tooltip="" translate="no">get_optional_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of optional properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_properties/1" data-no-tooltip="" translate="no">get_properties(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the list of properties the object has.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_properties_type_map/0" data-no-tooltip="" translate="no">get_properties_type_map()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get a map of property name to type.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_property/2" data-no-tooltip="" translate="no">get_property(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get a property's value from an object.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_protected_properties/0" data-no-tooltip="" translate="no">get_protected_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of protected properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_readonly_properties/0" data-no-tooltip="" translate="no">get_readonly_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of readonly properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_required_properties/0" data-no-tooltip="" translate="no">get_required_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of required properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#has_property?/2" data-no-tooltip="" translate="no">has_property?(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks if the given object has the given property.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#property_writable?/2" data-no-tooltip="" translate="no">property_writable?(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks if the given property is writable.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#remove_property/2" data-no-tooltip="" translate="no">remove_property(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Removes an optional property from an object. This function is idempotent.
+Remote objects can not be mutated using this operation.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#supports_intrinsic/0" data-no-tooltip="" translate="no">supports_intrinsic()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to check whether the object type supports intrinsic reporting.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#update_property/3" data-no-tooltip="" translate="no">update_property(object, property, value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Updates a property of an object.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h2>
+
+    <div class="types-list">
+<section class="detail" id="t:common_object_opts/0">
+
+  <div class="detail-header">
+    <a href="#t:common_object_opts/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">common_object_opts()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> common_object_opts() ::
+  {:allow_unknown_properties, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | {:ignore_unknown_properties, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | {:revision, <a href="BACnet.Protocol.Constants.html#t:protocol_revision/0">BACnet.Protocol.Constants.protocol_revision</a>()}</pre>
+
+      </div>
+
+<p>Common object options for creation - all are optional.</p><ul><li><code class="inline">allow_unknown_properties</code> - Properties that are unknown to the object implementation are usually rejected.
+With this option, unknown properties (numeric identifiers usually means we dont know them) are accepted
+and put into a separate map. This does mean we can not validate or write them.
+Types of the values can be anything at this point. While you can read unknown properties with atom
+or integer as property identifier, you can only remove numeric unknown property identifiers from an object.
+Property identifiers of type <code class="inline">atom</code> are only accepted, if it is a remote object (object implementation is only
+enforced if it is a local object). Numeric property identifiers are accepted regardless of remote object or not.
+For remote objects, this means you have to write &quot;raw values&quot; (usually <code class="inline">Encoding</code> structs).</li><li><code class="inline">ignore_unknown_properties</code> - Properties that are unknown to the object implementation are usually rejected.
+With this option, unknown properties get ignored, as if they were not specified.</li><li><code class="inline">revision</code> - The BACnet protocol revision to check required properties against.
+Optional properties are regardless of revision available.
+See <a href="BACnet.Protocol.Constants.html#t:protocol_revision/0"><code class="inline">BACnet.Protocol.Constants.protocol_revision/0</code></a> for the available revisions.</li></ul>
+  </section>
+</section>
+<section class="detail" id="t:object_opts/0">
+
+  <div class="detail-header">
+    <a href="#t:object_opts/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">object_opts()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L36" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> object_opts() :: <a href="#t:common_object_opts/0">common_object_opts</a>()</pre>
+
+      </div>
+
+<p>Available object options.</p>
+  </section>
+</section>
+<section class="detail" id="t:property_name/0">
+
+  <div class="detail-header">
+    <a href="#t:property_name/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">property_name()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> property_name() ::
+  :attempted_samples
+  | :average_value
+  | :description
+  | :max_value
+  | :max_value_timestamp
+  | :min_value
+  | :min_value_timestamp
+  | :object_instance
+  | :object_name
+  | :object_property_reference
+  | :profile_name
+  | :valid_samples
+  | :variance_value
+  | :window_interval
+  | :window_samples</pre>
+
+      </div>
+
+<p>Available property names for this object.</p>
+  </section>
+</section>
+<section class="detail" id="t:property_update_error/0">
+
+  <div class="detail-header">
+    <a href="#t:property_update_error/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">property_update_error()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> property_update_error() ::
+  {:error,
+   {error :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(),
+    property :: <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()}}</pre>
+
+      </div>
+
+<p>The structure for property errors.</p>
+  </section>
+</section>
+<section class="detail" id="t:t/0">
+
+  <div class="detail-header">
+    <a href="#t:t/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">t()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> t() :: %BACnet.Protocol.ObjectTypes.Averaging{
+  _metadata: internal_metadata(),
+  _unknown_properties: %{
+    optional(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()) =&gt;
+      <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+      | <a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()
+      | [<a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()]
+  },
+  attempted_samples: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(),
+  average_value: <a href="BACnet.Protocol.ApplicationTags.html#t:ieee_float/0">BACnet.Protocol.ApplicationTags.ieee_float</a>(),
+  description: <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>() | nil,
+  max_value: <a href="BACnet.Protocol.ApplicationTags.html#t:ieee_float/0">BACnet.Protocol.ApplicationTags.ieee_float</a>(),
+  max_value_timestamp: <a href="BACnet.Protocol.BACnetDateTime.html#t:t/0">BACnet.Protocol.BACnetDateTime.t</a>() | nil,
+  min_value: <a href="BACnet.Protocol.ApplicationTags.html#t:ieee_float/0">BACnet.Protocol.ApplicationTags.ieee_float</a>(),
+  min_value_timestamp: <a href="BACnet.Protocol.BACnetDateTime.html#t:t/0">BACnet.Protocol.BACnetDateTime.t</a>() | nil,
+  object_instance: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(),
+  object_name: <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
+  object_property_reference: <a href="BACnet.Protocol.DeviceObjectPropertyRef.html#t:t/0">BACnet.Protocol.DeviceObjectPropertyRef.t</a>(),
+  profile_name: <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>() | nil,
+  valid_samples: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(),
+  variance_value: <a href="BACnet.Protocol.ApplicationTags.html#t:ieee_float/0">BACnet.Protocol.ApplicationTags.ieee_float</a>() | nil,
+  window_interval: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(),
+  window_samples: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()
+}</pre>
+
+      </div>
+
+<p>Represents an Averaging object. All keys should be treated as read-only,
+all updates should go only through <a href="#update_property/3"><code class="inline">update_property/3</code></a>.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="add_property/3">
+
+  <div class="detail-header">
+    <a href="#add_property/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">add_property(object, property, value)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> add_property(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Adds an optional property to an object.
+Remote objects can not be mutated using this operation.</p><p>Please note that properties of services can <strong>not</strong> be dynamically added and instead
+the object must be newly created using <a href="#create/4"><code class="inline">create/4</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="create/4">
+
+    <span id="create/2"></span>
+
+    <span id="create/3"></span>
+
+  <div class="detail-header">
+    <a href="#create/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">create(instance_number, object_name, properties \\ %{}, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> create(
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(),
+  <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
+  %{optional(<a href="#t:property_name/0">property_name</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()) =&gt; <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()},
+  [<a href="#t:object_opts/0">object_opts</a>() | internal_metadata()]
+) :: {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Creates a new object struct with the defined properties. Optional properties are not
+created when not given, only required, given and dependency properties are created.
+Properties with a value of <code class="inline">nil</code> are ignored.</p><p>Only properties that are required for specific services (i.e. Intrinsic Reporting)
+are automatically created.</p>
+  </section>
+</section>
+<section class="detail" id="get_all_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_all_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_all_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_all_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of all properties this object supports.</p>
+  </section>
+</section>
+<section class="detail" id="get_annotation/1">
+
+  <div class="detail-header">
+    <a href="#get_annotation/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_annotation(name)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_annotation(<a href="#t:property_name/0">property_name</a>()) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the annotations for the given property name.</p>
+  </section>
+</section>
+<section class="detail" id="get_annotations/0">
+
+  <div class="detail-header">
+    <a href="#get_annotations/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_annotations()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_annotations() :: [{name :: <a href="#t:property_name/0">property_name</a>(), values :: [<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()]}]</pre>
+
+      </div>
+
+<p>Auto generated function to get the list of annotations for each property.</p>
+  </section>
+</section>
+<section class="detail" id="get_cov_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_cov_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_cov_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_cov_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of properties used for COV reporting.</p>
+  </section>
+</section>
+<section class="detail" id="get_intrinsic_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_intrinsic_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_intrinsic_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_intrinsic_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of intrinsic properties.</p>
+  </section>
+</section>
+<section class="detail" id="get_object_identifier/1">
+
+  <div class="detail-header">
+    <a href="#get_object_identifier/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_object_identifier(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_object_identifier(<a href="#t:t/0">t</a>()) :: <a href="BACnet.Protocol.ObjectIdentifier.html#t:t/0">BACnet.Protocol.ObjectIdentifier.t</a>()</pre>
+
+      </div>
+
+<p>Get the BACnet object identifier.</p>
+  </section>
+</section>
+<section class="detail" id="get_optional_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_optional_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_optional_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_optional_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of optional properties.</p>
+  </section>
+</section>
+<section class="detail" id="get_properties/1">
+
+  <div class="detail-header">
+    <a href="#get_properties/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_properties(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_properties(<a href="#t:t/0">t</a>()) :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Get the list of properties the object has.</p>
+  </section>
+</section>
+<section class="detail" id="get_properties_type_map/0">
+
+  <div class="detail-header">
+    <a href="#get_properties_type_map/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_properties_type_map()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_properties_type_map() :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()</pre>
+
+      </div>
+
+<p>Auto generated function to get a map of property name to type.</p>
+  </section>
+</section>
+<section class="detail" id="get_property/2">
+
+  <div class="detail-header">
+    <a href="#get_property/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_property(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_property(
+  <a href="#t:t/0">t</a>(),
+  <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()
+) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Get a property's value from an object.</p>
+  </section>
+</section>
+<section class="detail" id="get_protected_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_protected_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_protected_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_protected_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of protected properties.</p><p>Protected is an annotation and the object modules prevent writing to
+this property directly in code. The protected properties are either
+written on creation or updated automatically depending on other properties
+being written to. Some properties are only written once at creation and
+never updated.</p>
+  </section>
+</section>
+<section class="detail" id="get_readonly_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_readonly_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_readonly_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_readonly_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of readonly properties.</p><p>Readonly is only an annotation that the property should be write protected
+on the BACnet side, there is no actual write protection in the object.
+This is a hint to the device server. If you need actual write protection, see <code class="inline">protected</code>.</p>
+  </section>
+</section>
+<section class="detail" id="get_required_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_required_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_required_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_required_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of required properties.</p>
+  </section>
+</section>
+<section class="detail" id="has_property?/2">
+
+  <div class="detail-header">
+    <a href="#has_property?/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">has_property?(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> has_property?(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks if the given object has the given property.</p><p>See <a href="BACnet.Protocol.ObjectsUtility.html#has_property?/2"><code class="inline">BACnet.Protocol.ObjectsUtility.has_property?/2</code></a> for implementation details.</p>
+  </section>
+</section>
+<section class="detail" id="property_writable?/2">
+
+  <div class="detail-header">
+    <a href="#property_writable?/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">property_writable?(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> property_writable?(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()) ::
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks if the given property is writable.</p><p>Check <a href="BACnet.Protocol.ObjectsUtility.html#property_writable?/2"><code class="inline">BACnet.Protocol.ObjectsUtility.property_writable?/2</code></a> for a basic run-down.</p>
+  </section>
+</section>
+<section class="detail" id="remove_property/2">
+
+  <div class="detail-header">
+    <a href="#remove_property/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">remove_property(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> remove_property(
+  <a href="#t:t/0">t</a>(),
+  <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()
+) ::
+  {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Removes an optional property from an object. This function is idempotent.
+Remote objects can not be mutated using this operation.</p><p>Please note that properties of services can <strong>not</strong> be dynamically removed and instead
+the object must be newly created using <a href="#create/4"><code class="inline">create/4</code></a>. Required properties can not be removed.</p>
+  </section>
+</section>
+<section class="detail" id="supports_intrinsic/0">
+
+  <div class="detail-header">
+    <a href="#supports_intrinsic/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">supports_intrinsic()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> supports_intrinsic() :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Auto generated function to check whether the object type supports intrinsic reporting.</p>
+  </section>
+</section>
+<section class="detail" id="update_property/3">
+
+  <div class="detail-header">
+    <a href="#update_property/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">update_property(object, property, value)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/averaging.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> update_property(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Updates a property of an object.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="bacstack.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.1) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

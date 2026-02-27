@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.1">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>BACnet.BeamTypes — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-YJO4MOOW.css" />
+
+    <script defer src="dist/sidebar_items-C7FAD1DE.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-YU4BZFVS.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr>BeamTypes</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0)</small>
+
+    </h1>
+
+<a href="BACnet.BeamTypes.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/beam_types.ex#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>Contains functions to resolve typespecs and types from BEAM bytecode
+into a type declaration and functions to validate those types against values.</p><p>During compilation, it uses a compilation tracer (as configured in the bacstack Mix Project)
+to track fresh compiled modules and stores them in persistent term for lookup later.</p><p>The types are mostly used for BACnet object type declarations, where those types are
+at compile-time resolved, so compilation tracing is a huge need for development.
+Modules that have not changed and are not compiled, are read from the BEAM file.</p><p>The module <a href="BACnet.Protocol.ObjectsMacro.html"><code class="inline">BACnet.Protocol.ObjectsMacro</code></a> and <a href="BACnet.Protocol.ObjectsUtility.html"><code class="inline">BACnet.Protocol.ObjectsUtility</code></a> use this
+module to resolve and validate types accurately to the need of ASHRAE 135 BACnet specification.</p>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-types summary">
+  <h3>
+    <a href="#types">Types</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:typechecker_types/0" data-no-tooltip="" translate="no">typechecker_types()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Valid type checker types. This is mostly used for BACnet object properties.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#check_type/2" data-no-tooltip="" translate="no">check_type(type, value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks the type of value and verifies more complex type it is of the same type as the given type.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#generate_valid_clause/2" data-no-tooltip="" translate="no">generate_valid_clause(module, env)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Generates <code class="inline">valid?/1</code> clause body based on the given module's <code class="inline">:t</code> typespec,
+it must reference a struct.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#resolve_struct_type/4" data-no-tooltip="" translate="no">resolve_struct_type(module, type, env, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Resolves a type (struct) to a map of fields to typespecs (<a href="#resolve_type/2"><code class="inline">resolve_type/2</code></a>-like).</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#resolve_type/2" data-no-tooltip="" translate="no">resolve_type(type, env)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Resolves an AST type to something <a href="#check_type/2"><code class="inline">check_type/2</code></a> works with.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h2>
+
+    <div class="types-list">
+<section class="detail" id="t:typechecker_types/0">
+
+  <div class="detail-header">
+    <a href="#t:typechecker_types/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">typechecker_types()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/beam_types.ex#L49" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> typechecker_types() ::
+  nil
+  | :any
+  | :boolean
+  | :string
+  | :octet_string
+  | :signed_integer
+  | :unsigned_integer
+  | :real
+  | :double
+  | :bitstring
+  | {:array, <a href="#t:typechecker_types/0">typechecker_types</a>()}
+  | {:array, <a href="#t:typechecker_types/0">typechecker_types</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()}
+  | {:constant, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>()}
+  | {:in_list, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}
+  | {:in_range, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">integer</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">integer</a>()}
+  | {:list, <a href="#t:typechecker_types/0">typechecker_types</a>()}
+  | {:literal, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}
+  | {:struct, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">module</a>()}
+  | {:tuple, [<a href="#t:typechecker_types/0">typechecker_types</a>()]}
+  | {:type_list, [<a href="#t:typechecker_types/0">typechecker_types</a>()]}
+  | {:with_validator, <a href="#t:typechecker_types/0">typechecker_types</a>(), (<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>() -&gt; <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>())}
+  | {:with_validator, <a href="#t:typechecker_types/0">typechecker_types</a>(), <a href="https://hexdocs.pm/elixir/Macro.html#t:t/0">Macro.t</a>()}</pre>
+
+      </div>
+
+<p>Valid type checker types. This is mostly used for BACnet object properties.</p><p>Following types are supported:</p><ul><li><code class="inline">nil</code> - <code class="inline">nil</code></li><li><code class="inline">:any</code> - <code class="inline">any()</code>/<code class="inline">term()</code></li><li><code class="inline">:boolean</code> - <code class="inline">boolean()</code></li><li><code class="inline">:string</code> - <code class="inline">String.t()</code></li><li><code class="inline">:octet_string</code> - <code class="inline">binary()</code></li><li><code class="inline">:signed_integer</code> - <code class="inline">integer()</code></li><li><code class="inline">:unsigned_integer</code> - <code class="inline">non_neg_integer()</code></li><li><code class="inline">:real</code> - <code class="inline">float()</code>, also allowing <code class="inline">:NaN</code>, <code class="inline">:inf</code>, <code class="inline">:infn</code></li><li><code class="inline">:double</code> - value check same as <code class="inline">:real</code> (for <code class="inline">bac_object/2</code>, this type must be explicitely specified)</li><li><code class="inline">:bitstring</code> - tuple of booleans</li><li><code class="inline">{:array, subtype}</code> (validates a <code class="inline">BACnetArray</code> and every value of it being of <code class="inline">subtype</code>)</li><li><code class="inline">{:array, subtype, fixed_size}</code> (validates a <code class="inline">BACnetArray</code> with fixed size of <code class="inline">fixed_size</code> and every value of it being of <code class="inline">subtype</code>)</li><li><code class="inline">{:constant, type}</code> - <code class="inline">Constants.type()</code></li><li><code class="inline">{:in_list, values}</code></li><li><code class="inline">{:in_range, low, high}</code> - <code class="inline">x..y</code></li><li><code class="inline">{:list, type}</code> - <code class="inline">[type()]</code></li><li><code class="inline">{:literal, value_check}</code> (checks if <code class="inline">value</code> equals to <code class="inline">value_check</code> using the match <a href="https://hexdocs.pm/elixir/Kernel.html#===/2"><code class="inline">===/2</code></a> operator)</li><li><code class="inline">{:struct, module}</code> (calls the module's <code class="inline">valid?/1</code> function, if exported)</li><li><code class="inline">{:tuple, [type]}</code> (checks in sequence if the tuple element matches to the type in the same index)</li><li><code class="inline">{:type_list, [type]}</code> - <code class="inline">type_a()|type_b()</code> (checks if the value passes one of the type checks in <code class="inline">types</code> list)</li><li><code class="inline">{:with_validator, type, (term() -&gt; boolean())}</code> - First checks the type and then calls the validator function.</li><li><code class="inline">{:with_validator, type, validator_function_ast}</code> - First checks the type and then calls the validator function,
+ which is AST that gets first evaluated and then called with the value. The AST must evaluate to a single arity function.</li></ul>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="check_type/2">
+
+  <div class="detail-header">
+    <a href="#check_type/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">check_type(type, value)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/beam_types.ex#L77" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> check_type(<a href="#t:typechecker_types/0">typechecker_types</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks the type of value and verifies more complex type it is of the same type as the given type.</p>
+  </section>
+</section>
+<section class="detail" id="generate_valid_clause/2">
+
+  <div class="detail-header">
+    <a href="#generate_valid_clause/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">generate_valid_clause(module, env)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/beam_types.ex#L218" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> generate_valid_clause(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">module</a>(), <a href="https://hexdocs.pm/elixir/Macro.Env.html#t:t/0">Macro.Env.t</a>()) :: <a href="https://hexdocs.pm/elixir/Macro.html#t:t/0">Macro.t</a>()</pre>
+
+      </div>
+
+<p>Generates <code class="inline">valid?/1</code> clause body based on the given module's <code class="inline">:t</code> typespec,
+it must reference a struct.</p>
+  </section>
+</section>
+<section class="detail" id="resolve_struct_type/4">
+
+    <span id="resolve_struct_type/3"></span>
+
+  <div class="detail-header">
+    <a href="#resolve_struct_type/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">resolve_struct_type(module, type, env, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/beam_types.ex#L278" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> resolve_struct_type(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">module</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(), <a href="https://hexdocs.pm/elixir/Macro.Env.html#t:t/0">Macro.Env.t</a>(), <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()</pre>
+
+      </div>
+
+<p>Resolves a type (struct) to a map of fields to typespecs (<a href="#resolve_type/2"><code class="inline">resolve_type/2</code></a>-like).</p><p>This function only works with BACnet data structures and not with types, such as
+exposed by the module <code class="inline">ApplicationTags</code>. Since <code class="inline">tuples</code> are used in that module to
+structure data together, <code class="inline">tuples</code> are used in BACnet data structures as bitstrings
+(as seen in <code class="inline">ApplicationTags</code> bitstrings).
+As such wrong typespecs will be generated and cannot be used for validation.</p><p>For structs that do not define any fields, an empty map will be returned.</p><p>Tuple types such as <code class="inline">{binary(), integer()}</code> will be resolved to <code class="inline">{:tuple, [:octet_string, :integer]}</code>.</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex(1)&gt; </span><span class="n">resolve_struct_type</span><span class="p" data-group-id="1755475885-1">(</span><span class="nc">BACnet.Protocol.EventParameters.ChangeOfBitstring</span><span class="p">,</span><span class="w"> </span><span class="ss">:t</span><span class="p">,</span><span class="w"> </span><span class="bp">__ENV__</span><span class="p" data-group-id="1755475885-1">)</span><span class="w">
+</span><span class="p" data-group-id="1755475885-2">%{</span><span class="w">
+  </span><span class="ss">alarm_values</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="1755475885-3">{</span><span class="ss">:list</span><span class="p">,</span><span class="w"> </span><span class="ss">:bitstring</span><span class="p" data-group-id="1755475885-3">}</span><span class="p">,</span><span class="w">
+  </span><span class="ss">bitmask</span><span class="p">:</span><span class="w"> </span><span class="ss">:bitstring</span><span class="p">,</span><span class="w">
+  </span><span class="ss">time_delay</span><span class="p">:</span><span class="w"> </span><span class="ss">:unsigned_integer</span><span class="p">,</span><span class="w">
+  </span><span class="ss">time_delay_normal</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="1755475885-4">{</span><span class="ss">:type_list</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1755475885-5">[</span><span class="ss">:unsigned_integer</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1755475885-6">{</span><span class="ss">:literal</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="1755475885-6">}</span><span class="p" data-group-id="1755475885-5">]</span><span class="p" data-group-id="1755475885-4">}</span><span class="w">
+</span><span class="p" data-group-id="1755475885-2">}</span></code></pre><p>Available options:</p><ul><li><code class="inline">ignore_underlined_keys: boolean()</code> - Ignores/skips keys starting with <code class="inline">_</code>, as such the
+resolved types will exclude types for underline-prefixed keys.</li></ul>
+  </section>
+</section>
+<section class="detail" id="resolve_type/2">
+
+  <div class="detail-header">
+    <a href="#resolve_type/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">resolve_type(type, env)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/beam_types.ex#L246" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> resolve_type(<a href="https://hexdocs.pm/elixir/Macro.html#t:t/0">Macro.t</a>(), <a href="https://hexdocs.pm/elixir/Macro.Env.html#t:t/0">Macro.Env.t</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()</pre>
+
+      </div>
+
+<p>Resolves an AST type to something <a href="#check_type/2"><code class="inline">check_type/2</code></a> works with.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="bacstack.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.1) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.1">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>BACnet.Stack.TrendLogger — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-YJO4MOOW.css" />
+
+    <script defer src="dist/sidebar_items-C7FAD1DE.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-YU4BZFVS.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr>Stack.<wbr>TrendLogger</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0)</small>
+
+    </h1>
+
+<a href="BACnet.Stack.TrendLogger.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/trend_logger.ex#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>The Trend Logger module is responsible for handling event and trend logging
+and keeping a log buffer.</p><p>Event logging can only occur in one mode: triggered. As per BACnet standard
+there's no defined mechanism how it gets decided which events go to which
+event log, the only way to do event logging is by explicitely triggering
+event logging with <a href="#trigger_log/3"><code class="inline">trigger_log/3</code></a>.</p><p>Trend logging can occur in three different modes as per BACnet standard:</p><ul><li><code class="inline">:triggered</code> - Logging has to be manually triggered through BACnet.</li><li><code class="inline">:polled</code> - Logging is done periodically and for each poll, the object is read.</li><li><code class="inline">:cov</code> - Logging is done through COV reporting.</li></ul><p>For COV reporting, COV subscription will only occur on remote object, when <code class="inline">cov_cb</code>
+is in the <code class="inline">opts</code> of <a href="#start_link/1"><code class="inline">start_link/1</code></a> and if <code class="inline">cov_resubscription_interval</code> on
+the object is present and not zero.
+COV subscription does not mean the COV notifications get automatically routed
+to this module (however they can, if the given <code class="inline">cov_cb</code> callback does the routing).
+The COV callback must use confirmed COV subscriptions, as per BACnet standard.</p><p>For COV reporting on the local device, the user has to route COV notifications
+to this module manually and invoke the <a href="#notify/2"><code class="inline">notify/2</code></a> function.</p><p>Please note that clock-aligned logging is currently not supported by this module.</p><p>Whenever the buffer reaches its max size, a notification can be sent to the
+specified notification receiver (an atom (registered name) or PID). Additionally,
+for Intrinsic Reporting-enabled objects, intrinsic reporting will occur and
+provide notifications once the algorithm <code class="inline">BUFFER_READY</code> triggers.</p><p>Events occur as messages: <code class="inline">{:bacnet_trend_logger, nil, object(), metadata}</code></p><p>The object received is not updated when updates happen in BACnet or otherwise
+in the application. The only changes are when using <a href="#change_log_state/3"><code class="inline">change_log_state/3</code></a> or
+when logging gets stopped due to <code class="inline">stop_when_full: true</code> (buffer is full),
+thus the object is otherwise in the same state as when it was added or updated.</p><p><code class="inline">metadata</code> is a map of:</p><ul><li><code class="inline">buffer: {module(), LogBufferBehaviour.t()}</code></li><li><p><code class="inline">event: :buffer_full | :intrinsic_reporting</code></p></li><li><p><code class="inline">intrinsic: NotificationParameters.BufferReady.t() | nil</code></p></li></ul><p>To trigger <code class="inline">time_change</code> log data in the log buffer, these need to be manually
+triggered by the user. There's no clock time tracking in this module.
+Theoretically this can be implemented by monitoring time offsets using
+<code class="inline">:erlang.monitor(:time_offset, :clock_service)</code> and process those message.
+Upon processing these messages, one can trigger <code class="inline">time_change</code> using <a href="#trigger_log/3"><code class="inline">trigger_log/3</code></a>.</p>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-types summary">
+  <h3>
+    <a href="#types">Types</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:object/0" data-no-tooltip="" translate="no">object()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents valid BACnet objects. These can be handled by the trend logger.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:server/0" data-no-tooltip="" translate="no">server()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents a server process of the Trend Logger module.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:start_option/0" data-no-tooltip="" translate="no">start_option()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Valid start options. For a description of each, see <a href="#start_link/1"><code class="inline">start_link/1</code></a>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:start_options/0" data-no-tooltip="" translate="no">start_options()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>List of start options.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#add_object/2" data-no-tooltip="" translate="no">add_object(server, object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Adds an EventLog, TrendLog or TrendLogMultiple object to the trend logger.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#change_log_state/3" data-no-tooltip="" translate="no">change_log_state(server, object, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Change the log state for a single object or globally (all) to <code class="inline">state</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#child_spec/1" data-no-tooltip="" translate="no">child_spec(init_arg)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Returns a specification to start this module under a supervisor.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_buffer/2" data-no-tooltip="" translate="no">get_buffer(server, object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the log buffer contents for the given object.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#notify/2" data-no-tooltip="" translate="no">notify(server, log)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Submits a COV notification to the trend logger.
+Any notification for unknown object(s) will be ignored.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#prune_buffer/2" data-no-tooltip="" translate="no">prune_buffer(server, object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Prunes the buffer for the specified object, or all buffers.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#remove_object/2" data-no-tooltip="" translate="no">remove_object(server, object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Removes an EventLog, TrendLog or TrendLogMultiple object from the trend logger.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#resubscribe_cov/2" data-no-tooltip="" translate="no">resubscribe_cov(server, object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Triggers a COV re-subscription for the given object or all objects.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#start_link/1" data-no-tooltip="" translate="no">start_link(opts)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Starts and links the trend logger.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#trigger_log/3" data-no-tooltip="" translate="no">trigger_log(server, object, log)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Triggers a log for the given object. The given log will be used for the log buffer record.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#update_object/2" data-no-tooltip="" translate="no">update_object(server, object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Updates the following properties of the object in the trend logger</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h2>
+
+    <div class="types-list">
+<section class="detail" id="t:object/0">
+
+  <div class="detail-header">
+    <a href="#t:object/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">object()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/trend_logger.ex#L204" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> object() ::
+  <a href="BACnet.Protocol.ObjectTypes.EventLog.html#t:t/0">BACnet.Protocol.ObjectTypes.EventLog.t</a>()
+  | <a href="BACnet.Protocol.ObjectTypes.TrendLog.html#t:t/0">BACnet.Protocol.ObjectTypes.TrendLog.t</a>()
+  | <a href="BACnet.Protocol.ObjectTypes.TrendLogMultiple.html#t:t/0">BACnet.Protocol.ObjectTypes.TrendLogMultiple.t</a>()</pre>
+
+      </div>
+
+<p>Represents valid BACnet objects. These can be handled by the trend logger.</p>
+  </section>
+</section>
+<section class="detail" id="t:server/0">
+
+  <div class="detail-header">
+    <a href="#t:server/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">server()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/trend_logger.ex#L209" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> server() :: <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>()</pre>
+
+      </div>
+
+<p>Represents a server process of the Trend Logger module.</p>
+  </section>
+</section>
+<section class="detail" id="t:start_option/0">
+
+  <div class="detail-header">
+    <a href="#t:start_option/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">start_option()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/trend_logger.ex#L214" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> start_option() ::
+  {:cov_cb,
+   (<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pid</a>(),
+    <a href="BACnet.Protocol.DeviceObjectPropertyRef.html#t:t/0">BACnet.Protocol.DeviceObjectPropertyRef.t</a>(),
+    :sub
+    | :unsub,
+    <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(),
+    <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">float</a>()
+    | nil -&gt;
+      :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()})}
+  | {:log_buffer_module, <a href="BACnet.Stack.LogBufferBehaviour.html#t:mod/0">BACnet.Stack.LogBufferBehaviour.mod</a>()}
+  | {:lookup_cb,
+     (<a href="BACnet.Protocol.DeviceObjectRef.html#t:t/0">BACnet.Protocol.DeviceObjectRef.t</a>() -&gt;
+        {:ok, <a href="BACnet.Protocol.ObjectsUtility.html#t:bacnet_object/0">BACnet.Protocol.ObjectsUtility.bacnet_object</a>()}
+        | {:error, <a href="BACnet.Protocol.BACnetError.html#t:t/0">BACnet.Protocol.BACnetError.t</a>()})}
+  | {:notification_receiver, <a href="https://hexdocs.pm/elixir/Process.html#t:dest/0">Process.dest</a>()}
+  | {:state, <a href="BACnet.Stack.TrendLogger.State.html#t:t/0">BACnet.Stack.TrendLogger.State.t</a>()}
+  | {:supervisor, <a href="https://hexdocs.pm/elixir/Supervisor.html#t:supervisor/0">Supervisor.supervisor</a>()}
+  | {:timezone, <a href="https://hexdocs.pm/elixir/Calendar.html#t:time_zone/0">Calendar.time_zone</a>()}
+  | <a href="https://hexdocs.pm/elixir/GenServer.html#t:option/0">GenServer.option</a>()</pre>
+
+      </div>
+
+<p>Valid start options. For a description of each, see <a href="#start_link/1"><code class="inline">start_link/1</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="t:start_options/0">
+
+  <div class="detail-header">
+    <a href="#t:start_options/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">start_options()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/trend_logger.ex#L231" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> start_options() :: [<a href="#t:start_option/0">start_option</a>()]</pre>
+
+      </div>
+
+<p>List of start options.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="add_object/2">
+
+  <div class="detail-header">
+    <a href="#add_object/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">add_object(server, object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/trend_logger.ex#L295" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> add_object(<a href="#t:server/0">server</a>(), <a href="#t:object/0">object</a>()) :: :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Adds an EventLog, TrendLog or TrendLogMultiple object to the trend logger.</p><p>For EventLog objects, the logging must be triggered manually (as the logging is a local matter).</p>
+  </section>
+</section>
+<section class="detail" id="change_log_state/3">
+
+  <div class="detail-header">
+    <a href="#change_log_state/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">change_log_state(server, object, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/trend_logger.ex#L306" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> change_log_state(<a href="#t:server/0">server</a>(), <a href="#t:object/0">object</a>() | :global, :enable | :disable) ::
+  :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Change the log state for a single object or globally (all) to <code class="inline">state</code>.</p><p>A log status change record will be logged.</p>
+  </section>
+</section>
+<section class="detail" id="child_spec/1">
+
+  <div class="detail-header">
+    <a href="#child_spec/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">child_spec(init_arg)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/trend_logger.ex#L86" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Returns a specification to start this module under a supervisor.</p><p>See <a href="https://hexdocs.pm/elixir/Supervisor.html"><code class="inline">Supervisor</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="get_buffer/2">
+
+  <div class="detail-header">
+    <a href="#get_buffer/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_buffer(server, object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/trend_logger.ex#L319" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_buffer(<a href="#t:server/0">server</a>(), <a href="#t:object/0">object</a>()) ::
+  {:ok,
+   {current_sequence_number :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(), buffer_module :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">module</a>(),
+    buffer :: <a href="BACnet.Stack.LogBufferBehaviour.html#t:t/0">BACnet.Stack.LogBufferBehaviour.t</a>()}}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Get the log buffer contents for the given object.</p>
+  </section>
+</section>
+<section class="detail" id="notify/2">
+
+  <div class="detail-header">
+    <a href="#notify/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">notify(server, log)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/trend_logger.ex#L348" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> notify(
+  <a href="#t:server/0">server</a>(),
+  <a href="BACnet.Protocol.Services.ConfirmedCovNotification.html#t:t/0">BACnet.Protocol.Services.ConfirmedCovNotification.t</a>()
+  | <a href="BACnet.Protocol.Services.UnconfirmedCovNotification.html#t:t/0">BACnet.Protocol.Services.UnconfirmedCovNotification.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Submits a COV notification to the trend logger.
+Any notification for unknown object(s) will be ignored.</p><p>The logger will handle the notification and trigger a log for
+any trendlogs, where necessary.</p><p>For event logs, only <a href="#trigger_log/3"><code class="inline">trigger_log/3</code></a> can be used, as there's
+no defined mechanism to decide which events go to which event log.</p>
+  </section>
+</section>
+<section class="detail" id="prune_buffer/2">
+
+  <div class="detail-header">
+    <a href="#prune_buffer/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">prune_buffer(server, object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/trend_logger.ex#L329" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> prune_buffer(<a href="#t:server/0">server</a>(), <a href="#t:object/0">object</a>() | :global) :: :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Prunes the buffer for the specified object, or all buffers.</p><p>A buffer purged record will be logged after pruning.</p>
+  </section>
+</section>
+<section class="detail" id="remove_object/2">
+
+  <div class="detail-header">
+    <a href="#remove_object/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">remove_object(server, object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/trend_logger.ex#L364" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> remove_object(<a href="#t:server/0">server</a>(), <a href="#t:object/0">object</a>()) :: :ok</pre>
+
+      </div>
+
+<p>Removes an EventLog, TrendLog or TrendLogMultiple object from the trend logger.</p><p>This function is idempotent, meaning multiple calls for the same object will be ignored.</p>
+  </section>
+</section>
+<section class="detail" id="resubscribe_cov/2">
+
+  <div class="detail-header">
+    <a href="#resubscribe_cov/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">resubscribe_cov(server, object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/trend_logger.ex#L375" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> resubscribe_cov(<a href="#t:server/0">server</a>(), <a href="#t:object/0">object</a>() | :global) :: :ok</pre>
+
+      </div>
+
+<p>Triggers a COV re-subscription for the given object or all objects.</p><p>This function call will invoke async trend logger processing,
+the return value does not indicate completion of operation.</p>
+  </section>
+</section>
+<section class="detail" id="start_link/1">
+
+  <div class="detail-header">
+    <a href="#start_link/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">start_link(opts)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/trend_logger.ex#L276" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> start_link(<a href="#t:start_options/0">start_options</a>()) :: <a href="https://hexdocs.pm/elixir/GenServer.html#t:on_start/0">GenServer.on_start</a>()</pre>
+
+      </div>
+
+<p>Starts and links the trend logger.</p><p>Following options are available, in addition to <a href="https://hexdocs.pm/elixir/GenServer.html#t:options/0"><code class="inline">GenServer.options/0</code></a>:</p><ul><li><p><code class="inline">cov_cb: (pid(), DeviceObjectPropertyRef.t(), :sub | :unsub, non_neg_integer(), float() | nil -&gt; :ok | {:error, term()})</code> - Optional.</p><p>The given function will be used to subscribe, resubscribe and unsubscribe confirmed COV subscriptions for remote objects.
+If it is missing, no COV subscription will occur and needs to be manually handled by the user.</p><p>The function will receive the trend logger PID, a device object property reference, the operation to subscribe or unsubscribe,
+the COV subscription lifetime and the requested client COV increment (or nil).</p><p>The callback should automatically route COV notifications to this module's function <a href="#notify/2"><code class="inline">notify/2</code></a>. This however
+depends on the callback and the implementation details.</p><p>For local objects, the user needs to take care of notifying the trend logger of changes (COV notifications).</p></li><li><p><code class="inline">log_buffer_module: module()</code> - Optional. Set the Log Buffer implementation to use. It needs to implement the <code class="inline">LogBufferBehaviour</code>.</p></li><li><p><code class="inline">lookup_cb: (DeviceObjectRef.t() -&gt; {:ok, ObjectsUtility.bacnet_object()} | {:error, BACnetError.t()})</code> - Required.</p><p>The given function will be used to look up objects (such as discovering the current state),
+for both local and remote objects.</p><p>The function will receive the device object reference.</p></li><li><p><code class="inline">notification_receiver: Process.dest()</code> - Optional. The recipient of notifications when either reaching
+buffer size or when Intrinsic Reporting reports an event. It may be optional, but for Intrinsic Reporting
+compliance, it is important to receive notifications and update the object state in the device server,
+including reporting events to BACnet recipients.</p></li><li><p><code class="inline">state: State.t()</code> - Optional. Can be used to reinitialize the trend logger with
+pre-existing state (i.e. after restart to not lose the buffers).
+This option needs to be used with care, as a wrong value can crash the process.
+<code class="inline">opts</code> of <code class="inline">state</code> will be overwritten.</p></li><li><p><code class="inline">supervisor: Supervisor.supervisor()</code> - Optional. The task supervisor to use to spawn tasks under.
+Tasks are spawned to invoke the given callback. If no supervisor is given,
+the tasks will be spawned unsupervised.</p></li><li><p><code class="inline">timezone: Calendar.time_zone()</code> - Optional. The timezone to use for timestamps. Defaults to <code class="inline">Etc/UTC</code> (resp. default timezone).</p></li></ul>
+  </section>
+</section>
+<section class="detail" id="trigger_log/3">
+
+  <div class="detail-header">
+    <a href="#trigger_log/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">trigger_log(server, object, log)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/trend_logger.ex#L407" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> trigger_log(
+  <a href="#t:server/0">server</a>(),
+  <a href="#t:object/0">object</a>(),
+  <a href="BACnet.Protocol.Services.ConfirmedEventNotification.html#t:t/0">BACnet.Protocol.Services.ConfirmedEventNotification.t</a>()
+  | <a href="BACnet.Protocol.Services.UnconfirmedEventNotification.html#t:t/0">BACnet.Protocol.Services.UnconfirmedEventNotification.t</a>()
+  | <a href="BACnet.Protocol.Services.ConfirmedCovNotification.html#t:t/0">BACnet.Protocol.Services.ConfirmedCovNotification.t</a>()
+  | <a href="BACnet.Protocol.ObjectsUtility.html#t:bacnet_object/0">BACnet.Protocol.ObjectsUtility.bacnet_object</a>()
+  | [<a href="BACnet.Protocol.ObjectsUtility.html#t:bacnet_object/0">BACnet.Protocol.ObjectsUtility.bacnet_object</a>()]
+  | :interrupted
+  | {:time_change, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">float</a>()}
+) :: :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Triggers a log for the given object. The given log will be used for the log buffer record.</p><p>When the log is disabled, this call is ignored (returns <code class="inline">:ok</code>).</p><p>When the function returns, it does not necessarily mean the operation was fully completed -
+for remote objects which need to be polled, the function returns before completion.
+For local objects, the function returns after completion.</p><p>See the table below for valid argument combinations:</p><table><thead><tr><th style="text-align: left;">Object</th><th style="text-align: center;">COV Notification</th><th style="text-align: center;">Event Notification</th><th style="text-align: center;">BACnet Object</th><th style="text-align: center;">List of BACnet Objects</th><th style="text-align: center;"><code class="inline">:interrupted</code></th><th style="text-align: center;">Time Change</th></tr></thead><tbody><tr><td style="text-align: left;">Event Log</td><td style="text-align: center;"></td><td style="text-align: center;">X</td><td style="text-align: center;">X</td><td style="text-align: center;"></td><td style="text-align: center;">X</td><td style="text-align: center;">X</td></tr><tr><td style="text-align: left;">Trend Log</td><td style="text-align: center;">X</td><td style="text-align: center;"></td><td style="text-align: center;">X</td><td style="text-align: center;"></td><td style="text-align: center;">X</td><td style="text-align: center;">X</td></tr><tr><td style="text-align: left;">Trend Log Multiple</td><td style="text-align: center;"></td><td style="text-align: center;"></td><td style="text-align: center;"></td><td style="text-align: center;">X</td><td style="text-align: center;">X</td><td style="text-align: center;">X</td></tr></tbody></table>
+  </section>
+</section>
+<section class="detail" id="update_object/2">
+
+  <div class="detail-header">
+    <a href="#update_object/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">update_object(server, object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/trend_logger.ex#L442" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> update_object(<a href="#t:server/0">server</a>(), <a href="#t:object/0">object</a>()) :: :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Updates the following properties of the object in the trend logger:</p><ul><li>buffer_size</li><li>cov_resubscription_interval (trend logs only)</li><li>enable</li><li>Intrinsic Reporting (notification threshold)</li><li>log_interval (trend logs only)</li><li>logging_type (trend logs only)</li><li>start_time and stop_time</li><li>stop_when_full</li></ul><p>When updating <code class="inline">buffer_size</code>, the records in the buffer will transfer
+over to the new buffer, discarding any oldest records that would
+overfill the new buffer.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="bacstack.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.1) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

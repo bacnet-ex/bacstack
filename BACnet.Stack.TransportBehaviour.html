@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.1">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>BACnet.Stack.TransportBehaviour — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-YJO4MOOW.css" />
+
+    <script defer src="dist/sidebar_items-C7FAD1DE.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-YU4BZFVS.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-behaviour" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr>Stack.<wbr>TransportBehaviour</span> <small>behaviour</small>
+      <small class="app-vsn" translate="no">(bacstack v0.1.0)</small>
+
+    </h1>
+
+<a href="BACnet.Stack.TransportBehaviour.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>Defines the BACnet transport protocol behaviour.</p><p>It ensures all implemented transport layer can be easily integrated
+into the Elixir BACnet client, indepedently of the underlying
+physical transport layer (IP, MS/TP, etc.).</p>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-types summary">
+  <h3>
+    <a href="#types">Types</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:portal/0" data-no-tooltip="" translate="no">portal()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents a transport module portal.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:transport/0" data-no-tooltip="" translate="no">transport()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents a transport module reference.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:transport_callback/0" data-no-tooltip="" translate="no">transport_callback()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Transport callback.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:transport_cb_frame/0" data-no-tooltip="" translate="no">transport_cb_frame()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Transport Callback Frames. The callback may ignore any non-APDU frames, if they do not
+wish to handle them.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:transport_id/0" data-no-tooltip="" translate="no">transport_id()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>BACnet transport identifier, represented by the protocol and the implementing transport module.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:transport_msg/0" data-no-tooltip="" translate="no">transport_msg()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Transport message structure.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:transport_protocol/0" data-no-tooltip="" translate="no">transport_protocol()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>BACnet transport protocols.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:transport_send_option/0" data-no-tooltip="" translate="no">transport_send_option()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Valid transport send options. For a description of each, see <a href="#c:send/4"><code class="inline">send/4</code></a>.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-callbacks summary">
+  <h3>
+    <a href="#callbacks">Callbacks</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:bacnet_protocol/0" data-no-tooltip="" translate="no">bacnet_protocol()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the BACnet transport protocol this transport implements.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:close/1" data-no-tooltip="" translate="no">close(transport)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Closes the Transport module.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:get_broadcast_address/1" data-no-tooltip="" translate="no">get_broadcast_address(transport)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the broadcast address.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:get_local_address/1" data-no-tooltip="" translate="no">get_local_address(transport)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the local address.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:get_portal/1" data-no-tooltip="" translate="no">get_portal(transport)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the transport module portal for the given transport PID/port.
+Transport modules may return the input as output, if the same
+PID or port is used for sending.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:is_destination_routed/2" data-no-tooltip="" translate="no">is_destination_routed(transport, address)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks whether the given destination is an address that needs to be routed.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:is_valid_destination/1" data-no-tooltip="" translate="no">is_valid_destination(destination)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Verifies whether the given destination is valid for the transport module.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:max_apdu_length/0" data-no-tooltip="" translate="no">max_apdu_length()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the maximum APDU length for this transport.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:max_npdu_length/0" data-no-tooltip="" translate="no">max_npdu_length()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the maximum NPDU length for this transport.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:open/2" data-no-tooltip="" translate="no">open(callback, opts)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Opens/starts the Transport module. If a process is started, it is linked to the caller process.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:send/4" data-no-tooltip="" translate="no">send(portal, destination, data, opts)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Sends data to the BACnet network.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#build_bacnet_packet/3" data-no-tooltip="" translate="no">build_bacnet_packet(apdu, is_broadcast, opts)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Builds the BACnet packet common parts. It is used in transports for common tasks.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#child_spec/4" data-no-tooltip="" translate="no">child_spec(module, callback, opts \\ [], child_spec)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Produces a supervisor child spec based on the BACnet transport <code class="inline">open</code> callback, as such
+it will take the <code class="inline">callback</code> and <code class="inline">opts</code> for <a href="#c:open/2"><code class="inline">open/2</code></a>.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h2>
+
+    <div class="types-list">
+<section class="detail" id="t:portal/0">
+
+  <div class="detail-header">
+    <a href="#t:portal/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">portal()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L21" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> portal() :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pid</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">port</a>() | <a href="https://www.erlang.org/doc/apps/kernel/socket.html#t:socket/0">:socket.socket</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()</pre>
+
+      </div>
+
+<p>Represents a transport module portal.</p>
+  </section>
+</section>
+<section class="detail" id="t:transport/0">
+
+  <div class="detail-header">
+    <a href="#t:transport/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">transport()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L26" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> transport() :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pid</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">port</a>() | <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>() | <a href="https://www.erlang.org/doc/apps/kernel/socket.html#t:socket/0">:socket.socket</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()</pre>
+
+      </div>
+
+<p>Represents a transport module reference.</p>
+  </section>
+</section>
+<section class="detail" id="t:transport_callback/0">
+
+  <div class="detail-header">
+    <a href="#t:transport_callback/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">transport_callback()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L36" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> transport_callback() ::
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">mfa</a>()
+  | <a href="https://hexdocs.pm/elixir/Process.html#t:dest/0">Process.dest</a>()
+  | (source_address :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     frame :: <a href="#t:transport_cb_frame/0">transport_cb_frame</a>(),
+     portal :: <a href="#t:portal/0">portal</a>() -&gt;
+       <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>())</pre>
+
+      </div>
+
+<p>Transport callback.</p><p>Callback may be a Module-Function-Arity tuple, a PID (where the data is sent to as a message)
+or an anonymous function.
+The MFA has the same arguments as the anonymous function. As such, the arity needs to be 3.
+The return value is ignored.</p>
+  </section>
+</section>
+<section class="detail" id="t:transport_cb_frame/0">
+
+  <div class="detail-header">
+    <a href="#t:transport_cb_frame/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">transport_cb_frame()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L48" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> transport_cb_frame() ::
+  {:bvlc, bvlc :: <a href="BACnet.Protocol.html#t:bvlc/0">BACnet.Protocol.bvlc</a>()}
+  | {:network, bvlc :: <a href="BACnet.Protocol.html#t:bvlc/0">BACnet.Protocol.bvlc</a>(),
+     npci :: <a href="BACnet.Protocol.NPCI.html#t:t/0">BACnet.Protocol.NPCI.t</a>() | nil,
+     nsdu :: <a href="BACnet.Protocol.NetworkLayerProtocolMessage.html#t:t/0">BACnet.Protocol.NetworkLayerProtocolMessage.t</a>()}
+  | {:apdu, bvlc :: <a href="BACnet.Protocol.html#t:bvlc/0">BACnet.Protocol.bvlc</a>(),
+     npci :: <a href="BACnet.Protocol.NPCI.html#t:t/0">BACnet.Protocol.NPCI.t</a>() | nil, apdu :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()}</pre>
+
+      </div>
+
+<p>Transport Callback Frames. The callback may ignore any non-APDU frames, if they do not
+wish to handle them.</p><p>The APDU is uninterpreted binary data and needs to be decoded first, through the <a href="BACnet.Protocol.html"><code class="inline">BACnet.Protocol</code></a> module.</p>
+  </section>
+</section>
+<section class="detail" id="t:transport_id/0">
+
+  <div class="detail-header">
+    <a href="#t:transport_id/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">transport_id()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L57" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> transport_id() :: {<a href="#t:transport_protocol/0">transport_protocol</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">module</a>()}</pre>
+
+      </div>
+
+<p>BACnet transport identifier, represented by the protocol and the implementing transport module.</p>
+  </section>
+</section>
+<section class="detail" id="t:transport_msg/0">
+
+  <div class="detail-header">
+    <a href="#t:transport_msg/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">transport_msg()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L62" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> transport_msg() ::
+  {:bacnet_transport, <a href="#t:transport_id/0">transport_id</a>(), source_address :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+   data :: <a href="#t:transport_cb_frame/0">transport_cb_frame</a>(), portal :: <a href="#t:portal/0">portal</a>()}</pre>
+
+      </div>
+
+<p>Transport message structure.</p>
+  </section>
+</section>
+<section class="detail" id="t:transport_protocol/0">
+
+  <div class="detail-header">
+    <a href="#t:transport_protocol/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">transport_protocol()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L69" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> transport_protocol() ::
+  :bacnet_arcnet
+  | :bacnet_ethernet
+  | :bacnet_ipv4
+  | :bacnet_ipv6
+  | :bacnet_lontalk
+  | :bacnet_mstp
+  | :bacnet_ptp
+  | :bacnet_sc</pre>
+
+      </div>
+
+<p>BACnet transport protocols.</p>
+  </section>
+</section>
+<section class="detail" id="t:transport_send_option/0">
+
+  <div class="detail-header">
+    <a href="#t:transport_send_option/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">transport_send_option()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L82" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> transport_send_option() ::
+  {:destination, <a href="BACnet.Protocol.NpciTarget.html#t:t/0">BACnet.Protocol.NpciTarget.t</a>()}
+  | {:npci, <a href="BACnet.Protocol.NPCI.html#t:t/0">BACnet.Protocol.NPCI.t</a>() | false}
+  | {:skip_headers, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | {:source, <a href="BACnet.Protocol.NpciTarget.html#t:t/0">BACnet.Protocol.NpciTarget.t</a>()}</pre>
+
+      </div>
+
+<p>Valid transport send options. For a description of each, see <a href="#c:send/4"><code class="inline">send/4</code></a>.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="callbacks" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#callbacks">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Callbacks</span>
+    </h2>
+
+    <div class="callbacks-list">
+<section class="detail" id="c:bacnet_protocol/0">
+
+  <div class="detail-header">
+    <a href="#c:bacnet_protocol/0" class="detail-link" data-no-tooltip="" aria-label="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">bacnet_protocol()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L115" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@callback</span> bacnet_protocol() :: <a href="#t:transport_protocol/0">transport_protocol</a>()</pre>
+
+      </div>
+
+<p>Get the BACnet transport protocol this transport implements.</p>
+  </section>
+</section>
+<section class="detail" id="c:close/1">
+
+  <div class="detail-header">
+    <a href="#c:close/1" class="detail-link" data-no-tooltip="" aria-label="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">close(transport)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L110" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@callback</span> close(transport :: <a href="#t:transport/0">transport</a>()) :: :ok</pre>
+
+      </div>
+
+<p>Closes the Transport module.</p>
+  </section>
+</section>
+<section class="detail" id="c:get_broadcast_address/1">
+
+  <div class="detail-header">
+    <a href="#c:get_broadcast_address/1" class="detail-link" data-no-tooltip="" aria-label="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_broadcast_address(transport)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L137" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@callback</span> get_broadcast_address(transport :: <a href="#t:transport/0">transport</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()</pre>
+
+      </div>
+
+<p>Get the broadcast address.</p>
+  </section>
+</section>
+<section class="detail" id="c:get_local_address/1">
+
+  <div class="detail-header">
+    <a href="#c:get_local_address/1" class="detail-link" data-no-tooltip="" aria-label="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_local_address(transport)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L142" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@callback</span> get_local_address(transport :: <a href="#t:transport/0">transport</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()</pre>
+
+      </div>
+
+<p>Get the local address.</p>
+  </section>
+</section>
+<section class="detail" id="c:get_portal/1">
+
+  <div class="detail-header">
+    <a href="#c:get_portal/1" class="detail-link" data-no-tooltip="" aria-label="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_portal(transport)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L152" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@callback</span> get_portal(transport :: <a href="#t:transport/0">transport</a>()) :: <a href="#t:portal/0">portal</a>()</pre>
+
+      </div>
+
+<p>Get the transport module portal for the given transport PID/port.
+Transport modules may return the input as output, if the same
+PID or port is used for sending.</p><p>This is used to get the portal before having received data from
+the transport module, so data can be sent prior to reception.</p>
+  </section>
+</section>
+<section class="detail" id="c:is_destination_routed/2">
+
+  <div class="detail-header">
+    <a href="#c:is_destination_routed/2" class="detail-link" data-no-tooltip="" aria-label="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">is_destination_routed(transport, address)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L157" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@callback</span> is_destination_routed(transport :: <a href="#t:transport/0">transport</a>(), address :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks whether the given destination is an address that needs to be routed.</p>
+  </section>
+</section>
+<section class="detail" id="c:is_valid_destination/1">
+
+  <div class="detail-header">
+    <a href="#c:is_valid_destination/1" class="detail-link" data-no-tooltip="" aria-label="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">is_valid_destination(destination)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L162" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@callback</span> is_valid_destination(destination :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Verifies whether the given destination is valid for the transport module.</p>
+  </section>
+</section>
+<section class="detail" id="c:max_apdu_length/0">
+
+  <div class="detail-header">
+    <a href="#c:max_apdu_length/0" class="detail-link" data-no-tooltip="" aria-label="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">max_apdu_length()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L120" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@callback</span> max_apdu_length() :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()</pre>
+
+      </div>
+
+<p>Get the maximum APDU length for this transport.</p>
+  </section>
+</section>
+<section class="detail" id="c:max_npdu_length/0">
+
+  <div class="detail-header">
+    <a href="#c:max_npdu_length/0" class="detail-link" data-no-tooltip="" aria-label="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">max_npdu_length()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L132" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@callback</span> max_npdu_length() :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()</pre>
+
+      </div>
+
+<p>Get the maximum NPDU length for this transport.</p><p>The NPDU length contains the maximum transmittable size
+of the NPDU, including the APDU, without violating
+the maximum transmission unit of the underlying transport.</p><p>Any necessary transport header (i.e. BVLL, LLC) must have
+been taken into account when calculating this number.</p>
+  </section>
+</section>
+<section class="detail" id="c:open/2">
+
+  <div class="detail-header">
+    <a href="#c:open/2" class="detail-link" data-no-tooltip="" aria-label="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">open(callback, opts)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L102" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@callback</span> open(
+  callback :: <a href="#t:transport_callback/0">transport_callback</a>(),
+  opts :: <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()
+) :: {:ok, transport :: <a href="#t:transport/0">transport</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Opens/starts the Transport module. If a process is started, it is linked to the caller process.</p><p>The callback argument can be one of PID (resp. <a href="https://hexdocs.pm/elixir/Process.html#t:dest/0"><code class="inline">Process.dest/0</code></a>), MFA tuple or a three arity function.
+In case of a PID, the <a href="#t:transport_msg/0"><code class="inline">transport_msg/0</code></a> structure is sent as message. Otherwise the function or MFA tuple
+gets invoked with the arguments: <code class="inline">source_address :: term(), frame :: transport_cb_frame(), portal :: portal()</code>.
+The function or MFA tuple may be run under a standalone task or a supervisored task.</p><p>The source address is any term and depends on the transport protocol. The portal is a term, where
+the BACnet data is received from and sent to. The portal may be the same as the transport, but must
+not be assumed it is. Sending data must always be directed to the portal and not to the transport.
+Some transports may use &quot;grouping data structures&quot; to avoid going through processes and build
+bottlenecks on busy networks.</p>
+  </section>
+</section>
+<section class="detail" id="c:send/4">
+
+  <div class="detail-header">
+    <a href="#c:send/4" class="detail-link" data-no-tooltip="" aria-label="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">send(portal, destination, data, opts)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L185" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@callback</span> send(
+  portal :: <a href="#t:portal/0">portal</a>(),
+  destination :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  data :: <a href="BACnet.Stack.EncoderProtocol.html#t:t/0">BACnet.Stack.EncoderProtocol.t</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">iodata</a>(),
+  opts :: <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()
+) :: :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Sends data to the BACnet network.</p><p>Segmentation and respect to APDU length needs to be handled by the caller. The transport module will raise,
+if the maximum APDU/NPDU length is exceeded.</p><p>The data is a struct implementing the Encoder Protocol, or must be already encoded (iodata).</p><p>By default, the BACnet Virtual Link Layer, or similar, and Network Protocol Data Unit are added,
+if either of those are required by the transport.</p><p>The following options are available (unless specified otherwise by the transport):</p><ul><li><code class="inline">destination: NpciTarget.t()</code> - Optional. Sets the <code class="inline">destination</code> (DNET, DADDR, DLEN) in the
+NPCI header accordingly (defaults to absent). A value of <code class="inline">nil</code> should be treated as option absent.</li><li><p><code class="inline">npci: NPCI.t() | false</code> - Optional. The NPCI to use. If omitted, the NPCI will be calculated.
+If the <code class="inline">npci</code> option is present, options <code class="inline">destination</code> and <code class="inline">source</code> will be ignored.
+<code class="inline">false</code> can be used to omit the NPCI completely from the BACnet packet (i.e. for pure BVLL packets).</p></li><li><code class="inline">skip_headers: boolean()</code> - Optional. Skips adding all headers for the transport protocol (i.e. BVLL, NPCI).</li><li><code class="inline">source: NpciTarget.t()</code> - Optional. Sets the <code class="inline">source</code> (SNET, SADDR, SLEN) in the
+NPCI header accordingly (defaults to absent). A value of <code class="inline">nil</code> should be treated as option absent.</li></ul>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="build_bacnet_packet/3">
+
+  <div class="detail-header">
+    <a href="#build_bacnet_packet/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">build_bacnet_packet(apdu, is_broadcast, opts)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L230" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> build_bacnet_packet(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">iodata</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>(), <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()) ::
+  {:ok, {npci :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">iodata</a>(), apdu :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">iodata</a>()}} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Builds the BACnet packet common parts. It is used in transports for common tasks.</p><p>It encodes the given APDU (if struct), encodes the NPDU (if not skipping headers)
+and validates common grounds between all transports.</p><p>When the NPCI is not present in <code class="inline">opts</code>, it will be calculated from the payload.
+<code class="inline">NPCI.new/1</code> is used to create the NPCI with <code class="inline">destination</code>, <code class="inline">expects_reply</code>
+and <code class="inline">source</code> set.</p><p>The following gets validated:</p><ul><li><code class="inline">expects_reply</code> in NPCI is not set if broadcast</li><li>Valid <code class="inline">destination</code> option (is a <code class="inline">NpciTarget</code> struct - <code class="inline">address</code> is not validated)</li><li>Valid <code class="inline">source</code> option (is a <code class="inline">NpciTarget</code> struct - <code class="inline">address</code> is not validated)</li></ul><p>The following options of <a href="#c:send/4"><code class="inline">send/4</code></a> are used:</p><ul><li><code class="inline">destination: NpciTarget.t()</code></li><li><code class="inline">npci: NPCI.t()</code></li><li><code class="inline">skip_headers: boolean()</code></li><li><code class="inline">source: NpciTarget.t()</code></li></ul>
+  </section>
+</section>
+<section class="detail" id="child_spec/4">
+
+    <span id="child_spec/3"></span>
+
+  <div class="detail-header">
+    <a href="#child_spec/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">child_spec(module, callback, opts \\ [], child_spec)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport_behaviour.ex#L200" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> child_spec(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">module</a>(), <a href="#t:transport_callback/0">transport_callback</a>(), <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>(), <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()) ::
+  <a href="https://hexdocs.pm/elixir/Supervisor.html#t:child_spec/0">Supervisor.child_spec</a>()</pre>
+
+      </div>
+
+<p>Produces a supervisor child spec based on the BACnet transport <code class="inline">open</code> callback, as such
+it will take the <code class="inline">callback</code> and <code class="inline">opts</code> for <a href="#c:open/2"><code class="inline">open/2</code></a>.</p><p>See also <a href="https://hexdocs.pm/elixir/Supervisor.html#child_spec/2"><code class="inline">Supervisor.child_spec/2</code></a> for the rest of the behaviour.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="bacstack.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.1) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

@@ -1,0 +1,2863 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.1">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>API Reference — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-YJO4MOOW.css" />
+
+    <script defer src="dist/sidebar_items-C7FAD1DE.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-YU4BZFVS.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-extra" id="main" data-type="extras">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>API Reference <small class="app-vsn">bacstack v#0.1.0</small></h1>
+<a href="api-reference.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+      <a href="https://github.com/bacnet-ex/bacstack" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+    <section class="details-list">
+      <h2 id="modules" class="section-heading">Modules</h2>
+      <div class="summary">
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.html" translate="no">BACnet</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>BACstack is a low-level Elixir implementation for the ASHRAE standard 135, BACnet - Building Automation and Controller network.
+This implementation supports ASHRAE 135-xxxx&lt;!-- TODO --&gt; and BACnet/IPv4. Support for other transport layers (such as BACnet/SC, BACnet/MSTP)
+can be straight forward added on top of it.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.BeamTypes.html" translate="no">BACnet.<wbr>BeamTypes</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Contains functions to resolve typespecs and types from BEAM bytecode
+into a type declaration and functions to validate those types against values.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.html" translate="no">BACnet.<wbr>Protocol</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module is mostly used for basic decoding of BACnet frames (Protocol Data Units - PDU).</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.APDU.html" translate="no">BACnet.<wbr>Protocol.<wbr>APDU</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module provides decoding of Application Data Units (APDU).
+Encoding of APDUs are directly handled in the APDU modules.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.APDU.Abort.html" translate="no">BACnet.<wbr>Protocol.<wbr>APDU.<wbr>Abort</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Abort APDUs are used to terminate a transaction between two peers.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.APDU.ComplexACK.html" translate="no">BACnet.<wbr>Protocol.<wbr>APDU.<wbr>ComplexACK</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Complex ACK APDUs are used to convey the information contained
+in a positive service response primitive that contains information
+in addition to the fact that the service request
+was successfully carried out.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.APDU.ConfirmedServiceRequest.html" translate="no">BACnet.<wbr>Protocol.<wbr>APDU.<wbr>ConfirmedServiceRequest</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Confirmed Service Request APDUs are used to convey
+the information contained in confirmed service request primitives.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.APDU.Error.html" translate="no">BACnet.<wbr>Protocol.<wbr>APDU.<wbr>Error</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Error APDUs are used to the information contained in a
+service response primitive that indicates the reason why
+a previous confirmed service request failed,
+either in its entirety or only partially.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.APDU.Reject.html" translate="no">BACnet.<wbr>Protocol.<wbr>APDU.<wbr>Reject</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Reject APDUs are used to reject a received confirmed service request
+based on syntactical flaws or other protocol errors that prevent
+the PDU from being interpreted or the requested service from being provided.
+Only confirmed request PDUs may be rejected (see ASHRAE 135 Clause 18.8).
+A Reject APDU shall be sent only before the execution of the service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.APDU.SegmentACK.html" translate="no">BACnet.<wbr>Protocol.<wbr>APDU.<wbr>SegmentACK</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Segment ACK APDUs are used to acknowledge the receipt of one or more frames
+containing portions of a segmented message. It may also request the
+next segment or segments of the segmented message.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.APDU.SimpleACK.html" translate="no">BACnet.<wbr>Protocol.<wbr>APDU.<wbr>SimpleACK</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Simple ACK APDUs are used to convey the information contained
+in a positive service response primitive that contains no other
+information except that the service request was successfully carried out.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.APDU.UnconfirmedServiceRequest.html" translate="no">BACnet.<wbr>Protocol.<wbr>APDU.<wbr>UnconfirmedServiceRequest</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Unconfirmed Service Request APDUs are used to convey the information
+contained in unconfirmed service request primitives.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.AccessSpecification.html" translate="no">BACnet.<wbr>Protocol.<wbr>AccessSpecification</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents BACnet Access Specification, used in BACnet <code class="inline">Read-Property-Multiple</code> and <code class="inline">Write-Property-Multiple</code>,
+as Read Access Specification and Write Access Specification, respectively.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.AccessSpecification.Property.html" translate="no">BACnet.<wbr>Protocol.<wbr>AccessSpecification.<wbr>Property</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.AccumulatorRecord.html" translate="no">BACnet.<wbr>Protocol.<wbr>AccumulatorRecord</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ActionCommand.html" translate="no">BACnet.<wbr>Protocol.<wbr>ActionCommand</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ActionList.html" translate="no">BACnet.<wbr>Protocol.<wbr>ActionList</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.AddressBinding.html" translate="no">BACnet.<wbr>Protocol.<wbr>AddressBinding</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.AlarmSummary.html" translate="no">BACnet.<wbr>Protocol.<wbr>AlarmSummary</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ApplicationTags.html" translate="no">BACnet.<wbr>Protocol.<wbr>ApplicationTags</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module provides application tags encoding and decoding as per ASHRAE 135 chapter 20.2, including constructed tags.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ApplicationTags.Encoding.html" translate="no">BACnet.<wbr>Protocol.<wbr>ApplicationTags.<wbr>Encoding</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module should help dealing with application tags encodings in user code, as
+application tags encoding can be more easily dealt with as the values can be accessed directly.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ApplicationTags.Encoding.Error.html" translate="no">BACnet.<wbr>Protocol.<wbr>ApplicationTags.<wbr>Encoding.<wbr>Error</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p><code class="inline">ApplicationTags.Encoding</code> errors.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.BACnetArray.html" translate="no">BACnet.<wbr>Protocol.<wbr>BACnetArray</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>A BACnet Array is a structured datatype in ordered sequences.
+A BACnet Array consists of data elements each having the same datatype.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.BACnetDate.html" translate="no">BACnet.<wbr>Protocol.<wbr>BACnetDate</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>A BACnet Date is used to represent dates, but also can represent unspecific dates,
+such as a single component being unspecified (i.e. can match anything in that component),
+or can be something like targeting even or odd numbers.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.BACnetDateTime.html" translate="no">BACnet.<wbr>Protocol.<wbr>BACnetDateTime</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>A BACnet DateTime is used to represent date with timepoints.
+It wraps both <code class="inline">BACnetDate</code> and <code class="inline">BACnetTime</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.BACnetError.html" translate="no">BACnet.<wbr>Protocol.<wbr>BACnetError</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.BACnetTime.html" translate="no">BACnet.<wbr>Protocol.<wbr>BACnetTime</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>A BACnet Time is used to represent timepoints of the day, but also can represent
+unspecific timepoints, such as a single component being unspecified
+(i.e. can match anything in that component).</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.BACnetTimestamp.html" translate="no">BACnet.<wbr>Protocol.<wbr>BACnetTimestamp</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.BroadcastDistributionTableEntry.html" translate="no">BACnet.<wbr>Protocol.<wbr>BroadcastDistributionTableEntry</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.BvlcForwardedNPDU.html" translate="no">BACnet.<wbr>Protocol.<wbr>BvlcForwardedNPDU</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.BvlcFunction.html" translate="no">BACnet.<wbr>Protocol.<wbr>BvlcFunction</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.BvlcResult.html" translate="no">BACnet.<wbr>Protocol.<wbr>BvlcResult</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.CalendarEntry.html" translate="no">BACnet.<wbr>Protocol.<wbr>CalendarEntry</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Constants.html" translate="no">BACnet.<wbr>Protocol.<wbr>Constants</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>BACnet Protocol constants.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Constants.ConstantError.html" translate="no">BACnet.<wbr>Protocol.<wbr>Constants.<wbr>ConstantError</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Constants exception.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.CovSubscription.html" translate="no">BACnet.<wbr>Protocol.<wbr>CovSubscription</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.DailySchedule.html" translate="no">BACnet.<wbr>Protocol.<wbr>DailySchedule</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.DateRange.html" translate="no">BACnet.<wbr>Protocol.<wbr>DateRange</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.DaysOfWeek.html" translate="no">BACnet.<wbr>Protocol.<wbr>DaysOfWeek</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Destination.html" translate="no">BACnet.<wbr>Protocol.<wbr>Destination</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Device.ObjectTypesSupported.html" translate="no">BACnet.<wbr>Protocol.<wbr>Device.<wbr>ObjectTypesSupported</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>BACnet object types need to be supported by the device, in order for a BACnet client
+to be able to handle them.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Device.ServicesSupported.html" translate="no">BACnet.<wbr>Protocol.<wbr>Device.<wbr>ServicesSupported</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>BACnet Services need to be supported by the device, in order for a BACnet client
+to be able to invoke them.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.DeviceObjectPropertyRef.html" translate="no">BACnet.<wbr>Protocol.<wbr>DeviceObjectPropertyRef</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.DeviceObjectRef.html" translate="no">BACnet.<wbr>Protocol.<wbr>DeviceObjectRef</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EnrollmentSummary.html" translate="no">BACnet.<wbr>Protocol.<wbr>EnrollmentSummary</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventAlgorithms.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventAlgorithms</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>BACnet has various different types of event algorithms.
+Each of them is implemented by a different module.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventAlgorithms.BufferReady.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventAlgorithms.<wbr>BufferReady</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Implements the BACnet event algorithm <code class="inline">BufferReady</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventAlgorithms.ChangeOfBitstring.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventAlgorithms.<wbr>ChangeOfBitstring</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Implements the BACnet event algorithm <code class="inline">ChangeOfBitstring</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventAlgorithms.ChangeOfCharacterString.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventAlgorithms.<wbr>ChangeOfCharacterString</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Implements the BACnet event algorithm <code class="inline">ChangeOfCharacterString</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventAlgorithms.ChangeOfLifeSafety.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventAlgorithms.<wbr>ChangeOfLifeSafety</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Implements the BACnet event algorithm <code class="inline">ChangeOfLifeSafety</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventAlgorithms.ChangeOfState.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventAlgorithms.<wbr>ChangeOfState</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Implements the BACnet event algorithm <code class="inline">ChangeOfState</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventAlgorithms.ChangeOfStatusFlags.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventAlgorithms.<wbr>ChangeOfStatusFlags</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Implements the BACnet event algorithm <code class="inline">ChangeOfStatusFlags</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventAlgorithms.ChangeOfValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventAlgorithms.<wbr>ChangeOfValue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Implements the BACnet event algorithm <code class="inline">ChangeOfValue</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventAlgorithms.CommandFailure.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventAlgorithms.<wbr>CommandFailure</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Implements the BACnet event algorithm <code class="inline">CommandFailure</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventAlgorithms.ComplexEventType.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventAlgorithms.<wbr>ComplexEventType</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Implements the BACnet event algorithm <code class="inline">ComplexEventType</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventAlgorithms.DoubleOutOfRange.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventAlgorithms.<wbr>DoubleOutOfRange</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Implements the BACnet event algorithm <code class="inline">DoubleOutOfRange</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventAlgorithms.Extended.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventAlgorithms.<wbr>Extended</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Implements the BACnet event algorithm <code class="inline">Extended</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventAlgorithms.FloatingLimit.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventAlgorithms.<wbr>FloatingLimit</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Implements the BACnet event algorithm <code class="inline">FloatingLimit</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventAlgorithms.OutOfRange.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventAlgorithms.<wbr>OutOfRange</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Implements the BACnet event algorithm <code class="inline">OutOfRange</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventAlgorithms.SignedOutOfRange.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventAlgorithms.<wbr>SignedOutOfRange</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Implements the BACnet event algorithm <code class="inline">SignedOutOfRange</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventAlgorithms.UnsignedOutOfRange.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventAlgorithms.<wbr>UnsignedOutOfRange</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Implements the BACnet event algorithm <code class="inline">UnsignedOutOfRange</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventAlgorithms.UnsignedRange.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventAlgorithms.<wbr>UnsignedRange</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Implements the BACnet event algorithm <code class="inline">UnsignedRange</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventInformation.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventInformation</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventLogRecord.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventLogRecord</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventMessageTexts.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventMessageTexts</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventParameters.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventParameters</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>BACnet has various different types of event parameters.
+Each of them is represented by a different module.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventParameters.BufferReady.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventParameters.<wbr>BufferReady</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">BufferReady</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventParameters.ChangeOfBitstring.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventParameters.<wbr>ChangeOfBitstring</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">ChangeOfBitstring</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventParameters.ChangeOfCharacterString.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventParameters.<wbr>ChangeOfCharacterString</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">ChangeOfCharacterString</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventParameters.ChangeOfLifeSafety.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventParameters.<wbr>ChangeOfLifeSafety</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">ChangeOfLifeSafety</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventParameters.ChangeOfState.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventParameters.<wbr>ChangeOfState</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">ChangeOfState</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventParameters.ChangeOfStatusFlags.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventParameters.<wbr>ChangeOfStatusFlags</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">ChangeOfStatusFlags</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventParameters.ChangeOfValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventParameters.<wbr>ChangeOfValue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">ChangeOfValue</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventParameters.CommandFailure.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventParameters.<wbr>CommandFailure</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">CommandFailure</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventParameters.DoubleOutOfRange.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventParameters.<wbr>DoubleOutOfRange</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">DoubleOutOfRange</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventParameters.Extended.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventParameters.<wbr>Extended</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">Extended</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventParameters.FloatingLimit.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventParameters.<wbr>FloatingLimit</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">FloatingLimit</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventParameters.None.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventParameters.<wbr>None</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">None</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventParameters.OutOfRange.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventParameters.<wbr>OutOfRange</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">OutOfRange</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventParameters.SignedOutOfRange.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventParameters.<wbr>SignedOutOfRange</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">SignedOutOfRange</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventParameters.UnsignedOutOfRange.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventParameters.<wbr>UnsignedOutOfRange</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">UnsignedOutOfRange</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventParameters.UnsignedRange.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventParameters.<wbr>UnsignedRange</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">UnsignedRange</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventTimestamps.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventTimestamps</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.EventTransitionBits.html" translate="no">BACnet.<wbr>Protocol.<wbr>EventTransitionBits</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.FaultAlgorithms.html" translate="no">BACnet.<wbr>Protocol.<wbr>FaultAlgorithms</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>BACnet has various different types of fault algorithms.
+Each of them is implemented by a different module.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.FaultAlgorithms.FaultCharacterString.html" translate="no">BACnet.<wbr>Protocol.<wbr>FaultAlgorithms.<wbr>FaultCharacterString</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet fault algorithm <code class="inline">FaultCharacterString</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.FaultAlgorithms.FaultExtended.html" translate="no">BACnet.<wbr>Protocol.<wbr>FaultAlgorithms.<wbr>FaultExtended</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet fault algorithm <code class="inline">FaultExtended</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.FaultAlgorithms.FaultLifeSafety.html" translate="no">BACnet.<wbr>Protocol.<wbr>FaultAlgorithms.<wbr>FaultLifeSafety</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet fault algorithm <code class="inline">FaultLifeSafety</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.FaultAlgorithms.FaultState.html" translate="no">BACnet.<wbr>Protocol.<wbr>FaultAlgorithms.<wbr>FaultState</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet fault algorithm <code class="inline">FaultState</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.FaultAlgorithms.FaultStatusFlags.html" translate="no">BACnet.<wbr>Protocol.<wbr>FaultAlgorithms.<wbr>FaultStatusFlags</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet fault algorithm <code class="inline">FaultStatusFlags</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.FaultParameters.html" translate="no">BACnet.<wbr>Protocol.<wbr>FaultParameters</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>BACnet has various different types of fault parameters.
+Each of them is represented by a different module.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.FaultParameters.FaultCharacterString.html" translate="no">BACnet.<wbr>Protocol.<wbr>FaultParameters.<wbr>FaultCharacterString</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet fault algorithm <code class="inline">FaultCharacterString</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.FaultParameters.FaultExtended.html" translate="no">BACnet.<wbr>Protocol.<wbr>FaultParameters.<wbr>FaultExtended</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet fault algorithm <code class="inline">FaultExtended</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.FaultParameters.FaultLifeSafety.html" translate="no">BACnet.<wbr>Protocol.<wbr>FaultParameters.<wbr>FaultLifeSafety</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet fault algorithm <code class="inline">FaultLifeSafety</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.FaultParameters.FaultState.html" translate="no">BACnet.<wbr>Protocol.<wbr>FaultParameters.<wbr>FaultState</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet fault algorithm <code class="inline">FaultState</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.FaultParameters.FaultStatusFlags.html" translate="no">BACnet.<wbr>Protocol.<wbr>FaultParameters.<wbr>FaultStatusFlags</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet fault algorithm <code class="inline">FaultStatusFlags</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.FaultParameters.None.html" translate="no">BACnet.<wbr>Protocol.<wbr>FaultParameters.<wbr>None</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet fault algorithm <code class="inline">None</code> parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ForeignDeviceTableEntry.html" translate="no">BACnet.<wbr>Protocol.<wbr>ForeignDeviceTableEntry</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.GroupChannelValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>GroupChannelValue</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.IncompleteAPDU.html" translate="no">BACnet.<wbr>Protocol.<wbr>IncompleteAPDU</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module is used to represent a segmented incomplete APDU.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.LimitEnable.html" translate="no">BACnet.<wbr>Protocol.<wbr>LimitEnable</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>BACnet Limit Enable conveys several flags that describe the enabled limit detection algorithms.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.LogMultipleRecord.html" translate="no">BACnet.<wbr>Protocol.<wbr>LogMultipleRecord</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.LogRecord.html" translate="no">BACnet.<wbr>Protocol.<wbr>LogRecord</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.LogStatus.html" translate="no">BACnet.<wbr>Protocol.<wbr>LogStatus</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NPCI.html" translate="no">BACnet.<wbr>Protocol.<wbr>NPCI</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Network Protocol Control Information (NPCI) are used to determine
+priority, whether reply is expected, for who by who this frame is
+and what kind of BACnet Data Unit this is.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NetworkLayerProtocolMessage.html" translate="no">BACnet.<wbr>Protocol.<wbr>NetworkLayerProtocolMessage</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Network layer messages are used for prividing the basis for
+router auto-configuration, router maintenance and
+network layer congestion control.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationClassPriority.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationClassPriority</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The notification class priority BACnet array is used to convey the priority
+used for event notifications. A lower number indicates a higher priority.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationParameters.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationParameters</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>BACnet has various different types of notification parameters.
+Each of them is represented by a different module.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationParameters.BufferReady.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationParameters.<wbr>BufferReady</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">BufferReady</code> notification parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationParameters.ChangeOfBitstring.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationParameters.<wbr>ChangeOfBitstring</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">ChangeOfBitstring</code> notification parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationParameters.ChangeOfCharacterString.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationParameters.<wbr>ChangeOfCharacterString</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">ChangeOfCharacterString</code> notification parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationParameters.ChangeOfLifeSafety.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationParameters.<wbr>ChangeOfLifeSafety</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">ChangeOfLifeSafety</code> notification parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationParameters.ChangeOfReliability.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationParameters.<wbr>ChangeOfReliability</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">ChangeOfReliability</code> notification parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationParameters.ChangeOfState.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationParameters.<wbr>ChangeOfState</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">ChangeOfState</code> notification parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationParameters.ChangeOfStatusFlags.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationParameters.<wbr>ChangeOfStatusFlags</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">ChangeOfStatusFlags</code> notification parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationParameters.ChangeOfValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationParameters.<wbr>ChangeOfValue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">ChangeOfValue</code> notification parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationParameters.CommandFailure.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationParameters.<wbr>CommandFailure</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">CommandFailure</code> notification parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationParameters.ComplexEventType.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationParameters.<wbr>ComplexEventType</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">ComplexEventType</code> notification parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationParameters.DoubleOutOfRange.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationParameters.<wbr>DoubleOutOfRange</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">DoubleOutOfRange</code> notification parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationParameters.Extended.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationParameters.<wbr>Extended</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">Extended</code> notification parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationParameters.FloatingLimit.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationParameters.<wbr>FloatingLimit</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">FloatingLimit</code> notification parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationParameters.OutOfRange.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationParameters.<wbr>OutOfRange</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">OutOfRange</code> notification parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationParameters.SignedOutOfRange.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationParameters.<wbr>SignedOutOfRange</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">SignedOutOfRange</code> notification parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationParameters.UnsignedOutOfRange.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationParameters.<wbr>UnsignedOutOfRange</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">UnsignedOutOfRange</code> notification parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NotificationParameters.UnsignedRange.html" translate="no">BACnet.<wbr>Protocol.<wbr>NotificationParameters.<wbr>UnsignedRange</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents the BACnet event algorithm <code class="inline">UnsignedRange</code> notification parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.NpciTarget.html" translate="no">BACnet.<wbr>Protocol.<wbr>NpciTarget</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Network Protocol Control Information targets are used to describe
+source and destination targets (network and address information) inside
+of Network Protocol Control Information (<a href="BACnet.Protocol.NPCI.html"><code class="inline">BACnet.Protocol.NPCI</code></a>).</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectIdentifier.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectIdentifier</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectPropertyRef.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectPropertyRef</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.Accumulator.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>Accumulator</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Accumulator object type defines a standardized object whose properties
+represent the externally visible characteristics of a device that indicates
+measurements made by counting pulses.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.AnalogInput.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>AnalogInput</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Analog Input object type defines a standardized object whose properties represent
+the externally visible characteristics of an analog input.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.AnalogOutput.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>AnalogOutput</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Analog Output object type defines a standardized object whose properties represent
+the externally visible characteristics of an analog output.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.AnalogValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>AnalogValue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Analog Value object type defines a standardized object whose properties represent
+the externally visible characteristics of an analog value.
+An &quot;analog value&quot; is a control system parameter residing in the memory of the BACnet Device.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.Averaging.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>Averaging</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Averaging object type defines a standardized object whose properties represent
+the externally visible characteristics of a value that is sampled periodically over
+a specified time interval. The Averaging object records the minimum, maximum and
+average value over the interval, and makes these values visible as properties of
+the Averaging object. The sampled value may be the value of any BOOLEAN, INTEGER,
+Unsigned, Enumerated or REAL property value of any object within the BACnet
+Device in which the object resides. Optionally, the object property to be sampled
+may exist in a different BACnet Device.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.BinaryInput.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>BinaryInput</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Binary Input object type defines a standardized object whose properties represent
+the externally visible characteristics of a binary input.
+A &quot;binary input&quot; is a physical device or hardware input that can be in only one of two distinct states.
+In this description, those states are referred to as ACTIVE (<code class="inline">true</code>) and INACTIVE (<code class="inline">false</code>).
+A typical use of a binary input is to indicate whether a particular piece of mechanical equipment,
+such as a fan or pump, is running or idle.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.BinaryOutput.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>BinaryOutput</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Binary Output object type defines a standardized object whose properties represent
+the externally visible characteristics of a binary output.
+A &quot;binary output&quot; is a physical device or hardware output that can be in only one of two distinct states.
+In this description, those states are referred to as ACTIVE (<code class="inline">true</code>) and INACTIVE (<code class="inline">false</code>).
+A typical use of a binary output is to switch a particular piece of mechanical equipment,
+such as a fan or pump, on or off. The state ACTIVE corresponds to the situation when the
+equipment is on or running, and INACTIVE corresponds to the situation when the equipment is off or idle.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.BinaryValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>BinaryValue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Binary Value object type defines a standardized object whose properties represent
+the externally visible characteristics of a binary value.
+A &quot;binary value&quot; is a control system parameter residing in the memory of the BACnet Device.
+This parameter may assume only one of two distinct states.
+In this description, those states are referred to as ACTIVE and INACTIVE.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.BitstringValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>BitstringValue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Bitstring Value object type defines a standardized object whose properties
+represent the externally visible characteristics of a named data value
+in a BACnet device. A BACnet device can use a Bitstring Value object to make
+any kind of bitstring data value accessible to other BACnet devices.
+The mechanisms by which the value is derived are not visible to the BACnet
+client.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.Calendar.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>Calendar</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Calendar object type defines a standardized object used to describe
+a list of calendar dates, which might be thought of as &quot;holidays&quot;, &quot;special events&quot;,
+or simply as a list of dates.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.CharacterStringValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>CharacterStringValue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The CharacterString Value object type defines a standardized object whose properties
+represent the externally visible characteristics of a named data value in a BACnet device.
+A BACnet device can use a CharacterString Value object to make any kind of character
+string data value accessible to other BACnet devices. The mechanisms by which the
+value is derived are not visible to the BACnet client.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.Command.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>Command</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Command object type defines a standardized object whose properties represent
+the externally visible characteristics of a multi-action command procedure.
+A Command object is used to write a set of values to a group of object properties,
+based on the &quot;action code&quot; that is written to the Present_Value of the Command object.
+Whenever the Present_Value property of the Command object is written to,
+it triggers the Command object to take a set of actions that change the values of
+a set of other objects' properties.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.DatePatternValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>DatePatternValue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Date Pattern Value object type defines a standardized object whose properties
+represent the externally visible characteristics of a named data value in a BACnet device.
+A BACnet device can use a Date Pattern Value object to make any kind of date data
+value accessible to other BACnet devices. The mechanisms by which the value is derived
+are not visible to the BACnet client.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.DateTimePatternValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>DateTimePatternValue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The DateTime Pattern Value object type defines a standardized object whose properties
+represent the externally visible characteristics of a named data value in a BACnet device.
+A BACnet device can use a DateTime Pattern Value object to make any kind of datetime data
+value accessible to other BACnet devices. The mechanisms by which the value is derived are
+not visible to the BACnet client.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.DateTimeValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>DateTimeValue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The DateTime Value object type defines a standardized object whose properties represent
+the externally visible characteristics of a named data value in a BACnet device.
+A BACnet device can use a DateTime Value object to make any kind of datetime data value
+accessible to other BACnet devices. The mechanisms by which the value is derived are not
+visible to the BACnet client. A DateTime Value object is used to represent a
+single moment in time. In contrast, the DateTime Pattern Value object can be used to
+represent multiple recurring dates and times.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.DateValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>DateValue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Date Value object type defines a standardized object whose properties represent
+the externally visible characteristics of a named data value in a BACnet device.
+A BACnet device can use a Date Value object to make any kind of date data value
+accessible to other BACnet devices. The mechanisms by which the value is derived
+are not visible to the BACnet client.
+A Date Value object is used to represent a single day. In contrast,
+the Date Pattern Value object can be used to represent multiple recurring dates.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.Device.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>Device</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Device object type defines a standardized object whose properties represent
+the externally visible characteristics of a BACnet Device.
+There shall be exactly one Device object in each BACnet Device.
+A Device object is referenced by its Object_Identifier property,
+which is not only unique to the BACnet Device that maintains this object
+but is also unique throughout the BACnet internetwork.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.EventEnrollment.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>EventEnrollment</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Event Enrollment object type defines a standardized object that represents
+and contains the information required for algorithmic reporting of events.
+For the general event concepts and algorithmic event reporting, see Clause 13.2.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.EventLog.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>EventLog</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>An Event Log object records event notifications with timestamps and other
+pertinent data in an internal buffer for subsequent retrieval.
+Each timestamped buffer entry is called an event log &quot;record&quot;.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.File.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>File</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The File object type defines a standardized object that is used
+to describe properties of data files that may be accessed using
+File Services (see Clause 14).</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.Group.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>Group</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Group object type defines a standardized object whose properties
+represent a collection of other objects and one or more of their properties.
+A group object is used to simplify the exchange of information between
+BACnet Devices by providing a shorthand way to specify all members of the
+group at once. A group may be formed using any combination of object types.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.IntegerValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>IntegerValue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Integer Value object type defines a standardized object whose properties represent
+the externally visible characteristics of a named data value in a BACnet device.
+A BACnet device can use an Integer Value object to make any kind of signed integer data
+value accessible to other BACnet devices.
+The mechanisms by which the value is derived are not visible to the BACnet client.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.LargeAnalogValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>LargeAnalogValue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Large Analog Value object type defines a standardized object whose properties represent
+the externally visible characteristics of a named data value in a BACnet device.
+A BACnet device can use a Large Analog Value object to make any kind of
+double-precision data value accessible to other BACnet devices. The mechanisms by
+which the value is derived are not visible to the BACnet client.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.Loop.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>Loop</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Loop object type defines a standardized object whose properties represent
+the externally visible characteristics of any form of feedback control loop.
+Flexibility is achieved by providing three independent gain constants with
+no assumed values for units. The appropriate gain units are determined by
+the details of the control algorithm, which is a local matter.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.MultistateInput.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>MultistateInput</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Multi-state Input object type defines a standardized object whose Present_Value
+represents the result of an algorithmic process within the BACnet Device in which
+the object resides.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.MultistateOutput.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>MultistateOutput</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Multi-state Output object type defines a standardized object whose properties
+represent the desired state of one or more physical outputs or processes within
+the BACnet Device in which the object resides.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.MultistateValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>MultistateValue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Multi-state Value object type defines a standardized object whose properties
+represent the externally visible characteristics of a multi-state value.
+A &quot;multi-state value&quot; is a control system parameter residing in the memory of the
+BACnet Device. The actual functions associated with a specific state are a
+local matter and not specified by the protocol. For example, a particular state may
+represent the active/inactive condition of several physical inputs and outputs or
+perhaps the value of an analog input or output.
+The Present_Value property is an unsigned integer number representing the state.
+The State_Text property associates a description with each state.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.NotificationClass.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>NotificationClass</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Notification Class object type defines a standardized object that represents
+and contains information required for the distribution of event notifications
+within BACnet systems. Notification Classes are useful for event-initiating objects
+that have identical needs in terms of how their notifications should be handled,
+what the destination(s) for their notifications should be, and how they should
+be acknowledged. A notification class defines how event notifications shall be
+prioritized in their handling according to TO_OFFNORMAL, TO_FAULT, and TO_NORMAL events;
+whether these categories of events require acknowledgment (nearly always by a
+human operator); and what destination devices or processes should receive notifications.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.OctetStringValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>OctetStringValue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The OctetString Value object type defines a standardized object whose properties
+represent the externally visible characteristics of a named data value in a
+BACnet device.
+A BACnet device can use an OctetString Value object to make any kind of
+OCTET STRING data value accessible to other BACnet devices.
+The mechanisms by which the value is derived are not visible to the BACnet client.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.PositiveIntegerValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>PositiveIntegerValue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Integer Value object type defines a standardized object whose properties represent
+the externally visible characteristics of a named data value in a BACnet device.
+A BACnet device can use a Positive Integer Value object to make any kind of unsigned
+integer data value accessible to other BACnet devices.
+The mechanisms by which the value is derived are not visible to the BACnet client.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.Program.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>Program</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Program object type defines a standardized object whose properties represent
+the externally visible characteristics of an application program. In this context,
+an application program is an abstract representation of a process within a BACnet
+Device, which is executing a particular body of instructions that act upon a particular
+collection of data structures. The logic that is embodied in these instructions and
+the form and content of these data structures are local matters. The Program object
+provides a network-visible view of selected parameters of an application program
+in the form of properties of the Program object. Some of these properties are
+specified in the standard and exhibit a consistent behavior across different
+BACnet Devices. The operating state of the process that executes the application
+program may be viewed and controlled through these standardized properties,
+which are required for all Program objects. In addition to these standardized
+properties, a Program object may also provide vendor-specific properties.
+These vendor-specific properties may serve as inputs to the program, outputs from
+the program, or both. However, these vendor-specific properties may not be present at all.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.PulseConverter.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>PulseConverter</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Pulse Converter object type defines a standardized object that represents
+a process whereby ongoing measurements made of some quantity, such as
+electric power or water or natural gas usage, and represented by pulses or counts,
+might be monitored over some time interval for applications such as
+peak load management, where it is necessary to make periodic measurements
+but where a precise accounting of every input pulse or count is not required.
+The Pulse Converter object might represent a physical input. As an alternative,
+it might acquire the data from the Present_Value of an Accumulator object,
+representing an input in the same device as the Pulse Converter object.
+This linkage is illustrated by the dotted line in Figure 12-4. Every time the
+Present_Value property of the Accumulator object is incremented, the Count property
+of the Pulse Converter object is also incremented.
+The Present_Value property of the Pulse Converter object can be adjusted at any time
+by writing to the Adjust_Value property, which causes the Count property to be adjusted,
+and the Present_Value recomputed from Count. In the illustration in Figure 12-4,
+the Count property of the Pulse Converter was adjusted down to 0 when the Total_Count
+of the Accumulator object had the value 0070.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.Schedule.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>Schedule</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Schedule object type defines a standardized object used to describe a periodic schedule
+that may recur during a range of dates, with optional exceptions at arbitrary times on
+arbitrary dates. The Schedule object also serves as a binding between these scheduled times
+and the writing of specified &quot;values&quot; to specific properties of specific objects at those times.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.StructuredView.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>StructuredView</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Structured View object type defines a standardized object that provides
+a container to hold references to subordinate objects, which may include other
+Structured View objects, thereby allowing multilevel hierarchies to be created.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.TimePatternValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>TimePatternValue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Time Pattern Value object type defines a standardized object whose properties
+represent the externally visible characteristics of a named data value in a BACnet device.
+A BACnet device can use a Time Pattern Value object to make any kind of time data value
+accessible to other BACnet devices. The mechanisms by which the value is derived are not
+visible to the BACnet client.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.TimeValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>TimeValue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Time Value object type defines a standardized object whose properties represent
+the externally visible characteristics of a named data value in a BACnet device.
+A BACnet device can use a Time Value object to make any kind of time data value
+accessible to other BACnet devices. The mechanisms by which the value is derived
+are not visible to the BACnet client.
+A Time Value object is used to represent a single moment in time. In contrast,
+the Time Pattern Value object can be used to represent multiple recurring times.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.TrendLog.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>TrendLog</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>A Trend Log object monitors a property of a referenced object and,
+when predefined conditionsare met, saves (&quot;logs&quot;) the value of the property
+and a timestamp in an internal buffer for subsequent retrieval.
+The data may be logged periodically, upon a change of value or
+when &quot;triggered&quot; by a write to the Trigger property.
+The Trigger property allows the acquisition of samples to be controlled by
+network write operations or internal processes. Errors that prevent the acquisition
+of the data, as well as changes in the status or operation of the logging process itself,
+are also recorded. Each timestamped buffer entry is called a trend log &quot;record.&quot;</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectTypes.TrendLogMultiple.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectTypes.<wbr>TrendLogMultiple</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>A Trend Log Multiple object monitors one or more properties of one or more
+referenced objects, either in the same device as the Trend Log Multiple object
+or in an external device. When predefined conditions are met,
+the object saves (&quot;logs&quot;) the value of the properties and a timestamp into
+an internal buffer for subsequent retrieval. The data may be logged periodically
+or when &quot;triggered&quot; by a write to the Trigger property. Errors that prevent the
+acquisition of the data, as well as changes in the status or operation of the
+logging process itself, are also recorded. Each timestamped buffer entry is
+called a &quot;log record&quot;. The Log_DeviceObjectProperty array holds the list of
+properties to be monitored and logged. If an element of the
+Log_DeviceObjectProperty array has an object or device instance number equal to 4194303,
+this indicates that the element is 'empty' or 'uninitialized'.
+For empty or uninitialized elements, an indication that no property was specified
+shall be written to the corresponding entry in each log record.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectsMacro.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectsMacro</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This is an internal module for defining BACnet objects.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ObjectsUtility.html" translate="no">BACnet.<wbr>Protocol.<wbr>ObjectsUtility</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module offers utility functions that work on all object types.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Prescale.html" translate="no">BACnet.<wbr>Protocol.<wbr>Prescale</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.PriorityArray.html" translate="no">BACnet.<wbr>Protocol.<wbr>PriorityArray</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Priority Array is a BACnet means of ensuring Command Prioritization.
+The Priority Array is an array (or in this case a struct) that contains 16 levels of priority,
+each which can take a particular value (each priority must have the same type) or NULL (<code class="inline">nil</code>).
+The highest priority (lowest array index) with a non-NULL value is the active command.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.PropertyRef.html" translate="no">BACnet.<wbr>Protocol.<wbr>PropertyRef</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.PropertyState.html" translate="no">BACnet.<wbr>Protocol.<wbr>PropertyState</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.PropertyValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>PropertyValue</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ReadAccessResult.html" translate="no">BACnet.<wbr>Protocol.<wbr>ReadAccessResult</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents BACnet Read Access Result, used in BACnet <code class="inline">Read-Property-Multiple</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ReadAccessResult.ReadResult.html" translate="no">BACnet.<wbr>Protocol.<wbr>ReadAccessResult.<wbr>ReadResult</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Recipient.html" translate="no">BACnet.<wbr>Protocol.<wbr>Recipient</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.RecipientAddress.html" translate="no">BACnet.<wbr>Protocol.<wbr>RecipientAddress</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.ResultFlags.html" translate="no">BACnet.<wbr>Protocol.<wbr>ResultFlags</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>BACnet Result Flags conveys several flags that describe characteristics of the response data.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Ack.AtomicReadFileAck.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Ack.<wbr>AtomicReadFileAck</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Ack.AtomicWriteFileAck.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Ack.<wbr>AtomicWriteFileAck</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Ack.ConfirmedPrivateTransferAck.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Ack.<wbr>ConfirmedPrivateTransferAck</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Ack.CreateObjectAck.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Ack.<wbr>CreateObjectAck</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Ack.GetAlarmSummaryAck.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Ack.<wbr>GetAlarmSummaryAck</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Ack.GetEnrollmentSummaryAck.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Ack.<wbr>GetEnrollmentSummaryAck</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Ack.GetEventInformationAck.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Ack.<wbr>GetEventInformationAck</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Ack.ReadPropertyAck.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Ack.<wbr>ReadPropertyAck</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Ack.ReadPropertyMultipleAck.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Ack.<wbr>ReadPropertyMultipleAck</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Ack.ReadRangeAck.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Ack.<wbr>ReadRangeAck</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.AcknowledgeAlarm.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>AcknowledgeAlarm</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Acknowledge Alarm service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.AddListElement.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>AddListElement</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Add List Element service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.AtomicReadFile.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>AtomicReadFile</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Atomic Read File service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.AtomicWriteFile.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>AtomicWriteFile</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Atomic Write File service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Behaviour.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Behaviour</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Common.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Common</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module implements the parsing for some services, which are available as both confirmed
+and unconfirmed. So instead of implementing the same parsing and encoding twice, this module
+is the common ground for these services.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.ConfirmedCovNotification.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>ConfirmedCovNotification</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Confirmed COV Notification service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.ConfirmedEventNotification.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>ConfirmedEventNotification</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Confirmed Event Notification service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.ConfirmedPrivateTransfer.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>ConfirmedPrivateTransfer</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Confirmed Private Transfer service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.ConfirmedTextMessage.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>ConfirmedTextMessage</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Confirmed Text Message service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.CreateObject.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>CreateObject</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Create Object service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.DeleteObject.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>DeleteObject</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Delete Object service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.DeviceCommunicationControl.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>DeviceCommunicationControl</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Device Communication Control service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Error.AddListElementError.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Error.<wbr>AddListElementError</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Error.ConfirmedPrivateTransferError.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Error.<wbr>ConfirmedPrivateTransferError</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Error.CreateObjectError.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Error.<wbr>CreateObjectError</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Error.DeleteObjectError.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Error.<wbr>DeleteObjectError</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Error.RemoveListElementError.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Error.<wbr>RemoveListElementError</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Error.WritePropertyMultipleError.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Error.<wbr>WritePropertyMultipleError</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.GetAlarmSummary.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>GetAlarmSummary</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Get Alarm Summary service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.GetEnrollmentSummary.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>GetEnrollmentSummary</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Get Enrollment Summary service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.GetEventInformation.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>GetEventInformation</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Get Event Information service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.IAm.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>IAm</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet I-Am service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.IHave.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>IHave</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet I-Have service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.LifeSafetyOperation.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>LifeSafetyOperation</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Life Safety Operation service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.Protocol.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>Protocol</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.ReadProperty.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>ReadProperty</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Read Property service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.ReadPropertyMultiple.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>ReadPropertyMultiple</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Read Property Multiple service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.ReadRange.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>ReadRange</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Read Range service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.ReinitializeDevice.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>ReinitializeDevice</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Reinitialize Device service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.RemoveListElement.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>RemoveListElement</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Remove List Element service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.SubscribeCov.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>SubscribeCov</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Subscribe COV service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.SubscribeCovProperty.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>SubscribeCovProperty</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Subscribe COV Property service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.TimeSynchronization.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>TimeSynchronization</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Time Synchronization service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.UnconfirmedCovNotification.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>UnconfirmedCovNotification</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Unconfirmed COV Notification service (Change Of Value).</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.UnconfirmedEventNotification.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>UnconfirmedEventNotification</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Unconfirmed Event Notification service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.UnconfirmedPrivateTransfer.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>UnconfirmedPrivateTransfer</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Unconfirmed Private Transfer service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.UnconfirmedTextMessage.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>UnconfirmedTextMessage</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Unconfirmed Text Message service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.UtcTimeSynchronization.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>UtcTimeSynchronization</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet UTC Time Synchronization service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.WhoHas.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>WhoHas</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Who-Has service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.WhoIs.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>WhoIs</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Who-Is service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.WriteGroup.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>WriteGroup</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Write Group service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.WriteProperty.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>WriteProperty</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Write Property service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Services.WritePropertyMultiple.html" translate="no">BACnet.<wbr>Protocol.<wbr>Services.<wbr>WritePropertyMultiple</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module represents the BACnet Write Property Multiple service.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.SetpointReference.html" translate="no">BACnet.<wbr>Protocol.<wbr>SetpointReference</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.SpecialEvent.html" translate="no">BACnet.<wbr>Protocol.<wbr>SpecialEvent</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.StatusFlags.html" translate="no">BACnet.<wbr>Protocol.<wbr>StatusFlags</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.TimeValue.html" translate="no">BACnet.<wbr>Protocol.<wbr>TimeValue</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.Utility.html" translate="no">BACnet.<wbr>Protocol.<wbr>Utility</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Various utility functions to help with the BACnet protocol.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Protocol.WeekNDay.html" translate="no">BACnet.<wbr>Protocol.<wbr>WeekNDay</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.BBMD.html" translate="no">BACnet.<wbr>Stack.<wbr>BBMD</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The BBMD module is responsible for acting as a BACnet/IPv4 Broadcast Management Device (BBMD).</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.BBMD.ClientRef.html" translate="no">BACnet.<wbr>Stack.<wbr>BBMD.<wbr>ClientRef</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Internal module for <a href="BACnet.Stack.BBMD.html"><code class="inline">BACnet.Stack.BBMD</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.BBMD.Registration.html" translate="no">BACnet.<wbr>Stack.<wbr>BBMD.<wbr>Registration</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Internal module for <a href="BACnet.Stack.BBMD.html"><code class="inline">BACnet.Stack.BBMD</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.BBMD.State.html" translate="no">BACnet.<wbr>Stack.<wbr>BBMD.<wbr>State</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Internal module for <a href="BACnet.Stack.BBMD.html"><code class="inline">BACnet.Stack.BBMD</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.Client.html" translate="no">BACnet.<wbr>Stack.<wbr>Client</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The BACnet client is responsible for connecting the application to the BACnet transport protocol
+and vice versa - it interfaces with the BACnet transport protocol, using the transport behaviour.
+The client will take requests and send them to the BACnet transport protocol and ultimately listen for
+frames from the BACnet transport protocol.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.Client.ApduTimer.html" translate="no">BACnet.<wbr>Stack.<wbr>Client.<wbr>ApduTimer</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Internal module for <a href="BACnet.Stack.Client.html"><code class="inline">BACnet.Stack.Client</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.Client.ReplyTimer.html" translate="no">BACnet.<wbr>Stack.<wbr>Client.<wbr>ReplyTimer</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Internal module for <a href="BACnet.Stack.Client.html"><code class="inline">BACnet.Stack.Client</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.Client.State.html" translate="no">BACnet.<wbr>Stack.<wbr>Client.<wbr>State</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Internal module for <a href="BACnet.Stack.Client.html"><code class="inline">BACnet.Stack.Client</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.ClientHelper.html" translate="no">BACnet.<wbr>Stack.<wbr>ClientHelper</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>BACnet stack client helper functions for executing commands/queries.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.EncoderProtocol.html" translate="no">BACnet.<wbr>Stack.<wbr>EncoderProtocol</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This protocol is used inside the BACnet stack (transport modules) to encode APDU structs into binary BACnet APDUs,
+which then are sent through the transport layer.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.ForeignDevice.html" translate="no">BACnet.<wbr>Stack.<wbr>ForeignDevice</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Foreign Device module is a server process that takes care of registering the application
+(client/transport) as a Foreign Device in a BACnet/IPv4 Broadcast Management Device (BBMD).</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.ForeignDevice.Registration.html" translate="no">BACnet.<wbr>Stack.<wbr>ForeignDevice.<wbr>Registration</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Internal module for <a href="BACnet.Stack.ForeignDevice.html"><code class="inline">BACnet.Stack.ForeignDevice</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.ForeignDevice.State.html" translate="no">BACnet.<wbr>Stack.<wbr>ForeignDevice.<wbr>State</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Internal module for <a href="BACnet.Stack.ForeignDevice.html"><code class="inline">BACnet.Stack.ForeignDevice</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.LogBuffer.html" translate="no">BACnet.<wbr>Stack.<wbr>LogBuffer</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Simple log buffer implementation for event and trend logs.
+The type of the item is not enforced.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.LogBufferBehaviour.html" translate="no">BACnet.<wbr>Stack.<wbr>LogBufferBehaviour</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>A behaviour for log buffer implementations, most notably for the <a href="BACnet.Stack.TrendLogger.html"><code class="inline">BACnet.Stack.TrendLogger</code></a> module.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.Segmentator.html" translate="no">BACnet.<wbr>Stack.<wbr>Segmentator</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Segmentator module is responsible for sending segmented requests or responses.
+Incoming segments need to be handled manually or through the <a href="BACnet.Stack.SegmentsStore.html"><code class="inline">BACnet.Stack.SegmentsStore</code></a> module.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.Segmentator.Sequence.html" translate="no">BACnet.<wbr>Stack.<wbr>Segmentator.<wbr>Sequence</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Internal module for <a href="BACnet.Stack.Segmentator.html"><code class="inline">BACnet.Stack.Segmentator</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.Segmentator.State.html" translate="no">BACnet.<wbr>Stack.<wbr>Segmentator.<wbr>State</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Internal module for <a href="BACnet.Stack.Segmentator.html"><code class="inline">BACnet.Stack.Segmentator</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.SegmentsStore.html" translate="no">BACnet.<wbr>Stack.<wbr>SegmentsStore</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Segments Store module handles incoming segments of a segmented request or response.
+Outgoing segments need to be handled manually or through the <a href="BACnet.Stack.Segmentator.html"><code class="inline">BACnet.Stack.Segmentator</code></a> module.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.SegmentsStore.Sequence.html" translate="no">BACnet.<wbr>Stack.<wbr>SegmentsStore.<wbr>Sequence</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Internal module for <a href="BACnet.Stack.SegmentsStore.html"><code class="inline">BACnet.Stack.SegmentsStore</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.SegmentsStore.State.html" translate="no">BACnet.<wbr>Stack.<wbr>SegmentsStore.<wbr>State</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Internal module for <a href="BACnet.Stack.SegmentsStore.html"><code class="inline">BACnet.Stack.SegmentsStore</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.Telemetry.html" translate="no">BACnet.<wbr>Stack.<wbr>Telemetry</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Contains functions for easier interaction with telemetry.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.Transport.EthernetTransport.html" translate="no">BACnet.<wbr>Stack.<wbr>Transport.<wbr>EthernetTransport</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The BACnet transport for BACnet/Ethernet.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.Transport.IPv4Transport.html" translate="no">BACnet.<wbr>Stack.<wbr>Transport.<wbr>IPv4Transport</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The BACnet transport for BACnet/IP on IPv4.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.TransportBehaviour.html" translate="no">BACnet.<wbr>Stack.<wbr>TransportBehaviour</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Defines the BACnet transport protocol behaviour.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.TrendLogger.html" translate="no">BACnet.<wbr>Stack.<wbr>TrendLogger</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Trend Logger module is responsible for handling event and trend logging
+and keeping a log buffer.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.TrendLogger.Log.html" translate="no">BACnet.<wbr>Stack.<wbr>TrendLogger.<wbr>Log</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Internal module for <a href="BACnet.Stack.TrendLogger.html"><code class="inline">BACnet.Stack.TrendLogger</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="BACnet.Stack.TrendLogger.State.html" translate="no">BACnet.<wbr>Stack.<wbr>TrendLogger.<wbr>State</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Internal module for <a href="BACnet.Stack.TrendLogger.html"><code class="inline">BACnet.Stack.TrendLogger</code></a>.</p></div>
+
+</div>
+
+      </div>
+    </section>
+
+
+</div>
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="bacstack.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.1) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

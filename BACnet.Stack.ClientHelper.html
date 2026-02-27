@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.1">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>BACnet.Stack.ClientHelper — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-YJO4MOOW.css" />
+
+    <script defer src="dist/sidebar_items-C7FAD1DE.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-YU4BZFVS.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr>Stack.<wbr>ClientHelper</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0)</small>
+
+    </h1>
+
+<a href="BACnet.Stack.ClientHelper.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client_helper.ex#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>BACnet stack client helper functions for executing commands/queries.</p>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#i_am/5" data-no-tooltip="" translate="no">i_am(server, destination, device, vendor_id, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Sends an I-Am service request to the destination, or optionally using
+<code class="inline">:broadcast</code> (or the real broadcast address) as local broadcast.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#read_object/4" data-no-tooltip="" translate="no">read_object(server, destination, object, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Read a BACnet object from a remote BACnet device and transform it into an object.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#read_property/6" data-no-tooltip="" translate="no">read_property(server, destination, object, property, array_index \\ nil, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Read a single property from a remote BACnet object and transform the value.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#read_property_multiple/5" data-no-tooltip="" translate="no">read_property_multiple(server, destination, object, properties, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Read multiple properties from a remote BACnet object at once and transform each value.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#reinitialize_device/5" data-no-tooltip="" translate="no">reinitialize_device(server, destination, state \\ Constants.macro_assert_name(:reinitialized_state, :warmstart), password \\ nil, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Send a Reinitialize-Device service request to a remote BACnet device.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#scan_device/4" data-no-tooltip="" translate="no">scan_device(server, destination, device, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Scan the given device for available objects and read all objects. A map of objects will be returned on success.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#send_time_synchronization/3" data-no-tooltip="" translate="no">send_time_synchronization(server, destination \\ :broadcast, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Send a (UTC) Time Synchronization service APDU to the destination.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#subscribe_cov_property/5" data-no-tooltip="" translate="no">subscribe_cov_property(server, destination, object, property, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Subscribes for COV notification for a remote BACnet object property.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#who_is/3" data-no-tooltip="" translate="no">who_is(server, timeout \\ 5000, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Sends a Who-Is service request to the network (local broadcast).
+The I-Am responses will be collected and returned.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#write_property/6" data-no-tooltip="" translate="no">write_property(server, destination, object, property, value, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Write to a single property of a remote BACnet object.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#write_property_multiple/5" data-no-tooltip="" translate="no">write_property_multiple(server, destination, object, properties, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Write to multiple properties of a remote BACnet object.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="i_am/5">
+
+    <span id="i_am/4"></span>
+
+  <div class="detail-header">
+    <a href="#i_am/5" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">i_am(server, destination, device, vendor_id, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client_helper.ex#L40" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> i_am(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>() | :broadcast,
+  <a href="BACnet.Protocol.ObjectIdentifier.html#t:t/0">BACnet.Protocol.ObjectIdentifier.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(),
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()
+) :: :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Sends an I-Am service request to the destination, or optionally using
+<code class="inline">:broadcast</code> (or the real broadcast address) as local broadcast.</p><p>See also <a href="BACnet.Protocol.Services.IAm.html"><code class="inline">BACnet.Protocol.Services.IAm</code></a>.</p><p>The <code class="inline">Client.send/4</code> options are available.</p>
+  </section>
+</section>
+<section class="detail" id="read_object/4">
+
+    <span id="read_object/3"></span>
+
+  <div class="detail-header">
+    <a href="#read_object/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">read_object(server, destination, object, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client_helper.ex#L102" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> read_object(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.ObjectIdentifier.html#t:t/0">BACnet.Protocol.ObjectIdentifier.t</a>(),
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()
+) ::
+  {:ok, <a href="BACnet.Protocol.ObjectsUtility.html#t:bacnet_object/0">BACnet.Protocol.ObjectsUtility.bacnet_object</a>()}
+  | {:error, <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>()}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Read a BACnet object from a remote BACnet device and transform it into an object.</p><p>The required properties are always as a bare minimum read, only more properties can be read, never less.</p><p>The value is casted through the <a href="BACnet.Protocol.ObjectsUtility.html"><code class="inline">BACnet.Protocol.ObjectsUtility</code></a> module based on the object modules.
+As such object types or properties that are not supported, will fail.</p><p>If you want to read a device object and don't know the proper device instance number,
+you can use <code class="inline">4_194_303</code> as instance number. By the BACnet specification that instance number will be
+treated by the remote BACnet device as if the instance number was locally correctly matched.</p><p>The following options are available:</p><ul><li>All options from <a href="BACnet.Stack.Client.html#send/4"><code class="inline">BACnet.Stack.Client.send/4</code></a>.</li><li>All options from <a href="BACnet.Protocol.Services.ReadPropertyMultiple.html#to_apdu/2"><code class="inline">BACnet.Protocol.Services.ReadPropertyMultiple.to_apdu/2</code></a>.</li><li>All options from <a href="BACnet.Protocol.ObjectsUtility.html#cast_read_properties_ack/3"><code class="inline">BACnet.Protocol.ObjectsUtility.cast_read_properties_ack/3</code></a>.</li><li>All options from <a href="BACnet.Protocol.ObjectsUtility.html#cast_properties_to_object/3"><code class="inline">BACnet.Protocol.ObjectsUtility.cast_properties_to_object/3</code></a>.</li><li><p><code class="inline">properties: [:all | :required | Constants.property_identifier()]</code> - Optional. Select the properties to read.</p></li><li><p><code class="inline">read_level: :all | :required</code> - Optional. Select how many properties should be read (defaults to <code class="inline">:all</code>).</p></li></ul><p><code class="inline">properties</code> and <code class="inline">read_level</code> are mutually excluse. If both are given, <code class="inline">properties</code> takes precedence.</p>
+  </section>
+</section>
+<section class="detail" id="read_property/6">
+
+    <span id="read_property/4"></span>
+
+    <span id="read_property/5"></span>
+
+  <div class="detail-header">
+    <a href="#read_property/6" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">read_property(server, destination, object, property, array_index \\ nil, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client_helper.ex#L206" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> read_property(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.ObjectIdentifier.html#t:t/0">BACnet.Protocol.ObjectIdentifier.t</a>(),
+  <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>() | nil,
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()
+) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}
+  | {:ok,
+     <a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()
+     | [<a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()]}
+  | {:error, <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>()}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Read a single property from a remote BACnet object and transform the value.</p><p>The value is casted through the <a href="BACnet.Protocol.ObjectsUtility.html"><code class="inline">BACnet.Protocol.ObjectsUtility</code></a> module based on the object modules.
+As such object types or properties that are not supported, will fail, unless you specify
+the <code class="inline">raw</code> options, which will give you the <code class="inline">Encoding</code> struct (or list of) to handle yourself.
+Array indexes of 0 will return the array size as <code class="inline">{:ok, non_neg_integer()}</code>, if successfully read.</p><p>If you want to read a device object's property without needing to know before hand which instance number,
+you can use <code class="inline">4_194_303</code> as instance number. By the BACnet specification that instance number will be
+treated by the remote BACnet device as if the instance number was locally correctly matched.</p><p>The following options are available:</p><ul><li>All options from <a href="BACnet.Stack.Client.html#send/4"><code class="inline">BACnet.Stack.Client.send/4</code></a>.</li><li>All options from <a href="BACnet.Protocol.Services.ReadProperty.html#to_apdu/2"><code class="inline">BACnet.Protocol.Services.ReadProperty.to_apdu/2</code></a>.</li><li><code class="inline">raw: boolean()</code> - Optional. Returns the <code class="inline">t:Encoding.t/0</code> (or list of) instead of trying to transform the value.</li></ul>
+  </section>
+</section>
+<section class="detail" id="read_property_multiple/5">
+
+    <span id="read_property_multiple/4"></span>
+
+  <div class="detail-header">
+    <a href="#read_property_multiple/5" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">read_property_multiple(server, destination, object, properties, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client_helper.ex#L288" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> read_property_multiple(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.ObjectIdentifier.html#t:t/0">BACnet.Protocol.ObjectIdentifier.t</a>(),
+  [
+    <a href="BACnet.Protocol.AccessSpecification.Property.html#t:t/0">BACnet.Protocol.AccessSpecification.Property.t</a>()
+    | <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()
+    | :all
+    | :required
+    | :optional
+  ],
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()
+) ::
+  {:ok, %{optional(<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()) =&gt; <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}}
+  | {:ok, [<a href="BACnet.Protocol.ReadAccessResult.html#t:t/0">BACnet.Protocol.ReadAccessResult.t</a>()]}
+  | {:error, <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>()}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Read multiple properties from a remote BACnet object at once and transform each value.</p><p>The values are casted through the <a href="BACnet.Protocol.ObjectsUtility.html"><code class="inline">BACnet.Protocol.ObjectsUtility</code></a> module based on the object modules.
+As such object types or properties that are not supported, will fail, unless you specify
+the <code class="inline">raw</code> options, which will give you a list of <code class="inline">ReadAccessResult</code>s to handle yourself.</p><p>The following options are available:</p><ul><li>All options from <a href="BACnet.Stack.Client.html#send/4"><code class="inline">BACnet.Stack.Client.send/4</code></a>.</li><li>All options from <a href="BACnet.Protocol.Services.ReadPropertyMultiple.html#to_apdu/2"><code class="inline">BACnet.Protocol.Services.ReadPropertyMultiple.to_apdu/2</code></a>.</li><li><code class="inline">raw: boolean()</code> - Optional. Returns the results instead of trying to transform each value.</li></ul>
+  </section>
+</section>
+<section class="detail" id="reinitialize_device/5">
+
+    <span id="reinitialize_device/2"></span>
+
+    <span id="reinitialize_device/3"></span>
+
+    <span id="reinitialize_device/4"></span>
+
+  <div class="detail-header">
+    <a href="#reinitialize_device/5" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">reinitialize_device(server, destination, state \\ Constants.macro_assert_name(:reinitialized_state, :warmstart), password \\ nil, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client_helper.ex#L347" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> reinitialize_device(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.Constants.html#t:reinitialized_state/0">BACnet.Protocol.Constants.reinitialized_state</a>(),
+  <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>() | nil,
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()
+) :: :ok | {:error, <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Send a Reinitialize-Device service request to a remote BACnet device.</p><p>Password must be an ASCII string between 1 to 20 characters, inclusive, or nil.</p><p>The following options are available:</p><ul><li>All options from <a href="BACnet.Stack.Client.html#send/4"><code class="inline">BACnet.Stack.Client.send/4</code></a>.</li><li>All options from <a href="BACnet.Protocol.Services.ReinitializeDevice.html#to_apdu/2"><code class="inline">BACnet.Protocol.Services.ReinitializeDevice.to_apdu/2</code></a>.</li></ul>
+  </section>
+</section>
+<section class="detail" id="scan_device/4">
+
+    <span id="scan_device/3"></span>
+
+  <div class="detail-header">
+    <a href="#scan_device/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">scan_device(server, destination, device, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client_helper.ex#L410" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> scan_device(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.ObjectIdentifier.html#t:t/0">BACnet.Protocol.ObjectIdentifier.t</a>(),
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()
+) ::
+  {:ok,
+   %{
+     optional(<a href="BACnet.Protocol.Constants.html#t:object_type/0">BACnet.Protocol.Constants.object_type</a>()) =&gt; %{
+       optional(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()) =&gt;
+         <a href="BACnet.Protocol.ObjectsUtility.html#t:bacnet_object/0">BACnet.Protocol.ObjectsUtility.bacnet_object</a>()
+     }
+   }}
+  | {:error, {<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(), <a href="BACnet.Protocol.ObjectIdentifier.html#t:t/0">BACnet.Protocol.ObjectIdentifier.t</a>()}}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Scan the given device for available objects and read all objects. A map of objects will be returned on success.</p><p>If you don't know the device object identifier of the BACnet device in question, but you know the
+BACnet network address (i.e. the IP address and port for BACnet/IP), you can use the Who-Is service
+with the destination address being the device's network address, to discover the object identifier.
+You can also use <a href="#read_property/6"><code class="inline">read_property/6</code></a> to read the <code class="inline">:object_identifier</code> property.</p><p>The scan process is parallelized through <a href="https://hexdocs.pm/elixir/Task.html#async_stream/3"><code class="inline">Task.async_stream/3</code></a> and thus the <code class="inline">invoke_id</code> is
+automatically being set. Since this implementation simply uses <code class="inline">invoke_id</code> in the range of <code class="inline">0..max_concurrency-1</code>,
+it would be safest when the <a href="BACnet.Stack.Client.html"><code class="inline">BACnet.Stack.Client</code></a> implementation manages and overrides the <code class="inline">invoke_id</code>,
+so that an user does not have to care about possible collisions.
+The current &quot;default&quot; implementation of <a href="BACnet.Stack.Client.html"><code class="inline">BACnet.Stack.Client</code></a> does manage <code class="inline">invoke_id</code>s,
+but it can be deactivated, so care must be exercised if it done.
+You need to be aware to not invoke/have parallel other requests to the same destination,
+as the <code class="inline">invoke_id</code> could be duplicated.</p><p>The values are casted through the <a href="BACnet.Protocol.ObjectsUtility.html"><code class="inline">BACnet.Protocol.ObjectsUtility</code></a> module based on the object modules.
+As such object types or properties that are not supported, will fail the operation.</p><p>The following options are available:</p><ul><li>All options from <a href="#read_object/4"><code class="inline">read_object/4</code></a>.</li><li>All options from <a href="BACnet.Stack.Client.html#send/4"><code class="inline">BACnet.Stack.Client.send/4</code></a>.</li><li>All options from <a href="BACnet.Protocol.Services.ReadPropertyMultiple.html#to_apdu/2"><code class="inline">BACnet.Protocol.Services.ReadPropertyMultiple.to_apdu/2</code></a>, except <code class="inline">invoke_id</code>.</li><li>All options from <a href="BACnet.Protocol.ObjectsUtility.html#cast_read_properties_ack/3"><code class="inline">BACnet.Protocol.ObjectsUtility.cast_read_properties_ack/3</code></a>.</li><li>All options from <a href="BACnet.Protocol.ObjectsUtility.html#cast_properties_to_object/3"><code class="inline">BACnet.Protocol.ObjectsUtility.cast_properties_to_object/3</code></a>.</li><li><code class="inline">exit_on_error: boolean()</code> - Optional. Whether to exit the process on first error.</li><li><code class="inline">ignore_errors: boolean()</code> - Optional. Whether to ignore errors and continue with the rest.</li><li><code class="inline">ignore_unsupported_object_types: boolean()</code> - Optional. Whether to ignore unknown/unsupported object types.</li><li><code class="inline">task_max_concurrency: pos_integer()</code> - Optional. The maximum task concurrency to use (limited to 255).</li><li><code class="inline">task_supervisor: Supervisor.supervisor()</code> - Optional. The task supervisor to use for spawning tasks.</li><li><code class="inline">task_timeout: timeout()</code> - Optional. The timeout to use for the task async stream (defaults to <code class="inline">30_000</code>).</li></ul><p><code class="inline">exit_on_error</code> and <code class="inline">ignore_errors</code> are mutually excluse. <code class="inline">ignore_errors</code> takes precedence, if set to <code class="inline">true</code>.</p>
+  </section>
+</section>
+<section class="detail" id="send_time_synchronization/3">
+
+    <span id="send_time_synchronization/1"></span>
+
+    <span id="send_time_synchronization/2"></span>
+
+  <div class="detail-header">
+    <a href="#send_time_synchronization/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">send_time_synchronization(server, destination \\ :broadcast, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client_helper.ex#L568" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> send_time_synchronization(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()
+) :: :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Send a (UTC) Time Synchronization service APDU to the destination.</p><p><code class="inline">:broadcast</code> will be resolved to the local broadcast address.</p><p>The following options are available:</p><ul><li>All options from <a href="BACnet.Stack.Client.html#send/4"><code class="inline">BACnet.Stack.Client.send/4</code></a>.</li><li>All options from <code class="inline">BACnet.Protocol.Services.TimeSynchronziation.to_apdu/2</code> respectively
+<code class="inline">BACnet.Protocol.Services.UtcTimeSynchronziation.to_apdu/2</code>.</li><li><code class="inline">datetime: DateTime.t()</code> - Optional. The timestamp to use for synchronization.
+It will be automatically shifted to UTC, if necessary.
+If omitted, <a href="https://hexdocs.pm/elixir/DateTime.html#now!/1"><code class="inline">DateTime.now!/1</code></a> will be used with Time Synchronization -
+if the default timezone is &quot;Etc/UTC&quot;, then UTC Time Synchronization will be used.
+The <code class="inline">utc</code> option overrides the behaviour of the default timezone -
+you may use a non-UTC timezone and still be able to use UTC.</li><li><code class="inline">utc: boolean()</code> - Optional. Whether to use UTC Time Synchronization.</li></ul>
+  </section>
+</section>
+<section class="detail" id="subscribe_cov_property/5">
+
+    <span id="subscribe_cov_property/4"></span>
+
+  <div class="detail-header">
+    <a href="#subscribe_cov_property/5" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">subscribe_cov_property(server, destination, object, property, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client_helper.ex#L642" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> subscribe_cov_property(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.ObjectIdentifier.html#t:t/0">BACnet.Protocol.ObjectIdentifier.t</a>(),
+  <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>(),
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()
+) :: :ok | {:error, <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Subscribes for COV notification for a remote BACnet object property.</p><p>When using confirmed COV notifications, the remote BACnet device requires
+you to send confirmations of the reception (<code class="inline">BACnet.Protocol.Services.SimpleACK</code>) -
+this is not done automatically.</p><p>The following options are available:</p><ul><li>All options from <a href="BACnet.Stack.Client.html#send/4"><code class="inline">BACnet.Stack.Client.send/4</code></a>.</li><li>All options from <a href="BACnet.Protocol.Services.SubscribeCovProperty.html#to_apdu/2"><code class="inline">BACnet.Protocol.Services.SubscribeCovProperty.to_apdu/2</code></a>.</li><li><code class="inline">confirmed: boolean()</code> - Optional. Request confirmed COV notifications.
+By default, COV notifications are requested to be unconfirmed.</li><li><code class="inline">cov_increment: float()</code> - Optional. The COV increment to use for float properties.</li><li><p><code class="inline">lifetime: non_neg_integer() | nil</code> - Optional. The COV subscription lifetime to use
+in seconds (defaults to 3600). To unsubscribe, use <code class="inline">nil</code>.</p></li><li><code class="inline">pid: non_neg_integer()</code> - Optional. The process identifier to use. By default,
+this will be calculated from the caller PID (<code class="inline">node bits 0-3 &lt;&lt; 28 + pid_number &lt;&lt; 13 + pid_serial</code>).</li></ul>
+  </section>
+</section>
+<section class="detail" id="who_is/3">
+
+    <span id="who_is/1"></span>
+
+    <span id="who_is/2"></span>
+
+  <div class="detail-header">
+    <a href="#who_is/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">who_is(server, timeout \\ 5000, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client_helper.ex#L725" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> who_is(<a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>(), <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()) ::
+  {:ok, [{source_address :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(), <a href="BACnet.Protocol.Services.IAm.html#t:t/0">BACnet.Protocol.Services.IAm.t</a>()}]}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Sends a Who-Is service request to the network (local broadcast).
+The I-Am responses will be collected and returned.</p><p>See also <a href="BACnet.Protocol.Services.WhoIs.html"><code class="inline">BACnet.Protocol.Services.WhoIs</code></a>.</p><p>By default, it will collect all responses received until <code class="inline">timeout</code>.
+By using <code class="inline">max</code> opts, one can tell the function how many to receive
+and then stop prematurely. Either <code class="inline">max</code> or <code class="inline">timeout</code> will stop
+the collecting. Timeout must be minimum <code class="inline">10</code>ms.</p><p>This function will by default spawn a new task and subscribe for
+BACnet notification messages and afterwards unsubscribe.
+This behaviour can be disabled through <code class="inline">no_subscribe</code> opts.</p><p>The following options are available, in addition the <code class="inline">Client.send/4</code> options:</p><ul><li><code class="inline">apdu_destination: term()</code> - Optional. Overrides the APDU destination address.</li><li><code class="inline">high_limit: pos_integer()</code> - Optional. The maximum BACnet device ID for the Who-Is query.</li><li><code class="inline">low_limit: pos_integer()</code> - Optional. The minimum BACnet device ID for the Who-Is query.</li><li><code class="inline">max: pos_integer()</code> - Optional. The maximum amount of IAm responses to collect.</li><li><code class="inline">no_subscribe: boolean()</code> - Optional. Whether to spawn a new task.</li></ul>
+  </section>
+</section>
+<section class="detail" id="write_property/6">
+
+    <span id="write_property/5"></span>
+
+  <div class="detail-header">
+    <a href="#write_property/6" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">write_property(server, destination, object, property, value, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client_helper.ex#L782" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> write_property(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.ObjectIdentifier.html#t:t/0">BACnet.Protocol.ObjectIdentifier.t</a>(),
+  <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+  | <a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()
+  | [<a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()],
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()
+) :: :ok | {:error, <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Write to a single property of a remote BACnet object.</p><p>Either the actual value of the property can be given and then the value will
+be automatically encoded through <a href="BACnet.Protocol.ObjectsUtility.html"><code class="inline">BACnet.Protocol.ObjectsUtility</code></a>.
+Or an <code class="inline">Encoding</code> struct (or list of) can be given, which will be used
+directly without validation.</p><p>The following options are available:</p><ul><li>All options from <a href="BACnet.Stack.Client.html#send/4"><code class="inline">BACnet.Stack.Client.send/4</code></a>.</li><li>All options from <a href="BACnet.Protocol.Services.WriteProperty.html#to_apdu/2"><code class="inline">BACnet.Protocol.Services.WriteProperty.to_apdu/2</code></a>.</li><li><p><code class="inline">array_index: non_neg_integer() | nil</code> - Optional. The property array index to write to.</p></li><li><p><code class="inline">priority: 1..16 | nil</code> - Optional. The BACnet priority to write to.</p></li></ul>
+  </section>
+</section>
+<section class="detail" id="write_property_multiple/5">
+
+    <span id="write_property_multiple/4"></span>
+
+  <div class="detail-header">
+    <a href="#write_property_multiple/5" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">write_property_multiple(server, destination, object, properties, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client_helper.ex#L908" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> write_property_multiple(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.ObjectIdentifier.html#t:t/0">BACnet.Protocol.ObjectIdentifier.t</a>(),
+  %{
+    optional(property_identifier) =&gt;
+      value | {array_index :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(), value}
+  }
+  | [
+      {property_identifier, value | {array_index :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(), value}}
+      | {property_identifier, array_index :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(), value}
+      | <a href="BACnet.Protocol.AccessSpecification.Property.html#t:t/0">BACnet.Protocol.AccessSpecification.Property.t</a>()
+    ],
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()
+) ::
+  :ok
+  | {:error, <a href="BACnet.Protocol.Services.Error.WritePropertyMultipleError.html#t:t/0">BACnet.Protocol.Services.Error.WritePropertyMultipleError.t</a>()}
+  | {:error, <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>()}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}
+when property_identifier:
+       <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(),
+     value:
+       <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+       | <a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()
+       | [<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>() | <a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()]</pre>
+
+      </div>
+
+<p>Write to multiple properties of a remote BACnet object.</p><p>Either the actual value of the property can be given and then the value will
+be automatically encoded through <a href="BACnet.Protocol.ObjectsUtility.html"><code class="inline">BACnet.Protocol.ObjectsUtility</code></a>.
+Or an <code class="inline">Encoding</code> struct (or list of) can be given, which will be used
+directly without validation.</p><p>Prioritized property access is not possible with this function.
+Use <a href="#write_property/6"><code class="inline">write_property/6</code></a> instead if you need to write to a specific priority.
+You can however write to specific array indexes.</p><p>The following options are available:</p><ul><li>All options from <a href="BACnet.Stack.Client.html#send/4"><code class="inline">BACnet.Stack.Client.send/4</code></a>.</li><li>All options from <a href="BACnet.Protocol.Services.WritePropertyMultiple.html#to_apdu/2"><code class="inline">BACnet.Protocol.Services.WritePropertyMultiple.to_apdu/2</code></a>.</li></ul>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="bacstack.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.1) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

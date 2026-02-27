@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.1">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>BACnet.Protocol.ApplicationTags — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-YJO4MOOW.css" />
+
+    <script defer src="dist/sidebar_items-C7FAD1DE.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-YU4BZFVS.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr>Protocol.<wbr>ApplicationTags</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0)</small>
+
+    </h1>
+
+<a href="BACnet.Protocol.ApplicationTags.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>This module provides application tags encoding and decoding as per ASHRAE 135 chapter 20.2, including constructed tags.</p><p>32bit floats (IEEE 754 single precision floating point numbers) will be truncated to the first non-repeating digit
+when decoding those. Due to (single) precision issues, some floats will be rounded to the nearest single precision
+floating point number representation, such as <code class="inline">0.3</code> -&gt; <code class="inline">0.3000000004</code> or <code class="inline">6.9</code> -&gt; <code class="inline">6.900000095367432</code>.
+By default, if more than 3 consecutive numbers are the same, the float will be truncated to the first non-repeating,
+such as <code class="inline">6.914000045</code> -&gt; <code class="inline">6.914</code>.
+This behaviour can be configured at compile-time using the application environment <code class="inline">:bacstack</code>.
+Set <code class="inline">:app_tags_truncate_float32</code> to <code class="inline">false</code> to disable this behaviour entirely. To configure the precision (or minimum
+number of consecutive repeating numbers), configure <code class="inline">:app_tags_truncate_float32_precision</code> (defaults to <code class="inline">4</code>).
+IEEE 754 double precision floating point numbers (64bit floats) are entirely unaffected by this behaviour.</p><section role="note" class="admonition info"><h4 class="admonition-title info">Information</h4><p>The following information is quite low-level and is only intended for reference. Knowledge of the BACnet protocol is
+required to use this module. Dealing with application tags is not required when using abstractions on top of
+of the APDU layer, such as most of the <code class="inline">Services.*</code> modules.</p></section><p>BACnet tags are encoded in an initial byte and zero or more conditional subsequent bytes. The initial byte is defined as
+follows:</p><pre><code class="makeup elixir" translate="no"><span class="nc">Bit</span><span class="w"> </span><span class="ss">Number</span><span class="p">:</span><span class="w">
+    </span><span class="mi">7</span><span class="w">     </span><span class="mi">6</span><span class="w">     </span><span class="mi">5</span><span class="w">     </span><span class="mi">4</span><span class="w">     </span><span class="mi">3</span><span class="w">     </span><span class="mi">2</span><span class="w">     </span><span class="mi">1</span><span class="w">     </span><span class="mi">0</span><span class="w">
+</span><span class="o">|</span><span class="o">--</span><span class="o">--</span><span class="o">-</span><span class="o">|</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">|</span><span class="o">--</span><span class="o">--</span><span class="o">-</span><span class="o">|</span><span class="o">--</span><span class="o">--</span><span class="o">-</span><span class="o">|</span><span class="o">--</span><span class="o">--</span><span class="o">-</span><span class="o">|</span><span class="o">--</span><span class="o">--</span><span class="o">-</span><span class="o">|</span><span class="o">--</span><span class="o">--</span><span class="o">-</span><span class="o">|</span><span class="o">--</span><span class="o">--</span><span class="o">-</span><span class="o">|</span><span class="w">
+</span><span class="o">|</span><span class="w">       </span><span class="nc">Tag</span><span class="w"> </span><span class="nc">Number</span><span class="w">       </span><span class="o">|</span><span class="nc">Class</span><span class="o">|</span><span class="nc">Length</span><span class="o">/</span><span class="nc">Value</span><span class="o">/</span><span class="nc">Type</span><span class="o">|</span><span class="w">
+</span><span class="o">|</span><span class="o">--</span><span class="o">--</span><span class="o">-</span><span class="o">|</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">|</span><span class="o">--</span><span class="o">--</span><span class="o">-</span><span class="o">|</span><span class="o">--</span><span class="o">--</span><span class="o">-</span><span class="o">|</span><span class="o">--</span><span class="o">--</span><span class="o">-</span><span class="o">|</span><span class="o">--</span><span class="o">--</span><span class="o">-</span><span class="o">|</span><span class="o">--</span><span class="o">--</span><span class="o">-</span><span class="o">|</span><span class="o">--</span><span class="o">--</span><span class="o">-</span><span class="o">|</span></code></pre><p>where Tag Number = the tag number within the class</p><p>Class = the class of tag (application or context specific)</p><p>Length/Value/Type = whether the data following the tag is primitive or constructed and specifies the length
+or value of primitive data.</p><p>Tag numbers ranging from 0 to 14 are encoded in the initial byte. Tag numbers from 15 to 254 (255 is reserved by ASHRAE) are encoded
+by setting the tag number bits to <code class="inline">0b1111</code> and the tag number extension byte in the subsequent byte to the initial byte denotes the actual tag number.</p><p>The Length/Value/Type bits are used to distinguish between primitive and constructed data. The Length/Value/Type bits are defined as follows:</p><ul><li>if the application tag denotes a boolean, then the boolean value is encoded in the Length/Value/Type bits</li><li>if the data is primitive and not constructed, the Length/Value/Type bits denote the length, length from 0-4 are encoded in those bits, for
+length from 5 to 253 the bits are set to <code class="inline">0b101</code> and the subsequent byte denotes the length from 0-253, for
+length from 254 to 65535 the bits are set to <code class="inline">0b101</code>, the subsequent byte is set to 254 and the following two bytes denotes the length from 0-65535, for
+length from 65536 to 2^32-1 the bits are set to <code class="inline">0b101</code>, the subsequent byte is set to 255 and the following four bytes denotes the length from 0-2^32-1</li><li>if the data is constructed, the Length/Value/Type bits are set to <code class="inline">0b110</code> to declare an opening tag, the tags follow in complete application tags encoding,
+and the closing tag is encoded with the same tag number and class as the opening tag and the Length/Value/Type bits are set to <code class="inline">0b111</code> to declare a closing tag</li></ul><p>Constructed data contains zero or more tagged elements. Each tagged element may be a constructed element iself, this does not result in ambiguous encoding.</p><p>The following table shows application tags:</p><table><thead><tr><th style="text-align: left;">Tag Number</th><th style="text-align: left;">Datatype</th><th style="text-align: left;">Respective Elixir decoding (unwrapped)</th></tr></thead><tbody><tr><td style="text-align: left;">0</td><td style="text-align: left;">Null</td><td style="text-align: left;"><code class="inline">nil</code></td></tr><tr><td style="text-align: left;">1</td><td style="text-align: left;">Boolean</td><td style="text-align: left;"><code class="inline">boolean()</code></td></tr><tr><td style="text-align: left;">2</td><td style="text-align: left;">Unsigned Integer</td><td style="text-align: left;"><code class="inline">non_neg_integer()</code></td></tr><tr><td style="text-align: left;">3</td><td style="text-align: left;">Signed Integer</td><td style="text-align: left;"><code class="inline">integer()</code></td></tr><tr><td style="text-align: left;">4</td><td style="text-align: left;">Real</td><td style="text-align: left;"><code class="inline">float()</code></td></tr><tr><td style="text-align: left;">5</td><td style="text-align: left;">Double</td><td style="text-align: left;"><code class="inline">float()</code></td></tr><tr><td style="text-align: left;">6</td><td style="text-align: left;">Octet String</td><td style="text-align: left;"><code class="inline">binary()</code></td></tr><tr><td style="text-align: left;">7</td><td style="text-align: left;">Character String</td><td style="text-align: left;"><code class="inline">String.t()</code></td></tr><tr><td style="text-align: left;">8</td><td style="text-align: left;">Bitstring</td><td style="text-align: left;"><code class="inline">tuple()</code>, each element is a <code class="inline">boolean()</code> (left to right)</td></tr><tr><td style="text-align: left;">9</td><td style="text-align: left;">Enumerated</td><td style="text-align: left;"><code class="inline">non_neg_integer()</code></td></tr><tr><td style="text-align: left;">10</td><td style="text-align: left;">Date</td><td style="text-align: left;"><code class="inline">BACnetDate.t()</code></td></tr><tr><td style="text-align: left;">11</td><td style="text-align: left;">Time</td><td style="text-align: left;"><code class="inline">BACnetTime.t()</code></td></tr><tr><td style="text-align: left;">12</td><td style="text-align: left;">Object Identifier</td><td style="text-align: left;"><code class="inline">ObjectIdentifier.t()</code></td></tr><tr><td style="text-align: left;">13-15</td><td style="text-align: left;">Reserved by ASHRAE</td><td style="text-align: left;"></td></tr></tbody></table><p>For common application tags, you will receive decoding results such as:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="6173474974-1">{</span><span class="ss">:enumerated</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p" data-group-id="6173474974-1">}</span><span class="w">
+</span><span class="p" data-group-id="6173474974-2">{</span><span class="ss">:object_identifier</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6173474974-3">%</span><span class="nc" data-group-id="6173474974-3">ObjectIdentifier</span><span class="p" data-group-id="6173474974-3">{</span><span class="w">
+  </span><span class="ss">instance</span><span class="p">:</span><span class="w"> </span><span class="mi">111</span><span class="p">,</span><span class="w">
+  </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:device</span><span class="w">
+</span><span class="p" data-group-id="6173474974-3">}</span><span class="p" data-group-id="6173474974-2">}</span><span class="w">
+</span><span class="p" data-group-id="6173474974-4">{</span><span class="ss">:unsigned_integer</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p" data-group-id="6173474974-4">}</span></code></pre><p>Context-specific tags contain context-specific data, which are not denoted directly by an application tag.
+As such the data cannot be directly decoded to the correct datatype, but the application must direct the datatype to correctly decode the data.
+As such the following result is not uncommon:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="1094659960-1">{</span><span class="ss">:tagged</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1094659960-2">{</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1094659960-3">&lt;&lt;</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">15</span><span class="p">,</span><span class="w"> </span><span class="mi">226</span><span class="p">,</span><span class="w"> </span><span class="mi">104</span><span class="p" data-group-id="1094659960-3">&gt;&gt;</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p" data-group-id="1094659960-2">}</span><span class="p" data-group-id="1094659960-1">}</span></code></pre><p>The <code class="inline">:tagged</code> atom denotes a context-specific tag encoding and contains the bytes that were given along with the tag encoding (in this case 4 bytes).
+However due to the context and the correct datatype being unknown, the bytes couldn't be directly decoded to a particular datatype.</p><p>Constructed data may contain primitive or context-specific tags, as such both results are to be expected:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="1918519520-1">{</span><span class="ss">:constructed</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1918519520-2">{</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1918519520-3">{</span><span class="ss">:octet_string</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1918519520-4">&lt;&lt;</span><span class="mi">11</span><span class="p">,</span><span class="w"> </span><span class="mi">22</span><span class="p" data-group-id="1918519520-4">&gt;&gt;</span><span class="p" data-group-id="1918519520-3">}</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p" data-group-id="1918519520-2">}</span><span class="p" data-group-id="1918519520-1">}</span><span class="w">
+</span><span class="p" data-group-id="1918519520-5">{</span><span class="ss">:constructed</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1918519520-6">{</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1918519520-7">{</span><span class="ss">:tagged</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1918519520-8">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1918519520-9">&lt;&lt;</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w"> </span><span class="mi">49</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p" data-group-id="1918519520-9">&gt;&gt;</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p" data-group-id="1918519520-8">}</span><span class="p" data-group-id="1918519520-7">}</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p" data-group-id="1918519520-6">}</span><span class="p" data-group-id="1918519520-5">}</span></code></pre><p>Or even nested constructed data:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="9317612607-1">{</span><span class="ss">:constructed</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9317612607-2">{</span><span class="mi">12</span><span class="p">,</span><span class="w">
+     </span><span class="p" data-group-id="9317612607-3">{</span><span class="ss">:constructed</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9317612607-4">{</span><span class="mi">6</span><span class="p">,</span><span class="w">
+       </span><span class="p" data-group-id="9317612607-5">[</span><span class="w">
+         </span><span class="ss">tagged</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="9317612607-6">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;U&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="9317612607-6">}</span><span class="p">,</span><span class="w">
+         </span><span class="ss">constructed</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="9317612607-7">{</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9317612607-8">{</span><span class="ss">:real</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p" data-group-id="9317612607-8">}</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p" data-group-id="9317612607-7">}</span><span class="w">
+       </span><span class="p" data-group-id="9317612607-5">]</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p" data-group-id="9317612607-4">}</span><span class="p" data-group-id="9317612607-3">}</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p" data-group-id="9317612607-2">}</span><span class="p" data-group-id="9317612607-1">}</span></code></pre><p>The above snippet contains a tagged and constructed element. The tagged contains a binary with length 1 and the constructed contains a real with value 1.0.
+In case of the constructed element, the value was decoded, as the datatype is known. In case of the tagged element, the datatype is unknown and as such
+knowledge of the BACnet protocol and the context the element is from needs to be known.</p><p>If that is known, the function <a href="#unfold_to_type/2"><code class="inline">unfold_to_type/2</code></a> can be used to produce a primitive value by specifying the correct datatype as an atom.</p><pre><code class="makeup elixir" translate="no"><span class="nc">ApplicationTags</span><span class="o">.</span><span class="n">unfold_to_type</span><span class="p" data-group-id="3285061902-1">(</span><span class="ss">:unsigned_integer</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3285061902-2">{</span><span class="ss">:tagged</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3285061902-3">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;U&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="3285061902-3">}</span><span class="p" data-group-id="3285061902-2">}</span><span class="p" data-group-id="3285061902-1">)</span></code></pre><p>Constructed data can also be a list of values, for example when dealing with Priority Arrays:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="4017228079-1">{</span><span class="ss">:constructed</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4017228079-2">{</span><span class="mi">3</span><span class="p">,</span><span class="w">
+  </span><span class="p" data-group-id="4017228079-3">[</span><span class="w">
+      </span><span class="ss">null</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+      </span><span class="ss">null</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+      </span><span class="ss">null</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+      </span><span class="ss">null</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+      </span><span class="ss">null</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+      </span><span class="ss">null</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+      </span><span class="ss">null</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+      </span><span class="ss">null</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+      </span><span class="ss">null</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+      </span><span class="ss">null</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+      </span><span class="ss">null</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+      </span><span class="ss">null</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+      </span><span class="ss">null</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+      </span><span class="ss">null</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+      </span><span class="ss">null</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+      </span><span class="ss">null</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="w">
+  </span><span class="p" data-group-id="4017228079-3">]</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p" data-group-id="4017228079-2">}</span><span class="p" data-group-id="4017228079-1">}</span></code></pre>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-types summary">
+  <h3>
+    <a href="#types">Types</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:elixir_datetime/0" data-no-tooltip="" translate="no">elixir_datetime()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>When encoding date or time values, the Elixir integrated <a href="https://hexdocs.pm/elixir/Date.html"><code class="inline">Date</code></a> and <a href="https://hexdocs.pm/elixir/Time.html"><code class="inline">Time</code></a> datatypes can be used aswell.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:encoding/0" data-no-tooltip="" translate="no">encoding()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents a BACnet application tags encoding for primitive, tagged and constructed data.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:encoding_list/0" data-no-tooltip="" translate="no">encoding_list()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Linked list of BACnet application tag encoding.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:ieee_float/0" data-no-tooltip="" translate="no">ieee_float()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents sort of IEEE 754 floats, including NaN and infinity using atoms.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:primitive_encoding/0" data-no-tooltip="" translate="no">primitive_encoding()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents the BACnet application tags encoding for primitive data.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:primitive_type/0" data-no-tooltip="" translate="no">primitive_type()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>BACnet application tag primitive types.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:signed8/0" data-no-tooltip="" translate="no">signed8()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents an <code class="inline">integer()</code> with a limited 8-bit number range.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:signed16/0" data-no-tooltip="" translate="no">signed16()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents an <code class="inline">integer()</code> with a limited 16-bit number range.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:signed32/0" data-no-tooltip="" translate="no">signed32()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents an <code class="inline">integer()</code> with a limited 32-bit number range.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:signed64/0" data-no-tooltip="" translate="no">signed64()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents an <code class="inline">integer()</code> with a limited 64-bit number range.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:unsigned8/0" data-no-tooltip="" translate="no">unsigned8()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents a <code class="inline">non_neg_integer()</code> with a limited 8-bit number range.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:unsigned16/0" data-no-tooltip="" translate="no">unsigned16()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents a <code class="inline">non_neg_integer()</code> with a limited 16-bit number range.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:unsigned32/0" data-no-tooltip="" translate="no">unsigned32()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents a <code class="inline">non_neg_integer()</code> with a limited 32-bit number range.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:unsigned64/0" data-no-tooltip="" translate="no">unsigned64()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents a <code class="inline">non_neg_integer()</code> with a limited 64-bit number range.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#create_tag_encoding/2" data-no-tooltip="" translate="no">create_tag_encoding(tag_number, tag_encoding)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Helper function to create <code class="inline">{:tagged, ...}</code> tag encodings.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#create_tag_encoding/3" data-no-tooltip="" translate="no">create_tag_encoding(tag_number, type, value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Helper function to create <code class="inline">{:tagged, ...}</code> tag encodings.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#decode/1" data-no-tooltip="" translate="no">decode(data)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Decode the application tag.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#decode_tag_number/1" data-no-tooltip="" translate="no">decode_tag_number(data)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Decode the tag number from the application tags encoding.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#decode_value/2" data-no-tooltip="" translate="no">decode_value(tag_number, data)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Decode the value from the application tags encoding.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#encode/2" data-no-tooltip="" translate="no">encode(tag, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Encode the application tag.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#encode_value/2" data-no-tooltip="" translate="no">encode_value(tag, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Encode the application tag value, without the tag header in the resulting binary.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#unfold_to_type/2" data-no-tooltip="" translate="no">unfold_to_type(format, tag_encoding)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Tries to unfold a value into a specific primitive value. The requested primitive type is given through <code class="inline">format</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#valid_int?/2" data-no-tooltip="" translate="no">valid_int?(integer, size)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks whether the given integer fits into the given integer size in bits.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h2>
+
+    <div class="types-list">
+<section class="detail" id="t:elixir_datetime/0">
+
+  <div class="detail-header">
+    <a href="#t:elixir_datetime/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">elixir_datetime()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L293" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> elixir_datetime() :: {:date, <a href="https://hexdocs.pm/elixir/Date.html#t:t/0">Date.t</a>()} | {:time, <a href="https://hexdocs.pm/elixir/Time.html#t:t/0">Time.t</a>()}</pre>
+
+      </div>
+
+<p>When encoding date or time values, the Elixir integrated <a href="https://hexdocs.pm/elixir/Date.html"><code class="inline">Date</code></a> and <a href="https://hexdocs.pm/elixir/Time.html"><code class="inline">Time</code></a> datatypes can be used aswell.</p>
+  </section>
+</section>
+<section class="detail" id="t:encoding/0">
+
+  <div class="detail-header">
+    <a href="#t:encoding/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">encoding()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L280" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> encoding() ::
+  <a href="#t:primitive_encoding/0">primitive_encoding</a>()
+  | {:constructed,
+     {tag_number :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">byte</a>(), value :: <a href="#t:encoding/0">encoding</a>() | [<a href="#t:encoding/0">encoding</a>()], 0}}
+  | {:tagged,
+     {tag_number :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">byte</a>(), value :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), length :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()}}</pre>
+
+      </div>
+
+<p>Represents a BACnet application tags encoding for primitive, tagged and constructed data.</p>
+  </section>
+</section>
+<section class="detail" id="t:encoding_list/0">
+
+  <div class="detail-header">
+    <a href="#t:encoding_list/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">encoding_list()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L288" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> encoding_list() :: [<a href="#t:encoding/0">encoding</a>()]</pre>
+
+      </div>
+
+<p>Linked list of BACnet application tag encoding.</p>
+  </section>
+</section>
+<section class="detail" id="t:ieee_float/0">
+
+  <div class="detail-header">
+    <a href="#t:ieee_float/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">ieee_float()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L298" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> ieee_float() :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">float</a>() | :NaN | :inf | :infn</pre>
+
+      </div>
+
+<p>Represents sort of IEEE 754 floats, including NaN and infinity using atoms.</p>
+  </section>
+</section>
+<section class="detail" id="t:primitive_encoding/0">
+
+  <div class="detail-header">
+    <a href="#t:primitive_encoding/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">primitive_encoding()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L262" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> primitive_encoding() ::
+  {:null, nil}
+  | {:boolean, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | {:unsigned_integer, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()}
+  | {:signed_integer, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">integer</a>()}
+  | {:real, <a href="#t:ieee_float/0">ieee_float</a>()}
+  | {:double, <a href="#t:ieee_float/0">ieee_float</a>()}
+  | {:octet_string, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()}
+  | {:character_string, <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()}
+  | {:bitstring, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">tuple</a>()}
+  | {:enumerated, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()}
+  | {:date, <a href="BACnet.Protocol.BACnetDate.html#t:t/0">BACnet.Protocol.BACnetDate.t</a>()}
+  | {:time, <a href="BACnet.Protocol.BACnetTime.html#t:t/0">BACnet.Protocol.BACnetTime.t</a>()}
+  | {:object_identifier, <a href="BACnet.Protocol.ObjectIdentifier.html#t:t/0">BACnet.Protocol.ObjectIdentifier.t</a>()}</pre>
+
+      </div>
+
+<p>Represents the BACnet application tags encoding for primitive data.</p>
+  </section>
+</section>
+<section class="detail" id="t:primitive_type/0">
+
+  <div class="detail-header">
+    <a href="#t:primitive_type/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">primitive_type()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L244" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> primitive_type() ::
+  :null
+  | :boolean
+  | :unsigned_integer
+  | :signed_integer
+  | :real
+  | :double
+  | :octet_string
+  | :character_string
+  | :bitstring
+  | :enumerated
+  | :date
+  | :time
+  | :object_identifier</pre>
+
+      </div>
+
+<p>BACnet application tag primitive types.</p><p>This is identical to <a href="BACnet.Protocol.Constants.html#t:application_tag/0"><code class="inline">BACnet.Protocol.Constants.application_tag/0</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="t:signed8/0">
+
+  <div class="detail-header">
+    <a href="#t:signed8/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">signed8()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L303" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> signed8() :: -128..127</pre>
+
+      </div>
+
+<p>Represents an <code class="inline">integer()</code> with a limited 8-bit number range.</p>
+  </section>
+</section>
+<section class="detail" id="t:signed16/0">
+
+  <div class="detail-header">
+    <a href="#t:signed16/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">signed16()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L313" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> signed16() :: -32768..32767</pre>
+
+      </div>
+
+<p>Represents an <code class="inline">integer()</code> with a limited 16-bit number range.</p>
+  </section>
+</section>
+<section class="detail" id="t:signed32/0">
+
+  <div class="detail-header">
+    <a href="#t:signed32/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">signed32()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L323" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> signed32() :: -2_147_483_648..2_147_483_647</pre>
+
+      </div>
+
+<p>Represents an <code class="inline">integer()</code> with a limited 32-bit number range.</p>
+  </section>
+</section>
+<section class="detail" id="t:signed64/0">
+
+  <div class="detail-header">
+    <a href="#t:signed64/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">signed64()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L333" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> signed64() :: -9_223_372_036_854_775_808..9_223_372_036_854_775_807</pre>
+
+      </div>
+
+<p>Represents an <code class="inline">integer()</code> with a limited 64-bit number range.</p>
+  </section>
+</section>
+<section class="detail" id="t:unsigned8/0">
+
+  <div class="detail-header">
+    <a href="#t:unsigned8/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">unsigned8()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L308" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> unsigned8() :: 0..255</pre>
+
+      </div>
+
+<p>Represents a <code class="inline">non_neg_integer()</code> with a limited 8-bit number range.</p>
+  </section>
+</section>
+<section class="detail" id="t:unsigned16/0">
+
+  <div class="detail-header">
+    <a href="#t:unsigned16/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">unsigned16()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L318" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> unsigned16() :: 0..65535</pre>
+
+      </div>
+
+<p>Represents a <code class="inline">non_neg_integer()</code> with a limited 16-bit number range.</p>
+  </section>
+</section>
+<section class="detail" id="t:unsigned32/0">
+
+  <div class="detail-header">
+    <a href="#t:unsigned32/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">unsigned32()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L328" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> unsigned32() :: 0..4_294_967_295</pre>
+
+      </div>
+
+<p>Represents a <code class="inline">non_neg_integer()</code> with a limited 32-bit number range.</p>
+  </section>
+</section>
+<section class="detail" id="t:unsigned64/0">
+
+  <div class="detail-header">
+    <a href="#t:unsigned64/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">unsigned64()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L338" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> unsigned64() :: 0..18_446_744_073_709_551_615</pre>
+
+      </div>
+
+<p>Represents a <code class="inline">non_neg_integer()</code> with a limited 64-bit number range.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="create_tag_encoding/2">
+
+  <div class="detail-header">
+    <a href="#create_tag_encoding/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">create_tag_encoding(tag_number, tag_encoding)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L867" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> create_tag_encoding(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">integer</a>(), <a href="#t:primitive_encoding/0">primitive_encoding</a>()) ::
+  {:ok, <a href="#t:encoding/0">encoding</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Helper function to create <code class="inline">{:tagged, ...}</code> tag encodings.</p>
+  </section>
+</section>
+<section class="detail" id="create_tag_encoding/3">
+
+  <div class="detail-header">
+    <a href="#create_tag_encoding/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">create_tag_encoding(tag_number, type, value)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L876" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> create_tag_encoding(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">integer</a>(), <a href="#t:primitive_type/0">primitive_type</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()) ::
+  {:ok, <a href="#t:encoding/0">encoding</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Helper function to create <code class="inline">{:tagged, ...}</code> tag encodings.</p>
+  </section>
+</section>
+<section class="detail" id="decode/1">
+
+  <div class="detail-header">
+    <a href="#decode/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">decode(data)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L346" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> decode(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) :: {:ok, <a href="#t:encoding/0">encoding</a>(), rest :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Decode the application tag.</p>
+  </section>
+</section>
+<section class="detail" id="decode_tag_number/1">
+
+  <div class="detail-header">
+    <a href="#decode_tag_number/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">decode_tag_number(data)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L434" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> decode_tag_number(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
+  {:ok, {:extended | :normal, tag :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">byte</a>()}, rest :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Decode the tag number from the application tags encoding.</p>
+  </section>
+</section>
+<section class="detail" id="decode_value/2">
+
+  <div class="detail-header">
+    <a href="#decode_value/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">decode_value(tag_number, data)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L442" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> decode_value(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">byte</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Decode the value from the application tags encoding.</p>
+  </section>
+</section>
+<section class="detail" id="encode/2">
+
+    <span id="encode/1"></span>
+
+  <div class="detail-header">
+    <a href="#encode/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">encode(tag, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L457" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> encode(<a href="#t:encoding/0">encoding</a>() | <a href="#t:elixir_datetime/0">elixir_datetime</a>(), <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Encode the application tag.</p><p>Available options:</p><ul><li><p><code class="inline">encoding: :utf8 | :iso_8859_1</code> - Optional. The target encoding for character strings (defaults to <code class="inline">:utf8</code>).</p></li></ul>
+  </section>
+</section>
+<section class="detail" id="encode_value/2">
+
+    <span id="encode_value/1"></span>
+
+  <div class="detail-header">
+    <a href="#encode_value/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">encode_value(tag, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L515" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> encode_value(<a href="#t:encoding/0">encoding</a>() | <a href="#t:elixir_datetime/0">elixir_datetime</a>(), <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()) ::
+  {:ok, value :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+   {application_tag :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">bitstring</a>(), context :: 0 | 1, length :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">bitstring</a>()}}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Encode the application tag value, without the tag header in the resulting binary.</p><p>Constructed tags are not supported, as the format is complex. Constructed tags must be encoded through <a href="#encode/2"><code class="inline">encode/2</code></a>.</p><p>For available options, see <a href="#encode/2"><code class="inline">encode/2</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="unfold_to_type/2">
+
+  <div class="detail-header">
+    <a href="#unfold_to_type/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">unfold_to_type(format, tag_encoding)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L828" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> unfold_to_type(<a href="#t:primitive_type/0">primitive_type</a>(), <a href="#t:encoding/0">encoding</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
+  {:ok, <a href="#t:primitive_encoding/0">primitive_encoding</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Tries to unfold a value into a specific primitive value. The requested primitive type is given through <code class="inline">format</code>.</p><p>Since the BACnet encoding may be a primitive value, a constructed value or a context-specific tagged value,
+this function tries to take all three forms into considering and tries to produce a primitive value.</p>
+  </section>
+</section>
+<section class="detail" id="valid_int?/2">
+
+  <div class="detail-header">
+    <a href="#valid_int?/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">valid_int?(integer, size)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/application_tags.ex#L895" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> valid_int?(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">integer</a>(), 8 | 16 | 24 | 32 | 40 | 48 | 56 | 64) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks whether the given integer fits into the given integer size in bits.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="bacstack.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.1) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

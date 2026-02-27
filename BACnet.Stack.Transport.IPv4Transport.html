@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.1">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>BACnet.Stack.Transport.IPv4Transport — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-YJO4MOOW.css" />
+
+    <script defer src="dist/sidebar_items-C7FAD1DE.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-YU4BZFVS.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr>Stack.<wbr>Transport.<wbr>IPv4Transport</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0)</small>
+
+    </h1>
+
+<a href="BACnet.Stack.Transport.IPv4Transport.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>The BACnet transport for BACnet/IP on IPv4.</p><p>BACnet/IPv4 uses UDP/IPv4 for communication. It uses both unicast and broadcast.
+Broadcast is used for unconfirmed services, such as discovery.</p><p>The BACnet specification allows for using multicast, however multicast is not implemented,
+as the majority of the commercial devices solely use unicast and broadcast.</p><p>For retrieving the broadcast address to send BACnet data the GenServer will be called.
+When sending BACnet data in large quantities (high performance scenario),
+this is however unwanted because it can slow down the process and bottleneck the whole
+traffic, if the transport has huge traffic to handle.
+For those rare cases, retrieving the broadcast address for sending can be optimized
+by storing the broadcast address in <code class="inline">:persistent_term</code>.
+This can be enabled in the application environment <code class="inline">:bacstack</code>
+under <code class="inline">:client_broadcast_addr_in_persistent_term</code> with the value <code class="inline">true</code>.
+Alternatively you can provide the option <code class="inline">:is_broadcast</code> for <a href="#send/4"><code class="inline">send/4</code></a>.
+When using <a href="BACnet.Stack.Client.html"><code class="inline">BACnet.Stack.Client</code></a>, it will provide <code class="inline">:is_broadcast</code> pre-calculated.</p>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-types summary">
+  <h3>
+    <a href="#types">Types</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:iplink_address/0" data-no-tooltip="" translate="no">iplink_address()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>The destination and source address is a tuple of IPv4 address and UDP port.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:open_option/0" data-no-tooltip="" translate="no">open_option()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Valid open options. For a description of each, see <a href="#open/2"><code class="inline">open/2</code></a>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:open_options/0" data-no-tooltip="" translate="no">open_options()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>List of open options.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:send_option/0" data-no-tooltip="" translate="no">send_option()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Valid send options. For a description of each, see <a href="#send/4"><code class="inline">send/4</code></a>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:send_options/0" data-no-tooltip="" translate="no">send_options()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>List of send options.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#bacnet_protocol/0" data-no-tooltip="" translate="no">bacnet_protocol()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the BACnet transport protocol this transport implements.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#child_spec/1" data-no-tooltip="" translate="no">child_spec(init_arg)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Produces a supervisor child spec.
+It will call <code class="inline">child_spec(callback, opts)</code> with the given 2-element list elements.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#child_spec/2" data-no-tooltip="" translate="no">child_spec(callback, opts)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Produces a supervisor child spec based on the BACnet transport <code class="inline">open</code> callback, as such
+it will take the <code class="inline">callback</code> and <code class="inline">opts</code> for <a href="#open/2"><code class="inline">open/2</code></a>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#close/1" data-no-tooltip="" translate="no">close(transport)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Closes the Transport module.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_address_for_ifname/1" data-no-tooltip="" translate="no">get_address_for_ifname(ifname)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the IPv4 address for the given ethernet interface name.
+Only interfaces with broadcast capabilities are considered.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_broadcast_address/1" data-no-tooltip="" translate="no">get_broadcast_address(transport)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the broadcast address.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_local_address/1" data-no-tooltip="" translate="no">get_local_address(transport)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the local address.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_portal/1" data-no-tooltip="" translate="no">get_portal(transport)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the transport module portal for the given transport PID/port.
+Transport modules may return the input as output, if the same
+PID or port is used for sending.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#is_destination_routed/2" data-no-tooltip="" translate="no">is_destination_routed(transport, destination)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks whether the given destination is an address that needs to be routed.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#is_valid_destination/1" data-no-tooltip="" translate="no">is_valid_destination(destination)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Verifies whether the given destination is valid for the transport module.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#max_apdu_length/0" data-no-tooltip="" translate="no">max_apdu_length()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the maximum APDU length for this transport.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#max_npdu_length/0" data-no-tooltip="" translate="no">max_npdu_length()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the maximum NPDU length for this transport.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#open/2" data-no-tooltip="" translate="no">open(callback, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Opens/starts the Transport module. A process is started, that is linked to the caller process.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#send/4" data-no-tooltip="" translate="no">send(portal, destination, data, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Sends data to the BACnet network.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h2>
+
+    <div class="types-list">
+<section class="detail" id="t:iplink_address/0">
+
+  <div class="detail-header">
+    <a href="#t:iplink_address/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">iplink_address()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L120" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> iplink_address() :: {<a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:ip4_address/0">:inet.ip4_address</a>(), <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:port_number/0">:inet.port_number</a>()}</pre>
+
+      </div>
+
+<p>The destination and source address is a tuple of IPv4 address and UDP port.</p>
+  </section>
+</section>
+<section class="detail" id="t:open_option/0">
+
+  <div class="detail-header">
+    <a href="#t:open_option/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">open_option()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L90" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> open_option() ::
+  {:bacnet_port, 47808..65535}
+  | {:inet_backend, :inet | :socket}
+  | {:local_ip, <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:ip4_address/0">:inet.ip4_address</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>() | :none}
+  | {:reuseaddr, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | {:reuseport, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | {:supervisor, <a href="https://hexdocs.pm/elixir/Supervisor.html#t:supervisor/0">Supervisor.supervisor</a>()}
+  | <a href="https://hexdocs.pm/elixir/GenServer.html#t:option/0">GenServer.option</a>()</pre>
+
+      </div>
+
+<p>Valid open options. For a description of each, see <a href="#open/2"><code class="inline">open/2</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="t:open_options/0">
+
+  <div class="detail-header">
+    <a href="#t:open_options/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">open_options()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L102" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> open_options() :: [<a href="#t:open_option/0">open_option</a>()]</pre>
+
+      </div>
+
+<p>List of open options.</p>
+  </section>
+</section>
+<section class="detail" id="t:send_option/0">
+
+  <div class="detail-header">
+    <a href="#t:send_option/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">send_option()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L107" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> send_option() ::
+  {:bvlc, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()}
+  | {:is_broadcast, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | <a href="BACnet.Stack.TransportBehaviour.html#t:transport_send_option/0">BACnet.Stack.TransportBehaviour.transport_send_option</a>()</pre>
+
+      </div>
+
+<p>Valid send options. For a description of each, see <a href="#send/4"><code class="inline">send/4</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="t:send_options/0">
+
+  <div class="detail-header">
+    <a href="#t:send_options/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">send_options()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L115" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> send_options() :: [<a href="#t:send_option/0">send_option</a>()]</pre>
+
+      </div>
+
+<p>List of send options.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="bacnet_protocol/0">
+
+  <div class="detail-header">
+    <a href="#bacnet_protocol/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">bacnet_protocol()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L188" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> bacnet_protocol() :: <a href="BACnet.Stack.TransportBehaviour.html#t:transport_protocol/0">BACnet.Stack.TransportBehaviour.transport_protocol</a>()</pre>
+
+      </div>
+
+<p>Get the BACnet transport protocol this transport implements.</p>
+  </section>
+</section>
+<section class="detail" id="child_spec/1">
+
+  <div class="detail-header">
+    <a href="#child_spec/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">child_spec(init_arg)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L161" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> child_spec(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">list</a>()) :: <a href="https://hexdocs.pm/elixir/Supervisor.html#t:child_spec/0">Supervisor.child_spec</a>()</pre>
+
+      </div>
+
+<p>Produces a supervisor child spec.
+It will call <code class="inline">child_spec(callback, opts)</code> with the given 2-element list elements.</p><p>See also <a href="https://hexdocs.pm/elixir/Supervisor.html#child_spec/2"><code class="inline">Supervisor.child_spec/2</code></a> for the rest of the behaviour.</p>
+  </section>
+</section>
+<section class="detail" id="child_spec/2">
+
+  <div class="detail-header">
+    <a href="#child_spec/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">child_spec(callback, opts)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L175" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> child_spec(<a href="BACnet.Stack.TransportBehaviour.html#t:transport_callback/0">BACnet.Stack.TransportBehaviour.transport_callback</a>(), <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()) ::
+  <a href="https://hexdocs.pm/elixir/Supervisor.html#t:child_spec/0">Supervisor.child_spec</a>()</pre>
+
+      </div>
+
+<p>Produces a supervisor child spec based on the BACnet transport <code class="inline">open</code> callback, as such
+it will take the <code class="inline">callback</code> and <code class="inline">opts</code> for <a href="#open/2"><code class="inline">open/2</code></a>.</p><p>See also <a href="https://hexdocs.pm/elixir/Supervisor.html#child_spec/2"><code class="inline">Supervisor.child_spec/2</code></a> for the rest of the behaviour.</p>
+  </section>
+</section>
+<section class="detail" id="close/1">
+
+  <div class="detail-header">
+    <a href="#close/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">close(transport)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L305" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> close(<a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>()) :: :ok</pre>
+
+      </div>
+
+<p>Closes the Transport module.</p>
+  </section>
+</section>
+<section class="detail" id="get_address_for_ifname/1">
+
+  <div class="detail-header">
+    <a href="#get_address_for_ifname/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_address_for_ifname(ifname)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L138" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_address_for_ifname(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
+  {:ok, <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:ip4_address/0">:inet.ip4_address</a>()} | {:error, <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:posix/0">:inet.posix</a>() | :not_found}</pre>
+
+      </div>
+
+<p>Get the IPv4 address for the given ethernet interface name.
+Only interfaces with broadcast capabilities are considered.</p><p>Even if multiple IP addresses are bound to the interface,
+only the first one is returned.
+Which one is the first is undefined and may be platform-specific.
+Do not rely on consistent results for interfaces with multiple IPv4 addresses,
+unless you've tested it in full.</p><p>This is a helper function to get the address (which may be from DHCP) by
+the ethernet interface name, which is useful for <a href="#open/2"><code class="inline">open/2</code></a>/<a href="#child_spec/1"><code class="inline">child_spec/1</code></a>
+when you don't directly know the IPv4 address of the interface you want to use.</p>
+  </section>
+</section>
+<section class="detail" id="get_broadcast_address/1">
+
+  <div class="detail-header">
+    <a href="#get_broadcast_address/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_broadcast_address(transport)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L313" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_broadcast_address(<a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>()) :: <a href="#t:iplink_address/0">iplink_address</a>()</pre>
+
+      </div>
+
+<p>Get the broadcast address.</p>
+  </section>
+</section>
+<section class="detail" id="get_local_address/1">
+
+  <div class="detail-header">
+    <a href="#get_local_address/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_local_address(transport)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L321" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_local_address(<a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>()) :: <a href="#t:iplink_address/0">iplink_address</a>()</pre>
+
+      </div>
+
+<p>Get the local address.</p>
+  </section>
+</section>
+<section class="detail" id="get_portal/1">
+
+  <div class="detail-header">
+    <a href="#get_portal/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_portal(transport)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L334" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_portal(<a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">port</a>()</pre>
+
+      </div>
+
+<p>Get the transport module portal for the given transport PID/port.
+Transport modules may return the input as output, if the same
+PID or port is used for sending.</p><p>This is used to get the portal before having received data from
+the transport module, so data can be sent prior to reception.</p>
+  </section>
+</section>
+<section class="detail" id="is_destination_routed/2">
+
+  <div class="detail-header">
+    <a href="#is_destination_routed/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">is_destination_routed(transport, destination)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L342" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> is_destination_routed(<a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(), <a href="#t:iplink_address/0">iplink_address</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()) ::
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks whether the given destination is an address that needs to be routed.</p>
+  </section>
+</section>
+<section class="detail" id="is_valid_destination/1">
+
+  <div class="detail-header">
+    <a href="#is_valid_destination/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">is_valid_destination(destination)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L350" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> is_valid_destination(<a href="#t:iplink_address/0">iplink_address</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Verifies whether the given destination is valid for the transport module.</p>
+  </section>
+</section>
+<section class="detail" id="max_apdu_length/0">
+
+  <div class="detail-header">
+    <a href="#max_apdu_length/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">max_apdu_length()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L194" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> max_apdu_length() :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()</pre>
+
+      </div>
+
+<p>Get the maximum APDU length for this transport.</p>
+  </section>
+</section>
+<section class="detail" id="max_npdu_length/0">
+
+  <div class="detail-header">
+    <a href="#max_npdu_length/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">max_npdu_length()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L207" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> max_npdu_length() :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()</pre>
+
+      </div>
+
+<p>Get the maximum NPDU length for this transport.</p><p>The NPDU length contains the maximum transmittable size
+of the NPDU, including the APDU, without violating
+the maximum transmission unit of the underlying transport.</p><p>Any necessary transport header (i.e. BVLL, LLC) must have
+been taken into account when calculating this number.</p>
+  </section>
+</section>
+<section class="detail" id="open/2">
+
+    <span id="open/1"></span>
+
+  <div class="detail-header">
+    <a href="#open/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">open(callback, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L264" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> open(
+  callback :: <a href="BACnet.Stack.TransportBehaviour.html#t:transport_callback/0">BACnet.Stack.TransportBehaviour.transport_callback</a>(),
+  opts :: <a href="#t:open_options/0">open_options</a>()
+) :: {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pid</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Opens/starts the Transport module. A process is started, that is linked to the caller process.</p><p>See the <a href="BACnet.Stack.TransportBehaviour.html"><code class="inline">BACnet.Stack.TransportBehaviour</code></a> documentation for more information.</p><p>In the case of this BACnet/IPv4 transport, the transport PID/port is a <a href="https://hexdocs.pm/elixir/GenServer.html"><code class="inline">GenServer</code></a> receiving the UDP unicast
+and broadcast packets.
+However the portal is the UDP port where the data is sent to directly,
+without going through the <a href="https://hexdocs.pm/elixir/GenServer.html"><code class="inline">GenServer</code></a> for sending the data.
+The BACnet/IPv4 transport module makes sure the data is correctly wrapped for the BACnet/IPv4 protocol.
+Source and destination address is a tuple of IP address and port.</p><p>Two UDP sockets will be opened, unless we do not bind to a specific interface. The second socket is only
+used for receiving broadcasts, since as soon as we bind to a specific interface, the kernel will not
+send us broadcast packets anymore. On Windows, broadcasts are also received when binding.
+We internally filter broadcast packets on the non-broadcast socket in such cases, where two sockets will be opened.</p><p>This transport takes the following options, in addition to <a href="https://hexdocs.pm/elixir/GenServer.html#t:options/0"><code class="inline">GenServer.options/0</code></a>:</p><ul><li><code class="inline">bacnet_port: 47808..65535</code> - Optional. The port number to use for BACnet. Defaults to <code class="inline">0xBAC0</code> (47808).</li><li><p><code class="inline">inet_backend: :inet | :socket</code> - Optional. Allows to switch the inet (gen_udp) backend.</p></li><li><p><code class="inline">local_ip: :inet.ip4_address() | binary() | :none</code> - Optional. The local IP address to bind to. If not specified,
+the first private IP address will be discovered. As private IP addresses count the IANA private IP range -
+<code class="inline">10.0.0.0/8</code>, <code class="inline">172.16.0.0/12</code> and <code class="inline">192.168.0.0/16</code>.
+It may also be an ethernet interface name as a binary - in that case,
+the ethernet  interface adapters will be enumerated and
+the IP address of the given interface will be used to bind to.
+Use <code class="inline">:none</code> to not bind explicitely to a specific ethernet interface adapter, which in turn will automatically
+bind to all ethernet interfaces and all destinations will be marked as &quot;routed&quot; (<a href="#is_destination_routed/2"><code class="inline">is_destination_routed/2</code></a>).
+As a consequence, broadcast traffic may not be sent to the network you may want to and some devices will not reply
+to such broadcasts (<code class="inline">255.255.255.255</code>),
+unless you explicitely specify the correct broadcast address as destination when sending BACnet frames.
+Some functionality, such as BBMD and Foreign Device, will not work, because we are unable to determine
+our IP address (we do not know the default routing interface). We will try to automatically update the information,
+however that requires receiving a broadcast from ourself (some OS don't give us our broadcast back, i.e. BSD),
+which will however in normal circumstances be too late, since the relevant processes have already been started in the supervision tree.
+The <code class="inline">:none</code> value is thus not recommended and should not be used in a production environment.
+The default way of discovering the network interface should work in non-complex environments (only one network interface),
+for complex environments you should specify the network interface explicitely.</p></li><li><code class="inline">reuseaddr: boolean()</code> - Optional. Allows to set <code class="inline">SO_REUSEADDR</code> on the UDP socket.</li><li><code class="inline">reuseport: boolean()</code> - Optional. Allows to set <code class="inline">SO_REUSEPORT</code> on the UDP socket - only with socket backend.</li><li><code class="inline">supervisor: Supervisor.supervisor()</code> - Optional. The task supervisor to use to spawn tasks under.
+Tasks are spawned to invoke the given callback. If no supervisor is given,
+the tasks will be spawned unsupervised.</li></ul>
+  </section>
+</section>
+<section class="detail" id="send/4">
+
+    <span id="send/3"></span>
+
+  <div class="detail-header">
+    <a href="#send/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">send(portal, destination, data, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/ipv4_transport.ex#L382" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> send(
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">port</a>(),
+  <a href="#t:iplink_address/0">iplink_address</a>(),
+  <a href="BACnet.Stack.EncoderProtocol.html#t:t/0">BACnet.Stack.EncoderProtocol.t</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">iodata</a>(),
+  <a href="#t:send_options/0">send_options</a>()
+) :: :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Sends data to the BACnet network.</p><p>See the <a href="BACnet.Stack.TransportBehaviour.html"><code class="inline">BACnet.Stack.TransportBehaviour</code></a> documentation for more information.</p><p>In addition, the following options are available:</p><ul><li><code class="inline">bvlc: binary()</code> - Optional. The BACnet/IP Virtual Link Control to use.
+This needs to be the binary representation of any BVLC (i.e. of <a href="BACnet.Protocol.BvlcForwardedNPDU.html"><code class="inline">BACnet.Protocol.BvlcForwardedNPDU</code></a>),
+including the BVLC function. The BVLC function gets automatically extracted and placed at the correct position.</li><li><code class="inline">is_broadcast: boolean()</code> - Optional. Whether the destination is a broadcast address or not.
+If omitted it will be automatically determined by calling the GenServer
+to get the broadcast address (or using <code class="inline">:persistent_term</code>, if enabled).</li></ul>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="bacstack.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.1) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

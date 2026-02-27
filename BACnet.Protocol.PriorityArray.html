@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.1">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>BACnet.Protocol.PriorityArray — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-YJO4MOOW.css" />
+
+    <script defer src="dist/sidebar_items-C7FAD1DE.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-YU4BZFVS.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr>Protocol.<wbr>PriorityArray</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0)</small>
+
+    </h1>
+
+<a href="BACnet.Protocol.PriorityArray.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/priority_array.ex#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>The Priority Array is a BACnet means of ensuring Command Prioritization.
+The Priority Array is an array (or in this case a struct) that contains 16 levels of priority,
+each which can take a particular value (each priority must have the same type) or NULL (<code class="inline">nil</code>).
+The highest priority (lowest array index) with a non-NULL value is the active command.</p><h3 id="module-command-prioritization" class="section-heading"><a href="#module-command-prioritization" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Command Prioritization</span></h3><p>In building control systems, an object may be manipulated by a number of entities.
+For example, the present value of a Binary Output object may be set by several applications,
+such as demand metering, optimum start/stop, etc.
+Each such application program has a well-defined function it needs to perform.
+When the actions of two or more application programs conflict with regard to the value of a property,
+there is a need to arbitrate between them.
+The objective of the arbitration process is to ensure the desired behavior of an object
+that is manipulated by several program (or non-program) entities.
+For example, a start/stop program may specify that a particular Binary Output should be ON,
+while demand metering may specify that the same Binary Output should be OFF.
+In this case, the OFF should take precedence. An operator may be able to override
+the demand metering program and force the Binary Output ON, in which case the ON should take precedence.</p><p>In BACnet, this arbitration is provided by a prioritization scheme that assigns varying levels
+of priorities to commanding entities on a system-wide basis. Each object that contains a commandable property
+is responsible for acting upon prioritized commands in the order of their priorities.
+While there is a trade-off between the complexity and the robustness of any such mechanism,
+the scheme described here is intended to be effective but applicable to even simple BACnet devices.</p><h3 id="module-prioritization-mechanism" class="section-heading"><a href="#module-prioritization-mechanism" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Prioritization Mechanism</span></h3><p>For BACnet objects, commands are prioritized based upon a fixed number of priorities
+that are assigned to command-issuing entities.
+A prioritized command (one that is directed at a commandable property of an object) is performed
+via a WriteProperty service request or a WritePropertyMultiple service request.
+The request primitive includes a conditional 'Priority' parameter that ranges from 1 to 16.
+Each commandable property of an object has an associated priority table
+that is represented by a <code class="inline">priority_array</code> property.
+The PriorityArray consists of an array of commanded values in order of decreasing priority.
+The first value in the array corresponds to priority 1 (highest),
+the second value corresponds to priority 2, and so on,
+to the sixteenth value that corresponds to priority 16 (lowest).</p><p>An entry in the PriorityArray may have a commanded value or a NULL.
+A NULL value indicates that there is no existing command at that priority.
+An object continuously monitors all entries within the priority table in order
+to locate the entry with the highest priority non-NULL value and
+sets the commandable property to this value.</p><p>A commanding entity (application program, operator, etc.) may issue a command
+to write to the commandable property of an object,
+or it may relinquish a command issued earlier. Relinquishing of a command is performed
+by a write operation similar to the command itself,
+except that the commandable property value is NULL.
+Relinquishing a command places a NULL value in the PriorityArray corresponding to the appropriate priority.
+This prioritization approach shall be applied to local actions that change the value
+of commandable properties as well as to write operations via BACnet services.</p>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-types summary">
+  <h3>
+    <a href="#types">Types</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:t/0" data-no-tooltip="" translate="no">t()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Base type for the BACnet Priority Array.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:t/1" data-no-tooltip="" translate="no">t(subtype)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents the BACnet Priority Array with 16 priorities.
+The lowest priority number has the highest priority.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#fetch/2" data-no-tooltip="" translate="no">fetch(array, key)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Fetches the value for a specific <code class="inline">key</code> in the given <code class="inline">array</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#from_array/1" data-no-tooltip="" translate="no">from_array(array)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Create a Priority Array from a BACnetArray.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#from_list/1" data-no-tooltip="" translate="no">from_list(list)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Create a Priority Array from a list (or any other enumerable).</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_and_update/3" data-no-tooltip="" translate="no">get_and_update(array, key, fun)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Gets the value from <code class="inline">key</code> and updates it, all in one pass.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_value/1" data-no-tooltip="" translate="no">get_value(array)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the highest active priority value. If none is active, <code class="inline">nil</code> is returned.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#pop/2" data-no-tooltip="" translate="no">pop(array, key)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Resets the value associated with <code class="inline">key</code> in <code class="inline">array</code> to <code class="inline">nil</code> and
+returns the value and the updated array.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#to_array/1" data-no-tooltip="" translate="no">to_array(array)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Create a BACnetArray from a Priority Array.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#to_list/1" data-no-tooltip="" translate="no">to_list(array)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Create a list from a Priority Array.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#valid?/2" data-no-tooltip="" translate="no">valid?(t, type \\ :any)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Validates whether the given priority array is in form valid.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h2>
+
+    <div class="types-list">
+<section class="detail" id="t:t/0">
+
+  <div class="detail-header">
+    <a href="#t:t/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">t()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/priority_array.ex#L65" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> t() :: <a href="#t:t/1">t</a>(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>())</pre>
+
+      </div>
+
+<p>Base type for the BACnet Priority Array.</p>
+  </section>
+</section>
+<section class="detail" id="t:t/1">
+
+  <div class="detail-header">
+    <a href="#t:t/1" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">t(subtype)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/priority_array.ex#L73" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> t(subtype) :: %BACnet.Protocol.PriorityArray{
+  priority_1: subtype | nil,
+  priority_10: subtype | nil,
+  priority_11: subtype | nil,
+  priority_12: subtype | nil,
+  priority_13: subtype | nil,
+  priority_14: subtype | nil,
+  priority_15: subtype | nil,
+  priority_16: subtype | nil,
+  priority_2: subtype | nil,
+  priority_3: subtype | nil,
+  priority_4: subtype | nil,
+  priority_5: subtype | nil,
+  priority_6: subtype | nil,
+  priority_7: subtype | nil,
+  priority_8: subtype | nil,
+  priority_9: subtype | nil
+}</pre>
+
+      </div>
+
+<p>Represents the BACnet Priority Array with 16 priorities.
+The lowest priority number has the highest priority.</p><p>If a priority is nil, the priority is unset.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="fetch/2">
+
+  <div class="detail-header">
+    <a href="#fetch/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">fetch(array, key)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/priority_array.ex#L126" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> fetch(<a href="#t:t/1">t</a>(subtype), 1..16 | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>()) :: {:ok, subtype | nil} when subtype: var</pre>
+
+      </div>
+
+<p>Fetches the value for a specific <code class="inline">key</code> in the given <code class="inline">array</code>.</p><p><code class="inline">key</code> is the priority number or the struct field name.</p><p>This function is implemented for the <a href="https://hexdocs.pm/elixir/Access.html"><code class="inline">Access</code></a> behaviour and
+allows to access the fields using the priority number (or the atom key).</p><p>This function will raise for an invalid atom key.</p>
+  </section>
+</section>
+<section class="detail" id="from_array/1">
+
+  <div class="detail-header">
+    <a href="#from_array/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">from_array(array)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/priority_array.ex#L138" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> from_array(<a href="BACnet.Protocol.BACnetArray.html#t:t/1">BACnet.Protocol.BACnetArray.t</a>(subtype)) :: <a href="#t:t/1">t</a>(subtype)</pre>
+
+      </div>
+
+<p>Create a Priority Array from a BACnetArray.</p><p>The types of the array values are not checked. However,
+they should all be the same. The size of the array must
+be 16 or smaller (lower priorities will be <code class="inline">nil</code>).</p>
+  </section>
+</section>
+<section class="detail" id="from_list/1">
+
+  <div class="detail-header">
+    <a href="#from_list/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">from_list(list)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/priority_array.ex#L161" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> from_list(<a href="https://hexdocs.pm/elixir/Enumerable.html#t:t/1">Enumerable.t</a>(subtype)) :: <a href="#t:t/1">t</a>(subtype)</pre>
+
+      </div>
+
+<p>Create a Priority Array from a list (or any other enumerable).</p><p>The types of the list values are not checked. However,
+they should all be the same. The length of the list must
+be 16 or smaller (lower priorities will be <code class="inline">nil</code>).</p><p>When using a key-value based enumerable, if the key is a priority number,
+then it will be used as such.</p>
+  </section>
+</section>
+<section class="detail" id="get_and_update/3">
+
+  <div class="detail-header">
+    <a href="#get_and_update/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_and_update(array, key, fun)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/priority_array.ex#L201" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_and_update(
+  <a href="#t:t/1">t</a>(subtype),
+  1..16 | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(),
+  (subtype | nil -&gt;
+     {current_value :: subtype | nil, new_value :: subtype | nil} | :pop)
+) :: {current_value :: subtype | nil, new_struct :: <a href="#t:t/1">t</a>(subtype)}
+when subtype: var</pre>
+
+      </div>
+
+<p>Gets the value from <code class="inline">key</code> and updates it, all in one pass.</p><p><code class="inline">key</code> is the priority number or the struct field name.</p><p><code class="inline">fun</code> is called with the current value under <code class="inline">key</code> in <code class="inline">array</code> and must return
+a two-element tuple: the current value (the retrieved value, which can be operated
+on before being returned) and the new value to be stored under <code class="inline">key</code>
+in the resulting new array. <code class="inline">fun</code> may also return <code class="inline">:pop</code>,
+which means the current value will be set to <code class="inline">nil</code>.</p><p>This function is implemented for the <a href="https://hexdocs.pm/elixir/Access.html"><code class="inline">Access</code></a> behaviour.</p>
+  </section>
+</section>
+<section class="detail" id="get_value/1">
+
+  <div class="detail-header">
+    <a href="#get_value/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_value(array)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/priority_array.ex#L222" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_value(<a href="#t:t/1">t</a>(subtype)) :: {priority :: 1..16, value :: subtype} | nil</pre>
+
+      </div>
+
+<p>Get the highest active priority value. If none is active, <code class="inline">nil</code> is returned.</p>
+  </section>
+</section>
+<section class="detail" id="pop/2">
+
+  <div class="detail-header">
+    <a href="#pop/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">pop(array, key)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/priority_array.ex#L239" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> pop(<a href="#t:t/1">t</a>(subtype), 1..16 | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>()) ::
+  {value :: subtype | nil, updated_array :: <a href="#t:t/1">t</a>(subtype)}</pre>
+
+      </div>
+
+<p>Resets the value associated with <code class="inline">key</code> in <code class="inline">array</code> to <code class="inline">nil</code> and
+returns the value and the updated array.</p><p><code class="inline">key</code> is the priority number or the struct field name.</p><p>It returns <code class="inline">{value, updated_array}</code> where <code class="inline">value</code> is the value of
+the key and <code class="inline">updated_map</code> is the result of setting <code class="inline">key</code> to <code class="inline">nil</code>.</p><p>This function is implemented for the <a href="https://hexdocs.pm/elixir/Access.html"><code class="inline">Access</code></a> behaviour.</p>
+  </section>
+</section>
+<section class="detail" id="to_array/1">
+
+  <div class="detail-header">
+    <a href="#to_array/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">to_array(array)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/priority_array.ex#L250" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> to_array(<a href="#t:t/1">t</a>(subtype)) :: <a href="BACnet.Protocol.BACnetArray.html#t:t/1">BACnet.Protocol.BACnetArray.t</a>(subtype | nil)</pre>
+
+      </div>
+
+<p>Create a BACnetArray from a Priority Array.</p>
+  </section>
+</section>
+<section class="detail" id="to_list/1">
+
+  <div class="detail-header">
+    <a href="#to_list/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">to_list(array)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/priority_array.ex#L260" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> to_list(<a href="#t:t/1">t</a>(subtype)) :: [subtype | nil] when subtype: var</pre>
+
+      </div>
+
+<p>Create a list from a Priority Array.</p>
+  </section>
+</section>
+<section class="detail" id="valid?/2">
+
+    <span id="valid?/1"></span>
+
+  <div class="detail-header">
+    <a href="#valid?/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">valid?(t, type \\ :any)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/priority_array.ex#L276" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> valid?(<a href="#t:t/0">t</a>(), <a href="BACnet.BeamTypes.html#t:typechecker_types/0">BACnet.BeamTypes.typechecker_types</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Validates whether the given priority array is in form valid.</p><p>It only validates the struct is valid as per type specification.</p><p>Optionally, a type can be given to be verified, so that each priority
+is either nil or of that type (see <a href="BACnet.BeamTypes.html#check_type/2"><code class="inline">BACnet.BeamTypes.check_type/2</code></a>).</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="bacstack.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.1) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

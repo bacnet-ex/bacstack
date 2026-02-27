@@ -1,0 +1,3001 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.1">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>BACnet.Stack.Telemetry — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-YJO4MOOW.css" />
+
+    <script defer src="dist/sidebar_items-C7FAD1DE.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-YU4BZFVS.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr>Stack.<wbr>Telemetry</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0)</small>
+
+    </h1>
+
+<a href="BACnet.Stack.Telemetry.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>Contains functions for easier interaction with telemetry.</p><p>For full functionality, <code class="inline">:telemetry</code> dependency must be installed.
+If you want to disable emitting telemetry events even if telemetry is installed,
+set the environment <code class="inline">:bacstack</code> key <code class="inline">:no_telemetry</code> to true and recompile.
+For recompiling when bacstack is a dependency, use <code class="inline">mix deps.compile --force</code>.</p><p>All measurements contain at least <code class="inline">monotonic_time</code> (native units) and <code class="inline">system_time</code>.
+The event metadata will depend on the event, but will at least contain the following keys:</p><ul><li><code class="inline">self: GenServer.server()</code></li><li><code class="inline">transport_module: module()</code> (only for client messages)</li><li><code class="inline">portal: TransportBehaviour.portal()</code> (only for client messages)</li><li><code class="inline">client: Client.server()</code> (only for BBMD/foreign device messages)</li></ul>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_bbmd_add_fd_registration/4" data-no-tooltip="" translate="no">execute_bbmd_add_fd_registration(self, source_address, registration, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for new foreign device registration
+as <code class="inline">[:bacstack, :bbmd, :foreign_device, :add]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_bbmd_del_fd_registration/4" data-no-tooltip="" translate="no">execute_bbmd_del_fd_registration(self, source_address, registration, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for deleting foreign device registration
+as <code class="inline">[:bacstack, :bbmd, :foreign_device, :delete]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_bbmd_distribute_broadcast/6" data-no-tooltip="" translate="no">execute_bbmd_distribute_broadcast(self, source_address, bvlc, apdu, npci, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for distributing broadcasts
+as <code class="inline">[:bacstack, :bbmd, :broadcast_distribution, :distribute]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_bbmd_exception/6" data-no-tooltip="" translate="no">execute_bbmd_exception(self, kind, reason, stacktrace, basic_metadata, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for an error or exception as <code class="inline">[:bacstack, :bbmd, :exception]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_bbmd_read_bdt/4" data-no-tooltip="" translate="no">execute_bbmd_read_bdt(self, source_address, bdt, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for reading broadcast distribution table
+as <code class="inline">[:bacstack, :bbmd, :broadcast_distribution, :read_table]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_bbmd_read_fd_table/4" data-no-tooltip="" translate="no">execute_bbmd_read_fd_table(self, source_address, registrations, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for reading foreign device table
+as <code class="inline">[:bacstack, :bbmd, :foreign_device, :read_table]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_bbmd_write_bdt/4" data-no-tooltip="" translate="no">execute_bbmd_write_bdt(self, source_address, bdt, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for writing broadcast distribution table
+as <code class="inline">[:bacstack, :bbmd, :broadcast_distribution, :write_table]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_client_exception/6" data-no-tooltip="" translate="no">execute_client_exception(self, kind, reason, stacktrace, basic_metadata, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for an error or exception as <code class="inline">[:bacstack, :client, :exception]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_client_inc_apdu/6" data-no-tooltip="" translate="no">execute_client_inc_apdu(self, source_address, bvlc, npci, apdu, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for incoming APDU (decoded) as <code class="inline">[:bacstack, :client, :incoming_apdu]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_client_inc_apdu_decode_error/7" data-no-tooltip="" translate="no">execute_client_inc_apdu_decode_error(self, source_address, bvlc, npci, raw_apdu, error, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for incoming APDU decode error as <code class="inline">[:bacstack, :client, :incoming_apdu, :error]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_client_inc_apdu_duplicated/6" data-no-tooltip="" translate="no">execute_client_inc_apdu_duplicated(self, source_address, bvlc, npci, apdu, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for incoming APDU (duplicated)
+as<code class="inline">[:bacstack, :client, :incoming_apdu, :duplicated]</code>.
+The APDU has been detected as being deduplicated and is not passed on to the application.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_client_inc_apdu_handled/6" data-no-tooltip="" translate="no">execute_client_inc_apdu_handled(self, source_address, bvlc, npci, apdu, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for incoming APDU (handled) as <code class="inline">[:bacstack, :client, :incoming_apdu, :start]</code>.
+Handled refers to the APDU not being deduplicated and passed on to the application,
+if a notification receiver is registered.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_client_inc_apdu_rejected/7" data-no-tooltip="" translate="no">execute_client_inc_apdu_rejected(self, source_address, bvlc, npci, reject_apdu, original_apdu, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for incoming APDU rejected as <code class="inline">[:bacstack, :client, :incoming_apdu, :error]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_client_inc_apdu_reply/5" data-no-tooltip="" translate="no">execute_client_inc_apdu_reply(self, apdu, send_opts, timer, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for APDU application response
+as <code class="inline">[:bacstack, :client, :incoming_apdu, :stop]</code>.
+A <code class="inline">duration</code> key will be set in measurements using monotonic time native units.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_client_inc_apdu_segmentation_completed/8" data-no-tooltip="" translate="no">execute_client_inc_apdu_segmentation_completed(self, source_address, bvlc, npci, raw_apdu, complete_apdu, incomplete, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for incoming APDU segmented completed
+as <code class="inline">[:bacstack, :client, :incoming_apdu, :segmented, :completed]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_client_inc_apdu_segmentation_error/9" data-no-tooltip="" translate="no">execute_client_inc_apdu_segmentation_error(self, source_address, bvlc, npci, raw_apdu, incomplete, error, cancelled, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for incoming APDU segmented error
+as <code class="inline">[:bacstack, :client, :incoming_apdu, :segmented, :error]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_client_inc_apdu_segmentation_incomplete/7" data-no-tooltip="" translate="no">execute_client_inc_apdu_segmentation_incomplete(self, source_address, bvlc, npci, raw_apdu, incomplete, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for incoming APDU segmented incomplete
+as <code class="inline">[:bacstack, :client, :incoming_apdu, :segmented, :incomplete]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_client_inc_apdu_timeout/3" data-no-tooltip="" translate="no">execute_client_inc_apdu_timeout(self, timer, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for APDU application response timeout
+as <code class="inline">[:bacstack, :client, :incoming_apdu, :stop]</code>.
+A <code class="inline">duration</code> key will be set in measurements using monotonic time native units.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_client_request_apdu_timer/3" data-no-tooltip="" translate="no">execute_client_request_apdu_timer(self, timer, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for APDU request timeout as <code class="inline">[:bacstack, :client, :request, :stop]</code>.
+A <code class="inline">duration</code> key will be set in measurements using monotonic time native units.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_client_request_start/6" data-no-tooltip="" translate="no">execute_client_request_start(self, destination, apdu, send_opts, timer, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for request start as <code class="inline">[:bacstack, :client, :request, :start]</code>.
+Requests are started by sending APDU with <code class="inline">expect_reply: true</code>.
+Responses will be emitted for the request through <code class="inline">:stop</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_client_request_stop/7" data-no-tooltip="" translate="no">execute_client_request_stop(self, destination, bvlc, npci, apdu, timer, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for request stop as <code class="inline">[:bacstack, :client, :request, :stop]</code>.
+A <code class="inline">duration</code> key will be set in measurements using monotonic time native units.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_client_send/6" data-no-tooltip="" translate="no">execute_client_send(self, destination, apdu, send_opts, segmented, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for sending APDUs as <code class="inline">[:bacstack, :client, :send]</code>.
+Segmented will indicate whether segmenting and sending the APDU has been
+handed off to <a href="BACnet.Stack.Segmentator.html"><code class="inline">BACnet.Stack.Segmentator</code></a>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_client_send_error/7" data-no-tooltip="" translate="no">execute_client_send_error(self, destination, original_apdu, send_opts, reply_apdu, reason, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for send error as <code class="inline">[:bacstack, :client, :send, :error]</code>.
+Send errors are encountered for APDU too long (no segmentation) or
+recipient device does not support segmentation.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_client_transport_message/3" data-no-tooltip="" translate="no">execute_client_transport_message(self, transport_msg, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for an error or exception as <code class="inline">[:bacstack, :client, :transport, :message]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_foreign_device_add_fd_registration/4" data-no-tooltip="" translate="no">execute_foreign_device_add_fd_registration(self, bbmd, registration, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for adding the foreign device registration in the remote BBMD
+as <code class="inline">[:bacstack, :foreign_device, :foreign_device, :add]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_foreign_device_del_fd_registration/4" data-no-tooltip="" translate="no">execute_foreign_device_del_fd_registration(self, bbmd, registration, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for deleting the foreign device registration in the remote BBMD
+as <code class="inline">[:bacstack, :foreign_device, :foreign_device, :delete]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_foreign_device_distribute_broadcast/5" data-no-tooltip="" translate="no">execute_foreign_device_distribute_broadcast(self, bbmd, apdu, send_opts, client)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for distributing broadcast through the remote BBMD
+as <code class="inline">[:bacstack, :foreign_device, :broadcast_distribution, :distribute]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_foreign_device_exception/6" data-no-tooltip="" translate="no">execute_foreign_device_exception(self, kind, reason, stacktrace, basic_metadata, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for an error or exception as <code class="inline">[:bacstack, :foreign_device, :exception]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_foreign_device_read_bdt/4" data-no-tooltip="" translate="no">execute_foreign_device_read_bdt(self, bbmd, bdt, client)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for reading the broadcast distribution table from the remote BBMD
+as <code class="inline">[:bacstack, :foreign_device, :broadcast_distribution, :read_table]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_foreign_device_read_fd_table/4" data-no-tooltip="" translate="no">execute_foreign_device_read_fd_table(self, bbmd, registrations, client)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for reading the foreign device table from the remote BBMD
+as <code class="inline">[:bacstack, :foreign_device, :foreign_device, :read_table]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_foreign_device_write_bdt/4" data-no-tooltip="" translate="no">execute_foreign_device_write_bdt(self, bbmd, bdt, client)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for writing the broadcast distribution table to the remote BBMD
+as <code class="inline">[:bacstack, :foreign_device, :broadcast_distribution, :write_table]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_segmentator_exception/6" data-no-tooltip="" translate="no">execute_segmentator_exception(self, kind, reason, stacktrace, basic_metadata, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for an error or exception as <code class="inline">[:bacstack, :segmentator, :exception]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_segmentator_sequence_ack/4" data-no-tooltip="" translate="no">execute_segmentator_sequence_ack(self, sequence, ack, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for sequence ack as <code class="inline">[:bacstack, :segmentator, :sequence, :ack]</code>.
+A segment ACK has been sent from the remote BACnet client.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_segmentator_sequence_error/10" data-no-tooltip="" translate="no">execute_segmentator_sequence_error(self, transport_module, transport, portal, destination, original_apdu, send_opts, reply_apdu, reason, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for sequence error as <code class="inline">[:bacstack, :segmentator, :sequence, :error]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_segmentator_sequence_segment/4" data-no-tooltip="" translate="no">execute_segmentator_sequence_segment(self, sequence, segment_number, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for sequence segment as <code class="inline">[:bacstack, :segmentator, :sequence, :segment]</code>.
+An individual segment has been sent to the remote BACnet client.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_segmentator_sequence_start/3" data-no-tooltip="" translate="no">execute_segmentator_sequence_start(self, sequence, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for sequence start as <code class="inline">[:bacstack, :segmentator, :sequence, :start]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_segmentator_sequence_stop/4" data-no-tooltip="" translate="no">execute_segmentator_sequence_stop(self, sequence, reason, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for sequence stop as <code class="inline">[:bacstack, :segmentator, :sequence, :stop]</code>.
+A <code class="inline">duration</code> key will be set in measurements using monotonic time native units.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_segments_store_exception/6" data-no-tooltip="" translate="no">execute_segments_store_exception(self, kind, reason, stacktrace, basic_metadata, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for an error or exception as <code class="inline">[:bacstack, :segments_store, :exception]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_segments_store_sequence_ack/4" data-no-tooltip="" translate="no">execute_segments_store_sequence_ack(self, sequence, ack, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for sequence ack as <code class="inline">[:bacstack, :segments_store, :sequence, :ack]</code>.
+A segment ACK has been sent to the remote BACnet client.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_segments_store_sequence_error/9" data-no-tooltip="" translate="no">execute_segments_store_sequence_error(self, transport_module, portal, destination, incomplete_apdu, send_opts, reply_apdu, reason, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for sequence error as <code class="inline">[:bacstack, :segments_store, :sequence, :error]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_segments_store_sequence_segment/4" data-no-tooltip="" translate="no">execute_segments_store_sequence_segment(self, sequence, segment_number, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for sequence segment as <code class="inline">[:bacstack, :segments_store, :sequence, :segment]</code>.
+An individual segment has been received from the remote BACnet client.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_segments_store_sequence_start/3" data-no-tooltip="" translate="no">execute_segments_store_sequence_start(self, sequence, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for sequence start as <code class="inline">[:bacstack, :segments_store, :sequence, :start]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_segments_store_sequence_stop/4" data-no-tooltip="" translate="no">execute_segments_store_sequence_stop(self, sequence, reason, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for sequence stop as <code class="inline">[:bacstack, :segments_store, :sequence, :stop]</code>.
+A <code class="inline">duration</code> key will be set in measurements using monotonic time native units.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_trend_logger_cov_sub/2" data-no-tooltip="" translate="no">execute_trend_logger_cov_sub(self, object_ref)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for subscribing COV
+as <code class="inline">[:bacstack, :trend_logger, :lookup_object, :cov_sub]</code>.
+This function is called when subscribing for COV
+in the Trend Logger. Most notably for COV logs.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_trend_logger_cov_unsub/2" data-no-tooltip="" translate="no">execute_trend_logger_cov_unsub(self, object_ref)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for unsubscribing COV
+as <code class="inline">[:bacstack, :trend_logger, :lookup_object, :cov_unsub]</code>.
+This function is called when unsubscribing for COV
+in the Trend Logger. Most notably for COV logs.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_trend_logger_exception/6" data-no-tooltip="" translate="no">execute_trend_logger_exception(self, kind, reason, stacktrace, basic_metadata, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for an error or exception as <code class="inline">[:bacstack, :trend_logger, :exception]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_trend_logger_log_notify/4" data-no-tooltip="" translate="no">execute_trend_logger_log_notify(self, log, notify_type, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for notifications of the log object
+as <code class="inline">[:bacstack, :trend_logger, :log_object, :notify]</code>.
+This function is called when a log object produces
+notifications in the Trend Logger.
+Notify types can happen concurrently, so be prepared.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_trend_logger_log_start/3" data-no-tooltip="" translate="no">execute_trend_logger_log_start(self, log, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for log object start as <code class="inline">[:bacstack, :trend_logger, :log_object, :start]</code>.
+This function is called when a log object gets added to the Trend Logger.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_trend_logger_log_stop/3" data-no-tooltip="" translate="no">execute_trend_logger_log_stop(self, log, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for log object stop as <code class="inline">[:bacstack, :trend_logger, :log_object, :stop]</code>.
+This function is called when a log object gets removed from the Trend Logger.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_trend_logger_log_trigger/4" data-no-tooltip="" translate="no">execute_trend_logger_log_trigger(self, log, log_entry, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for trigger of the log object
+as <code class="inline">[:bacstack, :trend_logger, :log_object, :notify]</code>.
+This function is called when a log object gets
+triggered to log in the Trend Logger.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_trend_logger_log_update/4" data-no-tooltip="" translate="no">execute_trend_logger_log_update(self, log, type, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for updates to the log object
+as <code class="inline">[:bacstack, :trend_logger, :log_object, :update]</code>.
+This function is called when a log object gets updated in the Trend Logger.
+Updates may happen explicitely by the user (changing properties,
+enabling/disabling, etc.), or by updates to the buffer
+produced by the logging algorithm.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_trend_logger_lookup_object_error/4" data-no-tooltip="" translate="no">execute_trend_logger_lookup_object_error(self, object_ref, error, duration)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for error during look up objects
+as <code class="inline">[:bacstack, :trend_logger, :lookup_object, :error]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_trend_logger_lookup_object_start/2" data-no-tooltip="" translate="no">execute_trend_logger_lookup_object_start(self, object_ref)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for looking up objects
+as <code class="inline">[:bacstack, :trend_logger, :lookup_object, :start]</code>.
+This function is called when objects are looked up
+in the Trend Logger. Most notably for poll logs.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute_trend_logger_lookup_object_stop/4" data-no-tooltip="" translate="no">execute_trend_logger_lookup_object_stop(self, object_ref, result, duration)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes telemetry for stop looking up objects
+as <code class="inline">[:bacstack, :trend_logger, :lookup_object, :stop]</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_telemetry_measurements/1" data-no-tooltip="" translate="no">get_telemetry_measurements(map \\ %{})</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get basic telemetry measurements, such as <code class="inline">monotonic_time</code> and <code class="inline">system_time</code>.
+The given map will be merged into the basic measurements map.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#make_stacktrace_from_env/1" data-no-tooltip="" translate="no">make_stacktrace_from_env(env)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Makes a single stacktrace entry from the environment.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="execute_bbmd_add_fd_registration/4">
+
+  <div class="detail-header">
+    <a href="#execute_bbmd_add_fd_registration/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_bbmd_add_fd_registration(self, source_address, registration, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L177" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_bbmd_add_fd_registration(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  {<a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:ip4_address/0">:inet.ip4_address</a>(), <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:port_number/0">:inet.port_number</a>()},
+  <a href="BACnet.Stack.BBMD.Registration.html#t:t/0">BACnet.Stack.BBMD.Registration.t</a>(),
+  <a href="BACnet.Stack.BBMD.State.html#t:t/0">BACnet.Stack.BBMD.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for new foreign device registration
+as <code class="inline">[:bacstack, :bbmd, :foreign_device, :add]</code>.</p><p>The arguments <code class="inline">source_adress</code> and <code class="inline">registration</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_bbmd_del_fd_registration/4">
+
+  <div class="detail-header">
+    <a href="#execute_bbmd_del_fd_registration/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_bbmd_del_fd_registration(self, source_address, registration, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L145" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_bbmd_del_fd_registration(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  {<a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:ip4_address/0">:inet.ip4_address</a>(), <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:port_number/0">:inet.port_number</a>()} | nil,
+  <a href="BACnet.Stack.BBMD.Registration.html#t:t/0">BACnet.Stack.BBMD.Registration.t</a>(),
+  <a href="BACnet.Stack.BBMD.State.html#t:t/0">BACnet.Stack.BBMD.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for deleting foreign device registration
+as <code class="inline">[:bacstack, :bbmd, :foreign_device, :delete]</code>.</p><p>This function is only called for BACnet interactions,
+not for local interactions through the <code class="inline">BBMD</code> public API.
+However this function is called for expiring registrations (source_address = nil).</p><p>The arguments <code class="inline">source_adress</code> and <code class="inline">registration</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_bbmd_distribute_broadcast/6">
+
+  <div class="detail-header">
+    <a href="#execute_bbmd_distribute_broadcast/6" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_bbmd_distribute_broadcast(self, source_address, bvlc, apdu, npci, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L245" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_bbmd_distribute_broadcast(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  {<a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:ip4_address/0">:inet.ip4_address</a>(), <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:port_number/0">:inet.port_number</a>()},
+  <a href="BACnet.Protocol.html#t:bvlc/0">BACnet.Protocol.bvlc</a>(),
+  <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>(),
+  <a href="BACnet.Protocol.NPCI.html#t:t/0">BACnet.Protocol.NPCI.t</a>(),
+  <a href="BACnet.Stack.BBMD.State.html#t:t/0">BACnet.Stack.BBMD.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for distributing broadcasts
+as <code class="inline">[:bacstack, :bbmd, :broadcast_distribution, :distribute]</code>.</p><p>The arguments <code class="inline">source_adress</code>, <code class="inline">apdu</code> and <code class="inline">npci</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_bbmd_exception/6">
+
+  <div class="detail-header">
+    <a href="#execute_bbmd_exception/6" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_bbmd_exception(self, kind, reason, stacktrace, basic_metadata, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L103" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_bbmd_exception(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">list</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(),
+  <a href="BACnet.Stack.BBMD.State.html#t:t/0">BACnet.Stack.BBMD.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for an error or exception as <code class="inline">[:bacstack, :bbmd, :exception]</code>.</p><p>The arguments <code class="inline">kind</code>, <code class="inline">reason</code> and <code class="inline">stacktrace</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_bbmd_read_bdt/4">
+
+  <div class="detail-header">
+    <a href="#execute_bbmd_read_bdt/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_bbmd_read_bdt(self, source_address, bdt, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L283" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_bbmd_read_bdt(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  {<a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:ip4_address/0">:inet.ip4_address</a>(), <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:port_number/0">:inet.port_number</a>()},
+  [<a href="BACnet.Protocol.BroadcastDistributionTableEntry.html#t:t/0">BACnet.Protocol.BroadcastDistributionTableEntry.t</a>()],
+  <a href="BACnet.Stack.BBMD.State.html#t:t/0">BACnet.Stack.BBMD.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for reading broadcast distribution table
+as <code class="inline">[:bacstack, :bbmd, :broadcast_distribution, :read_table]</code>.</p><p>This function is only called for BACnet interactions,
+not for local interactions through the <code class="inline">BBMD</code> public API.</p><p>The arguments <code class="inline">source_adress</code> and <code class="inline">bdt</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_bbmd_read_fd_table/4">
+
+  <div class="detail-header">
+    <a href="#execute_bbmd_read_fd_table/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_bbmd_read_fd_table(self, source_address, registrations, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L212" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_bbmd_read_fd_table(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  {<a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:ip4_address/0">:inet.ip4_address</a>(), <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:port_number/0">:inet.port_number</a>()},
+  %{
+    optional({<a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:ip_address/0">:inet.ip_address</a>(), <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:port_number/0">:inet.port_number</a>()}) =&gt;
+      <a href="BACnet.Stack.BBMD.Registration.html#t:t/0">BACnet.Stack.BBMD.Registration.t</a>()
+  },
+  <a href="BACnet.Stack.BBMD.State.html#t:t/0">BACnet.Stack.BBMD.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for reading foreign device table
+as <code class="inline">[:bacstack, :bbmd, :foreign_device, :read_table]</code>.</p><p>This function is only called for BACnet interactions,
+not for local interactions through the <code class="inline">BBMD</code> public API.</p><p>The arguments <code class="inline">source_adress</code> and <code class="inline">registrations</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_bbmd_write_bdt/4">
+
+  <div class="detail-header">
+    <a href="#execute_bbmd_write_bdt/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_bbmd_write_bdt(self, source_address, bdt, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L317" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_bbmd_write_bdt(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  {<a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:ip4_address/0">:inet.ip4_address</a>(), <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:port_number/0">:inet.port_number</a>()},
+  [<a href="BACnet.Protocol.BroadcastDistributionTableEntry.html#t:t/0">BACnet.Protocol.BroadcastDistributionTableEntry.t</a>()],
+  <a href="BACnet.Stack.BBMD.State.html#t:t/0">BACnet.Stack.BBMD.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for writing broadcast distribution table
+as <code class="inline">[:bacstack, :bbmd, :broadcast_distribution, :write_table]</code>.</p><p>This function is only called for BACnet interactions,
+not for local interactions through the <code class="inline">BBMD</code> public API.</p><p>The arguments <code class="inline">source_adress</code> and <code class="inline">bdt</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_client_exception/6">
+
+  <div class="detail-header">
+    <a href="#execute_client_exception/6" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_client_exception(self, kind, reason, stacktrace, basic_metadata, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L349" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_client_exception(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">list</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(),
+  <a href="BACnet.Stack.Client.State.html#t:t/0">BACnet.Stack.Client.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for an error or exception as <code class="inline">[:bacstack, :client, :exception]</code>.</p><p>The arguments <code class="inline">kind</code>, <code class="inline">reason</code> and <code class="inline">stacktrace</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_client_inc_apdu/6">
+
+  <div class="detail-header">
+    <a href="#execute_client_inc_apdu/6" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_client_inc_apdu(self, source_address, bvlc, npci, apdu, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L388" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_client_inc_apdu(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.html#t:bvlc/0">BACnet.Protocol.bvlc</a>(),
+  <a href="BACnet.Protocol.NPCI.html#t:t/0">BACnet.Protocol.NPCI.t</a>(),
+  <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>(),
+  <a href="BACnet.Stack.Client.State.html#t:t/0">BACnet.Stack.Client.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for incoming APDU (decoded) as <code class="inline">[:bacstack, :client, :incoming_apdu]</code>.</p><p>The arguments <code class="inline">source_address</code>, <code class="inline">bvlc</code>, <code class="inline">npci</code> and <code class="inline">apdu</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_client_inc_apdu_decode_error/7">
+
+  <div class="detail-header">
+    <a href="#execute_client_inc_apdu_decode_error/7" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_client_inc_apdu_decode_error(self, source_address, bvlc, npci, raw_apdu, error, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L419" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_client_inc_apdu_decode_error(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.html#t:bvlc/0">BACnet.Protocol.bvlc</a>(),
+  <a href="BACnet.Protocol.NPCI.html#t:t/0">BACnet.Protocol.NPCI.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Stack.Client.State.html#t:t/0">BACnet.Stack.Client.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for incoming APDU decode error as <code class="inline">[:bacstack, :client, :incoming_apdu, :error]</code>.</p><p>The arguments <code class="inline">source_address</code>, <code class="inline">bvlc</code>, <code class="inline">npci</code>, <code class="inline">raw_apdu</code> and <code class="inline">error</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_client_inc_apdu_duplicated/6">
+
+  <div class="detail-header">
+    <a href="#execute_client_inc_apdu_duplicated/6" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_client_inc_apdu_duplicated(self, source_address, bvlc, npci, apdu, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L460" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_client_inc_apdu_duplicated(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.html#t:bvlc/0">BACnet.Protocol.bvlc</a>(),
+  <a href="BACnet.Protocol.NPCI.html#t:t/0">BACnet.Protocol.NPCI.t</a>(),
+  <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>(),
+  <a href="BACnet.Stack.Client.State.html#t:t/0">BACnet.Stack.Client.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for incoming APDU (duplicated)
+as<code class="inline">[:bacstack, :client, :incoming_apdu, :duplicated]</code>.
+The APDU has been detected as being deduplicated and is not passed on to the application.</p><p>The arguments <code class="inline">source_address</code>, <code class="inline">bvlc</code>, <code class="inline">npci</code> and <code class="inline">apdu</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_client_inc_apdu_handled/6">
+
+  <div class="detail-header">
+    <a href="#execute_client_inc_apdu_handled/6" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_client_inc_apdu_handled(self, source_address, bvlc, npci, apdu, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L499" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_client_inc_apdu_handled(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.html#t:bvlc/0">BACnet.Protocol.bvlc</a>(),
+  <a href="BACnet.Protocol.NPCI.html#t:t/0">BACnet.Protocol.NPCI.t</a>(),
+  <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>(),
+  <a href="BACnet.Stack.Client.State.html#t:t/0">BACnet.Stack.Client.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for incoming APDU (handled) as <code class="inline">[:bacstack, :client, :incoming_apdu, :start]</code>.
+Handled refers to the APDU not being deduplicated and passed on to the application,
+if a notification receiver is registered.</p><p>The arguments <code class="inline">source_address</code>, <code class="inline">bvlc</code>, <code class="inline">npci</code> and <code class="inline">apdu</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_client_inc_apdu_rejected/7">
+
+  <div class="detail-header">
+    <a href="#execute_client_inc_apdu_rejected/7" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_client_inc_apdu_rejected(self, source_address, bvlc, npci, reject_apdu, original_apdu, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L541" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_client_inc_apdu_rejected(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.html#t:bvlc/0">BACnet.Protocol.bvlc</a>(),
+  <a href="BACnet.Protocol.NPCI.html#t:t/0">BACnet.Protocol.NPCI.t</a>(),
+  <a href="BACnet.Protocol.APDU.Reject.html#t:t/0">BACnet.Protocol.APDU.Reject.t</a>(),
+  <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>(),
+  <a href="BACnet.Stack.Client.State.html#t:t/0">BACnet.Stack.Client.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for incoming APDU rejected as <code class="inline">[:bacstack, :client, :incoming_apdu, :error]</code>.</p><p>Rejected means there is no configured notification receiver (listener) and as such can not
+respond to APDU requests expecting reply.</p><p>The arguments <code class="inline">source_address</code>, <code class="inline">bvlc</code>, <code class="inline">npci</code>, <code class="inline">reject_apdu</code> and <code class="inline">original_apdu</code> are part
+of the event metadata. Additionally, key <code class="inline">reason</code> will be set to <code class="inline">:no_listener</code>.</p>
+  </section>
+</section>
+<section class="detail" id="execute_client_inc_apdu_reply/5">
+
+  <div class="detail-header">
+    <a href="#execute_client_inc_apdu_reply/5" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_client_inc_apdu_reply(self, apdu, send_opts, timer, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L720" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_client_inc_apdu_reply(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>(),
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>(),
+  <a href="BACnet.Stack.Client.ReplyTimer.html#t:t/0">BACnet.Stack.Client.ReplyTimer.t</a>(),
+  <a href="BACnet.Stack.Client.State.html#t:t/0">BACnet.Stack.Client.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for APDU application response
+as <code class="inline">[:bacstack, :client, :incoming_apdu, :stop]</code>.
+A <code class="inline">duration</code> key will be set in measurements using monotonic time native units.</p><p>The arguments <code class="inline">apdu</code> and <code class="inline">send_opts</code> are part of the events metadata.
+Additionally, the following keys are set:</p><ul><li><code class="inline">source_address: term()</code></li><li><code class="inline">ref: reference()</code></li></ul>
+  </section>
+</section>
+<section class="detail" id="execute_client_inc_apdu_segmentation_completed/8">
+
+  <div class="detail-header">
+    <a href="#execute_client_inc_apdu_segmentation_completed/8" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_client_inc_apdu_segmentation_completed(self, source_address, bvlc, npci, raw_apdu, complete_apdu, incomplete, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L585" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_client_inc_apdu_segmentation_completed(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.html#t:bvlc/0">BACnet.Protocol.bvlc</a>(),
+  <a href="BACnet.Protocol.NPCI.html#t:t/0">BACnet.Protocol.NPCI.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  <a href="BACnet.Protocol.IncompleteAPDU.html#t:t/0">BACnet.Protocol.IncompleteAPDU.t</a>(),
+  <a href="BACnet.Stack.Client.State.html#t:t/0">BACnet.Stack.Client.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for incoming APDU segmented completed
+as <code class="inline">[:bacstack, :client, :incoming_apdu, :segmented, :completed]</code>.</p><p>The arguments <code class="inline">source_address</code>, <code class="inline">bvlc</code>, <code class="inline">npci</code>, <code class="inline">raw_apdu</code>, <code class="inline">complete_apdu</code>
+and <code class="inline">incomplete</code>are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_client_inc_apdu_segmentation_error/9">
+
+  <div class="detail-header">
+    <a href="#execute_client_inc_apdu_segmentation_error/9" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_client_inc_apdu_segmentation_error(self, source_address, bvlc, npci, raw_apdu, incomplete, error, cancelled, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L673" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_client_inc_apdu_segmentation_error(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.html#t:bvlc/0">BACnet.Protocol.bvlc</a>(),
+  <a href="BACnet.Protocol.NPCI.html#t:t/0">BACnet.Protocol.NPCI.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  <a href="BACnet.Protocol.IncompleteAPDU.html#t:t/0">BACnet.Protocol.IncompleteAPDU.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>(),
+  <a href="BACnet.Stack.Client.State.html#t:t/0">BACnet.Stack.Client.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for incoming APDU segmented error
+as <code class="inline">[:bacstack, :client, :incoming_apdu, :segmented, :error]</code>.</p><p>The arguments <code class="inline">source_address</code>, <code class="inline">bvlc</code>, <code class="inline">npci</code>, <code class="inline">raw_apdu</code>, <code class="inline">incomplete</code>, <code class="inline">error</code> and
+<code class="inline">cancelled</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_client_inc_apdu_segmentation_incomplete/7">
+
+  <div class="detail-header">
+    <a href="#execute_client_inc_apdu_segmentation_incomplete/7" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_client_inc_apdu_segmentation_incomplete(self, source_address, bvlc, npci, raw_apdu, incomplete, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L629" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_client_inc_apdu_segmentation_incomplete(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.html#t:bvlc/0">BACnet.Protocol.bvlc</a>(),
+  <a href="BACnet.Protocol.NPCI.html#t:t/0">BACnet.Protocol.NPCI.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  <a href="BACnet.Protocol.IncompleteAPDU.html#t:t/0">BACnet.Protocol.IncompleteAPDU.t</a>(),
+  <a href="BACnet.Stack.Client.State.html#t:t/0">BACnet.Stack.Client.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for incoming APDU segmented incomplete
+as <code class="inline">[:bacstack, :client, :incoming_apdu, :segmented, :incomplete]</code>.</p><p>The arguments <code class="inline">source_address</code>, <code class="inline">bvlc</code>, <code class="inline">npci</code>, <code class="inline">raw_apdu</code> and <code class="inline">incomplete</code>
+are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_client_inc_apdu_timeout/3">
+
+  <div class="detail-header">
+    <a href="#execute_client_inc_apdu_timeout/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_client_inc_apdu_timeout(self, timer, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L761" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_client_inc_apdu_timeout(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Stack.Client.ReplyTimer.html#t:t/0">BACnet.Stack.Client.ReplyTimer.t</a>(),
+  <a href="BACnet.Stack.Client.State.html#t:t/0">BACnet.Stack.Client.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for APDU application response timeout
+as <code class="inline">[:bacstack, :client, :incoming_apdu, :stop]</code>.
+A <code class="inline">duration</code> key will be set in measurements using monotonic time native units.</p><p>The following keys are exposed as part of the event metadata:</p><ul><li><code class="inline">source_address: term()</code></li><li><code class="inline">bvlc: Protocol.bvlc()</code></li><li><code class="inline">npci: NPCI.t()</code></li><li><code class="inline">apdu: Protocol.apdu()</code></li><li><code class="inline">ref: reference()</code></li><li><code class="inline">error: :reply_timeout</code></li></ul>
+  </section>
+</section>
+<section class="detail" id="execute_client_request_apdu_timer/3">
+
+  <div class="detail-header">
+    <a href="#execute_client_request_apdu_timer/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_client_request_apdu_timer(self, timer, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L889" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_client_request_apdu_timer(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Stack.Client.ApduTimer.html#t:t/0">BACnet.Stack.Client.ApduTimer.t</a>(),
+  <a href="BACnet.Stack.Client.State.html#t:t/0">BACnet.Stack.Client.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for APDU request timeout as <code class="inline">[:bacstack, :client, :request, :stop]</code>.
+A <code class="inline">duration</code> key will be set in measurements using monotonic time native units.</p><p>The arguments <code class="inline">destination</code>, <code class="inline">bvlc</code>, <code class="inline">npci</code> and <code class="inline">apdu</code> are part of the event metadata.
+Additionally, the following keys are set:</p><ul><li><code class="inline">original_apdu: Protocol.apdu()</code></li><li><code class="inline">retry_count: non_neg_integer()</code></li></ul>
+  </section>
+</section>
+<section class="detail" id="execute_client_request_start/6">
+
+  <div class="detail-header">
+    <a href="#execute_client_request_start/6" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_client_request_start(self, destination, apdu, send_opts, timer, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L799" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_client_request_start(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>(),
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>(),
+  <a href="BACnet.Stack.Client.ApduTimer.html#t:t/0">BACnet.Stack.Client.ApduTimer.t</a>(),
+  <a href="BACnet.Stack.Client.State.html#t:t/0">BACnet.Stack.Client.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for request start as <code class="inline">[:bacstack, :client, :request, :start]</code>.
+Requests are started by sending APDU with <code class="inline">expect_reply: true</code>.
+Responses will be emitted for the request through <code class="inline">:stop</code>.</p><p>The arguments <code class="inline">destination</code>, <code class="inline">apdu</code> and <code class="inline">send_opts</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_client_request_stop/7">
+
+  <div class="detail-header">
+    <a href="#execute_client_request_stop/7" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_client_request_stop(self, destination, bvlc, npci, apdu, timer, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L845" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_client_request_stop(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.html#t:bvlc/0">BACnet.Protocol.bvlc</a>(),
+  <a href="BACnet.Protocol.NPCI.html#t:t/0">BACnet.Protocol.NPCI.t</a>(),
+  <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>(),
+  <a href="BACnet.Stack.Client.ApduTimer.html#t:t/0">BACnet.Stack.Client.ApduTimer.t</a>(),
+  <a href="BACnet.Stack.Client.State.html#t:t/0">BACnet.Stack.Client.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for request stop as <code class="inline">[:bacstack, :client, :request, :stop]</code>.
+A <code class="inline">duration</code> key will be set in measurements using monotonic time native units.</p><p>BVLC, NPCI and APDU are the response and belong to the request that got started.
+See also <a href="#execute_client_request_start/6"><code class="inline">execute_client_request_start/6</code></a>.</p><p>The arguments <code class="inline">destination</code>, <code class="inline">bvlc</code>, <code class="inline">npci</code> and <code class="inline">apdu</code> are part of the event metadata.
+Additionally, the following keys are set:</p><ul><li><code class="inline">original_apdu: Protocol.apdu()</code></li><li><code class="inline">retry_count: non_neg_integer()</code></li></ul>
+  </section>
+</section>
+<section class="detail" id="execute_client_send/6">
+
+  <div class="detail-header">
+    <a href="#execute_client_send/6" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_client_send(self, destination, apdu, send_opts, segmented, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L929" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_client_send(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>(),
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>(),
+  <a href="BACnet.Stack.Client.State.html#t:t/0">BACnet.Stack.Client.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for sending APDUs as <code class="inline">[:bacstack, :client, :send]</code>.
+Segmented will indicate whether segmenting and sending the APDU has been
+handed off to <a href="BACnet.Stack.Segmentator.html"><code class="inline">BACnet.Stack.Segmentator</code></a>.</p><p>The arguments <code class="inline">destination</code>, <code class="inline">apdu</code>, <code class="inline">send_opts</code> and <code class="inline">segmented</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_client_send_error/7">
+
+  <div class="detail-header">
+    <a href="#execute_client_send_error/7" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_client_send_error(self, destination, original_apdu, send_opts, reply_apdu, reason, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L970" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_client_send_error(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>(),
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>(),
+  <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(),
+  <a href="BACnet.Stack.Client.State.html#t:t/0">BACnet.Stack.Client.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for send error as <code class="inline">[:bacstack, :client, :send, :error]</code>.
+Send errors are encountered for APDU too long (no segmentation) or
+recipient device does not support segmentation.</p><p>The arguments <code class="inline">destination</code>, <code class="inline">original_apdu</code>, <code class="inline">send_opts</code>, <code class="inline">reply_apdu</code> and
+<code class="inline">reason</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_client_transport_message/3">
+
+  <div class="detail-header">
+    <a href="#execute_client_transport_message/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_client_transport_message(self, transport_msg, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1006" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_client_transport_message(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Stack.TransportBehaviour.html#t:transport_msg/0">BACnet.Stack.TransportBehaviour.transport_msg</a>(),
+  <a href="BACnet.Stack.Client.State.html#t:t/0">BACnet.Stack.Client.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for an error or exception as <code class="inline">[:bacstack, :client, :transport, :message]</code>.</p><p>The argument <code class="inline">transport_msg</code> is part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_foreign_device_add_fd_registration/4">
+
+  <div class="detail-header">
+    <a href="#execute_foreign_device_add_fd_registration/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_foreign_device_add_fd_registration(self, bbmd, registration, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1205" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_foreign_device_add_fd_registration(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  {<a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:ip4_address/0">:inet.ip4_address</a>(), <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:port_number/0">:inet.port_number</a>()},
+  <a href="BACnet.Stack.ForeignDevice.Registration.html#t:t/0">BACnet.Stack.ForeignDevice.Registration.t</a>(),
+  <a href="BACnet.Stack.ForeignDevice.State.html#t:t/0">BACnet.Stack.ForeignDevice.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for adding the foreign device registration in the remote BBMD
+as <code class="inline">[:bacstack, :foreign_device, :foreign_device, :add]</code>.</p><p>The registration is always about ourself - status may not be registered
+when this metric event gets called.</p><p>The arguments <code class="inline">bbmd</code> and <code class="inline">registration</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_foreign_device_del_fd_registration/4">
+
+  <div class="detail-header">
+    <a href="#execute_foreign_device_del_fd_registration/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_foreign_device_del_fd_registration(self, bbmd, registration, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1236" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_foreign_device_del_fd_registration(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  {<a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:ip4_address/0">:inet.ip4_address</a>(), <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:port_number/0">:inet.port_number</a>()},
+  <a href="BACnet.Stack.ForeignDevice.Registration.html#t:t/0">BACnet.Stack.ForeignDevice.Registration.t</a>(),
+  <a href="BACnet.Stack.ForeignDevice.State.html#t:t/0">BACnet.Stack.ForeignDevice.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for deleting the foreign device registration in the remote BBMD
+as <code class="inline">[:bacstack, :foreign_device, :foreign_device, :delete]</code>.</p><p>The arguments <code class="inline">bbmd</code> and <code class="inline">registration</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_foreign_device_distribute_broadcast/5">
+
+  <div class="detail-header">
+    <a href="#execute_foreign_device_distribute_broadcast/5" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_foreign_device_distribute_broadcast(self, bbmd, apdu, send_opts, client)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1076" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_foreign_device_distribute_broadcast(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  {<a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:ip4_address/0">:inet.ip4_address</a>(), <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:port_number/0">:inet.port_number</a>()},
+  <a href="BACnet.Protocol.APDU.UnconfirmedServiceRequest.html#t:t/0">BACnet.Protocol.APDU.UnconfirmedServiceRequest.t</a>(),
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>(),
+  <a href="BACnet.Stack.Client.html#t:server/0">BACnet.Stack.Client.server</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for distributing broadcast through the remote BBMD
+as <code class="inline">[:bacstack, :foreign_device, :broadcast_distribution, :distribute]</code>.</p><p>The arguments <code class="inline">bbmd</code>, <code class="inline">apdu</code> and <code class="inline">send_opts</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_foreign_device_exception/6">
+
+  <div class="detail-header">
+    <a href="#execute_foreign_device_exception/6" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_foreign_device_exception(self, kind, reason, stacktrace, basic_metadata, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1038" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_foreign_device_exception(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">list</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(),
+  <a href="BACnet.Stack.ForeignDevice.State.html#t:t/0">BACnet.Stack.ForeignDevice.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for an error or exception as <code class="inline">[:bacstack, :foreign_device, :exception]</code>.</p><p>The arguments <code class="inline">kind</code>, <code class="inline">reason</code> and <code class="inline">stacktrace</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_foreign_device_read_bdt/4">
+
+  <div class="detail-header">
+    <a href="#execute_foreign_device_read_bdt/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_foreign_device_read_bdt(self, bbmd, bdt, client)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1109" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_foreign_device_read_bdt(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  {<a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:ip4_address/0">:inet.ip4_address</a>(), <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:port_number/0">:inet.port_number</a>()},
+  [<a href="BACnet.Protocol.BroadcastDistributionTableEntry.html#t:t/0">BACnet.Protocol.BroadcastDistributionTableEntry.t</a>()],
+  <a href="BACnet.Stack.Client.html#t:server/0">BACnet.Stack.Client.server</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for reading the broadcast distribution table from the remote BBMD
+as <code class="inline">[:bacstack, :foreign_device, :broadcast_distribution, :read_table]</code>.</p><p>The arguments <code class="inline">bbmd</code> and <code class="inline">bdt</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_foreign_device_read_fd_table/4">
+
+  <div class="detail-header">
+    <a href="#execute_foreign_device_read_fd_table/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_foreign_device_read_fd_table(self, bbmd, registrations, client)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1171" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_foreign_device_read_fd_table(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  {<a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:ip4_address/0">:inet.ip4_address</a>(), <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:port_number/0">:inet.port_number</a>()},
+  [<a href="BACnet.Protocol.ForeignDeviceTableEntry.html#t:t/0">BACnet.Protocol.ForeignDeviceTableEntry.t</a>()],
+  <a href="BACnet.Stack.Client.html#t:server/0">BACnet.Stack.Client.server</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for reading the foreign device table from the remote BBMD
+as <code class="inline">[:bacstack, :foreign_device, :foreign_device, :read_table]</code>.</p><p>The arguments <code class="inline">bbmd</code> and <code class="inline">registrations</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_foreign_device_write_bdt/4">
+
+  <div class="detail-header">
+    <a href="#execute_foreign_device_write_bdt/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_foreign_device_write_bdt(self, bbmd, bdt, client)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1140" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_foreign_device_write_bdt(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  {<a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:ip4_address/0">:inet.ip4_address</a>(), <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:port_number/0">:inet.port_number</a>()},
+  [<a href="BACnet.Protocol.BroadcastDistributionTableEntry.html#t:t/0">BACnet.Protocol.BroadcastDistributionTableEntry.t</a>()],
+  <a href="BACnet.Stack.Client.html#t:server/0">BACnet.Stack.Client.server</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for writing the broadcast distribution table to the remote BBMD
+as <code class="inline">[:bacstack, :foreign_device, :broadcast_distribution, :write_table]</code>.</p><p>The arguments <code class="inline">bbmd</code> and <code class="inline">bdt</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_segmentator_exception/6">
+
+  <div class="detail-header">
+    <a href="#execute_segmentator_exception/6" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_segmentator_exception(self, kind, reason, stacktrace, basic_metadata, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1268" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_segmentator_exception(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">list</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(),
+  <a href="BACnet.Stack.Segmentator.State.html#t:t/0">BACnet.Stack.Segmentator.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for an error or exception as <code class="inline">[:bacstack, :segmentator, :exception]</code>.</p><p>The arguments <code class="inline">kind</code>, <code class="inline">reason</code> and <code class="inline">stacktrace</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_segmentator_sequence_ack/4">
+
+  <div class="detail-header">
+    <a href="#execute_segmentator_sequence_ack/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_segmentator_sequence_ack(self, sequence, ack, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1304" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_segmentator_sequence_ack(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Stack.Segmentator.Sequence.html#t:t/0">BACnet.Stack.Segmentator.Sequence.t</a>(),
+  <a href="BACnet.Protocol.APDU.SegmentACK.html#t:t/0">BACnet.Protocol.APDU.SegmentACK.t</a>(),
+  <a href="BACnet.Stack.Segmentator.State.html#t:t/0">BACnet.Stack.Segmentator.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for sequence ack as <code class="inline">[:bacstack, :segmentator, :sequence, :ack]</code>.
+A segment ACK has been sent from the remote BACnet client.</p><p>The arguments <code class="inline">sequence</code> and <code class="inline">ack</code> is part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_segmentator_sequence_error/10">
+
+  <div class="detail-header">
+    <a href="#execute_segmentator_sequence_error/10" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_segmentator_sequence_error(self, transport_module, transport, portal, destination, original_apdu, send_opts, reply_apdu, reason, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1341" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_segmentator_sequence_error(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">module</a>(),
+  <a href="BACnet.Stack.TransportBehaviour.html#t:transport/0">BACnet.Stack.TransportBehaviour.transport</a>(),
+  <a href="BACnet.Stack.TransportBehaviour.html#t:portal/0">BACnet.Stack.TransportBehaviour.portal</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>() | nil,
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>() | nil,
+  <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>() | nil,
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(),
+  <a href="BACnet.Stack.Segmentator.State.html#t:t/0">BACnet.Stack.Segmentator.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for sequence error as <code class="inline">[:bacstack, :segmentator, :sequence, :error]</code>.</p><p>The arguments <code class="inline">transport_module</code>, <code class="inline">transport</code>, <code class="inline">portal</code>, <code class="inline">destination</code>, <code class="inline">original_apdu</code>,
+<code class="inline">send_opts</code>, <code class="inline">reply_apdu</code> and <code class="inline">reason</code> is part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_segmentator_sequence_segment/4">
+
+  <div class="detail-header">
+    <a href="#execute_segmentator_sequence_segment/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_segmentator_sequence_segment(self, sequence, segment_number, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1413" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_segmentator_sequence_segment(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Stack.Segmentator.Sequence.html#t:t/0">BACnet.Stack.Segmentator.Sequence.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(),
+  <a href="BACnet.Stack.Segmentator.State.html#t:t/0">BACnet.Stack.Segmentator.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for sequence segment as <code class="inline">[:bacstack, :segmentator, :sequence, :segment]</code>.
+An individual segment has been sent to the remote BACnet client.</p><p>The arguments <code class="inline">sequence</code> and <code class="inline">segment_number</code> is part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_segmentator_sequence_start/3">
+
+  <div class="detail-header">
+    <a href="#execute_segmentator_sequence_start/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_segmentator_sequence_start(self, sequence, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1383" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_segmentator_sequence_start(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Stack.Segmentator.Sequence.html#t:t/0">BACnet.Stack.Segmentator.Sequence.t</a>(),
+  <a href="BACnet.Stack.Segmentator.State.html#t:t/0">BACnet.Stack.Segmentator.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for sequence start as <code class="inline">[:bacstack, :segmentator, :sequence, :start]</code>.</p><p>The argument <code class="inline">sequence</code> is part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_segmentator_sequence_stop/4">
+
+  <div class="detail-header">
+    <a href="#execute_segmentator_sequence_stop/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_segmentator_sequence_stop(self, sequence, reason, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1444" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_segmentator_sequence_stop(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Stack.Segmentator.Sequence.html#t:t/0">BACnet.Stack.Segmentator.Sequence.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(),
+  <a href="BACnet.Stack.Segmentator.State.html#t:t/0">BACnet.Stack.Segmentator.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for sequence stop as <code class="inline">[:bacstack, :segmentator, :sequence, :stop]</code>.
+A <code class="inline">duration</code> key will be set in measurements using monotonic time native units.</p><p>The arguments <code class="inline">sequence</code> and <code class="inline">reason</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_segments_store_exception/6">
+
+  <div class="detail-header">
+    <a href="#execute_segments_store_exception/6" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_segments_store_exception(self, kind, reason, stacktrace, basic_metadata, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1478" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_segments_store_exception(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">list</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(),
+  <a href="BACnet.Stack.SegmentsStore.State.html#t:t/0">BACnet.Stack.SegmentsStore.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for an error or exception as <code class="inline">[:bacstack, :segments_store, :exception]</code>.</p><p>The arguments <code class="inline">kind</code>, <code class="inline">reason</code> and <code class="inline">stacktrace</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_segments_store_sequence_ack/4">
+
+  <div class="detail-header">
+    <a href="#execute_segments_store_sequence_ack/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_segments_store_sequence_ack(self, sequence, ack, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1514" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_segments_store_sequence_ack(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Stack.SegmentsStore.Sequence.html#t:t/0">BACnet.Stack.SegmentsStore.Sequence.t</a>(),
+  <a href="BACnet.Protocol.APDU.SegmentACK.html#t:t/0">BACnet.Protocol.APDU.SegmentACK.t</a>(),
+  <a href="BACnet.Stack.SegmentsStore.State.html#t:t/0">BACnet.Stack.SegmentsStore.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for sequence ack as <code class="inline">[:bacstack, :segments_store, :sequence, :ack]</code>.
+A segment ACK has been sent to the remote BACnet client.</p><p>The arguments <code class="inline">sequence</code> and <code class="inline">ack</code> is part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_segments_store_sequence_error/9">
+
+  <div class="detail-header">
+    <a href="#execute_segments_store_sequence_error/9" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_segments_store_sequence_error(self, transport_module, portal, destination, incomplete_apdu, send_opts, reply_apdu, reason, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1550" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_segments_store_sequence_error(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">module</a>(),
+  <a href="BACnet.Stack.TransportBehaviour.html#t:portal/0">BACnet.Stack.TransportBehaviour.portal</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.IncompleteAPDU.html#t:t/0">BACnet.Protocol.IncompleteAPDU.t</a>() | nil,
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>() | nil,
+  <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>() | nil,
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(),
+  <a href="BACnet.Stack.SegmentsStore.State.html#t:t/0">BACnet.Stack.SegmentsStore.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for sequence error as <code class="inline">[:bacstack, :segments_store, :sequence, :error]</code>.</p><p>The arguments <code class="inline">transport_module</code>, <code class="inline">portal</code>, <code class="inline">destination</code>, <code class="inline">incomplete_apdu</code>,
+<code class="inline">send_opts</code>, <code class="inline">reply_apdu</code> and <code class="inline">reason</code> is part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_segments_store_sequence_segment/4">
+
+  <div class="detail-header">
+    <a href="#execute_segments_store_sequence_segment/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_segments_store_sequence_segment(self, sequence, segment_number, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1620" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_segments_store_sequence_segment(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Stack.SegmentsStore.Sequence.html#t:t/0">BACnet.Stack.SegmentsStore.Sequence.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(),
+  <a href="BACnet.Stack.SegmentsStore.State.html#t:t/0">BACnet.Stack.SegmentsStore.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for sequence segment as <code class="inline">[:bacstack, :segments_store, :sequence, :segment]</code>.
+An individual segment has been received from the remote BACnet client.</p><p>The arguments <code class="inline">sequence</code> and <code class="inline">segment_number</code> is part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_segments_store_sequence_start/3">
+
+  <div class="detail-header">
+    <a href="#execute_segments_store_sequence_start/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_segments_store_sequence_start(self, sequence, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1590" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_segments_store_sequence_start(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Stack.SegmentsStore.Sequence.html#t:t/0">BACnet.Stack.SegmentsStore.Sequence.t</a>(),
+  <a href="BACnet.Stack.SegmentsStore.State.html#t:t/0">BACnet.Stack.SegmentsStore.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for sequence start as <code class="inline">[:bacstack, :segments_store, :sequence, :start]</code>.</p><p>The argument <code class="inline">sequence</code> is part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_segments_store_sequence_stop/4">
+
+  <div class="detail-header">
+    <a href="#execute_segments_store_sequence_stop/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_segments_store_sequence_stop(self, sequence, reason, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1651" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_segments_store_sequence_stop(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Stack.SegmentsStore.Sequence.html#t:t/0">BACnet.Stack.SegmentsStore.Sequence.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(),
+  <a href="BACnet.Stack.SegmentsStore.State.html#t:t/0">BACnet.Stack.SegmentsStore.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for sequence stop as <code class="inline">[:bacstack, :segments_store, :sequence, :stop]</code>.
+A <code class="inline">duration</code> key will be set in measurements using monotonic time native units.</p><p>The arguments <code class="inline">sequence</code> and <code class="inline">reason</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_trend_logger_cov_sub/2">
+
+  <div class="detail-header">
+    <a href="#execute_trend_logger_cov_sub/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_trend_logger_cov_sub(self, object_ref)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1885" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_trend_logger_cov_sub(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Protocol.DeviceObjectPropertyRef.html#t:t/0">BACnet.Protocol.DeviceObjectPropertyRef.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for subscribing COV
+as <code class="inline">[:bacstack, :trend_logger, :lookup_object, :cov_sub]</code>.
+This function is called when subscribing for COV
+in the Trend Logger. Most notably for COV logs.</p><p>The argument <code class="inline">object_ref</code> is part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_trend_logger_cov_unsub/2">
+
+  <div class="detail-header">
+    <a href="#execute_trend_logger_cov_unsub/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_trend_logger_cov_unsub(self, object_ref)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1913" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_trend_logger_cov_unsub(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Protocol.DeviceObjectPropertyRef.html#t:t/0">BACnet.Protocol.DeviceObjectPropertyRef.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for unsubscribing COV
+as <code class="inline">[:bacstack, :trend_logger, :lookup_object, :cov_unsub]</code>.
+This function is called when unsubscribing for COV
+in the Trend Logger. Most notably for COV logs.</p><p>The argument <code class="inline">object_ref</code> is part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_trend_logger_exception/6">
+
+  <div class="detail-header">
+    <a href="#execute_trend_logger_exception/6" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_trend_logger_exception(self, kind, reason, stacktrace, basic_metadata, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1685" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_trend_logger_exception(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">list</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(),
+  <a href="BACnet.Stack.TrendLogger.State.html#t:t/0">BACnet.Stack.TrendLogger.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for an error or exception as <code class="inline">[:bacstack, :trend_logger, :exception]</code>.</p><p>The arguments <code class="inline">kind</code>, <code class="inline">reason</code> and <code class="inline">stacktrace</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_trend_logger_log_notify/4">
+
+  <div class="detail-header">
+    <a href="#execute_trend_logger_log_notify/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_trend_logger_log_notify(self, log, notify_type, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1780" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_trend_logger_log_notify(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Stack.TrendLogger.Log.html#t:t/0">BACnet.Stack.TrendLogger.Log.t</a>(),
+  :buffer_full | :intrinsic_reporting,
+  <a href="BACnet.Stack.TrendLogger.State.html#t:t/0">BACnet.Stack.TrendLogger.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for notifications of the log object
+as <code class="inline">[:bacstack, :trend_logger, :log_object, :notify]</code>.
+This function is called when a log object produces
+notifications in the Trend Logger.
+Notify types can happen concurrently, so be prepared.</p><p>The arguments <code class="inline">log</code> and <code class="inline">notify_type</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_trend_logger_log_start/3">
+
+  <div class="detail-header">
+    <a href="#execute_trend_logger_log_start/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_trend_logger_log_start(self, log, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1720" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_trend_logger_log_start(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Stack.TrendLogger.Log.html#t:t/0">BACnet.Stack.TrendLogger.Log.t</a>(),
+  <a href="BACnet.Stack.TrendLogger.State.html#t:t/0">BACnet.Stack.TrendLogger.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for log object start as <code class="inline">[:bacstack, :trend_logger, :log_object, :start]</code>.
+This function is called when a log object gets added to the Trend Logger.</p><p>The argument <code class="inline">log</code> is part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_trend_logger_log_stop/3">
+
+  <div class="detail-header">
+    <a href="#execute_trend_logger_log_stop/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_trend_logger_log_stop(self, log, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1748" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_trend_logger_log_stop(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Stack.TrendLogger.Log.html#t:t/0">BACnet.Stack.TrendLogger.Log.t</a>(),
+  <a href="BACnet.Stack.TrendLogger.State.html#t:t/0">BACnet.Stack.TrendLogger.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for log object stop as <code class="inline">[:bacstack, :trend_logger, :log_object, :stop]</code>.
+This function is called when a log object gets removed from the Trend Logger.</p><p>The argument <code class="inline">log</code> is part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_trend_logger_log_trigger/4">
+
+  <div class="detail-header">
+    <a href="#execute_trend_logger_log_trigger/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_trend_logger_log_trigger(self, log, log_entry, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1819" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_trend_logger_log_trigger(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Stack.TrendLogger.Log.html#t:t/0">BACnet.Stack.TrendLogger.Log.t</a>(),
+  <a href="BACnet.Protocol.Services.ConfirmedEventNotification.html#t:t/0">BACnet.Protocol.Services.ConfirmedEventNotification.t</a>()
+  | <a href="BACnet.Protocol.Services.UnconfirmedEventNotification.html#t:t/0">BACnet.Protocol.Services.UnconfirmedEventNotification.t</a>()
+  | <a href="BACnet.Protocol.Services.ConfirmedCovNotification.html#t:t/0">BACnet.Protocol.Services.ConfirmedCovNotification.t</a>()
+  | <a href="BACnet.Protocol.ObjectsUtility.html#t:bacnet_object/0">BACnet.Protocol.ObjectsUtility.bacnet_object</a>()
+  | [<a href="BACnet.Protocol.ObjectsUtility.html#t:bacnet_object/0">BACnet.Protocol.ObjectsUtility.bacnet_object</a>()]
+  | :interrupted
+  | {:time_change, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">float</a>()},
+  <a href="BACnet.Stack.TrendLogger.State.html#t:t/0">BACnet.Stack.TrendLogger.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for trigger of the log object
+as <code class="inline">[:bacstack, :trend_logger, :log_object, :notify]</code>.
+This function is called when a log object gets
+triggered to log in the Trend Logger.</p><p>The argument <code class="inline">log</code> and <code class="inline">log_entry</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_trend_logger_log_update/4">
+
+  <div class="detail-header">
+    <a href="#execute_trend_logger_log_update/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_trend_logger_log_update(self, log, type, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1854" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_trend_logger_log_update(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Stack.TrendLogger.Log.html#t:t/0">BACnet.Stack.TrendLogger.Log.t</a>(),
+  :buffer | :state,
+  <a href="BACnet.Stack.TrendLogger.State.html#t:t/0">BACnet.Stack.TrendLogger.State.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for updates to the log object
+as <code class="inline">[:bacstack, :trend_logger, :log_object, :update]</code>.
+This function is called when a log object gets updated in the Trend Logger.
+Updates may happen explicitely by the user (changing properties,
+enabling/disabling, etc.), or by updates to the buffer
+produced by the logging algorithm.</p><p>The arguments <code class="inline">log</code> and <code class="inline">type</code> is part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_trend_logger_lookup_object_error/4">
+
+  <div class="detail-header">
+    <a href="#execute_trend_logger_lookup_object_error/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_trend_logger_lookup_object_error(self, object_ref, error, duration)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1946" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_trend_logger_lookup_object_error(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Protocol.DeviceObjectRef.html#t:t/0">BACnet.Protocol.DeviceObjectRef.t</a>(),
+  <a href="BACnet.Protocol.BACnetError.html#t:t/0">BACnet.Protocol.BACnetError.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">integer</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for error during look up objects
+as <code class="inline">[:bacstack, :trend_logger, :lookup_object, :error]</code>.</p><p>A <code class="inline">duration</code> measurement is present in monotonic native units.
+For the calculation of duration, separate monotonic time is used
+and may differ a bit from both monotonic time present in start
+and stop metrics.</p><p>The arguments <code class="inline">object_ref</code> and <code class="inline">error</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_trend_logger_lookup_object_start/2">
+
+  <div class="detail-header">
+    <a href="#execute_trend_logger_lookup_object_start/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_trend_logger_lookup_object_start(self, object_ref)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L1977" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_trend_logger_lookup_object_start(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Protocol.DeviceObjectRef.html#t:t/0">BACnet.Protocol.DeviceObjectRef.t</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for looking up objects
+as <code class="inline">[:bacstack, :trend_logger, :lookup_object, :start]</code>.
+This function is called when objects are looked up
+in the Trend Logger. Most notably for poll logs.</p><p>The argument <code class="inline">object_ref</code> is part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="execute_trend_logger_lookup_object_stop/4">
+
+  <div class="detail-header">
+    <a href="#execute_trend_logger_lookup_object_stop/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute_trend_logger_lookup_object_stop(self, object_ref, result, duration)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L2010" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute_trend_logger_lookup_object_stop(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="BACnet.Protocol.DeviceObjectRef.html#t:t/0">BACnet.Protocol.DeviceObjectRef.t</a>(),
+  <a href="BACnet.Protocol.ObjectsUtility.html#t:bacnet_object/0">BACnet.Protocol.ObjectsUtility.bacnet_object</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">integer</a>()
+) :: :ok</pre>
+
+      </div>
+
+<p>Executes telemetry for stop looking up objects
+as <code class="inline">[:bacstack, :trend_logger, :lookup_object, :stop]</code>.</p><p>A <code class="inline">duration</code> measurement is present in monotonic native units.
+For the calculation of duration, separate monotonic time is used
+and may differ a bit from both monotonic time present in start
+and stop metrics.</p><p>The arguments <code class="inline">object_ref</code> and <code class="inline">result</code> are part of the event metadata.</p>
+  </section>
+</section>
+<section class="detail" id="get_telemetry_measurements/1">
+
+    <span id="get_telemetry_measurements/0"></span>
+
+  <div class="detail-header">
+    <a href="#get_telemetry_measurements/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_telemetry_measurements(map \\ %{})</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L61" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_telemetry_measurements(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: %{
+  :monotonic_time =&gt; <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+  :system_time =&gt; <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+  optional(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()) =&gt; <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()
+}</pre>
+
+      </div>
+
+<p>Get basic telemetry measurements, such as <code class="inline">monotonic_time</code> and <code class="inline">system_time</code>.
+The given map will be merged into the basic measurements map.</p>
+  </section>
+</section>
+<section class="detail" id="make_stacktrace_from_env/1">
+
+  <div class="detail-header">
+    <a href="#make_stacktrace_from_env/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">make_stacktrace_from_env(env)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/telemetry.ex#L47" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> make_stacktrace_from_env(<a href="https://hexdocs.pm/elixir/Macro.Env.html#t:t/0">Macro.Env.t</a>()) :: <a href="https://hexdocs.pm/elixir/Exception.html#t:stacktrace_entry/0">Exception.stacktrace_entry</a>()</pre>
+
+      </div>
+
+<p>Makes a single stacktrace entry from the environment.</p><p>Use case is calling <code class="inline">execute_*_exception</code> functions here without a real stacktrace.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="bacstack.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.1) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

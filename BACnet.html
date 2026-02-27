@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.1">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>BACnet — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-YJO4MOOW.css" />
+
+    <script defer src="dist/sidebar_items-C7FAD1DE.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-YU4BZFVS.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0)</small>
+
+    </h1>
+
+<a href="BACnet.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet.ex#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>BACstack is a low-level Elixir implementation for the ASHRAE standard 135, BACnet - Building Automation and Controller network.
+This implementation supports ASHRAE 135-xxxx&lt;!-- TODO --&gt; and BACnet/IPv4. Support for other transport layers (such as BACnet/SC, BACnet/MSTP)
+can be straight forward added on top of it.</p><p>As this is a low-level implementation, users of this library are required to do the heavy-lifting of the BACnet stack,
+such as automatically replying to Who-Is services, applying hard application timeout constraints, synchronizing time, etc.</p><!--If you're looking for a high level Elixir abstraction on top of this library, check out [BACnex].BACnex is a high level abstraction on top of this library, that offers the high level features of a regular BACnet stack.--><h2 id="module-installation" class="section-heading"><a href="#module-installation" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Installation</span></h2><p>While v0.0.1 has been released to <a href="https://hex.pm/packages/bacstack">Hex</a> to provide a minimal BACnet client featureset,
+it is recommended to install it through GitHub (you can also pin it to a commit hash).
+New changes, bugfixes and features are not released to Hex until bacstack has reached a more stable and complete featureset.</p><p>The package can be installed by adding <code class="inline">bacstack</code> to your list of dependencies in <code class="inline">mix.exs</code>:</p><pre><code class="makeup elixir" translate="no"><span class="kd">def</span><span class="w"> </span><span class="nf">deps</span><span class="w"> </span><span class="k" data-group-id="4860176706-1">do</span><span class="w">
+  </span><span class="p" data-group-id="4860176706-2">[</span><span class="w">
+    </span><span class="p" data-group-id="4860176706-3">{</span><span class="ss">:bacstack</span><span class="p">,</span><span class="w"> </span><span class="ss">github</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;bacnet-ex/bacstack&quot;</span><span class="p" data-group-id="4860176706-3">}</span><span class="w">
+  </span><span class="p" data-group-id="4860176706-2">]</span><span class="w">
+</span><span class="k" data-group-id="4860176706-1">end</span></code></pre><p>The documentation can be found at <a href="https://bacnet-ex.github.io/bacstack/">https://bacnet-ex.github.io/bacstack/</a>.</p><!--If [available in Hex](https://hex.pm/docs/publish), the package can be installedby adding `bacstack` to your list of dependencies in `mix.exs`:```elixirdef deps do  [    {:bacstack, "~> 0.1.0"}  ]end```Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)and published on [HexDocs](https://hexdocs.pm). Once published, the docs canbe found at <https://hexdocs.pm/bacstack>.--><h2 id="module-getting-started" class="section-heading"><a href="#module-getting-started" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Getting Started</span></h2><p>First start a transport (specify callback), start <code class="inline">Segmentator</code>, start <code class="inline">SegmentsStore</code> and finally start <code class="inline">Client</code>,
+specifying all three previously started processes.</p><p>In the following example, we will use registered processes for ease of use. You can also use <code class="inline">:via</code> tuple for
+an alternative to locally registered names (or simply no registration at all).
+However since we need to &quot;link&quot; the processes, names make it a lot easier.
+Though the transport module does allow to use a function or MFA callback instead,
+so &quot;linking&quot; can be implementation by the user as desired.</p><p>We use the IPv4 transport and it will automatically determine a network interface to use.
+You can also specify the network interface directly, if you want to or the wrong interface is selected.
+Refer to the documentation for more information.</p><pre><code class="makeup elixir" translate="no"><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Stack.Client</span><span class="w">
+</span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Stack.Segmentator</span><span class="w">
+</span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Stack.SegmentsStore</span><span class="w">
+</span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Stack.Transport.IPv4Transport</span><span class="w">
+
+</span><span class="nc">IPv4Transport</span><span class="o">.</span><span class="n">open</span><span class="p" data-group-id="8001954492-1">(</span><span class="nc">Client</span><span class="p">,</span><span class="w"> </span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="nc">IPv4Transport</span><span class="p" data-group-id="8001954492-1">)</span><span class="w">
+</span><span class="nc">Segmentator</span><span class="o">.</span><span class="n">start_link</span><span class="p" data-group-id="8001954492-2">(</span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="nc">Segmentator</span><span class="p" data-group-id="8001954492-2">)</span><span class="w">
+</span><span class="nc">SegmentsStore</span><span class="o">.</span><span class="n">start_link</span><span class="p" data-group-id="8001954492-3">(</span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="nc">SegmentsStore</span><span class="p" data-group-id="8001954492-3">)</span><span class="w">
+</span><span class="nc">Client</span><span class="o">.</span><span class="n">start_link</span><span class="p" data-group-id="8001954492-4">(</span><span class="w">
+  </span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="nc">Client</span><span class="p">,</span><span class="w">
+  </span><span class="ss">segmentator</span><span class="p">:</span><span class="w"> </span><span class="nc">Segmentator</span><span class="p">,</span><span class="w">
+  </span><span class="ss">segments_store</span><span class="p">:</span><span class="w"> </span><span class="nc">SegmentsStore</span><span class="p">,</span><span class="w">
+  </span><span class="ss">transport</span><span class="p">:</span><span class="w"> </span><span class="nc">IPv4Transport</span><span class="w">
+</span><span class="p" data-group-id="8001954492-4">)</span></code></pre><p>In a more production environment these processes should be started under a supervisor
+and also where possible, you should specify the supervisor for the modules to use (i.e. IPv4 transport).</p><p>You can now use the <code class="inline">Client</code> module to interact with the BACnet network (i.e. send Who-Is messages).
+You can also receive BACnet traffic by specifying a notification receiver when starting <code class="inline">Client</code>.</p><p>See also the <code class="inline">ClientHelper</code> module for functions orientated around helping you to send BACnet service requests.</p><p>If you need to interact with a remote BACnet network, you may want to register yourself as a Foreign Device.
+For that case, you can start an additional process <code class="inline">ForeignDevice</code> and specify the BBMD.
+Please note that the <code class="inline">Client</code> needs to be started on the correct network interface where the BBMD is reachable.</p><pre><code class="makeup elixir" translate="no"><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Stack.ForeignDevice</span><span class="w">
+
+</span><span class="nc">ForeignDevice</span><span class="o">.</span><span class="n">start_link</span><span class="p" data-group-id="1863769354-1">(</span><span class="ss">bbmd</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="1863769354-2">{</span><span class="n">bbmd_ip</span><span class="p">,</span><span class="w"> </span><span class="mh">0xBAC0</span><span class="p" data-group-id="1863769354-2">}</span><span class="p">,</span><span class="w"> </span><span class="ss">client</span><span class="p">:</span><span class="w"> </span><span class="nc">Client</span><span class="p" data-group-id="1863769354-1">)</span></code></pre><h2 id="module-character-sets" class="section-heading"><a href="#module-character-sets" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Character Sets</span></h2><p>This library uses the library <a href="https://hex.pm/packages/codepagex">Codepagex</a> to implement character set conversion.
+By default, Codepagex only generates conversion code for fast conversion algorithms to and from UTF-8 (such as ISO-8859-1).</p><p>If you need to use other character sets, such as CP932 (JIS-X-0208) or CP850 (DBCS), you will have to configure  Codepagex accordingly.
+Refer to their documentation for the necessary steps.</p><h2 id="module-time-zone" class="section-heading"><a href="#module-time-zone" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Time Zone</span></h2><p>When using this library, there are some functions that take or return <a href="https://hexdocs.pm/elixir/DateTime.html"><code class="inline">DateTime</code></a> structs.
+Inside the library, there is a default timezone that will be used, when you don't particularily set/override the timezone.
+The default timezone is an application environment configuration that is used across the library and can be used
+to set a different timezone than the default <code class="inline">Etc/UTC</code>. Where applicable,
+you can still override the default timezone locally (i.e. <code class="inline">BACnetDateTime.to_datetime/3</code>).</p><pre><code class="makeup elixir" translate="no"><span class="n">config</span><span class="w"> </span><span class="ss">:bacstack</span><span class="p">,</span><span class="w"> </span><span class="ss">:default_timezone</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Etc/UTC&quot;</span></code></pre><p>Please note, for timezones other than <code class="inline">UTC</code>, you still need to set a timezone database for Elixir to work with.
+For example, with the library <a href="https://hex.pm/packages/tzdata">Tzdata</a> it's just a matter of configuration:</p><pre><code class="makeup elixir" translate="no"><span class="n">config</span><span class="w"> </span><span class="ss">:elixir</span><span class="p">,</span><span class="w"> </span><span class="ss">:time_zone_database</span><span class="p">,</span><span class="w"> </span><span class="nc">Tzdata.TimeZoneDatabase</span></code></pre><h2 id="module-extensibility" class="section-heading"><a href="#module-extensibility" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Extensibility</span></h2><p>Some parts of this library can be extended at compile-time to provide additional value. Let's explore them.</p><h3 id="module-errors" class="section-heading"><a href="#module-errors" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Errors</span></h3><p>Abort Reason, Error Class, Error Code and Reject Reason can be extended at compile-time by the library user.
+This allows to provide forward compatibility for new revisions at early stages.</p><p>Simply configure the key <code class="inline">:additional_abort_reason</code>, <code class="inline">:additional_error_class</code>,
+<code class="inline">:additional_error_code</code>  and/or <code class="inline">:additional_reject_reason</code> of the application <code class="inline">:bacstack</code>
+to be a keyword or map and use the name as key and the integer protocol value as value.</p><h3 id="module-object-properties" class="section-heading"><a href="#module-object-properties" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Object Properties</span></h3><p>For each object the available properties can be extended at compile-time by the library user.
+This may be done to add new properties or even proprietary properties to an object type.</p><p>Configure the key <code class="inline">:objects_additional_properties</code> of the application <code class="inline">:bacstack</code> and
+supply proper quoted expression (Elixir AST) to a keyword list or map,
+with the object type as key.</p><p>Please note that the properties must be known (either already supplied by the library
+or added by the library user using <code class="inline">additional_property_identifiers</code>).</p><p>For example:</p><pre><code class="makeup elixir" translate="no"><span class="n">config</span><span class="w"> </span><span class="ss">:bacstack</span><span class="p">,</span><span class="w"> </span><span class="ss">:objects_additional_properties</span><span class="p">,</span><span class="w">
+  </span><span class="ss">loop</span><span class="p">:</span><span class="w">
+    </span><span class="p" data-group-id="1540394368-1">(</span><span class="k">quote</span><span class="w"> </span><span class="k" data-group-id="1540394368-2">do</span><span class="w">
+        </span><span class="n">field</span><span class="p" data-group-id="1540394368-3">(</span><span class="ss">:loop_enable</span><span class="p">,</span><span class="w"> </span><span class="n">boolean</span><span class="p" data-group-id="1540394368-4">(</span><span class="p" data-group-id="1540394368-4">)</span><span class="p">,</span><span class="w"> </span><span class="ss">encode_as</span><span class="p">:</span><span class="w"> </span><span class="ss">:enumerated</span><span class="p" data-group-id="1540394368-3">)</span><span class="w">
+
+        </span><span class="n">field</span><span class="p" data-group-id="1540394368-5">(</span><span class="ss">:loop_mode</span><span class="p">,</span><span class="w"> </span><span class="ss">:bacnet_loop</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">:plc_loop</span><span class="p">,</span><span class="w">
+          </span><span class="ss">bac_type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="1540394368-6">{</span><span class="ss">:in_list</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1540394368-7">[</span><span class="ss">:bacnet_loop</span><span class="p">,</span><span class="w"> </span><span class="ss">:plc_loop</span><span class="p" data-group-id="1540394368-7">]</span><span class="p" data-group-id="1540394368-6">}</span><span class="p">,</span><span class="w">
+          </span><span class="ss">annotation</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="1540394368-8">[</span><span class="w">
+            </span><span class="ss">encoder</span><span class="p">:</span><span class="w"> </span><span class="o">&amp;</span><span class="p" data-group-id="1540394368-9">{</span><span class="ss">:enumerated</span><span class="p">,</span><span class="w"> </span><span class="k">if</span><span class="p" data-group-id="1540394368-10">(</span><span class="ni">&amp;1</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="ss">:plc_loop</span><span class="p">,</span><span class="w"> </span><span class="ss">do</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">else</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p" data-group-id="1540394368-10">)</span><span class="p" data-group-id="1540394368-9">}</span><span class="p">,</span><span class="w">
+            </span><span class="ss">decoder</span><span class="p">:</span><span class="w"> </span><span class="o">&amp;</span><span class="k">if</span><span class="p" data-group-id="1540394368-11">(</span><span class="ni">&amp;1</span><span class="o">.</span><span class="n">value</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">do</span><span class="p">:</span><span class="w"> </span><span class="ss">:plc_loop</span><span class="p">,</span><span class="w"> </span><span class="ss">else</span><span class="p">:</span><span class="w"> </span><span class="ss">:bacnet_loop</span><span class="p" data-group-id="1540394368-11">)</span><span class="w">
+          </span><span class="p" data-group-id="1540394368-8">]</span><span class="w">
+        </span><span class="p" data-group-id="1540394368-5">)</span><span class="w">
+      </span><span class="k" data-group-id="1540394368-2">end</span><span class="p" data-group-id="1540394368-1">)</span></code></pre><p>See the documentation to <code class="inline">ObjectsMacro.bac_object/2</code> for more information and the allowed/expected expression.</p><h3 id="module-object-types" class="section-heading"><a href="#module-object-types" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Object Types</span></h3><p>The known object types can be extended at compile-time by the library.
+That does not automatically implement the new object types, however makes it possible to do so.
+It can be done to provide forward compatibility for new revisions at early stages.</p><p>Simply configure the key <code class="inline">:additional_object_type</code> of the application <code class="inline">:bacstack</code>
+to be a keyword or map and use the name as key and the integer protocol value as value.</p><p>You'll also want to extend object types supported through <code class="inline">:additional_object_types_supported</code>.
+The struct <a href="BACnet.Protocol.Device.ObjectTypesSupported.html"><code class="inline">BACnet.Protocol.Device.ObjectTypesSupported</code></a> is automatically adjusted and up-to-date at compile time.</p><h3 id="module-property-identifiers" class="section-heading"><a href="#module-property-identifiers" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Property Identifiers</span></h3><p>The known property identifiers can be extended at compile-time by the library user.
+This can be done to add new properties or even proprietary property identifiers.</p><p>Simply configure the key <code class="inline">:additional_property_identifiers</code> of the application <code class="inline">:bacstack</code>
+to be a keyword or map and use the name as key and the integer protocol value as value.</p><p>For example:</p><pre><code class="makeup elixir" translate="no"><span class="n">config</span><span class="w"> </span><span class="ss">:bacstack</span><span class="p">,</span><span class="w"> </span><span class="ss">:additional_property_identifiers</span><span class="p">,</span><span class="w"> </span><span class="ss">loop_enable</span><span class="p">:</span><span class="w"> </span><span class="mi">523</span><span class="p">,</span><span class="w"> </span><span class="ss">loop_mode</span><span class="p">:</span><span class="w"> </span><span class="mi">524</span></code></pre><h3 id="module-services" class="section-heading"><a href="#module-services" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Services</span></h3><p>Both confirmed and unconfirmed service choices known can be extended at compile-time by the library user.
+That does not mean though, that the services are implemented. It can be done though, to provide forward
+compatibility for new revisions at early stages.</p><p>Simply configure the key <code class="inline">:additional_confirmed_service_choice</code> and/or <code class="inline">:additional_unconfirmed_service_choice</code>
+of the application <code class="inline">:bacstack</code> to be a keyword or map and use the name as key and the integer protocol value as value.</p><p>You'll also want to extend services supported through <code class="inline">:additional_services_supported</code>.
+The struct <a href="BACnet.Protocol.Device.ServicesSupported.html"><code class="inline">BACnet.Protocol.Device.ServicesSupported</code></a> is automatically adjusted and up-to-date at compile time.</p><h2 id="module-status-of-bacnet-objects-implementation" class="section-heading"><a href="#module-status-of-bacnet-objects-implementation" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Status of BACnet objects implementation</span></h2><table><thead><tr><th style="text-align: left;">Object Type</th><th style="text-align: left;">Representation</th><th style="text-align: left;">Execute</th><th style="text-align: left;">Intrinsic Reporting</th></tr></thead><tbody><tr><td style="text-align: left;">Accumulator</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Analog Input</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Analog Output</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Analog Value</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Averaging</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Binary Input</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Binary Output</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Binary Value</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Calendar</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Command</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Device</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Event Enrollment</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">File</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Group</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Life Safety Point</td><td style="text-align: left;">N/A</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Life Safety Zone</td><td style="text-align: left;">N/A</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Loop</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Multistate Input</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Multistate Output</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Multistate Value</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Notification Class</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Program</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Pulse Converter</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Schedule</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Event Log</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Trend Log</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Trend Log Multiple</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Load Control</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Access Point</td><td style="text-align: left;">N/A</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Access Zone</td><td style="text-align: left;">N/A</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Access User</td><td style="text-align: left;">N/A</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Access Rights</td><td style="text-align: left;">N/A</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Access Credential</td><td style="text-align: left;">N/A</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Credential Data Input</td><td style="text-align: left;">N/A</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Structured View</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Character String Value</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">DateTime Value</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Large Analog Value</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Bitstring</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Octet String Value</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Time Value</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Integer Value</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Positive Integer Value</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Date Value</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">DateTime Pattern Value</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Time Pattern Value</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Date Pattern Value</td><td style="text-align: left;">135-2012</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Network Security</td><td style="text-align: left;">N/A</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Global Group</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Notification Forwarder</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Alert Enrollment</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Channel</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr><tr><td style="text-align: left;">Lighting Output</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td><td style="text-align: left;">-</td></tr></tbody></table><h2 id="module-status-of-bacnet-services-implementation" class="section-heading"><a href="#module-status-of-bacnet-services-implementation" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Status of BACnet services implementation</span></h2><table><thead><tr><th style="text-align: left;">Service Name</th><th style="text-align: left;">Receive</th><th style="text-align: left;">Send</th><th style="text-align: left;">ACK (Pos/Neg)</th></tr></thead><tbody><tr><td style="text-align: left;">Confirmed COV</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">Simple/Error</td></tr><tr><td style="text-align: left;">Unconfirmed COV</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;"></td></tr><tr><td style="text-align: left;">Confirmed Event</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">Simple/Error</td></tr><tr><td style="text-align: left;">Unconfirmed Event</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;"></td></tr><tr><td style="text-align: left;">Acknowledge Alarm</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">Simple/Error</td></tr><tr><td style="text-align: left;">Get Alarm Summary</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">x/Error</td></tr><tr><td style="text-align: left;">Get Enrollment Summary</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">x/Error</td></tr><tr><td style="text-align: left;">Get Event Information</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">x/Error</td></tr><tr><td style="text-align: left;">Life Safety Operation</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">Simple/Error</td></tr><tr><td style="text-align: left;">Subscribe COV</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">Simple/Error</td></tr><tr><td style="text-align: left;">Subscribe COV Property</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">Simple/Error</td></tr><tr><td style="text-align: left;">Atomic Read File</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">x/Error</td></tr><tr><td style="text-align: left;">Atomic Write File</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">x/Error</td></tr><tr><td style="text-align: left;">Add List Element</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">Simple/x</td></tr><tr><td style="text-align: left;">Remove List Element</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">Simple/x</td></tr><tr><td style="text-align: left;">Create Object</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">x/x</td></tr><tr><td style="text-align: left;">Delete Object</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">Simple/x</td></tr><tr><td style="text-align: left;">Read Property</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">x/Error</td></tr><tr><td style="text-align: left;">Read Property Multiple</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">x/Error</td></tr><tr><td style="text-align: left;">Read Range</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">x/Error</td></tr><tr><td style="text-align: left;">Write Property</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">Simple/Error</td></tr><tr><td style="text-align: left;">Write Property Multiple</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">Simple/x</td></tr><tr><td style="text-align: left;">Write Group</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;"></td></tr><tr><td style="text-align: left;">Device Communication Control</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">Simple/Error</td></tr><tr><td style="text-align: left;">Confirmed Private Transfer</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">x/x</td></tr><tr><td style="text-align: left;">Unconfirmed Private Transfer</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;"></td></tr><tr><td style="text-align: left;">Reinitialize Device</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">Simple/Error</td></tr><tr><td style="text-align: left;">Confirmed Text Message</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;">Simple/Error</td></tr><tr><td style="text-align: left;">Unconfirmed Text Message</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;"></td></tr><tr><td style="text-align: left;">Time Synchronization</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;"></td></tr><tr><td style="text-align: left;">UTC Time Synchronization</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;"></td></tr><tr><td style="text-align: left;">Who-Has</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;"></td></tr><tr><td style="text-align: left;">I-Have</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;"></td></tr><tr><td style="text-align: left;">Who-Is</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;"></td></tr><tr><td style="text-align: left;">I-Am</td><td style="text-align: left;">x</td><td style="text-align: left;">x</td><td style="text-align: left;"></td></tr><tr><td style="text-align: left;">VT Open</td><td style="text-align: left;">N/A</td><td style="text-align: left;">N/A</td><td style="text-align: left;"></td></tr><tr><td style="text-align: left;">VT Close</td><td style="text-align: left;">N/A</td><td style="text-align: left;">N/A</td><td style="text-align: left;"></td></tr><tr><td style="text-align: left;">VT Data</td><td style="text-align: left;">N/A</td><td style="text-align: left;">N/A</td><td style="text-align: left;"></td></tr></tbody></table><h2 id="module-status-of-event-algorithms-implementation" class="section-heading"><a href="#module-status-of-event-algorithms-implementation" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Status of Event Algorithms Implementation</span></h2><table><thead><tr><th style="text-align: left;">Event Algorithm</th><th style="text-align: left;">Implemented</th></tr></thead><tbody><tr><td style="text-align: left;">Buffer Ready</td><td style="text-align: left;">135-2012</td></tr><tr><td style="text-align: left;">Change Of Bitstring</td><td style="text-align: left;">135-2012</td></tr><tr><td style="text-align: left;">Change Of Character String</td><td style="text-align: left;">135-2012</td></tr><tr><td style="text-align: left;">Change Of Life Safety</td><td style="text-align: left;">135-2012</td></tr><tr><td style="text-align: left;">Change Of State</td><td style="text-align: left;">135-2012</td></tr><tr><td style="text-align: left;">Change Of Status Flags</td><td style="text-align: left;">135-2012</td></tr><tr><td style="text-align: left;">Change Of Value</td><td style="text-align: left;">135-2012</td></tr><tr><td style="text-align: left;">Command Failure</td><td style="text-align: left;">135-2012</td></tr><tr><td style="text-align: left;">Complex Event Type</td><td style="text-align: left;">N/A</td></tr><tr><td style="text-align: left;">Double Out Of Range</td><td style="text-align: left;">135-2012</td></tr><tr><td style="text-align: left;">Extended</td><td style="text-align: left;">N/A</td></tr><tr><td style="text-align: left;">Floating Limit</td><td style="text-align: left;">135-2012</td></tr><tr><td style="text-align: left;">Out Of Range</td><td style="text-align: left;">135-2012</td></tr><tr><td style="text-align: left;">Signed Out Of Range</td><td style="text-align: left;">135-2012</td></tr><tr><td style="text-align: left;">Unsigned Out Of Range</td><td style="text-align: left;">135-2012</td></tr><tr><td style="text-align: left;">Unsigned Range</td><td style="text-align: left;">135-2012</td></tr></tbody></table><h2 id="module-status-of-fault-algorithms-implementation" class="section-heading"><a href="#module-status-of-fault-algorithms-implementation" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Status of Fault Algorithms Implementation</span></h2><table><thead><tr><th style="text-align: left;">Fault Algorithm</th><th style="text-align: left;">Implemented</th></tr></thead><tbody><tr><td style="text-align: left;">Fault Character String</td><td style="text-align: left;">135-2012</td></tr><tr><td style="text-align: left;">Fault Extended</td><td style="text-align: left;">N/A</td></tr><tr><td style="text-align: left;">Fault Life Safety</td><td style="text-align: left;">135-2012</td></tr><tr><td style="text-align: left;">Fault State</td><td style="text-align: left;">135-2012</td></tr><tr><td style="text-align: left;">Fault Status Flags</td><td style="text-align: left;">135-2012</td></tr></tbody></table>
+    </section>
+
+</div>
+
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="bacstack.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.1) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

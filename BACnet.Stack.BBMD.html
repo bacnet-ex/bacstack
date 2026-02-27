@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.1">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>BACnet.Stack.BBMD — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-YJO4MOOW.css" />
+
+    <script defer src="dist/sidebar_items-C7FAD1DE.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-YU4BZFVS.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr>Stack.<wbr>BBMD</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0)</small>
+
+    </h1>
+
+<a href="BACnet.Stack.BBMD.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/bbmd.ex#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>The BBMD module is responsible for acting as a BACnet/IPv4 Broadcast Management Device (BBMD).</p><p>It will subscribe for BACnet/IP Virtual Link Layer messages from the <a href="BACnet.Stack.Client.html"><code class="inline">BACnet.Stack.Client</code></a>
+and act accordingly on BBMD-specific BVLC messages.
+It will handle both Broadcast Distribution according to the Broadcast Distribution Table (BDT)
+on local broadcast and Foreign Device Registration, including distributing broadcasts from those.</p><p>It allows to read the BDT and registered Foreign Devices through BVLC messages and
+the module functions. New Foreign Device Registrations may be &quot;paused&quot; and &quot;resumed&quot; at any time.
+Pausing Foreign Device Registrations will mean that new Register messages will be rejected.</p><p>BBMDs allow a Foreign Device (a device not residing on the same subnet) to send broadcasts
+to the network the BBMD is connected to. More specifically, the Foreign Device will tell the BBMD
+to distribute a specific APDU as broadcast and the BBMD will forward that APDU as broadcast
+on the network. BACnet devices on that network will then respond with <code class="inline">I-Am</code> APDUs directly
+to that device. As such, proper network routing is required for this to work.</p><p>For each network (client/transport) one BBMD process is required,
+if Foreign Devices should be served (enables to discover local BACnet devices).
+<strong>Only one BBMD is allowed on a BACnet network.</strong></p>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-types summary">
+  <h3>
+    <a href="#types">Types</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:client/0" data-no-tooltip="" translate="no">client()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents a <a href="BACnet.Stack.Client.html"><code class="inline">BACnet.Stack.Client</code></a> process. It will be used to retrieve the
+transport module, transport and portal through the <a href="BACnet.Stack.Client.html"><code class="inline">BACnet.Stack.Client</code></a> API.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:server/0" data-no-tooltip="" translate="no">server()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents a server process of the BBMD module.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:start_option/0" data-no-tooltip="" translate="no">start_option()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Valid start options. For a description of each, see <a href="#start_link/1"><code class="inline">start_link/1</code></a>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:start_options/0" data-no-tooltip="" translate="no">start_options()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>List of start options.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#add_bdt_entry/2" data-no-tooltip="" translate="no">add_bdt_entry(server, entry)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Add an entry to the Broadcast Distribution Table.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#child_spec/1" data-no-tooltip="" translate="no">child_spec(init_arg)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Returns a specification to start this module under a supervisor.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_broadcast_distribution_table/1" data-no-tooltip="" translate="no">get_broadcast_distribution_table(server)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the Foreign Device Table.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_foreign_device_table/1" data-no-tooltip="" translate="no">get_foreign_device_table(server)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the Foreign Device Table.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#pause_fd_registration/1" data-no-tooltip="" translate="no">pause_fd_registration(server)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Pause Foreign Device Registration process.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#remove_bdt_entry/2" data-no-tooltip="" translate="no">remove_bdt_entry(server, entry)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Removes an entry from the Broadcast Distribution Table.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#remove_foreign_device/2" data-no-tooltip="" translate="no">remove_foreign_device(server, fd)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Removes a Foreign Device from the Foreign Device table.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#resume_fd_registration/1" data-no-tooltip="" translate="no">resume_fd_registration(server)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Resumes Foreign Device Registration process.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#start_link/1" data-no-tooltip="" translate="no">start_link(opts)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Starts and links the BACnet Broadcast Management Device.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h2>
+
+    <div class="types-list">
+<section class="detail" id="t:client/0">
+
+  <div class="detail-header">
+    <a href="#t:client/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">client()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/bbmd.ex#L144" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> client() :: <a href="BACnet.Stack.Client.html#t:server/0">BACnet.Stack.Client.server</a>()</pre>
+
+      </div>
+
+<p>Represents a <a href="BACnet.Stack.Client.html"><code class="inline">BACnet.Stack.Client</code></a> process. It will be used to retrieve the
+transport module, transport and portal through the <a href="BACnet.Stack.Client.html"><code class="inline">BACnet.Stack.Client</code></a> API.</p>
+  </section>
+</section>
+<section class="detail" id="t:server/0">
+
+  <div class="detail-header">
+    <a href="#t:server/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">server()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/bbmd.ex#L149" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> server() :: <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>()</pre>
+
+      </div>
+
+<p>Represents a server process of the BBMD module.</p>
+  </section>
+</section>
+<section class="detail" id="t:start_option/0">
+
+  <div class="detail-header">
+    <a href="#t:start_option/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">start_option()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/bbmd.ex#L154" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> start_option() ::
+  {:bdt, [<a href="BACnet.Protocol.BroadcastDistributionTableEntry.html#t:t/0">BACnet.Protocol.BroadcastDistributionTableEntry.t</a>()]}
+  | {:bdt_readonly, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | {:client, <a href="#t:client/0">client</a>()}
+  | {:max_fd_registrations, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()}
+  | {:override_port, 47808..65535}
+  | {:paused, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | {:proxy_mode, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | <a href="https://hexdocs.pm/elixir/GenServer.html#t:option/0">GenServer.option</a>()</pre>
+
+      </div>
+
+<p>Valid start options. For a description of each, see <a href="#start_link/1"><code class="inline">start_link/1</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="t:start_options/0">
+
+  <div class="detail-header">
+    <a href="#t:start_options/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">start_options()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/bbmd.ex#L167" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> start_options() :: [<a href="#t:start_option/0">start_option</a>()]</pre>
+
+      </div>
+
+<p>List of start options.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="add_bdt_entry/2">
+
+  <div class="detail-header">
+    <a href="#add_bdt_entry/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">add_bdt_entry(server, entry)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/bbmd.ex#L218" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> add_bdt_entry(<a href="#t:server/0">server</a>(), <a href="BACnet.Protocol.BroadcastDistributionTableEntry.html#t:t/0">BACnet.Protocol.BroadcastDistributionTableEntry.t</a>()) ::
+  :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Add an entry to the Broadcast Distribution Table.</p>
+  </section>
+</section>
+<section class="detail" id="child_spec/1">
+
+  <div class="detail-header">
+    <a href="#child_spec/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">child_spec(init_arg)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/bbmd.ex#L42" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Returns a specification to start this module under a supervisor.</p><p>See <a href="https://hexdocs.pm/elixir/Supervisor.html"><code class="inline">Supervisor</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="get_broadcast_distribution_table/1">
+
+  <div class="detail-header">
+    <a href="#get_broadcast_distribution_table/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_broadcast_distribution_table(server)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/bbmd.ex#L231" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_broadcast_distribution_table(<a href="#t:server/0">server</a>()) :: [
+  <a href="BACnet.Protocol.BroadcastDistributionTableEntry.html#t:t/0">BACnet.Protocol.BroadcastDistributionTableEntry.t</a>()
+]</pre>
+
+      </div>
+
+<p>Get the Foreign Device Table.</p>
+  </section>
+</section>
+<section class="detail" id="get_foreign_device_table/1">
+
+  <div class="detail-header">
+    <a href="#get_foreign_device_table/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_foreign_device_table(server)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/bbmd.ex#L239" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_foreign_device_table(<a href="#t:server/0">server</a>()) :: [
+  <a href="BACnet.Protocol.ForeignDeviceTableEntry.html#t:t/0">BACnet.Protocol.ForeignDeviceTableEntry.t</a>()
+]</pre>
+
+      </div>
+
+<p>Get the Foreign Device Table.</p>
+  </section>
+</section>
+<section class="detail" id="pause_fd_registration/1">
+
+  <div class="detail-header">
+    <a href="#pause_fd_registration/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">pause_fd_registration(server)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/bbmd.ex#L253" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> pause_fd_registration(<a href="#t:server/0">server</a>()) :: :ok</pre>
+
+      </div>
+
+<p>Pause Foreign Device Registration process.</p><p>All new Foreign Device Registration requests will be rejected.
+Leading to &quot;draining&quot; of the BBMD through expiration of registrations,
+as long as expiration time (TTL) are not exorbitantly large.</p><p>See also <a href="#resume_fd_registration/1"><code class="inline">resume_fd_registration/1</code></a> for resuming.</p>
+  </section>
+</section>
+<section class="detail" id="remove_bdt_entry/2">
+
+  <div class="detail-header">
+    <a href="#remove_bdt_entry/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">remove_bdt_entry(server, entry)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/bbmd.ex#L261" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> remove_bdt_entry(<a href="#t:server/0">server</a>(), <a href="BACnet.Protocol.BroadcastDistributionTableEntry.html#t:t/0">BACnet.Protocol.BroadcastDistributionTableEntry.t</a>()) ::
+  :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Removes an entry from the Broadcast Distribution Table.</p>
+  </section>
+</section>
+<section class="detail" id="remove_foreign_device/2">
+
+  <div class="detail-header">
+    <a href="#remove_foreign_device/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">remove_foreign_device(server, fd)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/bbmd.ex#L273" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> remove_foreign_device(<a href="#t:server/0">server</a>(), <a href="BACnet.Protocol.ForeignDeviceTableEntry.html#t:t/0">BACnet.Protocol.ForeignDeviceTableEntry.t</a>()) ::
+  :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Removes a Foreign Device from the Foreign Device table.</p><p>This may be used to remove known dead devices with long expiration time
+manually without having to wait for the entries to expire.</p>
+  </section>
+</section>
+<section class="detail" id="resume_fd_registration/1">
+
+  <div class="detail-header">
+    <a href="#resume_fd_registration/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">resume_fd_registration(server)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/bbmd.ex#L285" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> resume_fd_registration(<a href="#t:server/0">server</a>()) :: :ok</pre>
+
+      </div>
+
+<p>Resumes Foreign Device Registration process.</p><p>All new Foreign Device Registration requests will be processed as normal.
+This function reverses <a href="#pause_fd_registration/1"><code class="inline">pause_fd_registration/1</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="start_link/1">
+
+  <div class="detail-header">
+    <a href="#start_link/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">start_link(opts)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/bbmd.ex#L193" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> start_link(<a href="#t:start_options/0">start_options</a>()) :: <a href="https://hexdocs.pm/elixir/GenServer.html#t:on_start/0">GenServer.on_start</a>()</pre>
+
+      </div>
+
+<p>Starts and links the BACnet Broadcast Management Device.</p><p>The following options are available, in addition to <a href="https://hexdocs.pm/elixir/GenServer.html#t:options/0"><code class="inline">GenServer.options/0</code></a>:</p><ul><li><code class="inline">bdt: [BroadcastDistributionTableEntry.t()]</code> - Optional. The Broadcast Distribution Table to distribute broadcasts to peers.</li><li><code class="inline">bdt_readonly: boolean()</code> - Optional. Whether the Broadcast Distribution Table is readonly on the BACnet side.
+By default the BDT can be written to and changed. Setting this to <code class="inline">true</code> will only allow writes through the Elixir side.</li><li><code class="inline">client: client()</code> - Required. The client &amp; transport information.</li><li><code class="inline">max_fd_registrations: pos_integer()</code> - Optional. The amount of Foreign Device registrations that can be accepted
+are limited by this option (defaults to <code class="inline">512</code>). That is by design to not allow an unlimited number of registrations to be
+accumulated with a long Time-To-Live. Only up to the given number will be accepted at most concurrently,
+any further registration will be rejected and must wait until one registration times out or
+gets deleted to allow a new registration to be accepted.
+The maximum Time-To-Live is <code class="inline">65_535</code> seconds (ca. 18h 12mins), as per ASHRAE 135 J.5.2.1.</li><li><code class="inline">override_port: 47_808..65_535</code> - Optional. Overrides the used broadcast port (defaults to transport port number).</li><li><code class="inline">paused: boolean()</code> - Optional. Start in paused state. See also <a href="#pause_fd_registration/1"><code class="inline">pause_fd_registration/1</code></a> and <a href="#resume_fd_registration/1"><code class="inline">resume_fd_registration/1</code></a>.</li><li><code class="inline">proxy_mode: boolean()</code> - Optional. This is an alternate mode to the BBMD operation as described in ASHRAE 135 Annex J.4.5.
+Instead of broadcasting received BVLL <code class="inline">Distribute-Broadcast-To-Network</code> as <code class="inline">Forwarded-NPDU</code>, it will do a regular broadcast.
+Which means the devices will respond unicast to the BBMD.
+The BBMD will forward all received <code class="inline">IAm</code> and <code class="inline">IHave</code> NPDUs to all Foreign Devices, even if the Foreign Device has not
+sent a request for <code class="inline">WhoIs</code> or the request has been long ago executed. This mode is only for development and testing purposes.
+It should not be used in production for regular BBMD operation.</li></ul>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="bacstack.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.1) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

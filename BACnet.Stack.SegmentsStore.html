@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.1">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>BACnet.Stack.SegmentsStore — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-YJO4MOOW.css" />
+
+    <script defer src="dist/sidebar_items-C7FAD1DE.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-YU4BZFVS.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr>Stack.<wbr>SegmentsStore</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0)</small>
+
+    </h1>
+
+<a href="BACnet.Stack.SegmentsStore.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/segments_store.ex#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>The Segments Store module handles incoming segments of a segmented request or response.
+Outgoing segments need to be handled manually or through the <a href="BACnet.Stack.Segmentator.html"><code class="inline">BACnet.Stack.Segmentator</code></a> module.</p><p>New segment sequences are automatically created when receiving a segmented request or response,
+through the <a href="#segment/6"><code class="inline">segment/6</code></a> function. Responses to the source of a segmented request or response are
+automatically sent.</p><p>Users of this module need to route incoming <code class="inline">Abort</code>, <code class="inline">Error</code>, <code class="inline">Reject</code> and segmented APDUs
+(identified by the <code class="inline">:incomplete</code> tuple of <code class="inline">BACnet.APDU.decode/1</code>) to this module,
+so the Segments Store can function properly. See the <a href="#cancel/3"><code class="inline">cancel/3</code></a> and <a href="#segment/6"><code class="inline">segment/6</code></a> documentation.</p><p>The Segments Store module is transport layer agnostic due to the nature of using
+the <a href="BACnet.Stack.TransportBehaviour.html"><code class="inline">BACnet.Stack.TransportBehaviour</code></a>.</p><p>This module is written to not require one instance per destination or transport layer protocol,
+as such when handling a segment, the transport module, portal, and source address need to be given.</p><p>Please note that in some circumstances, such as BACnet/IP and IP routing, the packets are under subject
+to packet re-ordering. To address this, you may overwrite the window size field for packets outside
+of the local network using <code class="inline">BACnet.IncompleteAPDU.set_window_size/2</code> before calling <a href="#segment/6"><code class="inline">segment/6</code></a>.
+The value should be set to <code class="inline">1</code>, so for each segment an acknowledge needs to be sent (thus preventing
+packet re-ordering and packets arriving out of order).</p>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-types summary">
+  <h3>
+    <a href="#types">Types</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:server/0" data-no-tooltip="" translate="no">server()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents a server process of the Segments Store module.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:start_option/0" data-no-tooltip="" translate="no">start_option()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Valid start options. For a description of each, see <a href="#start_link/1"><code class="inline">start_link/1</code></a>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:start_options/0" data-no-tooltip="" translate="no">start_options()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>List of start options.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#cancel/3" data-no-tooltip="" translate="no">cancel(server, source_address, apdu)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Cancels a segment sequence in the Store.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#child_spec/1" data-no-tooltip="" translate="no">child_spec(init_arg)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Returns a specification to start this module under a supervisor.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#segment/6" data-no-tooltip="" translate="no">segment(server, incomplete, transport, portal, source_address, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Sends a segment to the Store to be handled. <code class="inline">cancel</code> specifies whether segmentation is aborted/cancelled.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#start_link/1" data-no-tooltip="" translate="no">start_link(opts)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Starts and links the Segments Store.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h2>
+
+    <div class="types-list">
+<section class="detail" id="t:server/0">
+
+  <div class="detail-header">
+    <a href="#t:server/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">server()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/segments_store.ex#L125" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> server() :: <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>()</pre>
+
+      </div>
+
+<p>Represents a server process of the Segments Store module.</p>
+  </section>
+</section>
+<section class="detail" id="t:start_option/0">
+
+  <div class="detail-header">
+    <a href="#t:start_option/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">start_option()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/segments_store.ex#L130" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> start_option() ::
+  {:apdu_retries, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()}
+  | {:apdu_timeout, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()}
+  | {:max_segments, <a href="BACnet.Protocol.Constants.html#t:max_segments/0">BACnet.Protocol.Constants.max_segments</a>()}
+  | <a href="https://hexdocs.pm/elixir/GenServer.html#t:option/0">GenServer.option</a>()</pre>
+
+      </div>
+
+<p>Valid start options. For a description of each, see <a href="#start_link/1"><code class="inline">start_link/1</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="t:start_options/0">
+
+  <div class="detail-header">
+    <a href="#t:start_options/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">start_options()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/segments_store.ex#L139" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> start_options() :: [<a href="#t:start_option/0">start_option</a>()]</pre>
+
+      </div>
+
+<p>List of start options.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="cancel/3">
+
+  <div class="detail-header">
+    <a href="#cancel/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">cancel(server, source_address, apdu)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/segments_store.ex#L224" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> cancel(
+  <a href="#t:server/0">server</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="BACnet.Protocol.APDU.Abort.html#t:t/0">BACnet.Protocol.APDU.Abort.t</a>()
+  | <a href="BACnet.Protocol.APDU.Error.html#t:t/0">BACnet.Protocol.APDU.Error.t</a>()
+  | <a href="BACnet.Protocol.APDU.Reject.html#t:t/0">BACnet.Protocol.APDU.Reject.t</a>()
+  | <a href="BACnet.Protocol.APDU.SimpleACK.html#t:t/0">BACnet.Protocol.APDU.SimpleACK.t</a>()
+  | (invoke_id :: 0..255)
+) :: :ok</pre>
+
+      </div>
+
+<p>Cancels a segment sequence in the Store.</p><p>This function must be called by the user when one of the following conditions is met:</p><ul><li>Abort PDU received with the same invoke ID</li><li>Error PDU received with the same invoke ID</li><li>Reject PDU received with the same invoke ID</li><li>SimpleACK PDU received with the same invoke ID</li></ul><p>This function does nothing if no sequence exists in the Store, thus it is safe to call it,
+even if no segmentation is in progress. Although if there is a lot of traffic, the user
+should consider filtering and only call this function with interesting
+APDUs (APDUs for segmented requests/responses).</p>
+  </section>
+</section>
+<section class="detail" id="child_spec/1">
+
+  <div class="detail-header">
+    <a href="#child_spec/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">child_spec(init_arg)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/segments_store.ex#L38" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Returns a specification to start this module under a supervisor.</p><p>See <a href="https://hexdocs.pm/elixir/Supervisor.html"><code class="inline">Supervisor</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="segment/6">
+
+    <span id="segment/5"></span>
+
+  <div class="detail-header">
+    <a href="#segment/6" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">segment(server, incomplete, transport, portal, source_address, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/segments_store.ex#L185" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> segment(
+  <a href="#t:server/0">server</a>(),
+  <a href="BACnet.Protocol.IncompleteAPDU.html#t:t/0">BACnet.Protocol.IncompleteAPDU.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">module</a>(),
+  <a href="BACnet.Stack.TransportBehaviour.html#t:portal/0">BACnet.Stack.TransportBehaviour.portal</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()
+) ::
+  {:ok, complete_data :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()}
+  | :incomplete
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(), cancel :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}</pre>
+
+      </div>
+
+<p>Sends a segment to the Store to be handled. <code class="inline">cancel</code> specifies whether segmentation is aborted/cancelled.</p><p>If no segment sequence for the source address and invoke ID exist yet, one will be created automatically. Sequences
+aborted by the Store are automatically removed from it and the remote BACnet device is notified.</p><p>Once all segments have been received, an ok-tuple is returned with the complete APDU binary data,
+which then can be decoded using the <a href="BACnet.Protocol.html"><code class="inline">BACnet.Protocol</code></a> module.</p><p>This module sends answers directly to the remote BACnet device, as such the transport module and portal needs to be specified.</p><p>The <code class="inline">opts</code> argument will be passed on to the transport module's send function without modification.</p>
+  </section>
+</section>
+<section class="detail" id="start_link/1">
+
+  <div class="detail-header">
+    <a href="#start_link/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">start_link(opts)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/segments_store.ex#L152" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> start_link(<a href="#t:start_options/0">start_options</a>()) :: <a href="https://hexdocs.pm/elixir/GenServer.html#t:on_start/0">GenServer.on_start</a>()</pre>
+
+      </div>
+
+<p>Starts and links the Segments Store.</p><p>The following options are available, in addition to <a href="https://hexdocs.pm/elixir/GenServer.html#t:options/0"><code class="inline">GenServer.options/0</code></a>:</p><ul><li><code class="inline">apdu_retries: pos_integer()</code> - Optional. The amount of APDU sending retries (defaults to 3).</li><li><code class="inline">apdu_timeout: pos_integer()</code> - Optional. The APDU timeout to be waiting for a response, in ms (defaults to 3000ms).</li><li><code class="inline">max_segments: Constants.max_segments()</code> - Optional. The maximum amount of segments to allow (defaults to <code class="inline">:more_than_64</code>).
+While <code class="inline">:unspecified</code> is allowed here, it shouldn't be used anywhere, because it makes it for the server unable to determine
+if the response is transmittable. Since this setting here does not go to the server, <code class="inline">:unspecified</code> is allowed here.</li></ul>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="bacstack.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.1) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

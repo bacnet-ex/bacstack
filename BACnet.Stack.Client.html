@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.1">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>BACnet.Stack.Client — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-YJO4MOOW.css" />
+
+    <script defer src="dist/sidebar_items-C7FAD1DE.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-YU4BZFVS.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr>Stack.<wbr>Client</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0)</small>
+
+    </h1>
+
+<a href="BACnet.Stack.Client.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client.ex#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>The BACnet client is responsible for connecting the application to the BACnet transport protocol
+and vice versa - it interfaces with the BACnet transport protocol, using the transport behaviour.
+The client will take requests and send them to the BACnet transport protocol and ultimately listen for
+frames from the BACnet transport protocol.</p><p>The application will receive process messages on the specified <code class="inline">notification_receiver</code>. If there's no
+notification receiver and a confirmed service request is received, the client will automatically send
+a Reject APDU with reason <code class="inline">:other</code> to the remote BACnet device,
+the application won't be informed in any way.</p><p>BACnet BVLL and BACnet NPDU are directly forwarded to the application, without any processing.</p><p>For  BACnet BVLL, the following message is sent:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="5111743105-1">{</span><span class="ss">:bacnet_transport</span><span class="p">,</span><span class="w"> </span><span class="n">protocol_id</span><span class="p">,</span><span class="w"> </span><span class="n">source_address</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5111743105-2">{</span><span class="ss">:bvlc</span><span class="p">,</span><span class="w"> </span><span class="n">bvlc</span><span class="p" data-group-id="5111743105-2">}</span><span class="p">,</span><span class="w"> </span><span class="n">portal</span><span class="p" data-group-id="5111743105-1">}</span></code></pre><p>This is the same as <a href="BACnet.Stack.TransportBehaviour.html#t:transport_msg/0"><code class="inline">BACnet.Stack.TransportBehaviour.transport_msg/0</code></a>.</p><p>For BACnet NSPDU, the following message is sent:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="1755072135-1">{</span><span class="ss">:bacnet_transport</span><span class="p">,</span><span class="w"> </span><span class="n">protocol_id</span><span class="p">,</span><span class="w"> </span><span class="n">source_address</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1755072135-2">{</span><span class="ss">:network</span><span class="p">,</span><span class="w"> </span><span class="n">bvlc</span><span class="p">,</span><span class="w"> </span><span class="n">npci</span><span class="p">,</span><span class="w"> </span><span class="n">nsdu</span><span class="p" data-group-id="1755072135-2">}</span><span class="p">,</span><span class="w"> </span><span class="n">portal</span><span class="p" data-group-id="1755072135-1">}</span></code></pre><p>This is the same as <a href="BACnet.Stack.TransportBehaviour.html#t:transport_msg/0"><code class="inline">BACnet.Stack.TransportBehaviour.transport_msg/0</code></a>.</p><p>For BACnet APDU, the following message is sent:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="5350585816-1">{</span><span class="ss">:bacnet_client</span><span class="p">,</span><span class="w"> </span><span class="n">reference</span><span class="p" data-group-id="5350585816-2">(</span><span class="p" data-group-id="5350585816-2">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="n">apdu</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5350585816-3">{</span><span class="n">source_address</span><span class="p">,</span><span class="w"> </span><span class="n">bvlc</span><span class="p">,</span><span class="w"> </span><span class="n">npci</span><span class="p" data-group-id="5350585816-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">pid</span><span class="p" data-group-id="5350585816-4">(</span><span class="p" data-group-id="5350585816-4">)</span><span class="p" data-group-id="5350585816-1">}</span></code></pre><p>The reference is only present on confirmed service requests and is used for <a href="#reply/4"><code class="inline">reply/4</code></a>.
+APDU is <a href="BACnet.Protocol.html#t:apdu/0"><code class="inline">BACnet.Protocol.apdu/0</code></a>. The PID is of the <code class="inline">Client</code> process.
+For the rest, see <a href="BACnet.Stack.TransportBehaviour.html#t:transport_msg/0"><code class="inline">BACnet.Stack.TransportBehaviour.transport_msg/0</code></a>.</p><p>BACnet APDUs are decoded, checked against the internal cache and forwarded to the application.
+The client has an internal cache for requests for the application and replies from the application
+to the transport protocol in order to deduplicate request (i.e. when the application takes for the
+remote BACnet device far too long and re-sends the APDU).
+In case of duplicated request, the request will not be forwarded to the application,
+instead it will be silently dropped and the application will possibly reply in a timely fashion,
+or the APDU timeout will occur and the Client will reply instead - this situation may arise when
+the response does not arrive at the remote BACnet device within
+the remote BACnet device's configured APDU timeout window.
+Individual APDU timeouts on a per-source basis can be applied using <a href="#set_apdu_timeouts/2"><code class="inline">set_apdu_timeouts/2</code></a>.</p><p>The client will also keep track of sent APDUs for confirmed service requests and re-send them
+automatically, if no response arrives in the APDU timeout timeframe. If the maximum APDU retries
+is reached, the request will be deleted and the application will get an APDU timeout response.</p><p>Invoke IDs are automatically managed on a per destination (with device ID, if given) basis to avoid
+duplicated invoke IDs being sent to the same destination.
+This mechanism can be disabled on startup and allows external management (or usage with care) if desired.</p><p>If the application takes too long to respond to a remote BACnet request, the client will automatically
+send an Abort APDU and respond to a <code class="inline">reply</code> request from the application with an app timeout response.</p><p>If the application replies to a routed request (Forwarded NPDU), the client will automatically
+set the correct destination address in <a href="#reply/4"><code class="inline">reply/4</code></a>.</p><p>The BACnet client will not automatically respond to Who-Is, Who-Has, Time-Synchronization, etc. queries,
+as this is outside of the responsibility of this low level BACnet client implementation.</p><p>By default, the client will validate outgoing service requests in development environments and
+reject invalid service requests. In prod environments this is disabled for performance reasons.
+The idea behind this is to prevent invalid/bad service request APDUs to be written to the network
+and catch early accidents. In production we assume we don't construct invalid APDUs and instead
+prefer the performance gain of skipping validation.
+Outgoing service request APDUs validation can be explicitely disabled by configuring
+application environment <code class="inline">:bacstack</code> key <code class="inline">:client_prod_compilation</code> to <code class="inline">true</code>.
+If this is a dependency of your project, don't forget to <code class="inline">mix deps.compile --force bacstack</code>.</p>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-types summary">
+  <h3>
+    <a href="#types">Types</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:apdu_timeouts/0" data-no-tooltip="" translate="no">apdu_timeouts()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Per-source APDU timeouts.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:server/0" data-no-tooltip="" translate="no">server()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents a server process of the Client module.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:start_option/0" data-no-tooltip="" translate="no">start_option()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Valid start options. For a description of each, see <a href="#start_link/1"><code class="inline">start_link/1</code></a>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:start_options/0" data-no-tooltip="" translate="no">start_options()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>List of start options.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#add_apdu_timeout/4" data-no-tooltip="" translate="no">add_apdu_timeout(server, source_address, device_id, timeout)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Add a source to the per-source APDU timeouts map. This is only used for receiving.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#child_spec/1" data-no-tooltip="" translate="no">child_spec(init_arg)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Returns a specification to start this module under a supervisor.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_apdu_timeouts/1" data-no-tooltip="" translate="no">get_apdu_timeouts(server)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the per-source APDU timeouts map. This is only used for receiving.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_transport/1" data-no-tooltip="" translate="no">get_transport(server)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the transport used in the client.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#remove_apdu_timeout/3" data-no-tooltip="" translate="no">remove_apdu_timeout(server, source_address, device_id)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Remove a source from the per-source APDU timeouts map. This is only used for receiving.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#reply/4" data-no-tooltip="" translate="no">reply(server, ref, reply, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Replies to a confirmed service request from a remote BACnet device.
+The APDU frame may be segmentated by the client, depending on the
+APDU size and maximum transmittable APDU size.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#send/4" data-no-tooltip="" translate="no">send(server, destination, data, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Sends the given APDU frame to the specified destination (remote BACnet device).
+The APDU frame may be segmentated by the client.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#set_apdu_timeouts/2" data-no-tooltip="" translate="no">set_apdu_timeouts(server, timeouts)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Set the per-source APDU timeouts map. This is only used for receiving.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#start_link/1" data-no-tooltip="" translate="no">start_link(opts)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Starts and links the BACnet Client.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#subscribe/2" data-no-tooltip="" translate="no">subscribe(server, subscriber)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Puts the subscriber in the <code class="inline">notification_receiver</code> list.
+The list contains only unique elements, so this function call is idempotent.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#unsubscribe/2" data-no-tooltip="" translate="no">unsubscribe(server, subscriber)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Removes the subscriber from the <code class="inline">notification_receiver</code> list.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h2>
+
+    <div class="types-list">
+<section class="detail" id="t:apdu_timeouts/0">
+
+  <div class="detail-header">
+    <a href="#t:apdu_timeouts/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">apdu_timeouts()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client.ex#L301" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> apdu_timeouts() :: %{
+  optional({source_address :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(), device_id :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>() | nil}) =&gt;
+    apdu_timeout :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()
+}</pre>
+
+      </div>
+
+<p>Per-source APDU timeouts.</p><p>Device ID is only known, if the source transmits it with the APDU,
+as such, most of the time it can be nil.</p>
+  </section>
+</section>
+<section class="detail" id="t:server/0">
+
+  <div class="detail-header">
+    <a href="#t:server/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">server()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client.ex#L325" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> server() :: <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>()</pre>
+
+      </div>
+
+<p>Represents a server process of the Client module.</p>
+  </section>
+</section>
+<section class="detail" id="t:start_option/0">
+
+  <div class="detail-header">
+    <a href="#t:start_option/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">start_option()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client.ex#L309" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> start_option() ::
+  {:apdu_retries, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()}
+  | {:apdu_timeout, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()}
+  | {:disable_app_timeout, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | {:disable_invoke_id_management, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | {:notification_receiver, <a href="https://hexdocs.pm/elixir/Process.html#t:dest/0">Process.dest</a>() | [<a href="https://hexdocs.pm/elixir/Process.html#t:dest/0">Process.dest</a>()]}
+  | {:npci_source, <a href="BACnet.Protocol.NpciTarget.html#t:t/0">BACnet.Protocol.NpciTarget.t</a>()}
+  | {:segmentator, <a href="BACnet.Stack.Segmentator.html#t:server/0">BACnet.Stack.Segmentator.server</a>()}
+  | {:segments_store, <a href="BACnet.Stack.SegmentsStore.html#t:server/0">BACnet.Stack.SegmentsStore.server</a>()}
+  | {:segmented_rcv_window_overwrite, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | {:transport,
+     <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">module</a>() | {<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">module</a>(), <a href="BACnet.Stack.TransportBehaviour.html#t:transport/0">BACnet.Stack.TransportBehaviour.transport</a>()}}
+  | <a href="https://hexdocs.pm/elixir/GenServer.html#t:option/0">GenServer.option</a>()</pre>
+
+      </div>
+
+<p>Valid start options. For a description of each, see <a href="#start_link/1"><code class="inline">start_link/1</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="t:start_options/0">
+
+  <div class="detail-header">
+    <a href="#t:start_options/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">start_options()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client.ex#L330" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> start_options() :: [<a href="#t:start_option/0">start_option</a>()]</pre>
+
+      </div>
+
+<p>List of start options.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="add_apdu_timeout/4">
+
+  <div class="detail-header">
+    <a href="#add_apdu_timeout/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">add_apdu_timeout(server, source_address, device_id, timeout)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client.ex#L386" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> add_apdu_timeout(<a href="#t:server/0">server</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>() | nil, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()) ::
+  :ok</pre>
+
+      </div>
+
+<p>Add a source to the per-source APDU timeouts map. This is only used for receiving.</p><p>Each source is identified by source address and device ID (device ID
+is only known if the source transmit it in the BACnet NPCI).</p>
+  </section>
+</section>
+<section class="detail" id="child_spec/1">
+
+  <div class="detail-header">
+    <a href="#child_spec/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">child_spec(init_arg)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client.ex#L92" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Returns a specification to start this module under a supervisor.</p><p>See <a href="https://hexdocs.pm/elixir/Supervisor.html"><code class="inline">Supervisor</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="get_apdu_timeouts/1">
+
+  <div class="detail-header">
+    <a href="#get_apdu_timeouts/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_apdu_timeouts(server)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client.ex#L400" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_apdu_timeouts(<a href="#t:server/0">server</a>()) :: {:ok, <a href="#t:apdu_timeouts/0">apdu_timeouts</a>()}</pre>
+
+      </div>
+
+<p>Get the per-source APDU timeouts map. This is only used for receiving.</p><p>Each source is identified by source address and device ID (device ID
+is only known if the source transmit it in the BACnet NPCI).</p>
+  </section>
+</section>
+<section class="detail" id="get_transport/1">
+
+  <div class="detail-header">
+    <a href="#get_transport/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_transport(server)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client.ex#L409" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_transport(<a href="#t:server/0">server</a>()) ::
+  {<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">module</a>(), <a href="BACnet.Stack.TransportBehaviour.html#t:transport/0">BACnet.Stack.TransportBehaviour.transport</a>(),
+   <a href="BACnet.Stack.TransportBehaviour.html#t:portal/0">BACnet.Stack.TransportBehaviour.portal</a>()}</pre>
+
+      </div>
+
+<p>Get the transport used in the client.</p>
+  </section>
+</section>
+<section class="detail" id="remove_apdu_timeout/3">
+
+  <div class="detail-header">
+    <a href="#remove_apdu_timeout/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">remove_apdu_timeout(server, source_address, device_id)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client.ex#L459" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> remove_apdu_timeout(<a href="#t:server/0">server</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>() | nil) :: :ok</pre>
+
+      </div>
+
+<p>Remove a source from the per-source APDU timeouts map. This is only used for receiving.</p><p>Each source is identified by source address and device ID (device ID
+is only known if the source transmit it in the BACnet NPCI).</p>
+  </section>
+</section>
+<section class="detail" id="reply/4">
+
+    <span id="reply/3"></span>
+
+  <div class="detail-header">
+    <a href="#reply/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">reply(server, ref, reply, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client.ex#L438" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> reply(<a href="#t:server/0">server</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">reference</a>(), <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>(), <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()) ::
+  :ok
+  | {:error, :app_timeout}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}
+  | {:error, {<a href="https://hexdocs.pm/elixir/Exception.html#t:t/0">Exception.t</a>(), stacktrace :: <a href="https://hexdocs.pm/elixir/Exception.html#t:stacktrace/0">Exception.stacktrace</a>()}}</pre>
+
+      </div>
+
+<p>Replies to a confirmed service request from a remote BACnet device.
+The APDU frame may be segmentated by the client, depending on the
+APDU size and maximum transmittable APDU size.</p><p>The reference identifies the request in the client. The request is hold
+in the client to be able to apply application timeout constraints and
+automatically respond on application timeout.
+The remote BACnet device may send the same request again within the
+configured APDU timeout and thus will be silently deduplicated (dropped).
+The reference is given as part of the BACnet client notification process message.</p><p>If an automatic application timeout response has been sent (Abort APDU),
+<code class="inline">{:error, :app_timeout}</code> will be returned when trying to reply to the
+request.</p><p>See <a href="#send/4"><code class="inline">send/4</code></a> for more information about <code class="inline">opts</code>.
+The options <code class="inline">:max_apdu_length</code>, <code class="inline">:max_segments</code> and <code class="inline">:segmentation_supported</code> of <code class="inline">opts</code>
+are automatically derived from the confirmed service request, if not explicitely given.</p>
+  </section>
+</section>
+<section class="detail" id="send/4">
+
+    <span id="send/3"></span>
+
+  <div class="detail-header">
+    <a href="#send/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">send(server, destination, data, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client.ex#L520" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> send(<a href="#t:server/0">server</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(), <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>(), <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()) ::
+  :ok
+  | {:ok, <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>()}
+  | {:error, :apdu_timeout}
+  | {:error, :apdu_too_long}
+  | {:error, :segmentation_not_supported}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}
+  | {:error, {<a href="https://hexdocs.pm/elixir/Exception.html#t:t/0">Exception.t</a>(), stacktrace :: <a href="https://hexdocs.pm/elixir/Exception.html#t:stacktrace/0">Exception.stacktrace</a>()}}
+  | {:error, {<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(), stacktrace :: <a href="https://hexdocs.pm/elixir/Exception.html#t:stacktrace/0">Exception.stacktrace</a>()}}</pre>
+
+      </div>
+
+<p>Sends the given APDU frame to the specified destination (remote BACnet device).
+The APDU frame may be segmentated by the client.</p><p>The client will keep track of sent confirmed service requests and automatically
+re-send the APDUs, if the APDU times out, without a response from the remote
+BACnet server. If the maximum APDU retry count gets reached,
+<code class="inline">{:error, :apdu_timeout}</code> will be returned.</p><p>This function returns, for confirmed service requests, after receiving the
+response from the remote BACnet server, for everything else almost immediately.</p><p>As such, this function will block for maximum 60s (default compiled value), before
+the backpressure mechanism will exit the caller.</p><p>Destination depends on the transport module and is validated against the
+transport module.</p><p>BACnet Abort/Error/Reject are also returned in <code class="inline">:ok</code> tuples, not only
+acknowledgements and requests.</p><p>When sending and the APDU is too large and thus is needed to be segmented,
+the client will check accordinging to the given options,
+whether segmentation can occur and how many segments are supported.
+If the remote device does not support segmentation or a buffer overflow
+would occur due to too many segments, this client will send an Abort APDU
+to the remote device and return an error to the caller. The same will happen
+for too long APDUs that can not be segmented.</p><p>See the <a href="BACnet.Stack.TransportBehaviour.html#c:send/4"><code class="inline">BACnet.Stack.TransportBehaviour.send/4</code></a> documentation for what <code class="inline">opts</code> can be.
+In addition the following are available:</p><ul><li><code class="inline">device_id: pos_integer()</code> - Optional. The remote BACnet device ID.
+Only used for invoke ID management together with the destination address.
+Specifying it allows invoke IDs to be used on a per device ID basis,
+if multiple devices run on the same destination address (i.e. MS/TP to IP gateway).
+Please note, if wrongfully used, this may lead to collisions and invalid data -
+including  replies sent to requests that were never meant for that request.</li><li><code class="inline">max_apdu_length: pos_integer()</code> - Optional. The maximum APDU length
+the remote BACnet device supports (defaults to the transport max APDU length).</li><li><code class="inline">max_segments: pos_integer()</code> - Optional. Maximum amount of segments the
+remote BACnet device can accept (defaults to 2).</li><li><code class="inline">segmentation_supported: Constants.segmentation()</code> - Optional. Which kind
+of segmentation the remote BACnet device supports (defaults to none).</li></ul><p>This function may be subject to outgoing APDU validation.</p>
+  </section>
+</section>
+<section class="detail" id="set_apdu_timeouts/2">
+
+  <div class="detail-header">
+    <a href="#set_apdu_timeouts/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">set_apdu_timeouts(server, timeouts)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client.ex#L540" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> set_apdu_timeouts(<a href="#t:server/0">server</a>(), <a href="#t:apdu_timeouts/0">apdu_timeouts</a>()) :: :ok</pre>
+
+      </div>
+
+<p>Set the per-source APDU timeouts map. This is only used for receiving.</p><p>Each source is identified by source address and device ID (device ID
+is only known if the source transmit it in the BACnet NPCI).</p>
+  </section>
+</section>
+<section class="detail" id="start_link/1">
+
+  <div class="detail-header">
+    <a href="#start_link/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">start_link(opts)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client.ex#L355" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> start_link(<a href="#t:start_options/0">start_options</a>()) :: <a href="https://hexdocs.pm/elixir/GenServer.html#t:on_start/0">GenServer.on_start</a>()</pre>
+
+      </div>
+
+<p>Starts and links the BACnet Client.</p><p>The following options are available, in addition to <a href="https://hexdocs.pm/elixir/GenServer.html#t:options/0"><code class="inline">GenServer.options/0</code></a>:</p><ul><li><code class="inline">apdu_retries: pos_integer()</code> - Optional. The amount of APDU sending retries (defaults to 3).
+Only applied to confirmed service requests.</li><li><code class="inline">apdu_timeout: pos_integer()</code> - Optional. The APDU timeout to be waiting for a response, in ms (defaults to 3000ms).
+Only applied to confirmed service requests.</li><li><code class="inline">disable_app_timeout: boolean()</code> - Optional. Disables the application timeout mechanism.</li><li><code class="inline">disable_invoke_id_management: boolean()</code> - Optional. Disables <code class="inline">invoke_id</code> management and override in request payloads.</li><li><p><code class="inline">notification_receiver: Process.dest() | [Process.dest()]</code> - Optional. The destination to send messages to.</p></li><li><code class="inline">npci_source: NpciTarget.t()</code> - Optional. The NPCI target to use as source for outgoing APDUs.</li><li><code class="inline">segmentator: Segmentator.server()</code> - Required. The segmentator server to use.</li><li><code class="inline">segments_store: SegmentsStore.server()</code> - Required. The segments store server to use.</li><li><code class="inline">segmented_rcv_window_overwrite: boolean()</code> - Optional. Enable to overwrite the window size to 1 for incoming
+segmented APDUs when it is bound to be routed (i.e. subject to BACnet/IP UDP packet re-ordering).
+If you're having difficulty receiving segmented APDUs and the packets get routed on BACnet/IP,
+you should consider enabling this and see if it helps.</li><li><p><code class="inline">transport: module() | {module(), TransportBehaviour.transport()}</code> - Required. The transport to use.
+<code class="inline">module</code> is equivalent to <code class="inline">{module, module}</code> (the module name is registered process name).
+The given transport must implement the <a href="BACnet.Stack.TransportBehaviour.html"><code class="inline">BACnet.Stack.TransportBehaviour</code></a> behaviour.</p></li></ul>
+  </section>
+</section>
+<section class="detail" id="subscribe/2">
+
+  <div class="detail-header">
+    <a href="#subscribe/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">subscribe(server, subscriber)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client.ex#L556" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> subscribe(<a href="#t:server/0">server</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pid</a>() | <a href="https://hexdocs.pm/elixir/Process.html#t:dest/0">Process.dest</a>() | <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>()) :: :ok</pre>
+
+      </div>
+
+<p>Puts the subscriber in the <code class="inline">notification_receiver</code> list.
+The list contains only unique elements, so this function call is idempotent.</p><p>After this function returns, the subscriber will start to receive
+process messages as lined out by the module documentation.</p><p>If <code class="inline">subscriber</code> is a PID, it will be monitored and automatically removed.
+This means for short lived processes, using the PID is recommended
+as the PID is automatically removed when the process dies.</p>
+  </section>
+</section>
+<section class="detail" id="unsubscribe/2">
+
+  <div class="detail-header">
+    <a href="#unsubscribe/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">unsubscribe(server, subscriber)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/client.ex#L567" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> unsubscribe(<a href="#t:server/0">server</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pid</a>() | <a href="https://hexdocs.pm/elixir/Process.html#t:dest/0">Process.dest</a>() | <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>()) :: :ok</pre>
+
+      </div>
+
+<p>Removes the subscriber from the <code class="inline">notification_receiver</code> list.</p><p>After this function returns, the subscriber will stop receiving
+process messages as lined out by the module documentation.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="bacstack.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.1) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>
