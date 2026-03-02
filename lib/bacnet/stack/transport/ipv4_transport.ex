@@ -253,6 +253,7 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
     for complex environments you should specify the network interface explicitely.
   - `reuseaddr: boolean()` - Optional. Allows to set `SO_REUSEADDR` on the UDP socket.
   - `reuseport: boolean()` - Optional. Allows to set `SO_REUSEPORT` on the UDP socket - only with socket backend.
+  - `recbuf: integer()` - Optional. Allows to adjust the UDP receive buffer size.
   - `supervisor: Supervisor.supervisor()` - Optional. The task supervisor to use to spawn tasks under.
     Tasks are spawned to invoke the given callback. If no supervisor is given,
     the tasks will be spawned unsupervised.
@@ -290,6 +291,7 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
         :local_ip,
         :reuseaddr,
         :reuseport,
+        :recbuf,
         :supervisor
       ])
 
@@ -473,6 +475,12 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
       end
 
     opts_tail = Keyword.put(opts_tail, :reuseaddr, !!Map.get(opts, :reuseaddr, false))
+
+    opts_tail =
+      case Map.get(opts, :recbuf, nil) do
+        nil -> opts_tail
+        recbuf -> [{:recbuf, recbuf} | opts_tail]
+      end
 
     # Allow to use socket backend, instead of the current default inet
     {backend, opts_tail} =
@@ -1019,6 +1027,19 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
         raise ArgumentError,
               "open/2 expected local_ip to be a valid IPv4 address (tuple) " <>
                 "or binary or :none, " <>
+                "got: #{inspect(term)}"
+    end
+
+    case opts[:recbuf] do
+      nil ->
+        :ok
+
+      recbuf when is_integer(recbuf) and recbuf > 0 ->
+        :ok
+
+      term ->
+        raise ArgumentError,
+              "open/2 expected recbuf to be a positive integer or nil, " <>
                 "got: #{inspect(term)}"
     end
 
