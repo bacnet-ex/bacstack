@@ -91,6 +91,7 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
           {:bacnet_port, 47_808..65_535}
           | {:inet_backend, :inet | :socket}
           | {:local_ip, :inet.ip4_address() | binary() | :none}
+          | {:recbuffer_size, pos_integer()}
           | {:reuseaddr, boolean()}
           | {:reuseport, boolean()}
           | {:supervisor, Supervisor.supervisor()}
@@ -251,6 +252,7 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
     The `:none` value is thus not recommended and should not be used in a production environment.
     The default way of discovering the network interface should work in non-complex environments (only one network interface),
     for complex environments you should specify the network interface explicitely.
+  - `recbuffer_size: pos_integer()` - Optional. Sets the minimum size of the receive buffer to use for the UDP socket.
   - `reuseaddr: boolean()` - Optional. Allows to set `SO_REUSEADDR` on the UDP socket.
   - `reuseport: boolean()` - Optional. Allows to set `SO_REUSEPORT` on the UDP socket - only with socket backend.
   - `supervisor: Supervisor.supervisor()` - Optional. The task supervisor to use to spawn tasks under.
@@ -288,6 +290,7 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
         :bacnet_port,
         :inet_backend,
         :local_ip,
+        :recbuffer_size,
         :reuseaddr,
         :reuseport,
         :supervisor
@@ -473,6 +476,12 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
       end
 
     opts_tail = Keyword.put(opts_tail, :reuseaddr, !!Map.get(opts, :reuseaddr, false))
+
+    opts_tail =
+      case Map.get(opts, :recbuffer_size, nil) do
+        nil -> opts_tail
+        size -> [{:recbuf, size} | opts_tail]
+      end
 
     # Allow to use socket backend, instead of the current default inet
     {backend, opts_tail} =
@@ -1019,6 +1028,19 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
         raise ArgumentError,
               "open/2 expected local_ip to be a valid IPv4 address (tuple) " <>
                 "or binary or :none, " <>
+                "got: #{inspect(term)}"
+    end
+
+    case opts[:recbuffer_size] do
+      nil ->
+        :ok
+
+      recbuf when is_integer(recbuf) and recbuf > 0 ->
+        :ok
+
+      term ->
+        raise ArgumentError,
+              "open/2 expected recbuffer_size to be a positive integer or nil, " <>
                 "got: #{inspect(term)}"
     end
 
