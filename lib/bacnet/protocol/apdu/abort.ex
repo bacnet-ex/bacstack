@@ -94,6 +94,11 @@ defmodule BACnet.Protocol.APDU.Abort do
       raise "Illegal function call, APDU can not be segmented"
     end
 
+    @spec encode_to_segmented(@for.t(), iodata(), integer()) :: [iodata()]
+    def encode_to_segmented(%@for{} = _t, _data, _apdu_size) do
+      raise "Illegal function call, APDU can not be segmented"
+    end
+
     @spec intify(boolean()) :: 0..1
     defp intify(true), do: 1
     defp intify(false), do: 0

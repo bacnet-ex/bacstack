@@ -43,6 +43,8 @@ defmodule BACnet.Stack.Segmentator do
 
   use GenServer
 
+  @apdu_timer_offset 50
+
   @min_apdu 50
   @max_apdu 1476
 
@@ -51,9 +53,6 @@ defmodule BACnet.Stack.Segmentator do
 
   # 50ms time is given for a remote device to interrupt the sequence stream (negative ACK)
   @sequence_send_timer 50
-
-  # Give up indefinitely after 5 tries and only timeout
-  @sequence_retry_count 5
 
   defmodule Sequence do
     @moduledoc """
@@ -80,7 +79,9 @@ defmodule BACnet.Stack.Segmentator do
             send_opts: Keyword.t(),
             monotonic_time: integer(),
             timer: term(),
-            seq_timer: term()
+            seq_timer: term(),
+            callback_to: pid() | nil,
+            callback_msg: term()
           }
 
     @fields [
@@ -97,7 +98,9 @@ defmodule BACnet.Stack.Segmentator do
       :send_opts,
       :monotonic_time,
       :timer,
-      :seq_timer
+      :seq_timer,
+      :callback_to,
+      :callback_msg
     ]
     @enforce_keys @fields
     defstruct @fields
@@ -169,14 +172,24 @@ defmodule BACnet.Stack.Segmentator do
   This module will automatically send the segments or abort APDUs.
   Received `Abort` and `SegmentACK` APDUs need to be piped into this module through `handle_apdu/3`.
 
-  The `opts` argument will be passed on to the transport module's send function without modification.
+  The tuple form of `apdu` allows already encoded APDU data to be segmented more efficiently
+  without doing the whole encoding of the APDU again.
+  It uses the `EncoderProtocol.encode_to_segmented/3` function.
+
+  The `opts` argument will be passed on to the transport module's send function without modification,
+  with the exception of two options specific for this module:
+  - `callback_to: pid()` - Optional. Specify the PID to be sent a message when the sequence finishes or cancels.
+  - `callback_msg: term()` - Optional. Used for the second tuple element in the message. Must be used with `callback_to`.
+    Messages sent to `callback_to` have the form of `{state, callback_msg}`, where `state` can be `:done | :timeout | :cancelled`.
   """
   @spec create_sequence(
           server(),
           {transport_module :: module(), transport :: TransportBehaviour.transport(),
            portal :: TransportBehaviour.portal()},
           term(),
-          APDU.ConfirmedServiceRequest.t() | APDU.ComplexACK.t(),
+          APDU.ConfirmedServiceRequest.t()
+          | APDU.ComplexACK.t()
+          | {APDU.ConfirmedServiceRequest.t() | APDU.ComplexACK.t(), iodata()},
           non_neg_integer(),
           non_neg_integer(),
           Keyword.t()
@@ -220,7 +233,51 @@ defmodule BACnet.Stack.Segmentator do
         server,
         {transport_module, transport, portal},
         destination,
+        {%APDU.ConfirmedServiceRequest{proposed_window_size: window}, _data} = apdu,
+        max_apdu_size,
+        max_segments,
+        opts
+      )
+      when is_atom(transport_module) and window in 1..127 and
+             max_apdu_size in @min_apdu..@max_apdu and
+             is_integer(max_segments) and is_list(opts) do
+    unless Keyword.keyword?(opts) do
+      raise ArgumentError,
+            "create_sequence/9 expected opts to be a keyword list, " <>
+              "got: #{inspect(opts)}"
+    end
+
+    GenServer.call(
+      server,
+      {:create, {transport_module, transport, portal}, destination, apdu, opts, max_apdu_size,
+       max_segments}
+    )
+  end
+
+  def create_sequence(
+        server,
+        {transport_module, transport, portal},
+        destination,
         %APDU.ComplexACK{proposed_window_size: window} = apdu,
+        max_apdu_size,
+        max_segments,
+        opts
+      )
+      when is_atom(transport_module) and window in 1..127 and
+             max_apdu_size in @min_apdu..@max_apdu and
+             is_integer(max_segments) and is_list(opts) do
+    GenServer.call(
+      server,
+      {:create, {transport_module, transport, portal}, destination, apdu, opts, max_apdu_size,
+       max_segments}
+    )
+  end
+
+  def create_sequence(
+        server,
+        {transport_module, transport, portal},
+        destination,
+        {%APDU.ComplexACK{proposed_window_size: window}, _data} = apdu,
         max_apdu_size,
         max_segments,
         opts
@@ -286,27 +343,33 @@ defmodule BACnet.Stack.Segmentator do
 
   @doc false
   def handle_call(
-        {:create, {module, transport, portal}, destination, %{} = apdu, opts, apdu_size,
-         max_segments},
+        {:create, {module, transport, portal}, destination, apdu, opts, apdu_size, max_segments},
         _from,
         %State{} = state
       ) do
+    # apdu is either the APDU struct or a tuple of the struct and encoded data
+    {apdu_struct, encoded_data} =
+      case apdu do
+        {apdu, data} -> {apdu, data}
+        other -> {other, nil}
+      end
+
     log_debug(fn ->
       "Segmentator: Received create request for " <>
-        "#{inspect(destination)}:#{inspect(apdu.invoke_id)}"
+        "#{inspect(destination)}:#{inspect(apdu_struct.invoke_id)}"
     end)
 
-    id = {destination, apdu.invoke_id}
+    id = {destination, apdu_struct.invoke_id}
 
     {reply, new_state} =
       if Map.has_key?(state.sequences, id) do
         {{:error, :already_exists}, state}
       else
-        new_apdu =
+        new_apdu_struct =
           if module.is_destination_routed(transport, destination) do
             log_debug(fn ->
               "Segmentator: Overriding window size (destination routing) for " <>
-                "#{inspect(destination)}:#{inspect(apdu.invoke_id)}"
+                "#{inspect(destination)}:#{inspect(apdu_struct.invoke_id)}"
             end)
 
             # Create new APDU with window_size = 1
@@ -314,15 +377,22 @@ defmodule BACnet.Stack.Segmentator do
             # so we only do window of 1 to ensure the ordering
             # when the packet is bound to be routed and can be re-ordered
             # This is inefficient, but effective to keep ordering
-            %{apdu | proposed_window_size: 1}
+            %{apdu_struct | proposed_window_size: 1}
           else
-            apdu
+            apdu_struct
           end
 
         try do
           # Catch any errors when trying to encode the APDU
-          new_apdu
-          |> EncoderProtocol.encode_segmented(apdu_size)
+
+          apdu_bin =
+            if encoded_data do
+              EncoderProtocol.encode_to_segmented(new_apdu_struct, encoded_data, apdu_size)
+            else
+              EncoderProtocol.encode_segmented(new_apdu_struct, apdu_size)
+            end
+
+          apdu_bin
           |> Stream.with_index(0)
           |> Map.new(fn {value, key} ->
             {key, value}
@@ -339,7 +409,7 @@ defmodule BACnet.Stack.Segmentator do
                 transport: transport,
                 portal: portal,
                 destination: destination,
-                apdu: apdu
+                apdu: apdu_struct
               },
               state
             )
@@ -349,13 +419,16 @@ defmodule BACnet.Stack.Segmentator do
           segments ->
             # Assert remote device can handle that many segments
             if max_segments == 0 or map_size(segments) <= max_segments do
+              {callback_to, opts} = Keyword.pop(opts, :callback_to)
+              {callback_msg, opts} = Keyword.pop(opts, :callback_msg)
+
               new_sequence = %Sequence{
                 module: module,
                 transport: transport,
                 portal: portal,
                 destination: destination,
-                server: EncoderProtocol.is_response(apdu),
-                invoke_id: apdu.invoke_id,
+                server: EncoderProtocol.is_response(apdu_struct),
+                invoke_id: apdu_struct.invoke_id,
                 sequence_number: 0,
                 # Window size will be overwritten by SegmentACK later
                 window_size: 1,
@@ -363,8 +436,15 @@ defmodule BACnet.Stack.Segmentator do
                 send_opts: opts,
                 segments: segments,
                 monotonic_time: System.monotonic_time(),
-                timer: Process.send_after(self(), {:timer, id}, state.opts.apdu_timeout),
-                seq_timer: nil
+                timer:
+                  Process.send_after(
+                    self(),
+                    {:timer, id},
+                    state.opts.apdu_timeout + @apdu_timer_offset
+                  ),
+                seq_timer: nil,
+                callback_to: callback_to,
+                callback_msg: callback_msg
               }
 
               Telemetry.execute_segmentator_sequence_start(self(), new_sequence, state)
@@ -394,8 +474,8 @@ defmodule BACnet.Stack.Segmentator do
             else
               # Too many segments for the remote device, send BUFFER_OVERFLOW Abort
               abort = %APDU.Abort{
-                sent_by_server: EncoderProtocol.is_response(apdu),
-                invoke_id: apdu.invoke_id,
+                sent_by_server: EncoderProtocol.is_response(apdu_struct),
+                invoke_id: apdu_struct.invoke_id,
                 reason: Constants.macro_assert_name(:abort_reason, :buffer_overflow)
               }
 
@@ -405,7 +485,7 @@ defmodule BACnet.Stack.Segmentator do
                 transport,
                 portal,
                 destination,
-                apdu,
+                apdu_struct,
                 opts,
                 abort,
                 :buffer_overflow,
@@ -497,10 +577,8 @@ defmodule BACnet.Stack.Segmentator do
     {reply, new_state} =
       case Map.fetch(state.sequences, id) do
         # Reached end of segments, mission completed
-        {:ok,
-         %Sequence{sequence_number: seq_num, segments: segments, window_size: window_size} =
-             sequence}
-        when seq_num + window_size >= map_size(segments) ->
+        {:ok, %Sequence{segments: segments} = sequence}
+        when apdu.sequence_number + 1 >= map_size(segments) ->
           if sequence.timer do
             Process.cancel_timer(sequence.timer)
           end
@@ -511,7 +589,11 @@ defmodule BACnet.Stack.Segmentator do
 
           Telemetry.execute_segmentator_sequence_stop(self(), sequence, :completed, state)
 
-          %State{state | sequences: Map.delete(state.sequences, id)}
+          if is_pid(sequence.callback_to) do
+            send(sequence.callback_to, {:done, sequence.callback_msg})
+          end
+
+          {:ok, %State{state | sequences: Map.delete(state.sequences, id)}}
 
         {:ok, %Sequence{} = sequence} ->
           if sequence.timer do
@@ -529,7 +611,7 @@ defmodule BACnet.Stack.Segmentator do
               id,
               %Sequence{
                 sequence
-                | sequence_number: sequence.sequence_number + sequence.window_size,
+                | sequence_number: apdu.sequence_number + apdu.actual_window_size,
                   window_size: apdu.actual_window_size
               },
               apdu.sequence_number + 1,
@@ -626,6 +708,10 @@ defmodule BACnet.Stack.Segmentator do
             state
           )
 
+          if is_pid(sequence.callback_to) do
+            send(sequence.callback_to, {:cancelled, sequence.callback_msg})
+          end
+
           new_state = %State{state | sequences: Map.delete(state.sequences, id)}
           {:ok, new_state}
 
@@ -647,7 +733,7 @@ defmodule BACnet.Stack.Segmentator do
       case Map.fetch(state.sequences, id) do
         # Abort mission, drop sequence
         {:ok, %Sequence{module: module, retry_count: retry_count} = sequence}
-        when retry_count >= @sequence_retry_count ->
+        when retry_count >= state.opts.apdu_retries ->
           if sequence.seq_timer do
             # Cancel any active sequence segment timer
             Process.cancel_timer(sequence.seq_timer)
@@ -664,6 +750,10 @@ defmodule BACnet.Stack.Segmentator do
           )
 
           Telemetry.execute_segmentator_sequence_stop(self(), sequence, :timeout, state)
+
+          if is_pid(sequence.callback_to) do
+            send(sequence.callback_to, {:timeout, sequence.callback_msg})
+          end
 
           %State{state | sequences: Map.delete(state.sequences, id)}
 
@@ -695,7 +785,14 @@ defmodule BACnet.Stack.Segmentator do
               state
             )
 
-          %State{state | sequences: Map.put(state.sequences, id, new_sequence)}
+          %State{
+            state
+            | sequences:
+                Map.put(state.sequences, id, %{
+                  new_sequence
+                  | retry_count: sequence.retry_count + 1
+                })
+          }
 
         # Unknown sequence, silently ignore
         :error ->
@@ -762,7 +859,8 @@ defmodule BACnet.Stack.Segmentator do
 
     %Sequence{
       sequence
-      | timer: Process.send_after(self(), {:timer, id}, state.opts.apdu_timeout),
+      | timer:
+          Process.send_after(self(), {:timer, id}, state.opts.apdu_timeout + @apdu_timer_offset),
         seq_timer: nil
     }
   end

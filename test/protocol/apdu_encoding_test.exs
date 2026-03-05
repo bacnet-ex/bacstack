@@ -253,6 +253,165 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
              )
   end
 
+  @tag :encoder_protocol
+  test "encoding confirmed service request segmented - encode and then to segmented" do
+    apdu = %APDU.ConfirmedServiceRequest{
+      segmented_response_accepted: true,
+      max_apdu: 50,
+      max_segments: :more_than_64,
+      invoke_id: 35,
+      sequence_number: 1,
+      proposed_window_size: 16,
+      service: :write_property,
+      parameters: [
+        tagged: {0, <<0, 128, 0, 0>>, 4},
+        tagged: {1, "U", 1},
+        constructed: {3, {:real, 100.0}, 0},
+        tagged: {0, <<0, 0, 8, 72>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 73>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 74>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 75>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 76>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 77>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 78>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 79>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 80>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 81>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 82>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 83>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 84>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 54>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 55>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 56>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 57>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 58>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 59>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0}
+      ]
+    }
+
+    # The output must be identical as if we were to call `encode_segmented/2` directly
+    assert [
+             <<14, 112, 35, 0, 16, 15, 12, 0, 128, 0, 0, 25, 85, 62, 68, 66, 200, 0, 0, 63, 12, 0,
+               0, 8, 72, 30, 9, 85>>,
+             <<14, 112, 35, 1, 16, 15, 31, 12, 0, 0, 8, 73, 30, 9, 85, 31, 12, 0, 0, 8, 74, 30, 9,
+               85, 31, 12, 0, 0>>,
+             <<14, 112, 35, 2, 16, 15, 8, 75, 30, 9, 85, 31, 12, 0, 0, 8, 76, 30, 9, 85, 31, 12,
+               0, 0, 8, 77, 30, 9>>,
+             <<14, 112, 35, 3, 16, 15, 85, 31, 12, 0, 0, 8, 78, 30, 9, 85, 31, 12, 0, 0, 8, 79,
+               30, 9, 85, 31, 12, 0>>,
+             <<14, 112, 35, 4, 16, 15, 0, 8, 80, 30, 9, 85, 31, 12, 0, 0, 8, 81, 30, 9, 85, 31,
+               12, 0, 0, 8, 82, 30>>,
+             <<14, 112, 35, 5, 16, 15, 9, 85, 31, 12, 0, 0, 8, 83, 30, 9, 85, 31, 12, 0, 0, 8, 84,
+               30, 9, 85, 31, 30>>,
+             <<14, 112, 35, 6, 16, 15, 9, 85, 31, 12, 0, 0, 8, 54, 30, 9, 85, 31, 12, 0, 0, 8, 55,
+               30, 9, 85, 31, 12>>,
+             <<14, 112, 35, 7, 16, 15, 0, 0, 8, 56, 30, 9, 85, 31, 12, 0, 0, 8, 57, 30, 9, 85, 31,
+               12, 0, 0, 8, 58>>,
+             <<10, 112, 35, 8, 16, 15, 30, 9, 85, 31, 12, 0, 0, 8, 59, 30, 9, 85, 31>>
+           ] =
+             EncoderProtocol.encode_to_segmented(
+               apdu,
+               EncoderProtocol.encode(apdu),
+               22
+             )
+  end
+
+  @tag :encoder_protocol
+  test "encoding confirmed service request segmented 2 - encode and then to segmented" do
+    apdu = %APDU.ConfirmedServiceRequest{
+      segmented_response_accepted: true,
+      max_apdu: 128,
+      max_segments: :more_than_64,
+      invoke_id: 35,
+      sequence_number: 1,
+      proposed_window_size: 16,
+      service: :write_property,
+      parameters: [
+        tagged: {0, <<0, 128, 0, 0>>, 4},
+        tagged: {1, "U", 1},
+        constructed: {3, {:real, 100.0}, 0},
+        tagged: {0, <<0, 0, 8, 72>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 73>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 74>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 75>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 76>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 77>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 78>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 79>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 80>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 81>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 82>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 83>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 84>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 54>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 55>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 56>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 57>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 58>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 59>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0}
+      ]
+    }
+
+    # The output must be identical as if we were to call `encode_segmented/2` directly
+    assert [
+             <<14, 113, 35, 0, 16, 15, 12, 0, 128, 0, 0, 25, 85, 62, 68, 66, 200, 0, 0, 63, 12, 0,
+               0, 8, 72, 30, 9, 85, 31, 12, 0, 0, 8, 73, 30, 9, 85, 31, 12, 0, 0, 8, 74, 30, 9,
+               85, 31, 12, 0, 0, 8, 75, 30, 9, 85, 31, 12, 0, 0, 8, 76, 30, 9, 85, 31, 12, 0, 0,
+               8, 77, 30, 9, 85, 31, 12, 0, 0, 8, 78, 30, 9, 85, 31, 12, 0, 0, 8, 79, 30, 9, 85,
+               31, 12, 0, 0, 8, 80, 30, 9, 85, 31, 12, 0, 0, 8, 81>>,
+             <<10, 113, 35, 1, 16, 15, 30, 9, 85, 31, 12, 0, 0, 8, 82, 30, 9, 85, 31, 12, 0, 0, 8,
+               83, 30, 9, 85, 31, 12, 0, 0, 8, 84, 30, 9, 85, 31, 30, 9, 85, 31, 12, 0, 0, 8, 54,
+               30, 9, 85, 31, 12, 0, 0, 8, 55, 30, 9, 85, 31, 12, 0, 0, 8, 56, 30, 9, 85, 31, 12,
+               0, 0, 8, 57, 30, 9, 85, 31, 12, 0, 0, 8, 58, 30, 9, 85, 31, 12, 0, 0, 8, 59, 30, 9,
+               85, 31>>
+           ] =
+             EncoderProtocol.encode_to_segmented(
+               apdu,
+               EncoderProtocol.encode(apdu),
+               100
+             )
+  end
+
   test "encoding invalid confirmed service request" do
     assert {
              :error,
@@ -668,6 +827,20 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
     end
   end
 
+  @tag :encoder_protocol
+  test "encoder protocol encode to segmented errors for unconfirmed service request" do
+    assert_raise RuntimeError, ~r"APDU can not be segmented"i, fn ->
+      EncoderProtocol.encode_to_segmented(
+        %APDU.UnconfirmedServiceRequest{
+          parameters: [],
+          service: :i_am
+        },
+        [],
+        50
+      )
+    end
+  end
+
   test "encoding simple ACK" do
     assert {:ok, <<32, 70, 15>>} =
              APDU.SimpleACK.encode(%APDU.SimpleACK{
@@ -727,6 +900,20 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
           service: :write_property,
           invoke_id: 70
         },
+        50
+      )
+    end
+  end
+
+  @tag :encoder_protocol
+  test "encoder protocol encode to segmented errors for simple ACK" do
+    assert_raise RuntimeError, ~r"APDU can not be segmented"i, fn ->
+      EncoderProtocol.encode_to_segmented(
+        %APDU.SimpleACK{
+          service: :write_property,
+          invoke_id: 70
+        },
+        [],
         50
       )
     end
@@ -884,6 +1071,120 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
   end
 
   @tag :encoder_protocol
+  test "encoding complex ACK segmented - encode and then to segmented" do
+    apdu = %APDU.ComplexACK{
+      invoke_id: 255,
+      service: :read_property,
+      payload: [
+        tagged: {0, <<0, 128, 0, 0>>, 4},
+        tagged: {1, "U", 1},
+        constructed: {3, {:real, 100.0}, 0},
+        tagged: {0, <<0, 0, 8, 72>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 73>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 74>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 75>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 76>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 77>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 78>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 79>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 80>>, 4}
+      ],
+      proposed_window_size: 16,
+      sequence_number: 2
+    }
+
+    # The output must be identical as if we were to call `encode_segmented/2` directly
+    assert [
+             <<60, 255, 0, 16, 12, 12, 0, 128, 0, 0, 25, 85, 62, 68, 66, 200, 0, 0, 63, 12, 0, 0,
+               8, 72, 30, 9, 85>>,
+             <<60, 255, 1, 16, 12, 31, 12, 0, 0, 8, 73, 30, 9, 85, 31, 12, 0, 0, 8, 74, 30, 9, 85,
+               31, 12, 0, 0>>,
+             <<60, 255, 2, 16, 12, 8, 75, 30, 9, 85, 31, 12, 0, 0, 8, 76, 30, 9, 85, 31, 12, 0, 0,
+               8, 77, 30, 9>>,
+             <<60, 255, 3, 16, 12, 85, 31, 12, 0, 0, 8, 78, 30, 9, 85, 31, 12, 0, 0, 8, 79, 30, 9,
+               85, 31, 12, 0>>,
+             <<56, 255, 4, 16, 12, 0, 8, 80>>
+           ] =
+             EncoderProtocol.encode_to_segmented(
+               apdu,
+               EncoderProtocol.encode(apdu),
+               22
+             )
+  end
+
+  @tag :encoder_protocol
+  test "encoding complex ACK segmented 2 - encode and then to segmented" do
+    apdu = %APDU.ComplexACK{
+      invoke_id: 255,
+      service: :read_property,
+      payload: [
+        tagged: {0, <<0, 128, 0, 0>>, 4},
+        tagged: {1, "U", 1},
+        constructed: {3, {:real, 100.0}, 0},
+        tagged: {0, <<0, 0, 8, 72>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 73>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 74>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 75>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 76>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 77>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 78>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 79>>, 4},
+        constructed: {1, {:tagged, {0, "U", 1}}, 0},
+        tagged: {0, <<0, 0, 8, 80>>, 4}
+      ],
+      proposed_window_size: 16,
+      sequence_number: 2
+    }
+
+    # The output must be identical as if we were to call `encode_segmented/2` directly
+    assert [
+             <<60, 255, 0, 16, 12, 12, 0, 128, 0>>,
+             <<60, 255, 1, 16, 12, 0, 25, 85, 62>>,
+             <<60, 255, 2, 16, 12, 68, 66, 200, 0>>,
+             <<60, 255, 3, 16, 12, 0, 63, 12, 0>>,
+             <<60, 255, 4, 16, 12, 0, 8, 72, 30>>,
+             <<60, 255, 5, 16, 12, 9, 85, 31, 12>>,
+             <<60, 255, 6, 16, 12, 0, 0, 8, 73>>,
+             <<60, 255, 7, 16, 12, 30, 9, 85, 31>>,
+             <<60, 255, 8, 16, 12, 12, 0, 0, 8>>,
+             <<60, 255, 9, 16, 12, 74, 30, 9, 85>>,
+             <<60, 255, 10, 16, 12, 31, 12, 0, 0>>,
+             <<60, 255, 11, 16, 12, 8, 75, 30, 9>>,
+             <<60, 255, 12, 16, 12, 85, 31, 12, 0>>,
+             <<60, 255, 13, 16, 12, 0, 8, 76, 30>>,
+             <<60, 255, 14, 16, 12, 9, 85, 31, 12>>,
+             <<60, 255, 15, 16, 12, 0, 0, 8, 77>>,
+             <<60, 255, 16, 16, 12, 30, 9, 85, 31>>,
+             <<60, 255, 17, 16, 12, 12, 0, 0, 8>>,
+             <<60, 255, 18, 16, 12, 78, 30, 9, 85>>,
+             <<60, 255, 19, 16, 12, 31, 12, 0, 0>>,
+             <<60, 255, 20, 16, 12, 8, 79, 30, 9>>,
+             <<60, 255, 21, 16, 12, 85, 31, 12, 0>>,
+             <<56, 255, 22, 16, 12, 0, 8, 80>>
+           ] =
+             EncoderProtocol.encode_to_segmented(
+               apdu,
+               EncoderProtocol.encode(apdu),
+               4
+             )
+  end
+
+  @tag :encoder_protocol
   test "encoding complex ACK segmented no payload (ignores segmentation)" do
     assert [<<48, 255, 12>>] =
              EncoderProtocol.encode_segmented(
@@ -1024,7 +1325,7 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
   end
 
   @tag :encoder_protocol
-  test "encoding invalid complex ACK 4 (encoder protocol)" do
+  test "encoding invalid segment ACK 4 (encoder protocol)" do
     assert_raise ArgumentError, fn ->
       EncoderProtocol.encode(%APDU.SegmentACK{
         negative_ack: false,
@@ -1059,6 +1360,23 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
           sequence_number: 2,
           actual_window_size: 16
         },
+        50
+      )
+    end
+  end
+
+  @tag :encoder_protocol
+  test "encoder protocol encode to segmented errors for segment ACK" do
+    assert_raise RuntimeError, ~r"APDU can not be segmented"i, fn ->
+      EncoderProtocol.encode_to_segmented(
+        %APDU.SegmentACK{
+          negative_ack: false,
+          sent_by_server: true,
+          invoke_id: 70,
+          sequence_number: 2,
+          actual_window_size: 16
+        },
+        [],
         50
       )
     end
@@ -1160,6 +1478,21 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
           invoke_id: 255,
           reason: :other
         },
+        50
+      )
+    end
+  end
+
+  @tag :encoder_protocol
+  test "encoder protocol encode to segmented errors for abort" do
+    assert_raise RuntimeError, ~r"APDU can not be segmented"i, fn ->
+      EncoderProtocol.encode_to_segmented(
+        %APDU.Abort{
+          sent_by_server: true,
+          invoke_id: 255,
+          reason: :other
+        },
+        [],
         50
       )
     end
@@ -1347,6 +1680,23 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
     end
   end
 
+  @tag :encoder_protocol
+  test "encoder protocol encode to segmented errors for error" do
+    assert_raise RuntimeError, ~r"APDU can not be segmented"i, fn ->
+      EncoderProtocol.encode_to_segmented(
+        %APDU.Error{
+          class: :services,
+          code: :other,
+          invoke_id: 255,
+          payload: [],
+          service: :confirmed_private_transfer
+        },
+        [],
+        50
+      )
+    end
+  end
+
   test "encoding reject" do
     assert {:ok, <<96, 70, 1>>} =
              APDU.Reject.encode(%APDU.Reject{
@@ -1416,6 +1766,20 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
           invoke_id: 71,
           reason: :other
         },
+        50
+      )
+    end
+  end
+
+  @tag :encoder_protocol
+  test "encoder protocol encode to segmented errors for reject" do
+    assert_raise RuntimeError, ~r"APDU can not be segmented"i, fn ->
+      EncoderProtocol.encode_to_segmented(
+        %APDU.Reject{
+          invoke_id: 71,
+          reason: :other
+        },
+        [],
         50
       )
     end

@@ -159,6 +159,11 @@ defmodule BACnet.Protocol.APDU.UnconfirmedServiceRequest do
       raise "Illegal function call, APDU can not be segmented"
     end
 
+    @spec encode_to_segmented(@for.t(), iodata(), integer()) :: [iodata()]
+    def encode_to_segmented(%@for{} = _t, _data, _apdu_size) do
+      raise "Illegal function call, APDU can not be segmented"
+    end
+
     @spec encode_parameters(term()) :: binary()
     defp encode_parameters(parameters) when is_list(parameters) do
       parameters

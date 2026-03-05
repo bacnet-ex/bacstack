@@ -329,7 +329,7 @@ defmodule BACnet.Stack.SegmentsStore do
           Process.cancel_timer(Map.fetch!(state.sequences, id).timer)
 
           new_state = %State{state | sequences: Map.delete(state.sequences, id)}
-          {{:error, :invalid_apdu_in_this_state, true}, new_state}
+          {{:error, :invalid_apdu_in_this_state_already_present, true}, new_state}
 
         incomplete.sequence_number != 0 and not has_id ->
           # Invalid APDU, as sequence number is not 0 and we have no active sequence
@@ -353,7 +353,7 @@ defmodule BACnet.Stack.SegmentsStore do
 
           log_transport_send_error(module.send(portal, source_addr, abort, send_opts))
 
-          {{:error, :invalid_apdu_in_this_state, true}, state}
+          {{:error, :invalid_apdu_in_this_state_missing_id, true}, state}
 
         true ->
           # Valid APDU
@@ -650,7 +650,7 @@ defmodule BACnet.Stack.SegmentsStore do
     end
 
     if incomplete.more_follows do
-      if new.count_segments >= state.opts.max_segments do
+      if is_integer(state.opts.max_segments) and new.count_segments >= state.opts.max_segments do
         # Reached max segments but still incomplete, send abort
         log_debug(fn ->
           "SegmentsStore: Received max segments, still incomplete, " <>

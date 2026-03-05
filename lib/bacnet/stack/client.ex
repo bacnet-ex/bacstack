@@ -908,6 +908,57 @@ defmodule BACnet.Stack.Client do
     {:noreply, new_state}
   end
 
+  def handle_info({seg_state, {:apdu_timer_setup, key}}, %State{} = state) do
+    # Segmentator module reports back for the segmented APDU
+    # seg_state will be :done|:timeout|:cancelled
+    # (:cancelled shouldn't scratch us, as this should already be locally handled)
+    log_debug(fn ->
+      "Client: Received APDU timer setup message for #{inspect(key)} with state #{seg_state}"
+    end)
+
+    new_state =
+      case Map.fetch(state.apdu_timers, key) do
+        {:ok, %ApduTimer{} = timer} ->
+          case seg_state do
+            :done ->
+              %{
+                state
+                | apdu_timers:
+                    Map.update!(state.apdu_timers, key, fn timer ->
+                      %{
+                        timer
+                        | retry_count: timer.retry_count + 1,
+                          timer:
+                            Process.send_after(
+                              self(),
+                              {:apdu_timer, key},
+                              state.opts.apdu_timeout + @apdu_timer_offset
+                            )
+                      }
+                    end)
+              }
+
+            :timeout ->
+              log_debug(fn ->
+                "Client: APDU timer #{inspect(key)} has reached max retry count (via Segmentator), removing"
+              end)
+
+              Telemetry.execute_client_request_apdu_timer(self(), timer, state)
+
+              GenServer.reply(timer.call_ref, {:error, :apdu_timeout})
+              %{state | apdu_timers: Map.delete(state.apdu_timers, key)}
+
+            _other ->
+              %{state | apdu_timers: Map.delete(state.apdu_timers, key)}
+          end
+
+        :error ->
+          state
+      end
+
+    {:noreply, new_state}
+  end
+
   def handle_info({:apdu_timer, key}, %State{opts: %{apdu_retries: max_retry}} = state) do
     # If remote server takes too long to reply, send APDU again
     # for n times and if still no reply, abort and reply to call
@@ -1638,7 +1689,7 @@ defmodule BACnet.Stack.Client do
 
     case Map.fetch(state.apdu_timers, reply_key) do
       {:ok, %ApduTimer{} = timer} ->
-        Process.cancel_timer(timer.timer)
+        if timer.timer, do: Process.cancel_timer(timer.timer)
         {timer, %{state | apdu_timers: Map.delete(state.apdu_timers, reply_key)}}
 
       _else ->
@@ -1784,6 +1835,7 @@ defmodule BACnet.Stack.Client do
          _skip_invoke_id_check
        ) do
     sys_mono_time = System.monotonic_time()
+    key = {destination, device_id, Map.get(apdu, :invoke_id)}
 
     try do
       # Catch any errors when trying to encode the APDU
@@ -1904,18 +1956,23 @@ defmodule BACnet.Stack.Client do
                 state
               )
 
+              seg_opts =
+                send_opts
+                |> Keyword.put(:callback_to, self())
+                |> Keyword.put(:callback_msg, {:apdu_timer_setup, key})
+
               Segmentator.create_sequence(
                 state.segmentator,
                 {trans_mod, state.transport_pid, portal},
                 destination,
-                %{
-                  apdu
-                  | proposed_window_size:
-                      Map.get(apdu, :proposed_window_size) || @default_window_size
-                },
+                {%{
+                   apdu
+                   | proposed_window_size:
+                       Map.get(apdu, :proposed_window_size) || @default_window_size
+                 }, apdu_data},
                 max_apdu_len,
                 max_segments,
-                send_opts
+                seg_opts
               )
 
             true ->
@@ -1934,11 +1991,6 @@ defmodule BACnet.Stack.Client do
         if needs_tracking do
           case result do
             :ok ->
-              key = {destination, device_id, Map.get(apdu, :invoke_id)}
-
-              # Do basic APDU segments count estimation
-              factor = if(apdu_too_long, do: apdu_length / (max_apdu_len - 5) + 1, else: 1)
-
               timer = %ApduTimer{
                 portal: portal,
                 destination: destination,
@@ -1946,13 +1998,21 @@ defmodule BACnet.Stack.Client do
                 apdu: apdu,
                 send_opts: opts,
                 call_ref: call_ref,
-                retry_count: 0,
+                # If we're sending segmented, the Segmentator handles re-sending,
+                # so we only need to wait for it to timeout (or possibly get a reply)
+                retry_count: if(apdu_too_long, do: state.opts.apdu_retries, else: 0),
                 monotonic_time: sys_mono_time,
+                # If we're sending segmented,
+                # the timer will be setup when the Segmentator reports back
                 timer:
-                  Process.send_after(
-                    self(),
-                    {:apdu_timer, key},
-                    state.opts.apdu_timeout * factor + @apdu_timer_offset
+                  if(apdu_too_long,
+                    do: nil,
+                    else:
+                      Process.send_after(
+                        self(),
+                        {:apdu_timer, key},
+                        trunc(state.opts.apdu_timeout + @apdu_timer_offset)
+                      )
                   )
               }
 

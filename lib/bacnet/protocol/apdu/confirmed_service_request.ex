@@ -214,51 +214,68 @@ defmodule BACnet.Protocol.APDU.ConfirmedServiceRequest do
           %@for{proposed_window_size: window_size} = apdu,
           apdu_size
         )
-        when window_size != nil do
+        when is_integer(window_size) and window_size >= 1 and window_size <= 127 do
       case encode_struct(apdu) do
         {header, ""} ->
           [<<header::binary>>]
 
         {header, data} ->
-          # Rework header, add Segmentation and More Follows bit as set
-          <<pdu_type::size(4), _segmented::size(2), rest1::bitstring-size(18), service::size(8)>> =
-            header
-
-          seg_header = <<pdu_type::size(4), 1::size(1), 1::size(1), rest1::bitstring>>
-          last_header = <<pdu_type::size(4), 1::size(1), 0::size(1), rest1::bitstring>>
-
-          0..255//1
-          |> Enum.reduce_while({data, []}, fn
-            _index, {<<>>, segments} ->
-              {:halt, segments}
-
-            index, {data, segments} ->
-              start = binary_part(data, 0, min(byte_size(data), apdu_size))
-
-              rest =
-                case max(0, byte_size(data) - byte_size(start)) do
-                  0 -> ""
-                  len -> binary_part(data, apdu_size, len)
-                end
-
-              this_header =
-                if byte_size(rest) == 0 do
-                  last_header
-                else
-                  seg_header
-                end
-
-              # Inject Sequence Number (index) and Window Size into the APCI
-              {:cont,
-               {rest,
-                [
-                  <<this_header::bitstring, index::size(8), window_size::size(8),
-                    service::size(8), start::binary>>
-                  | segments
-                ]}}
-          end)
-          |> Enum.reverse()
+          do_encode_segmented(header, data, apdu_size, window_size)
       end
+    end
+
+    @spec encode_to_segmented(@for.t(), iodata(), integer()) :: [iodata()]
+    def encode_to_segmented(
+          %@for{proposed_window_size: window_size} = _apdu,
+          data,
+          apdu_size
+        )
+        when is_integer(window_size) and window_size >= 1 and window_size <= 127 do
+      <<header::binary-size(4), data::binary>> = IO.iodata_to_binary(data)
+      do_encode_segmented(header, data, apdu_size, window_size)
+    end
+
+    defp do_encode_segmented(header, data, apdu_size, window_size)
+         when is_binary(header) and is_binary(data) and is_integer(apdu_size) and apdu_size > 0 and
+                is_integer(window_size) and window_size > 0 do
+      # Rework header, add Segmentation and More Follows bit as set
+      <<pdu_type::size(4), _segmented::size(2), rest1::bitstring-size(18), service::size(8)>> =
+        header
+
+      seg_header = <<pdu_type::size(4), 1::size(1), 1::size(1), rest1::bitstring>>
+      last_header = <<pdu_type::size(4), 1::size(1), 0::size(1), rest1::bitstring>>
+
+      0..255//1
+      |> Enum.reduce_while({data, []}, fn
+        _index, {<<>>, segments} ->
+          {:halt, segments}
+
+        index, {data, segments} ->
+          start = binary_part(data, 0, min(byte_size(data), apdu_size))
+
+          rest =
+            case max(0, byte_size(data) - byte_size(start)) do
+              0 -> ""
+              len -> binary_part(data, apdu_size, len)
+            end
+
+          this_header =
+            if byte_size(rest) == 0 do
+              last_header
+            else
+              seg_header
+            end
+
+          # Inject Sequence Number (index) and Window Size into the APCI
+          {:cont,
+           {rest,
+            [
+              <<this_header::bitstring, index::size(8), window_size::size(8), service::size(8),
+                start::binary>>
+              | segments
+            ]}}
+      end)
+      |> Enum.reverse()
     end
 
     @spec encode_struct(@for.t()) ::

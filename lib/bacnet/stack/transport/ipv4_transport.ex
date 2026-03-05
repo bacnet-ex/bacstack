@@ -1035,7 +1035,7 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
       nil ->
         :ok
 
-      recbuf when is_integer(recbuf) and recbuf > 0 ->
+      size when is_integer(size) and size > 0 ->
         :ok
 
       term ->
