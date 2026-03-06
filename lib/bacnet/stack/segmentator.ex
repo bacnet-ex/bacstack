@@ -551,7 +551,7 @@ defmodule BACnet.Stack.Segmentator do
             state
           )
 
-          %State{state | sequences: Map.delete(state.sequences, id)}
+          {:ok, %State{state | sequences: Map.delete(state.sequences, id)}}
 
         # Unknown sequence, silently ignore
         :error ->

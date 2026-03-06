@@ -763,7 +763,7 @@ defmodule BACnet.Stack.TrendLogger do
 
             Telemetry.execute_trend_logger_log_trigger(self(), new_log, log_entry, state)
 
-            %State{state | logs: Map.put(state.logs, id, new_log)}
+            {:ok, %State{state | logs: Map.put(state.logs, id, new_log)}}
           end
 
         _else ->
