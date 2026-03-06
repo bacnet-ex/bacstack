@@ -366,17 +366,18 @@ defmodule BACnet.Stack.ClientHelper do
   @doc """
   Scan the given device for available objects and read all objects. A map of objects will be returned on success.
 
-  If you don't know the device object identifier of the BACnet device in question, but you know the
-  BACnet network address (i.e. the IP address and port for BACnet/IP), you can use the Who-Is service
-  with the destination address being the device's network address, to discover the object identifier.
-  You can also use `read_property/6` to read the `:object_identifier` property.
+  The device object identifier must be supplied, so that the correct device object properties can be read.
+  This must be done, in case the destination has multiple "virtual" BACnet devices to select the correct device.
+  If you know the destination has only one device object, then you can use `4_194_303` as instance number.
+  By the BACnet specification that instance number will be treated by the remote BACnet device as
+  if the instance number was locally correctly matched.
 
   The scan process is parallelized through `Task.async_stream/3` and thus the `invoke_id` is
   automatically being set. Since this implementation simply uses `invoke_id` in the range of `0..max_concurrency-1`,
   it would be safest when the `BACnet.Stack.Client` implementation manages and overrides the `invoke_id`,
   so that an user does not have to care about possible collisions.
   The current "default" implementation of `BACnet.Stack.Client` does manage `invoke_id`s,
-  but it can be deactivated, so care must be exercised if it done.
+  but it can be deactivated, so care must be exercised if it is done.
   You need to be aware to not invoke/have parallel other requests to the same destination,
   as the `invoke_id` could be duplicated.
 
