@@ -1842,7 +1842,11 @@ defmodule BACnet.Stack.Client do
       bin = EncoderProtocol.encode(apdu)
 
       # 50 is the minimum APDU size each device needs to support
-      max_apdu_len = min(max(opts[:max_apdu_length] || 0, 50), trans_mod.max_npdu_length())
+      max_apdu_len =
+        case Keyword.fetch(opts, :max_apdu_length) do
+          {:ok, val} -> min(max(val, 50), trans_mod.max_npdu_length())
+          _error -> trans_mod.max_npdu_length()
+        end
 
       {bin, max_apdu_len}
     catch
