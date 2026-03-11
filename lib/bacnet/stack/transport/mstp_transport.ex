@@ -470,7 +470,7 @@ if Code.ensure_loaded?(Circuits.UART) do
     @doc """
     Checks whether the given destination is an address that needs to be routed.
     """
-    @spec is_destination_routed(GenServer.server(), source_address() | term()) ::
+    @spec is_destination_routed(GenServer.server(), destination_address() | term()) ::
             boolean()
     def is_destination_routed(transport, destination) when is_server(transport) do
       GenServer.call(transport, {:is_destination_routed, destination})
