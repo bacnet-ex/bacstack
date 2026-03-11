@@ -271,6 +271,7 @@ if Code.ensure_loaded?(Circuits.UART) do
             {:baudrate, non_neg_integer()}
             | {:local_address, source_address()}
             | {:log_communication, boolean()}
+            | {:log_communication_rcv, boolean()}
             | {:max_info_frames, pos_integer()}
             | {:max_master_address, 0..127}
             | {:port_name, binary()}
