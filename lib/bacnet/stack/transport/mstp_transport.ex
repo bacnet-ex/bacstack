@@ -10,6 +10,10 @@ if Code.ensure_loaded?(Circuits.UART) do
     otherwise it will ignore us, and that's a sad thing to do! As such, sending large APDUs is opt-in.
 
     It uses `Circuits.UART` to handle RS485 for us in active mode.
+
+    If you want to use this transport, you'll have to add [`:circuits_uart`](https://hex.pm/packages/circuits_uart)
+    to your `mix.exs` as dependency! It is an optional dependency and thus
+    by default not present when you install this library.
     """
 
     # TODO: Convert Master Node FSM to :gen_statem?
