@@ -24,7 +24,7 @@ jobs:
       - run: mix deps.get
         name: Fetch Dependencies
 
-      - run: mix bacnet.build_docs_extras --clean-generated-extras && mix docs
+      - run: mix bacnet.build_docs_extras --clean-generated-extras && mix docs -f html
         name: Build Docs
 
       - uses: strumwolf/delete-deployment-environment@v3.0.0
