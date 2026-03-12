@@ -1137,6 +1137,41 @@ defmodule BACnet.Stack.Client do
             "more_follows: #{inspect(incomplete.more_follows)}"
         end)
 
+        # Get the BACnet device ID, if available from NPCI source
+        device_id =
+          case npci.source do
+            %NpciTarget{address: adr} when adr != nil -> adr
+            _else -> nil
+          end
+
+        reply_key = {source_address, device_id, incomplete.invoke_id}
+
+        # When we receive a segmented response, we need to reset the APDU timer,
+        # because with many segments, the single timeout (default 3s) is too short
+        # The SegmentsStore module handles individual segment timeouts
+        state =
+          case Map.fetch(state.apdu_timers, reply_key) do
+            {:ok, %ApduTimer{timer: ptimer} = timer} when not is_nil(ptimer) ->
+              Process.cancel_timer(ptimer)
+
+              %{
+                state
+                | apdu_timers:
+                    Map.put(state.apdu_timers, reply_key, %{
+                      timer
+                      | timer:
+                          Process.send_after(
+                            self(),
+                            {:apdu_timer, reply_key},
+                            trunc(state.opts.apdu_timeout + @apdu_timer_offset)
+                          )
+                    })
+              }
+
+            _else ->
+              state
+          end
+
         incomplete_apdu =
           if state.opts.segmented_rcv_window_overwrite and
                trans_mod.is_destination_routed(state.transport_pid, source_address) do

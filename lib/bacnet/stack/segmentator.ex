@@ -739,14 +739,47 @@ defmodule BACnet.Stack.Segmentator do
             Process.cancel_timer(sequence.seq_timer)
           end
 
+          # ASHRAE 135 5.4.4 [Requesting BACnet User (client)]
+          # State SEGMENTED_REQUEST: [Segmentator]
+          #  Timeout: Retry
+          #  FinalTimeout: Abort-APDU to local application program and enter IDLE
+          #
+          # State AWAIT_CONFIRMATION: [Client]
+          #  TimeoutSegmented: Retry
+          #  FinalTimeout: Abort-APDU to local application program and enter IDLE
+          #
+          # State SEGMENTED_CONF: [SegmentsStore]
+          #  Timeout: Abort-APDU to local application program and enter IDLE
+          #
+          # ASHRAE 135 5.4.5 [Responding BACnet User (server)]
+          # State SEGMENTED_REQUEST: [SegmentsStore]
+          #  Timeout: Stop SegmentTimer and enter IDLE
+          #
+          # State AWAIT_RESPONSE: [Client]
+          #  Timeout: Abort-APDU to local application program and enter IDLE
+          #
+          # State SEGMENTED_RESPONSE: [Segmentator]
+          #  FinalTimeout: Stop SegmentTimer and enter IDLE
+          #
+          # CONCLUSION: No Abort-APDU is ever sent to the remote BACnet user
+
           abort = %APDU.Abort{
             sent_by_server: sequence.server,
             invoke_id: sequence.invoke_id,
             reason: Constants.macro_assert_name(:abort_reason, :tsm_timeout)
           }
 
-          log_transport_send_error(
-            module.send(sequence.portal, sequence.destination, abort, sequence.send_opts)
+          Telemetry.execute_segmentator_sequence_error(
+            self(),
+            module,
+            sequence.transport,
+            sequence.portal,
+            sequence.destination,
+            nil,
+            nil,
+            abort,
+            :timeout,
+            state
           )
 
           Telemetry.execute_segmentator_sequence_stop(self(), sequence, :timeout, state)

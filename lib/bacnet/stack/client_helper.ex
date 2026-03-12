@@ -232,6 +232,15 @@ defmodule BACnet.Stack.ClientHelper do
            ),
          {:ok, %APDU.ComplexACK{} = resp} <- Client.send(server, destination, req, opts),
          {:ok, ack} <- Services.Ack.ReadPropertyAck.from_apdu(resp),
+         # When using 4_194_303 as device ID, fetch the correct ID from the result
+         cast_object_id =
+           (case object do
+              %{type: :device, instance: 4_194_303} ->
+                ack.object_identifier
+
+              _else ->
+                object
+            end),
          {:ok, value} <-
            (case opts[:raw] do
               true ->
@@ -242,7 +251,7 @@ defmodule BACnet.Stack.ClientHelper do
                   {:ok, ack.property_value.value}
                 else
                   ObjectsUtility.cast_property_to_value(
-                    object,
+                    cast_object_id,
                     ack.property_identifier,
                     ack.property_value,
                     allow_partial: array_index != nil
@@ -313,13 +322,22 @@ defmodule BACnet.Stack.ClientHelper do
            ),
          {:ok, %APDU.ComplexACK{} = resp} <- Client.send(server, destination, req, opts),
          {:ok, ack} <- Services.Ack.ReadPropertyMultipleAck.from_apdu(resp),
+         # When using 4_194_303 as device ID, fetch the correct ID from the first result
+         cast_object_id =
+           (case object do
+              %{type: :device, instance: 4_194_303} when ack.results != [] ->
+                hd(ack.results).object_identifier
+
+              _else ->
+                object
+            end),
          {:ok, values} <-
            (case opts[:raw] do
               true ->
                 {:ok, ack.results}
 
               _else ->
-                ObjectsUtility.cast_read_properties_ack(object, [ack], opts)
+                ObjectsUtility.cast_read_properties_ack(cast_object_id, [ack], opts)
             end) do
       {:ok, values}
     else

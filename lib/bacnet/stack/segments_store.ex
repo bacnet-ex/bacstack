@@ -37,7 +37,7 @@ defmodule BACnet.Stack.SegmentsStore do
 
   use GenServer
 
-  @default_apdu_retries 3
+  @default_apdu_retries 4
   @default_apdu_timeout 3000
   @default_max_segments :more_than_64
 
@@ -142,7 +142,7 @@ defmodule BACnet.Stack.SegmentsStore do
   Starts and links the Segments Store.
 
   The following options are available, in addition to `t:GenServer.options/0`:
-    - `apdu_retries: pos_integer()` - Optional. The amount of APDU sending retries (defaults to 3).
+    - `apdu_retries: pos_integer()` - Optional. The amount of APDU receiving retries (defaults to 4).
     - `apdu_timeout: pos_integer()` - Optional. The APDU timeout to be waiting for a response, in ms (defaults to 3000ms).
     - `max_segments: Constants.max_segments()` - Optional. The maximum amount of segments to allow (defaults to `:more_than_64`).
       While `:unspecified` is allowed here, it shouldn't be used anywhere, because it makes it for the server unable to determine
@@ -503,6 +503,30 @@ defmodule BACnet.Stack.SegmentsStore do
                 reason: Constants.macro_assert_name(:abort_reason, :tsm_timeout)
               }
 
+              # ASHRAE 135 5.4.4 [Requesting BACnet User (client)]
+              # State SEGMENTED_REQUEST: [Segmentator]
+              #  Timeout: Retry
+              #  FinalTimeout: Abort-APDU to local application program and enter IDLE
+              #
+              # State AWAIT_CONFIRMATION: [Client]
+              #  TimeoutSegmented: Retry
+              #  FinalTimeout: Abort-APDU to local application program and enter IDLE
+              #
+              # State SEGMENTED_CONF: [SegmentsStore]
+              #  Timeout: Abort-APDU to local application program and enter IDLE
+              #
+              # ASHRAE 135 5.4.5 [Responding BACnet User (server)]
+              # State SEGMENTED_REQUEST: [SegmentsStore]
+              #  Timeout: Stop SegmentTimer and enter IDLE
+              #
+              # State AWAIT_RESPONSE: [Client]
+              #  Timeout: Abort-APDU to local application program and enter IDLE
+              #
+              # State SEGMENTED_RESPONSE: [Segmentator]
+              #  FinalTimeout: Stop SegmentTimer and enter IDLE
+              #
+              # CONCLUSION: No Abort-APDU is ever sent to the remote BACnet user
+
               Telemetry.execute_segments_store_sequence_error(
                 self(),
                 module,
@@ -515,9 +539,7 @@ defmodule BACnet.Stack.SegmentsStore do
                 state
               )
 
-              log_transport_send_error(
-                module.send(sequence.portal, sequence.source_address, abort, sequence.send_opts)
-              )
+              Telemetry.execute_segments_store_sequence_stop(self(), sequence, :timeout, state)
 
               :drop
             else
