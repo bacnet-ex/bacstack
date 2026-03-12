@@ -966,7 +966,7 @@ defmodule BACnet.Stack.Client do
 
     new_state =
       case Map.fetch(state.apdu_timers, key) do
-        {:ok, %ApduTimer{retry_count: ^max_retry} = timer} ->
+        {:ok, %ApduTimer{retry_count: retry} = timer} when retry >= max_retry ->
           log_debug(fn ->
             "Client: APDU timer #{inspect(key)} has reached max retry count, removing"
           end)
