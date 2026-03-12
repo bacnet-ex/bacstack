@@ -18,6 +18,10 @@ if Code.ensure_loaded?(Circuits.UART) do
 
     # TODO: Convert Master Node FSM to :gen_statem?
 
+    # For testing we can use `socat -d -d pty,rawer,echo=0 pty,rawer,echo=0` in the future
+    # Output will contain two lines of `N PTY is /dev/pts/{number}` with can then be opened
+    # using Circuits.UART.open(pid, "dev/pts/{number}")
+
     alias __MODULE__
     alias __MODULE__.EncodingTools
     alias __MODULE__.ReceiveFSM
