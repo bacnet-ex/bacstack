@@ -1271,6 +1271,19 @@ if Code.ensure_loaded?(Circuits.UART) do
     end
 
     @doc false
+    def handle_info({:serial_crash, reason}, %State{} = state) do
+      # This message is either sent by ReceiveFSM or when writing UART fails
+      Logger.error(fn ->
+        "BacMstpTransport: UART error encountered and shutting down, error: " <> inspect(reason)
+      end)
+
+      # Stop everything
+      ReceiveFSM.close(state.receive_fsm)
+      UART.close(state.uart_pid)
+
+      {:stop, {:uart_error, reason}, state}
+    end
+
     def handle_info(:wakeup_use_token, %State{} = state) do
       {:noreply, state, {:continue, :use_token}}
     end
@@ -2645,6 +2658,12 @@ if Code.ensure_loaded?(Circuits.UART) do
             "BacMstpTransport: Got error while trying to write data to MS/TP network, error: " <>
               inspect(reason)
           end)
+
+          # Common errors are :badf and :eio
+          # They are bad enough we need to stop (serial port is gone, dead, etc.)
+          if reason not in [:eagain, :eintr] do
+            send(self(), {:serial_crash, reason})
+          end
 
           {:error, state}
       end

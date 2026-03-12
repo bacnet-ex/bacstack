@@ -138,6 +138,11 @@ if Code.ensure_loaded?(Circuits.UART) do
           inspect(reason)
       end)
 
+      if reason not in [:eagain, :eintr] do
+        # Notify Transport Master and it will shut everything down
+        send(data.transport_master, {:serial_crash, reason})
+      end
+
       {:keep_state, %{data | event_count: data.event_count + 1}}
     end
 
