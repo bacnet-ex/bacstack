@@ -41,6 +41,7 @@ npm-debug.log
 /assets/package-lock.json
 /extras/gen_*
 
+/.mix/
 .*.exs
 .iex.exs
 mix.lock
