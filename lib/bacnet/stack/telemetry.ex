@@ -21,8 +21,8 @@ defmodule BACnet.Stack.Telemetry do
   alias BACnet.Protocol.APDU.UnconfirmedServiceRequest
   alias BACnet.Protocol.BACnetError
   alias BACnet.Protocol.BroadcastDistributionTableEntry
-  alias BACnet.Protocol.DeviceObjectRef
   alias BACnet.Protocol.DeviceObjectPropertyRef
+  alias BACnet.Protocol.DeviceObjectRef
   alias BACnet.Protocol.ForeignDeviceTableEntry
   alias BACnet.Protocol.IncompleteAPDU
   alias BACnet.Protocol.NPCI

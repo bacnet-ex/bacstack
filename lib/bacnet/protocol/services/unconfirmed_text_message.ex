@@ -17,6 +17,7 @@ defmodule BACnet.Protocol.Services.UnconfirmedTextMessage do
 
   alias BACnet.Protocol
   alias BACnet.Protocol.Constants
+  alias BACnet.Protocol.Services.Common
   require Constants
 
   @behaviour Protocol.Services.Behaviour
@@ -67,7 +68,7 @@ defmodule BACnet.Protocol.Services.UnconfirmedTextMessage do
           service: @service_name
         } = request
       ) do
-    case Protocol.Services.Common.decode_text_message(request) do
+    case Common.decode_text_message(request) do
       {:ok, event} -> {:ok, struct(__MODULE__, event)}
       {:error, _err} = err -> err
     end
@@ -86,8 +87,8 @@ defmodule BACnet.Protocol.Services.UnconfirmedTextMessage do
           {:ok, Protocol.APDU.UnconfirmedServiceRequest.t()}
           | {:error, term()}
   def to_apdu(%__MODULE__{} = service, request_data) do
-    with {:ok, req} <- Protocol.Services.Common.encode_text_message(service) do
-      Protocol.Services.Common.after_encode_convert(
+    with {:ok, req} <- Common.encode_text_message(service) do
+      Common.after_encode_convert(
         req,
         request_data,
         Protocol.APDU.UnconfirmedServiceRequest,

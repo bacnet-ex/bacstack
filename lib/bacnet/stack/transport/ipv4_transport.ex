@@ -647,10 +647,13 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
         false
       end
 
-    # If we have a broadcast socket, we need to ignore broadcast packets from the normal socket (we MAY receive them duplicated, this is a countermeasurement)
+    # If we have a broadcast socket, we need to ignore broadcast packets from the normal socket
+    # (we MAY receive them duplicated, this is a countermeasurement)
     # On Windows we do not have a broadcast socket, since Windows receives broadcasts also on the normal socket
-    # On Linux we do have a broadcast socket (when binding), since Linux does NOT receive broadcasts on the normal socket
-    # If we have already determined that this is a packet from us, we can ignore the check here, the result of this operation is not used
+    # On Linux we do have a broadcast socket (when binding),
+    # since Linux does NOT receive broadcasts on the normal socket
+    # If we have already determined that this is a packet from us, we can ignore the check here,
+    # the result of this operation is not used
     is_packet_from_non_broadcast_socket =
       if !is_packet_from_us and state.broadcast_rcv_port != nil and
            state.broadcast_rcv_port != rcv_port do
@@ -826,7 +829,8 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
         try do
           send(pid, {:bacnet_transport, @transport_protocol, source_addr, data, state.port})
         catch
-          # Ignore any exception coming from send/2 (an "invalid" destination raises! [i.e. an atom but it's not registered])
+          # Ignore any exception coming from send/2 (an "invalid" destination raises!
+          # [i.e. an atom but it's not registered])
           _type, _err -> :ok
         end
 
@@ -1074,7 +1078,8 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
     end
   end
 
-  # Iterates :inet.getifaddrs() and returns a neat map of list of IPv4 addresses (only those with broadcast-capabilities)
+  # Iterates :inet.getifaddrs() and returns a neat map of list of IPv4 addresses
+  # (only those with broadcast-capabilities)
   @spec getifaddrs() ::
           {:ok,
            %{

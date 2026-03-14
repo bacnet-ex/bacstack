@@ -24,6 +24,7 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryInput do
   # TODO: Docs
 
   alias BACnet.Protocol.ApplicationTags
+  alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.ObjectsMacro
 
@@ -77,14 +78,14 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryInput do
     field(:active_text, String.t(), default: "Active", implicit_relationship: :inactive_text)
     field(:inactive_text, String.t(), default: "Inactive")
 
-    field(:change_of_state_time, BACnet.Protocol.BACnetDateTime.t(),
+    field(:change_of_state_time, BACnetDateTime.t(),
       implicit_relationship: :change_of_state_count,
       default: ObjectsMacro.get_default_bacnet_datetime()
     )
 
     field(:change_of_state_count, non_neg_integer(), default: 0)
 
-    field(:time_of_state_count_reset, BACnet.Protocol.BACnetDateTime.t(),
+    field(:time_of_state_count_reset, BACnetDateTime.t(),
       default: ObjectsMacro.get_default_bacnet_datetime()
     )
 
@@ -93,7 +94,7 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryInput do
       default: 0
     )
 
-    field(:time_of_active_time_reset, BACnet.Protocol.BACnetDateTime.t(),
+    field(:time_of_active_time_reset, BACnetDateTime.t(),
       default: ObjectsMacro.get_default_bacnet_datetime()
     )
 

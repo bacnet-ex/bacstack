@@ -70,7 +70,8 @@ if Code.ensure_loaded?(Circuits.UART) do
     # The number of retries on sending Token
     @param_n_retry_token 1
 
-    # The minimum number of DataAvailable or ReceiveError events that must be seen by a receiving node in order to declare the line "active"
+    # The minimum number of DataAvailable or ReceiveError events that must be seen by a receiving node
+    # in order to declare the line "active"
     @param_n_min_octets 4
 
     # The maximum idle time a sending node may allow to elapse between octets of a frame the node is transmitting
@@ -81,15 +82,18 @@ if Code.ensure_loaded?(Circuits.UART) do
     # Unit: ms
     @param_t_no_token 500
 
-    # The maximum time after the end of the stop bit of the final octet of a transmitted frame before a node must disable its EIA-485 drive
+    # The maximum time after the end of the stop bit of the final octet of a transmitted frame before
+    # a node must disable its EIA-485 drive
     # Unit: Bit times
     # @param_t_postdrive 15
 
-    # The maximum time a node may wait after reception of a frame that expects a reply before sending the first octet of a reply or Reply Postponed frame
+    # The maximum time a node may wait after reception of a frame that expects a reply before
+    # sending the first octet of a reply or Reply Postponed frame
     # Unit: ms
     @param_t_reply_delay 250
 
-    # The minimum time without a DataAvailable or ReceiveError event that a node must wait for a station to begin replying to a confirmed request
+    # The minimum time without a DataAvailable or ReceiveError event that a node must wait for a station
+    # to begin replying to a confirmed request
     # (Implementations may use larger values for this timeout, not to exceed 300 milliseconds)
     # Unit: ms
     # Default: 255
@@ -99,11 +103,13 @@ if Code.ensure_loaded?(Circuits.UART) do
     # Unit: ms
     @param_t_slot 10
 
-    # The maximum time a node may wait after reception of the token or a Poll For Master frame before sending the first octet of a frame
+    # The maximum time a node may wait after reception of the token or a Poll For Master frame before
+    # sending the first octet of a frame
     # Unit: ms
     # @param_t_usage 15
 
-    # The minimum time without a DataAvailable or ReceiveError event that a node must wait for a remote node to begin using a token or replying to a Poll For Master frame
+    # The minimum time without a DataAvailable or ReceiveError event that a node must wait for a remote node to
+    # begin using a token or replying to a Poll For Master frame
     # (Implementations may use larger values for this timeout, not to exceed 100 milliseconds)
     # Unit: ms
     # Default: 20
@@ -1517,7 +1523,8 @@ if Code.ensure_loaded?(Circuits.UART) do
       # If SilenceTimer is greater than or equal to Treply_timeout,
       # then assume that the request has failed. Set FrameCount to Nmax_info_frames and enter the DONE_WITH_TOKEN state.
       # Any retry of the data frame shall await the next entry to the USE_TOKEN state.
-      # (Because of the length of the timeout, this transition will cause the token to be passed regardless of the initial value of FrameCount)
+      # (Because of the length of the timeout, this transition will cause the token to be passed
+      #  regardless of the initial value of FrameCount)
       {:noreply,
        state_cancel_silence_timer(%{
          state
@@ -2158,7 +2165,8 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:noreply, new_state}
     end
 
-    # There are cases when an invalid frame needs to be explicitely handled to transit a state (i.e. during POLL_FOR_MASTER)
+    # There are cases when an invalid frame needs to be explicitely handled to transit a state
+    # (i.e. during POLL_FOR_MASTER)
     # Returns from handle_received_data/2 with a triple tuple are ignored, because they already do a transition
     @spec handle_maybe_poll_for_master_invalid_frame(
             {:noreply, State.t()}
@@ -2764,7 +2772,8 @@ if Code.ensure_loaded?(Circuits.UART) do
               {:bacnet_transport, @transport_protocol, source_addr, data, server}
             )
           catch
-            # Ignore any exception coming from send/2 (an "invalid" destination raises! [i.e. an atom but it's not registered])
+            # Ignore any exception coming from send/2
+            # (an "invalid" destination raises! [i.e. an atom but it's not registered])
             _type, _err -> :ok
           end
 

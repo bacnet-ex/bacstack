@@ -17,6 +17,7 @@ defmodule BACnet.Protocol.Services.ConfirmedPrivateTransfer do
 
   alias BACnet.Protocol
   alias BACnet.Protocol.Constants
+  alias BACnet.Protocol.Services.Common
   require Constants
 
   @behaviour Protocol.Services.Behaviour
@@ -65,7 +66,7 @@ defmodule BACnet.Protocol.Services.ConfirmedPrivateTransfer do
           service: @service_name
         } = request
       ) do
-    case Protocol.Services.Common.decode_private_transfer(request) do
+    case Common.decode_private_transfer(request) do
       {:ok, event} -> {:ok, struct(__MODULE__, event)}
       {:error, _err} = err -> err
     end
@@ -84,8 +85,8 @@ defmodule BACnet.Protocol.Services.ConfirmedPrivateTransfer do
           {:ok, Protocol.APDU.ConfirmedServiceRequest.t()}
           | {:error, term()}
   def to_apdu(%__MODULE__{} = service, request_data) do
-    with {:ok, req} <- Protocol.Services.Common.encode_private_transfer(service) do
-      Protocol.Services.Common.after_encode_convert(
+    with {:ok, req} <- Common.encode_private_transfer(service) do
+      Common.after_encode_convert(
         req,
         request_data,
         Protocol.APDU.ConfirmedServiceRequest,

@@ -1762,7 +1762,8 @@ defmodule BACnet.Stack.Client do
       try do
         Kernel.send(prc, msg)
       catch
-        # Ignore any exception coming from send/2 (an "invalid" destination raises! [i.e. an atom but it's not registered])
+        # Ignore any exception coming from send/2 (an "invalid" destination raises!
+        # [i.e. an atom but it's not registered])
         _type, _err -> :ok
       end
     end)

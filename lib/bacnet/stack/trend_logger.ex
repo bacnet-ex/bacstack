@@ -64,15 +64,15 @@ defmodule BACnet.Stack.TrendLogger do
   alias BACnet.Protocol.LogRecord
   alias BACnet.Protocol.LogStatus
   alias BACnet.Protocol.ObjectIdentifier
+  alias BACnet.Protocol.ObjectsUtility
   alias BACnet.Protocol.ObjectTypes.EventLog
   alias BACnet.Protocol.ObjectTypes.TrendLog
   alias BACnet.Protocol.ObjectTypes.TrendLogMultiple
-  alias BACnet.Protocol.ObjectsUtility
   alias BACnet.Protocol.PropertyValue
-  alias BACnet.Protocol.Services.ConfirmedEventNotification
-  alias BACnet.Protocol.Services.UnconfirmedEventNotification
   alias BACnet.Protocol.Services.ConfirmedCovNotification
+  alias BACnet.Protocol.Services.ConfirmedEventNotification
   alias BACnet.Protocol.Services.UnconfirmedCovNotification
+  alias BACnet.Protocol.Services.UnconfirmedEventNotification
   alias BACnet.Stack.LogBuffer
   alias BACnet.Stack.LogBufferBehaviour
   alias BACnet.Stack.Telemetry

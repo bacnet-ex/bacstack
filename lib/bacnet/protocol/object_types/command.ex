@@ -70,8 +70,8 @@ defmodule BACnet.Protocol.ObjectTypes.Command do
 
   # TODO: Docs
 
-  alias BACnet.Protocol.BACnetArray
   alias BACnet.Protocol.ActionList
+  alias BACnet.Protocol.BACnetArray
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.ObjectsMacro
 

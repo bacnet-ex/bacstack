@@ -11,6 +11,8 @@ defmodule BACnet.Protocol.NotificationParameters do
   details about each event's parameters.
   """
 
+  # credo:disable-for-this-file Credo.Check.Design.AliasUsage
+
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.DeviceObjectPropertyRef

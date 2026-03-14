@@ -71,8 +71,10 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
       default: :operational
     )
 
-    # Database Revision: This property is incremented when an object is mutated (added/modified/deleted) or a restore happened
-    # The creation and deletion of temporary configuration files during a backup or restore procedure does not affect this property
+    # Database Revision: This property is incremented when an object is mutated (added/modified/deleted)
+    # or a restore happened
+    # The creation and deletion of temporary configuration files during a backup or
+    # restore procedure does not affect this property
     field(:database_revision, non_neg_integer(), required: true, readonly: true, default: 1)
 
     # Protocol Version: 1

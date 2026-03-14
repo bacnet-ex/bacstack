@@ -24,10 +24,12 @@ if Code.ensure_loaded?(Circuits.UART) do
 
     @broadcast_addr 255
 
-    # The minimum number of DataAvailable or ReceiveError events that must be seen by a receiving node in order to declare the line "active"
+    # The minimum number of DataAvailable or ReceiveError events that must be seen by a receiving node
+    # in order to declare the line "active"
     # @param_n_min_octets 4
 
-    # The minimum time without a DataAvailable or ReceiveError event within a frame before a receiving node may discard the frame
+    # The minimum time without a DataAvailable or ReceiveError event within a frame before
+    # a receiving node may discard the frame
     # (Implementations may use larger values for this timeout, not to exceed 100 milliseconds)
     # Unit: Bit times
     # 60 * 30 = 93ms for 19.2kbits/s

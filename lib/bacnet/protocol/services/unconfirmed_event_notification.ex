@@ -17,6 +17,7 @@ defmodule BACnet.Protocol.Services.UnconfirmedEventNotification do
 
   alias BACnet.Protocol
   alias BACnet.Protocol.Constants
+  alias BACnet.Protocol.Services.Common
   require Constants
 
   @behaviour Protocol.Services.Behaviour
@@ -86,7 +87,7 @@ defmodule BACnet.Protocol.Services.UnconfirmedEventNotification do
           service: @service_name
         } = request
       ) do
-    case Protocol.Services.Common.decode_event_notification(request) do
+    case Common.decode_event_notification(request) do
       {:ok, event} -> {:ok, struct(__MODULE__, event)}
       {:error, _err} = err -> err
     end
@@ -105,8 +106,8 @@ defmodule BACnet.Protocol.Services.UnconfirmedEventNotification do
           {:ok, Protocol.APDU.UnconfirmedServiceRequest.t()}
           | {:error, term()}
   def to_apdu(%__MODULE__{} = service, request_data) do
-    with {:ok, req} <- Protocol.Services.Common.encode_event_notification(service) do
-      Protocol.Services.Common.after_encode_convert(
+    with {:ok, req} <- Common.encode_event_notification(service) do
+      Common.after_encode_convert(
         req,
         request_data,
         Protocol.APDU.UnconfirmedServiceRequest,

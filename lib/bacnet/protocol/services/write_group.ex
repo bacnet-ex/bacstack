@@ -22,8 +22,8 @@ defmodule BACnet.Protocol.Services.WriteGroup do
 
   alias BACnet.Protocol
   alias BACnet.Protocol.ApplicationTags
-  alias BACnet.Protocol.GroupChannelValue
   alias BACnet.Protocol.Constants
+  alias BACnet.Protocol.GroupChannelValue
 
   import Protocol.Utility, only: [pattern_extract_tags: 4]
   require Constants

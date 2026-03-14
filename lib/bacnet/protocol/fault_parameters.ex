@@ -7,6 +7,8 @@ defmodule BACnet.Protocol.FaultParameters do
   details about each fault's algorithm.
   """
 
+  # credo:disable-for-this-file Credo.Check.Design.AliasUsage
+
   # TODO: Docs
   # TODO: Throw argument error in encode if not valid
 

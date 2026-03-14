@@ -157,6 +157,7 @@ defmodule BACnet.Protocol.Services.WhoHas do
         []
       end
 
+    # credo:disable-for-lines:10 Credo.Check.Refactor.AppendSingleItem
     params =
       id_params ++
         [

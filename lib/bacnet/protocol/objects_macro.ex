@@ -18,8 +18,8 @@ defmodule BACnet.Protocol.ObjectsMacro do
 
   alias BACnet.BeamTypes
   alias BACnet.Protocol.ApplicationTags.Encoding
-  alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.BACnetDate
+  alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.BACnetTime
   alias BACnet.Protocol.BACnetTimestamp
   alias BACnet.Protocol.Constants

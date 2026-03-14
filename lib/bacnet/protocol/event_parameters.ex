@@ -9,6 +9,8 @@ defmodule BACnet.Protocol.EventParameters do
   details about each event's algorithm.
   """
 
+  # credo:disable-for-file Credo.Check.Design.AliasUsage
+
   # TODO: Docs
   # TODO: Throw argument error in encode if not valid
 
@@ -73,6 +75,8 @@ defmodule BACnet.Protocol.EventParameters do
 
     For more specific information about the event algorithm, consult ASHRAE 135 13.3.2.
     """
+
+    # credo:disable-for-this-file Credo.Check.Design.AliasUsage
 
     use TypedStruct
 

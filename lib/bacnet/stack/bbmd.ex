@@ -335,6 +335,7 @@ defmodule BACnet.Stack.BBMD do
   def handle_call({:add_bdt, %BroadcastDistributionTableEntry{} = entry}, _from, %State{} = state) do
     log_debug(fn -> "BBMD: Received add_bdt request" end)
 
+    # credo:disable-for-next-line Credo.Check.Refactor.AppendSingleItem
     new_state = update_in(state, [Access.key(:bdt)], fn bdts -> bdts ++ [entry] end)
     {:reply, :ok, new_state}
   end

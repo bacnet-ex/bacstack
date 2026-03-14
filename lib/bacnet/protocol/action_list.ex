@@ -2,8 +2,8 @@ defmodule BACnet.Protocol.ActionList do
   # TODO: Docs
   # TODO: Throw argument error in encode if not valid
 
-  alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.ActionCommand
+  alias BACnet.Protocol.ApplicationTags
 
   @type t :: %__MODULE__{
           actions: [ActionCommand.t()]

@@ -3,8 +3,8 @@ defmodule BACnet.Protocol.Services.Ack.ReadRangeAck do
 
   alias BACnet.Protocol.APDU.ComplexACK
   alias BACnet.Protocol.ApplicationTags
-  alias BACnet.Protocol.ResultFlags
   alias BACnet.Protocol.Constants
+  alias BACnet.Protocol.ResultFlags
 
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
   require Constants

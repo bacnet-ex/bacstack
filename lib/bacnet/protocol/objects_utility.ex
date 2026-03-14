@@ -1119,7 +1119,8 @@ defmodule BACnet.Protocol.ObjectsUtility do
           {:ok, term()} | {:error, term()}
   defp process_make_property(object_mod, property_identifier, value, opts)
 
-  # Handle this property independently from the object modules as they are not declaring it (we can just return the value as-is)
+  # Handle this property independently from the object modules as they are not declaring it
+  # (we can just return the value as-is)
   defp process_make_property(
          _object_mod,
          Constants.macro_assert_name(:property_identifier, :object_identifier),
@@ -1247,15 +1248,13 @@ defmodule BACnet.Protocol.ObjectsUtility do
          %Encoding{} = value
        )
        when is_function(decoder, 1) do
-    try do
-      case decoder.(value) do
-        {:ok, _val} = val -> val
-        {:error, _err} = err -> err
-        term -> {:ok, term}
-      end
-    rescue
-      e -> {:error, {:exception_during_decoding, e, __STACKTRACE__}}
+    case decoder.(value) do
+      {:ok, _val} = val -> val
+      {:error, _err} = err -> err
+      term -> {:ok, term}
     end
+  rescue
+    e -> {:error, {:exception_during_decoding, e, __STACKTRACE__}}
   end
 
   @spec do_cast_value_to_property(
@@ -1670,15 +1669,13 @@ defmodule BACnet.Protocol.ObjectsUtility do
          value
        )
        when is_function(encoder, 1) do
-    try do
-      case encoder.(value) do
-        {:ok, _val} = val -> val
-        {:error, _err} = err -> err
-        term -> {:ok, term}
-      end
-    rescue
-      e -> {:error, {:exception_during_encoding, e, __STACKTRACE__}}
+    case encoder.(value) do
+      {:ok, _val} = val -> val
+      {:error, _err} = err -> err
+      term -> {:ok, term}
     end
+  rescue
+    e -> {:error, {:exception_during_encoding, e, __STACKTRACE__}}
   end
 
   @spec cast_value_to_encoding(

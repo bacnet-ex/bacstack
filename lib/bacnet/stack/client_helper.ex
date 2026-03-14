@@ -6,9 +6,9 @@ defmodule BACnet.Stack.ClientHelper do
   alias BACnet.Protocol.AccessSpecification
   alias BACnet.Protocol.APDU
   alias BACnet.Protocol.ApplicationTags.Encoding
-  alias BACnet.Protocol.Constants
   alias BACnet.Protocol.BACnetDate
   alias BACnet.Protocol.BACnetTime
+  alias BACnet.Protocol.Constants
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.ObjectsUtility
   alias BACnet.Protocol.PropertyRef
