@@ -18,6 +18,8 @@ defmodule BACstack.MixProject do
       deps: deps(),
       package: package(),
       dialyzer: [
+        # Flags could be ["-Wno_opaque"]
+        flags: [],
         ignore_warnings: "dialyzer.ignore-warnings.exs",
         plt_add_apps: [:mix]
       ],
@@ -538,7 +540,8 @@ defmodule BACstack.MixProject do
     Path.join([__DIR__, "priv", "vendor_ids.csv"])
   end
 
-  @spec get_vendor_ids() :: %{optional(non_neg_integer()) => String.t()}
+  # Returns an :array.array(String.t()), but dialyzer doesn't like that
+  @spec get_vendor_ids() :: term()
   def get_vendor_ids() do
     if not File.exists?(get_vendor_ids_csv_file()) do
       Mix.Task.run("bacnet.dl.vendorids")
@@ -547,18 +550,19 @@ defmodule BACstack.MixProject do
     parse_vendor_ids_csv()
   end
 
-  @spec parse_vendor_ids_csv() :: %{optional(non_neg_integer()) => String.t()}
+  # Returns an :array.array(String.t()), but dialyzer doesn't like that
+  @spec parse_vendor_ids_csv() :: term()
   def parse_vendor_ids_csv() do
     get_vendor_ids_csv_file()
-    |> File.read!()
-    |> String.split("\n")
+    |> File.stream!()
     |> Stream.flat_map(fn line ->
       case String.split(line, ";") do
-        [id, name] -> [{String.to_integer(id), name}]
+        [id, name] -> [{String.to_integer(id), String.trim(name)}]
         _else -> []
       end
     end)
-    |> Map.new()
+    |> Enum.sort_by(&elem(&1, 0))
+    |> :array.from_orddict("")
   end
 
   #### Download BACnet Vendor IDs list from the BACnet website END ####

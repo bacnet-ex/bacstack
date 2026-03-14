@@ -252,18 +252,35 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
   @external_resource BACstack.MixProject.get_vendor_ids_csv_file()
   @vendor_ids BACstack.MixProject.get_vendor_ids()
 
+  # Dialyzer is so hecking stupid - go love yourself with your stupid opaqueness contracts
+  @dialyzer {:nowarn_function, get_vendor_ids: 0, get_vendor_ids_arr: 0, map_vendor_to_name: 1}
+
+  @spec get_vendor_ids_arr() :: :array.array(String.t())
+  defp get_vendor_ids_arr(), do: @vendor_ids
+
   @doc """
   Get the list of known vendor IDs to vendor names.
+
+  > #### Implementation Detail {: .info}
+  > Internally the vendor IDs mapping is represented as an erlang array
+  > and will be converted to a map. If you use this map multiple times in a row,
+  > consider storing it in a variable as the conversion can be computational heavy.
   """
   @spec get_vendor_ids() :: %{optional(non_neg_integer()) => String.t()}
   def get_vendor_ids() do
-    @vendor_ids
+    get_vendor_ids_arr()
+    |> :array.sparse_to_orddict()
+    |> Map.new()
   end
 
-  @spec map_vendor_to_name(non_neg_integer) :: String.t()
-  defp map_vendor_to_name(id) do
-    Map.get(@vendor_ids, id, "")
+  @spec map_vendor_to_name(non_neg_integer()) :: String.t()
+  defp map_vendor_to_name(id)
+
+  defp map_vendor_to_name(id) when is_integer(id) and id >= 0 do
+    :array.get(id, get_vendor_ids_arr())
   end
+
+  defp map_vendor_to_name(_id), do: ""
 
   @spec inhibit_object_check(t()) :: {:ok, t()}
   defp inhibit_object_check(obj) do
