@@ -1,8 +1,16 @@
 # BACstack
 
 BACstack is a low-level Elixir implementation for the ASHRAE standard 135, BACnet - Building Automation and Controller network.
-This implementation supports ASHRAE 135-xxxx<!-- TODO --> and BACnet/IPv4. Support for other transport layers (such as BACnet/SC, BACnet/MSTP)
+This implementation supports ASHRAE 135-xxxx and BACnet/IPv4. Support for other transport layers (such as BACnet/SC)
 can be straight forward added on top of it.
+
+BACnet/Ethernet is a tested transport (but not supported on Windows),
+but rarely seen in commercial devices since BACnet/IPv4 is the better and superior choice.
+BACnet/IPv4 is the most mature transport and also most widely supported one in general (next to MS/TP).
+BACnet/MS/TP is an experimental transport that requires [circuits_uart](https://hex.pm/packages/circuits_uart)
+and an USB RS485 adapter (or any serial device/tty supported by circuits_uart).
+
+<!-- TODO: Update year in ASHRAE 135-xxxx -->
 
 As this is a low-level implementation, users of this library are required to do the heavy-lifting of the BACnet stack,
 such as automatically replying to Who-Is services, applying hard application timeout constraints, synchronizing time, etc.
