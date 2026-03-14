@@ -14,6 +14,7 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
   - `active_cov_subscriptions`
   - `apdu_timeout` (propagation on write)
   - `auto_slave_discovery`
+  - `daylight_savings_status` (auto update on DST and propagation to UTC_Offset)
   - `device_address_binding`
   - `manual_slave_address_binding`
   - `max_info_frames` (marked as "readonly" and "default" value should be `1`)
@@ -62,6 +63,9 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
   @typedoc """
   Represents a Device object. All keys should be treated as read-only,
   all updates should go only through `update_property/3`.
+
+  UTC Offset is positive for western hemisphere and negative for eastern hemisphere in minutes,
+  i.e. UTC+2 is -120.
   """
   bac_object Constants.macro_assert_name(:object_type, :device) do
     services(intrinsic: false)
@@ -161,13 +165,32 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
     field(:local_date, BACnetDate.t(),
       readonly: true,
       init_fun: &BACnetDate.utc_today/0,
-      annotation: [on_read_function: &update_property(&1, :local_date, BACnetDate.utc_today())]
+      annotation: [
+        # Maybe we want to use DateTime.now/1 with the correct TimeZone? (the configured default)
+        # We use DateTime instead of Date so when shifting the time, we get the correct date
+        on_read_function:
+          &update_property(
+            &1,
+            :local_date,
+            BACnetDate.from_date(
+              DateTime.to_date(DateTime.add(DateTime.utc_now(), -(&1[:utc_offset] || 0), :minute))
+            )
+          )
+      ]
     )
 
     field(:local_time, BACnetTime.t(),
       readonly: true,
       init_fun: &BACnetTime.utc_now/0,
-      annotation: [on_read_function: &update_property(&1, :local_time, BACnetTime.utc_now())]
+      annotation: [
+        # Maybe we want to use DateTime.now/1 with the correct TimeZone? (the configured default)
+        on_read_function:
+          &update_property(
+            &1,
+            :local_time,
+            BACnetTime.from_time(Time.add(Time.utc_now(), -(&1[:utc_offset] || 0), :minute))
+          )
+      ]
     )
 
     # Properties for COV reporting service
