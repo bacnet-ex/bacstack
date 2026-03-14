@@ -479,8 +479,8 @@ defmodule BACnet.Protocol.ObjectsUtility do
   Sets the given priority in the priority array of an object (see `t:bacnet_object/0`).
   This function also updates the present value.
 
-  This function calls to the object module directly, as such it enforces the `t:bacnet_object/0` contract,
-  and additionally only objects with a priority array can be used (commandable objects).
+  This function calls to the object module directly and only objects with a priority array can be used (commandable objects),
+  as such it enforces the `t:bacnet_object_commandable/0` contract.
   """
   @spec set_priority(bacnet_object_commandable(), 1..16, term()) ::
           {:ok, bacnet_object_commandable()} | {:error, term()}
