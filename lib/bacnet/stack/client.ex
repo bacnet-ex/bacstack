@@ -24,6 +24,12 @@ defmodule BACnet.Stack.Client do
   ```
   This is the same as `t:BACnet.Stack.TransportBehaviour.transport_msg/0`.
 
+  For BACnet proprietary messages, the following message is sent:
+  ```elixir
+  {:bacnet_transport, protocol_id, source_address, {:proprietary, type, destination, data}, portal}
+  ```
+  This is the same as `t:BACnet.Stack.TransportBehaviour.transport_msg/0`.
+
   For BACnet APDU, the following message is sent:
   ```elixir
   {:bacnet_client, reference() | nil, apdu, {source_address, bvlc, npci}, pid()}
@@ -884,6 +890,22 @@ defmodule BACnet.Stack.Client do
       ) do
     log_debug(fn ->
       "Client: Got BACnet stack NSDU data from #{inspect(source_address)}, data: #{inspect(data)}"
+    end)
+
+    Telemetry.execute_client_transport_message(self(), data, state)
+
+    send_process_dest(dest, data)
+    {:noreply, state}
+  end
+
+  def handle_info(
+        {:bacnet_transport, _proto, source_address, {:proprietary, _type, _destination, _payload},
+         _portal} =
+          data,
+        %State{notification_receiver: dest} = state
+      ) do
+    log_debug(fn ->
+      "Client: Got BACnet stack proprietary data from #{inspect(source_address)}, data: #{inspect(data)}"
     end)
 
     Telemetry.execute_client_transport_message(self(), data, state)

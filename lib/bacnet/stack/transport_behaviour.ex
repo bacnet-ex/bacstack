@@ -43,13 +43,16 @@ defmodule BACnet.Stack.TransportBehaviour do
   Transport Callback Frames. The callback may ignore any non-APDU frames, if they do not
   wish to handle them.
 
-  The APDU is uninterpreted binary data and needs to be decoded first, through the `BACnet.Protocol` module.
+  The APDU is uninterpreted binary data and needs to be decoded first, through the `BACnet.Protocol.APDU` module.
+
+  Some transports allow proprietary messages to be sent, those are delivered as-is as uninterpreted iodata.
   """
   @type transport_cb_frame ::
           {:bvlc, bvlc :: Protocol.bvlc()}
           | {:network, bvlc :: Protocol.bvlc(), npci :: NPCI.t() | nil,
              nsdu :: Protocol.NetworkLayerProtocolMessage.t()}
           | {:apdu, bvlc :: Protocol.bvlc(), npci :: NPCI.t() | nil, apdu :: binary()}
+          | {:proprietary, type :: term(), destination :: term(), data :: iodata()}
 
   @typedoc """
   BACnet transport identifier, represented by the protocol and the implementing transport module.

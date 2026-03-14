@@ -18,6 +18,9 @@ if Code.ensure_loaded?(Circuits.UART) do
 
     @behaviour :gen_statem
 
+    @mstp_start_byte 0x55
+    @mstp_preamble_byte 0xFF
+
     # Max-APDU for a regular packet is 0-501,
     # Max-APDU 1476 requires COBS Encoding (available since 135-2016)
     @max_apdu 501
@@ -231,7 +234,7 @@ if Code.ensure_loaded?(Circuits.UART) do
 
     # IDLE|PREAMBLE -> PREAMBLE
     defp handle_receive_data(
-           <<0x55, rest::binary>>,
+           <<@mstp_start_byte, rest::binary>>,
            state,
            %StateData{} = state_data
          )
@@ -271,7 +274,7 @@ if Code.ensure_loaded?(Circuits.UART) do
            :idle,
            %StateData{} = state_data
          ) do
-      # If we're idling and the first byte isn't the PREAMBLE 0x55, then skip over it until we find it
+      # If we're idling and the first byte isn't the START 0x55, then skip over it until we find it
       {:keep_state, state_data,
        [
          {:next_event, :internal, {:serial_data, rest}},
@@ -281,7 +284,7 @@ if Code.ensure_loaded?(Circuits.UART) do
 
     # PREAMBLE -> HEADER
     defp handle_receive_data(
-           <<0xFF, rest::binary>>,
+           <<@mstp_preamble_byte, rest::binary>>,
            :preamble,
            %StateData{} = state_data
          ) do

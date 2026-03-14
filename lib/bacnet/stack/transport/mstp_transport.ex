@@ -9,8 +9,14 @@ if Code.ensure_loaded?(Circuits.UART) do
     up to 1476 bytes. When sending such large APDUs the receiving device must also support ASHRAE 135-2016,
     otherwise it will ignore us, and that's a sad thing to do! As such, sending large APDUs is opt-in.
 
-    It uses `Circuits.UART` to handle RS485 for us in active mode.
+    Proprietary frames are sent to the defined `callback` as:
 
+    ```elixir
+    {:proprietary, type :: 127..255, destination :: destination_address(), data :: iodata()}
+    ```
+    As defined by `t:BACnet.Stack.TransportBehaviour.transport_cb_frame/0`.
+
+    It uses `Circuits.UART` to handle RS485 for us in active mode.
     If you want to use this transport, you'll have to add [`:circuits_uart`](https://hex.pm/packages/circuits_uart)
     to your `mix.exs` as dependency! It is an optional dependency and thus
     by default not present when you install this library.
@@ -49,6 +55,9 @@ if Code.ensure_loaded?(Circuits.UART) do
 
     @bacnet_proto :bacnet_mstp
     @transport_protocol {@bacnet_proto, __MODULE__}
+
+    @mstp_start_byte 0x55
+    @mstp_preamble_byte 0xFF
 
     # Max-APDU for a regular packet is 0-501,
     # Max-APDU 1476 requires COBS Encoding (available since 135-2016)
@@ -167,7 +176,13 @@ if Code.ensure_loaded?(Circuits.UART) do
                 supervisor: Supervisor.supervisor()
               },
               statistics: %{
-                optional(atom()) => non_neg_integer()
+                received: %{
+                  optional(:invalid_frame) => non_neg_integer(),
+                  optional(MstpTransport.frame_type()) => non_neg_integer()
+                },
+                sent: %{
+                  optional(MstpTransport.frame_type()) => non_neg_integer()
+                }
               }
             }
 
@@ -717,7 +732,10 @@ if Code.ensure_loaded?(Circuits.UART) do
                 send_queue: :queue.new(),
                 send_timer: nil,
                 opts: new_opts,
-                statistics: %{}
+                statistics: %{
+                  received: %{},
+                  sent: %{}
+                }
               }
 
               log_debug(fn ->
@@ -1684,6 +1702,9 @@ if Code.ensure_loaded?(Circuits.UART) do
           state
         end
 
+      # Update received frame counter
+      new_state = update_received_statistics(:invalid_frame, new_state)
+
       {:noreply, new_state}
       |> handle_maybe_poll_for_master_invalid_frame()
       |> handle_maybe_wait_for_reply_invalid_frame()
@@ -1711,10 +1732,10 @@ if Code.ensure_loaded?(Circuits.UART) do
       #     state
       #  end
 
-      {:noreply,
-       Map.update!(state, :statistics, fn map ->
-         Map.update(map, data.frame_type, 1, &(&1 + 1))
-       end)}
+      # Update received frame counter
+      state = update_received_statistics(data.frame_type, state)
+
+      {:noreply, state}
     end
 
     def handle_info(
@@ -1755,10 +1776,10 @@ if Code.ensure_loaded?(Circuits.UART) do
           state_machine: %{state_machine | sole_master: false}
       }
 
-      {:noreply,
-       Map.update!(new_state, :statistics, fn map ->
-         Map.update(map, data.frame_type, 1, &(&1 + 1))
-       end)}
+      # Update received frame counter
+      new_state = update_received_statistics(data.frame_type, new_state)
+
+      {:noreply, new_state}
     end
 
     def handle_info(
@@ -1782,12 +1803,10 @@ if Code.ensure_loaded?(Circuits.UART) do
       state_machine = state.state_machine
       state = %{state | state_machine: %{state_machine | source_address: data.source_address}}
 
-      handle_mstp_frame(
-        Map.update!(state, :statistics, fn map ->
-          Map.update(map, data.frame_type, 1, &(&1 + 1))
-        end),
-        data
-      )
+      # Update received frame counter
+      state = update_received_statistics(data.frame_type, state)
+
+      handle_mstp_frame(state, data)
     end
 
     def handle_info({:received_data, data_length}, %State{} = state) do
@@ -2059,8 +2078,14 @@ if Code.ensure_loaded?(Circuits.UART) do
          ) do
       log_debug_comm(state, fn ->
         "BacMstpTransport: Received valid frame of type PROPRIETARY (#{type_num}) with data length " <>
-          "#{state_data.data_length} and destination #{dest}, it will be ignored however"
+          "#{state_data.data_length} and destination #{dest}"
       end)
+
+      after_decode_fanout_cb(
+        state,
+        state_data,
+        {:proprietary, type_num, dest, state_data.input_buffer}
+      )
 
       {:noreply, state}
     end
@@ -2088,7 +2113,15 @@ if Code.ensure_loaded?(Circuits.UART) do
          ) do
       case decode_packet(state_data) do
         {:ok, {npci, decoded}} ->
-          after_decode_fanout_cb(state, state_data, npci, decoded)
+          after_decode_fanout_cb(
+            state,
+            state_data,
+            {:apdu,
+             if(state_data.destination_address == @broadcast_addr,
+               do: :original_broadcast,
+               else: :original_unicast
+             ), npci, decoded}
+          )
 
         {:error, err} ->
           Logger.warning(
@@ -2126,7 +2159,15 @@ if Code.ensure_loaded?(Circuits.UART) do
 
       case decode_packet(state_data) do
         {:ok, {npci, decoded}} ->
-          after_decode_fanout_cb(state, state_data, npci, decoded)
+          after_decode_fanout_cb(
+            state,
+            state_data,
+            {:apdu,
+             if(state_data.destination_address == @broadcast_addr,
+               do: :original_broadcast,
+               else: :original_unicast
+             ), npci, decoded}
+          )
 
         {:error, err} ->
           Logger.warning(
@@ -2381,7 +2422,7 @@ if Code.ensure_loaded?(Circuits.UART) do
 
       header = [0, destination, state.local_address, 0, 0]
       crc = EncodingTools.calculate_header_crc(header, 0xFF)
-      payload = [0x55, 0xFF, header, crc]
+      payload = [@mstp_start_byte, @mstp_preamble_byte, header, crc]
 
       send_uart_data(state, payload)
     end
@@ -2396,7 +2437,7 @@ if Code.ensure_loaded?(Circuits.UART) do
 
       header = [1, destination, state.local_address, 0, 0]
       crc = EncodingTools.calculate_header_crc(header, 0xFF)
-      payload = [0x55, 0xFF, header, crc]
+      payload = [@mstp_start_byte, @mstp_preamble_byte, header, crc]
 
       with {:ok, state} <- send_uart_data(state, payload) do
         new_state = state_set_silence_timer(state, :timer_rcv_timeout, @param_t_usage_timeout)
@@ -2414,7 +2455,7 @@ if Code.ensure_loaded?(Circuits.UART) do
 
       header = [2, destination, state.local_address, 0, 0]
       crc = EncodingTools.calculate_header_crc(header, 0xFF)
-      payload = [0x55, 0xFF, header, crc]
+      payload = [@mstp_start_byte, @mstp_preamble_byte, header, crc]
 
       send_uart_data(state, payload)
     end
@@ -2436,8 +2477,8 @@ if Code.ensure_loaded?(Circuits.UART) do
       data_crc = 0xFFFF - EncodingTools.calculate_data_crc(data, 0xFFFF)
 
       payload = [
-        0x55,
-        0xFF,
+        @mstp_start_byte,
+        @mstp_preamble_byte,
         header,
         header_crc,
         data,
@@ -2466,8 +2507,8 @@ if Code.ensure_loaded?(Circuits.UART) do
       data_crc = 0xFFFF - EncodingTools.calculate_data_crc(data, 0xFFFF)
 
       payload = [
-        0x55,
-        0xFF,
+        @mstp_start_byte,
+        @mstp_preamble_byte,
         header,
         header_crc,
         data,
@@ -2497,8 +2538,8 @@ if Code.ensure_loaded?(Circuits.UART) do
       data_crc = 0xFFFF - EncodingTools.calculate_data_crc(data, 0xFFFF)
 
       payload = [
-        0x55,
-        0xFF,
+        @mstp_start_byte,
+        @mstp_preamble_byte,
         header,
         header_crc,
         data,
@@ -2531,8 +2572,8 @@ if Code.ensure_loaded?(Circuits.UART) do
         |> Bitwise.band(0xFFFF)
 
       payload = [
-        0x55,
-        0xFF,
+        @mstp_start_byte,
+        @mstp_preamble_byte,
         header,
         header_crc,
         data,
@@ -2553,7 +2594,7 @@ if Code.ensure_loaded?(Circuits.UART) do
 
       header = [7, destination, state.local_address, 0, 0]
       crc = EncodingTools.calculate_header_crc(header, 0xFF)
-      payload = [0x55, 0xFF, header, crc]
+      payload = [@mstp_start_byte, @mstp_preamble_byte, header, crc]
 
       send_uart_data(state, payload)
     end
@@ -2577,7 +2618,7 @@ if Code.ensure_loaded?(Circuits.UART) do
           header = [32, destination, state.local_address, <<cobs_len::size(16)>>]
           header_crc = EncodingTools.calculate_header_crc(header, 0xFF)
 
-          payload = [0x55, 0xFF, header, header_crc, cobs_data]
+          payload = [@mstp_start_byte, @mstp_preamble_byte, header, header_crc, cobs_data]
 
           send_uart_data(state, payload)
 
@@ -2611,7 +2652,7 @@ if Code.ensure_loaded?(Circuits.UART) do
           header = [33, destination, state.local_address, <<cobs_len::size(16)>>]
           header_crc = EncodingTools.calculate_header_crc(header, 0xFF)
 
-          payload = [0x55, 0xFF, header, header_crc, cobs_data]
+          payload = [@mstp_start_byte, @mstp_preamble_byte, header, header_crc, cobs_data]
 
           send_uart_data(state, payload)
 
@@ -2632,8 +2673,20 @@ if Code.ensure_loaded?(Circuits.UART) do
         "BacMstpTransport: Sending data to MS/TP network with data length #{IO.iodata_length(data)}"
       end)
 
+      # Update sent frame counter
+      # We do this here, so frames sent "raw" are counted too
+      state =
+        case data do
+          [@mstp_start_byte, @mstp_preamble_byte, [type | _rest] | _tail]
+          when type in 0..255//1 ->
+            update_sent_statistics(get_frametype(type), state)
+
+          _else ->
+            update_sent_statistics(:unknown, state)
+        end
+
       # case data do
-      #    [_, _, [type | _] | _] when type in [5, 6, 32, 33] ->
+      #    [@mstp_start_byte, @mstp_preamble_byte, [type | _] | _] when type in [5, 6, 32, 33] ->
       #     IO.inspect(
       #       data,
       #        label: "BacMstpTransport: Sending data to MS/TP network"
@@ -2723,6 +2776,43 @@ if Code.ensure_loaded?(Circuits.UART) do
       }
     end
 
+    @spec get_frametype(byte()) :: MstpTransport.frame_type()
+    defp get_frametype(type)
+
+    defp get_frametype(0), do: :token
+    defp get_frametype(1), do: :poll_for_master
+    defp get_frametype(2), do: :reply_to_poll_for_master
+    defp get_frametype(3), do: :test_request
+    defp get_frametype(4), do: :test_response
+    defp get_frametype(5), do: :bacnet_data_expecting_reply
+    defp get_frametype(6), do: :bacnet_data_not_expecting_reply
+    defp get_frametype(7), do: :reply_postponed
+    defp get_frametype(32), do: :bacnet_extended_data_expecting_reply
+    defp get_frametype(33), do: :bacnet_extended_data_not_expecting_reply
+    defp get_frametype(type) when type >= 128 and type <= 255, do: {:proprietary, type}
+    defp get_frametype(_type), do: :unknown
+
+    # In dev/test environment we want to keep counters on received and sent frames
+    # In prod this is unnecessary, so we just return the state as is
+    @spec update_received_statistics(frame_type() | :invalid_frame, State.t()) :: State.t()
+    @spec update_sent_statistics(frame_type(), State.t()) :: State.t()
+    if Mix.env() in [:dev, :test] do
+      defp update_received_statistics(type, %State{} = state) when is_atom(type) do
+        update_in(state, [Access.key(:statistics), :received, type], fn num ->
+          (num || 0) + 1
+        end)
+      end
+
+      defp update_sent_statistics(type, %State{} = state) when is_atom(type) do
+        update_in(state, [Access.key(:statistics), :sent, type], fn num ->
+          (num || 0) + 1
+        end)
+      end
+    else
+      defp update_received_statistics(_type, %State{} = state), do: state
+      defp update_sent_statistics(_type, %State{} = state), do: state
+    end
+
     #### Helpers ####
 
     # Spawns a new task (either supervisored or not) and invokes the function,
@@ -2745,31 +2835,27 @@ if Code.ensure_loaded?(Circuits.UART) do
     end
 
     # Fans out the frame to the transport callback
-    @spec after_decode_fanout_cb(State.t(), StateData.t(), NPCI.t(), term()) :: any()
-    defp after_decode_fanout_cb(%State{} = state, %StateData{} = state_data, npci, apdu_data) do
+    @spec after_decode_fanout_cb(
+            State.t(),
+            StateData.t(),
+            TransportBehaviour.transport_cb_frame()
+          ) :: any()
+    defp after_decode_fanout_cb(%State{} = state, %StateData{} = state_data, cb_frame) do
       server = self()
-
-      data =
-        {:apdu,
-         if(state_data.destination_address == 255,
-           do: :original_broadcast,
-           else: :original_unicast
-         ), npci, apdu_data}
-
       source_addr = state_data.source_address
 
       case state.callback do
         {module, function, arity}
         when is_atom(module) and is_atom(function) and arity == 3 ->
           if function_exported?(module, function, arity) do
-            spawn_task(state, data, source_addr, Function.capture(module, function, arity))
+            spawn_task(state, cb_frame, source_addr, Function.capture(module, function, arity))
           end
 
         pid when is_dest(pid) ->
           try do
             send(
               pid,
-              {:bacnet_transport, @transport_protocol, source_addr, data, server}
+              {:bacnet_transport, @transport_protocol, source_addr, cb_frame, server}
             )
           catch
             # Ignore any exception coming from send/2
@@ -2778,7 +2864,7 @@ if Code.ensure_loaded?(Circuits.UART) do
           end
 
         fun when is_function(fun, 3) ->
-          spawn_task(state, data, source_addr, fun)
+          spawn_task(state, cb_frame, source_addr, fun)
       end
     end
 
