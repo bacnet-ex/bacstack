@@ -91,6 +91,7 @@ defmodule BACnet.Protocol.EventAlgorithms.ChangeOfState do
   > equal to that value for pTimeDelay,
   > then indicate a transition to the OFFNORMAL event state.
   """
+  # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
   @spec execute(t()) ::
           {:event, new_state :: t(), Notify.t()}
           | {:delayed_event | :no_event, new_state :: t()}

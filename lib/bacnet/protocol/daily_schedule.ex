@@ -24,22 +24,23 @@ defmodule BACnet.Protocol.DailySchedule do
   @spec encode(t(), Keyword.t()) ::
           {:ok, ApplicationTags.encoding_list()} | {:error, term()}
   def encode(%__MODULE__{} = schedule, opts \\ []) do
-    with {:ok, schedules} <-
-           Enum.reduce_while(schedule.schedule, {:ok, []}, fn
-             tv, {:ok, acc} ->
-               case TimeValue.encode(tv, opts) do
-                 {:ok, encoded} -> {:cont, {:ok, [encoded | acc]}}
-                 {:error, _err} = err -> {:halt, err}
-               end
-           end) do
-      day_schedule =
-        schedules
-        |> Enum.reverse()
-        |> List.flatten()
+    case Enum.reduce_while(schedule.schedule, {:ok, []}, fn
+           tv, {:ok, acc} ->
+             case TimeValue.encode(tv, opts) do
+               {:ok, encoded} -> {:cont, {:ok, [encoded | acc]}}
+               {:error, _err} = err -> {:halt, err}
+             end
+         end) do
+      {:ok, schedules} ->
+        day_schedule =
+          schedules
+          |> Enum.reverse()
+          |> List.flatten()
 
-      {:ok, [{:constructed, {0, day_schedule, 0}}]}
-    else
-      {:error, _err} = err -> err
+        {:ok, [{:constructed, {0, day_schedule, 0}}]}
+
+      {:error, _err} = err ->
+        err
     end
   end
 
@@ -52,24 +53,25 @@ defmodule BACnet.Protocol.DailySchedule do
   def parse(tags) when is_list(tags) do
     case tags do
       [{:constructed, {0, tags, _len}} | rest] ->
-        with {:ok, schedules} when is_list(schedules) <-
-               Enum.reduce_while(1..100_000//1, {:ok, {[], tags}}, fn
-                 _ind, {:ok, {acc, []}} ->
-                   {:halt, {:ok, acc}}
+        case Enum.reduce_while(1..100_000//1, {:ok, {[], tags}}, fn
+               _ind, {:ok, {acc, []}} ->
+                 {:halt, {:ok, acc}}
 
-                 _ind, {:ok, {acc, tags}} ->
-                   case TimeValue.parse(tags) do
-                     {:ok, {tv, rest}} -> {:cont, {:ok, {[tv | acc], rest}}}
-                     {:error, _err} = err -> {:halt, err}
-                   end
-               end) do
-          schedule = %__MODULE__{
-            schedule: Enum.reverse(schedules)
-          }
+               _ind, {:ok, {acc, tags}} ->
+                 case TimeValue.parse(tags) do
+                   {:ok, {tv, rest}} -> {:cont, {:ok, {[tv | acc], rest}}}
+                   {:error, _err} = err -> {:halt, err}
+                 end
+             end) do
+          {:ok, schedules} when is_list(schedules) ->
+            schedule = %__MODULE__{
+              schedule: Enum.reverse(schedules)
+            }
 
-          {:ok, {schedule, rest}}
-        else
-          {:error, _err} = err -> err
+            {:ok, {schedule, rest}}
+
+          {:error, _err} = err ->
+            err
         end
 
       _term ->

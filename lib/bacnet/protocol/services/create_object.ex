@@ -75,12 +75,11 @@ defmodule BACnet.Protocol.Services.CreateObject do
             0 ->
               with {:ok, {:enumerated, enum}} <-
                      ApplicationTags.unfold_to_type(:enumerated, object_specifier),
-                   {:ok, const_enum} <-
+                   do:
                      (case Constants.by_value(:object_type, enum) do
                         {:ok, _val} = val -> val
                         :error -> {:error, {:unknown_object_type, enum}}
-                      end),
-                   do: {:ok, const_enum}
+                      end)
 
             1 ->
               with {:ok, {:object_identifier, obj}} <-

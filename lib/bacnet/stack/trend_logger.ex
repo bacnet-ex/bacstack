@@ -1005,19 +1005,21 @@ defmodule BACnet.Stack.TrendLogger do
               BACnetArray.size(object.log_device_object_property)
             end
 
-          with {:cont, log_datum} <- find_log_datum_from_trigger(log, object, result, size, state) do
-            new_log =
-              log_datum
-              |> then(&create_record(log, &1, id, state))
-              |> then(&log_buff_mod.checkin(log.buffer, &1))
-              |> then(&%Log{log | buffer: &1, seq_number: increment_seq_number(log.seq_number)})
+          case find_log_datum_from_trigger(log, object, result, size, state) do
+            {:cont, log_datum} ->
+              new_log =
+                log_datum
+                |> then(&create_record(log, &1, id, state))
+                |> then(&log_buff_mod.checkin(log.buffer, &1))
+                |> then(&%Log{log | buffer: &1, seq_number: increment_seq_number(log.seq_number)})
 
-            Telemetry.execute_trend_logger_log_update(self(), new_log, :buffer, state)
+              Telemetry.execute_trend_logger_log_update(self(), new_log, :buffer, state)
 
-            send(self(), {:maybe_notify_receiver, id})
-            %State{state | logs: Map.put(state.logs, id, new_log)}
-          else
-            _term -> state
+              send(self(), {:maybe_notify_receiver, id})
+              %State{state | logs: Map.put(state.logs, id, new_log)}
+
+            _term ->
+              state
           end
 
         _else ->
@@ -2057,6 +2059,7 @@ defmodule BACnet.Stack.TrendLogger do
     :ok
   end
 
+  # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
   defp validate_start_link_opts(opts) do
     case opts[:cov_cb] do
       nil ->

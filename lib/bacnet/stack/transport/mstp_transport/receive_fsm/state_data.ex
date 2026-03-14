@@ -82,7 +82,7 @@ defmodule BACnet.Stack.Transport.MstpTransport.ReceiveFSM.StateData do
     new_opts =
       opts
       |> Map.new()
-      |> Map.put_new(:baudrate, 38400)
+      |> Map.put_new(:baudrate, 38_400)
       |> Map.put_new(:log_communication, false)
 
     %__MODULE__{

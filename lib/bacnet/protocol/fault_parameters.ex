@@ -304,16 +304,24 @@ defmodule BACnet.Protocol.FaultParameters do
     case fault_values_tags do
       [
         constructed: {0, strings, _length2}
-      ] ->
-        with favalues when is_list(favalues) <-
-               Enum.map(strings, fn {:character_string, str} -> str end) do
-          fault = %FaultCharacterString{
-            fault_values: favalues
-          }
+      ]
+      when is_list(strings) ->
+        new_strings =
+          Enum.reduce_while(strings, [], fn
+            {:character_string, str}, acc -> {:cont, [str | acc]}
+            _other, _acc -> {:halt, {:error, :invalid_fault_values}}
+          end)
 
-          {:ok, fault}
-        else
-          {:error, _err} = err -> err
+        case new_strings do
+          favalues when is_list(favalues) ->
+            fault = %FaultCharacterString{
+              fault_values: Enum.reverse(new_strings)
+            }
+
+            {:ok, fault}
+
+          {:error, _err} = err ->
+            err
         end
 
       _term ->
@@ -401,21 +409,22 @@ defmodule BACnet.Protocol.FaultParameters do
       [
         constructed: {0, seq_propstates, _length2}
       ] ->
-        with {:ok, fault_values} <-
-               Enum.reduce_while(seq_propstates, {:ok, []}, fn
-                 term, acc ->
-                   case BACnet.Protocol.PropertyState.parse(List.wrap(term)) do
-                     {:ok, {state, _rest}} -> {:ok, [state | acc]}
-                     _term -> {:halt, {:error, :invalid_fault_values_parameter}}
-                   end
-               end) do
-          fault = %FaultState{
-            fault_values: Enum.reverse(fault_values)
-          }
+        case Enum.reduce_while(seq_propstates, {:ok, []}, fn
+               term, acc ->
+                 case BACnet.Protocol.PropertyState.parse(List.wrap(term)) do
+                   {:ok, {state, _rest}} -> {:ok, [state | acc]}
+                   _term -> {:halt, {:error, :invalid_fault_values_parameter}}
+                 end
+             end) do
+          {:ok, fault_values} ->
+            fault = %FaultState{
+              fault_values: Enum.reverse(fault_values)
+            }
 
-          {:ok, fault}
-        else
-          {:error, _err} = err -> err
+            {:ok, fault}
+
+          {:error, _err} = err ->
+            err
         end
 
       _term ->
@@ -429,14 +438,16 @@ defmodule BACnet.Protocol.FaultParameters do
       [
         constructed: {0, status_flags_ref_raw, _length2}
       ] ->
-        with {:ok, status_flags_ref} <- DeviceObjectPropertyRef.parse(status_flags_ref_raw) do
-          fault = %FaultStatusFlags{
-            status_flags: status_flags_ref
-          }
+        case DeviceObjectPropertyRef.parse(status_flags_ref_raw) do
+          {:ok, status_flags_ref} ->
+            fault = %FaultStatusFlags{
+              status_flags: status_flags_ref
+            }
 
-          {:ok, fault}
-        else
-          {:error, _err} = err -> err
+            {:ok, fault}
+
+          {:error, _err} = err ->
+            err
         end
 
       _term ->

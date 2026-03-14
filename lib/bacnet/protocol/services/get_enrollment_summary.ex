@@ -192,13 +192,14 @@ defmodule BACnet.Protocol.Services.GetEnrollmentSummary do
           {:ok, Protocol.APDU.ConfirmedServiceRequest.t()}
           | {:error, term()}
   def to_apdu(%__MODULE__{} = service, request_data) do
-    with ack_filter_num =
-           (case service.acknowledgment_filter do
-              :all -> 0
-              :acked -> 1
-              :not_acked -> 2
-            end),
-         {:ok, ack_filter, _header} <-
+    ack_filter_num =
+      case service.acknowledgment_filter do
+        :all -> 0
+        :acked -> 1
+        :not_acked -> 2
+      end
+
+    with {:ok, ack_filter, _header} <-
            ApplicationTags.encode_value({:enumerated, ack_filter_num}),
          {:ok, recipient_process} <- encode_recipient_process(service),
          {:ok, event_state} <-

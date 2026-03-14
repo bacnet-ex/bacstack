@@ -498,6 +498,7 @@ if Code.ensure_loaded?(Circuits.UART) do
     - `raw: boolean()` - Optional. Sends raw data to the transport layer.
       The data MUST be BACnet MS/TP conform data.
     """
+    # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
     @spec send(
             GenServer.server(),
             destination_address(),
@@ -1588,41 +1589,39 @@ if Code.ensure_loaded?(Circuits.UART) do
         "BacMstpTransport: Received generate token timer message"
       end)
 
-      cond do
-        # Assert timer was received BEFORE the next station would generate a new token
-        System.time_offset(:millisecond) - ts_offset <
-            @param_t_slot * (state.state_machine.ts + 1) ->
-          Logger.info(fn ->
-            "BacMstpTransport: Token has been lost and generating token now - " <>
-              "transitioning to POLL_FOR_MASTER state"
-          end)
+      # Assert timer was received BEFORE the next station would generate a new token
+      if System.time_offset(:millisecond) - ts_offset <
+           @param_t_slot * (state.state_machine.ts + 1) do
+        Logger.info(fn ->
+          "BacMstpTransport: Token has been lost and generating token now - " <>
+            "transitioning to POLL_FOR_MASTER state"
+        end)
 
-          ps = rem(state.state_machine.ts + 1, state.opts.max_master_address + 1)
+        ps = rem(state.state_machine.ts + 1, state.opts.max_master_address + 1)
 
-          new_state =
-            state_clear_silence_timer(%{
-              state
-              | state_machine: %{
-                  state_machine
-                  | ps: ps,
-                    ns: state.state_machine.ts,
-                    retry_count: 0,
-                    token_count: 0
-                },
-                transport_state: :poll_for_master
-            })
+        new_state =
+          state_clear_silence_timer(%{
+            state
+            | state_machine: %{
+                state_machine
+                | ps: ps,
+                  ns: state.state_machine.ts,
+                  retry_count: 0,
+                  token_count: 0
+              },
+              transport_state: :poll_for_master
+          })
 
-          {_type, state} = send_frame_pfm(new_state, ps)
-          {:noreply, state}
-
+        {_type, state} = send_frame_pfm(new_state, ps)
+        {:noreply, state}
+      else
         # Timer was received AFTER our timeslot -> the next station generates a new token
-        true ->
-          {:noreply,
-           state_set_silence_timer(
-             %{state | transport_state: :idle},
-             :timer_lost_token,
-             @param_t_no_token
-           )}
+        {:noreply,
+         state_set_silence_timer(
+           %{state | transport_state: :idle},
+           :timer_lost_token,
+           @param_t_no_token
+         )}
       end
     end
 
@@ -2774,6 +2773,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       end
     end
 
+    # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
     defp validate_open_opts(opts) do
       case opts[:baudrate] do
         nil ->

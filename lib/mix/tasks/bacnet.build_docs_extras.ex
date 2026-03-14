@@ -36,7 +36,7 @@ defmodule Mix.Tasks.Bacnet.BuildDocsExtras do
       extras_dir
       |> File.ls!()
       |> Enum.filter(&String.starts_with?(&1, "gen_"))
-      |> Enum.map(&File.rm!(Path.join(extras_dir, &1)))
+      |> Enum.each(&File.rm!(Path.join(extras_dir, &1)))
     end
 
     if not File.exists?(extras_dir) do

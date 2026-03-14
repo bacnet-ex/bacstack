@@ -36,7 +36,7 @@ defmodule BACnet.Protocol.BvlcForwardedNPDU do
   def encode(npdu)
 
   def encode(%__MODULE__{originating_port: port} = npdu)
-      when is_integer(port) and port in 1..65535 do
+      when is_integer(port) and port in 1..65_535 do
     with {:ok, ip} <-
            (case npdu.originating_ip do
               {ip_a, ip_b, ip_c, ip_d} -> {:ok, <<ip_a, ip_b, ip_c, ip_d>>}

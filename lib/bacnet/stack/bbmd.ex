@@ -1107,6 +1107,7 @@ defmodule BACnet.Stack.BBMD do
      }}
   end
 
+  # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
   defp validate_start_link_opts(opts) do
     case opts[:bdt] do
       nil ->

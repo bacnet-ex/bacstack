@@ -283,13 +283,11 @@ defmodule BACnet.Stack.Transport.EthernetTransport do
               :ok
             end) do
       {out_len, out_data} =
-        cond do
-          opts[:skip_headers] == true ->
-            {bin_len, bin_data}
-
-          true ->
-            npci_len = IO.iodata_length(npci_data)
-            {bin_len + npci_len + 3, [0x82, 0x82, 0x03, npci_data, bin_data]}
+        if opts[:skip_headers] == true do
+          {bin_len, bin_data}
+        else
+          npci_len = IO.iodata_length(npci_data)
+          {bin_len + npci_len + 3, [0x82, 0x82, 0x03, npci_data, bin_data]}
         end
 
       :socket.sendto(

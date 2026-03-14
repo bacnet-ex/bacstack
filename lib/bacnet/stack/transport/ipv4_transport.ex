@@ -427,15 +427,17 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
               :ok
             end) do
       out_data =
-        cond do
-          opts[:skip_headers] == true -> bin_data
-          true -> add_bvll(pkg, bin_len, is_broadcast, opts)
+        if opts[:skip_headers] == true do
+          bin_data
+        else
+          add_bvll(pkg, bin_len, is_broadcast, opts)
         end
 
       :gen_udp.send(portal, destination, out_data)
     end
   end
 
+  # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
   @doc false
   def init({callback, opts}) do
     bac_port = opts[:bacnet_port] || @bacnet_port
@@ -925,6 +927,7 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
     end
   end
 
+  # credo:disable-for-lines:2 Credo.Check.Warning.SpecWithStruct
   @spec calculate_cidr_and_broadcast_for_ip(:inet.ip4_address()) ::
           {broadcast_addr :: :inet.ip4_address() | nil, %CIDR{}}
   defp calculate_cidr_and_broadcast_for_ip(local_ip) do
@@ -995,6 +998,7 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
     "#{one}.#{two}.#{three}.#{four}:#{port}"
   end
 
+  # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
   defp validate_open_opts(opts) do
     case opts[:bacnet_port] do
       nil ->

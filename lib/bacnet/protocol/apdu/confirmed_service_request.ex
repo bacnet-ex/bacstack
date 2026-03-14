@@ -94,6 +94,7 @@ defmodule BACnet.Protocol.APDU.ConfirmedServiceRequest do
   @doc """
   Converts the APDU into a service, if supported and possible.
   """
+  # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
   @spec to_service(t()) :: {:ok, service()} | {:error, term()} | :not_supported
   def to_service(%__MODULE__{} = apdu) do
     case apdu.service do

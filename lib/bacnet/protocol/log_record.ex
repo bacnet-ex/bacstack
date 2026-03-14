@@ -247,10 +247,12 @@ defmodule BACnet.Protocol.LogRecord do
   end
 
   defp parse_log_datum({:tagged, {9, _tags, _len}} = tags) do
-    with {:ok, {:real, real}} <- ApplicationTags.unfold_to_type(:real, tags) do
-      {:ok, {:time_change, real}}
-    else
-      {:error, _err} = err -> err
+    case ApplicationTags.unfold_to_type(:real, tags) do
+      {:ok, {:real, real}} ->
+        {:ok, {:time_change, real}}
+
+      {:error, _err} = err ->
+        err
     end
   end
 

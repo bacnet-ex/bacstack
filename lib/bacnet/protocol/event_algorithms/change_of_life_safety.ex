@@ -148,6 +148,7 @@ defmodule BACnet.Protocol.EventAlgorithms.ChangeOfLifeSafety do
   > (k) If pCurrentState is LIFE_SAFETY_ALARM, and pMode changes, then indicate
   > a transition to the LIFE_SAFETY_ALARM event state.
   """
+  # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
   @spec execute(t()) ::
           {:event, new_state :: t(), Notify.t()}
           | {:delayed_event | :no_event, new_state :: t()}

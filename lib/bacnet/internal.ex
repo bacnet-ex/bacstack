@@ -40,6 +40,7 @@ defmodule BACnet.Internal do
        (Logger.level() == :debug and Application.compile_env(:bacstack, :debug, false)) do
     defmacro log_debug(message_or_fun) do
       quote do
+        # credo:disable-for-next-line Credo.Check.Warning.MissedMetadataKeyInLoggerConfig
         Logger.debug(unquote(message_or_fun), source: __MODULE__)
       end
     end

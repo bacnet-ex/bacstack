@@ -74,10 +74,12 @@ defmodule BACnet.Protocol.BACnetTime do
   @spec parse(ApplicationTags.encoding_list()) ::
           {:ok, {t(), rest :: ApplicationTags.encoding_list()}} | {:error, term}
   def parse(tags) when is_list(tags) do
-    with [{:time, %__MODULE__{} = time} | rest] <- tags do
-      {:ok, {time, rest}}
-    else
-      _else -> {:error, :invalid_tags}
+    case tags do
+      [{:time, %__MODULE__{} = time} | rest] ->
+        {:ok, {time, rest}}
+
+      _else ->
+        {:error, :invalid_tags}
     end
   end
 

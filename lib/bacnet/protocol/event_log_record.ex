@@ -34,15 +34,17 @@ defmodule BACnet.Protocol.EventLogRecord do
   @spec encode(t(), Keyword.t()) ::
           {:ok, ApplicationTags.encoding_list()} | {:error, term()}
   def encode(%__MODULE__{} = record, opts \\ []) do
-    with {:ok, log_datum} <- encode_log_datum(record.log_datum, opts) do
-      base = [
-        {:constructed, {0, [date: record.timestamp.date, time: record.timestamp.time], 0}},
-        {:constructed, {1, log_datum, 0}}
-      ]
+    case encode_log_datum(record.log_datum, opts) do
+      {:ok, log_datum} ->
+        base = [
+          {:constructed, {0, [date: record.timestamp.date, time: record.timestamp.time], 0}},
+          {:constructed, {1, log_datum, 0}}
+        ]
 
-      {:ok, base}
-    else
-      {:error, _err} = err -> err
+        {:ok, base}
+
+      {:error, _err} = err ->
+        err
     end
   end
 
@@ -124,12 +126,15 @@ defmodule BACnet.Protocol.EventLogRecord do
   defp parse_log_datum(tags)
 
   defp parse_log_datum({:tagged, {0, _tags, _len}} = tags) do
-    with {:ok, {:bitstring, {_b0, _b1, _b2} = bits}} <-
-           ApplicationTags.unfold_to_type(:bitstring, tags) do
-      {:ok, LogStatus.from_bitstring(bits)}
-    else
-      {:ok, _val} -> {:error, :invalid_tags}
-      {:error, _err} = err -> err
+    case ApplicationTags.unfold_to_type(:bitstring, tags) do
+      {:ok, {:bitstring, {_b0, _b1, _b2} = bits}} ->
+        {:ok, LogStatus.from_bitstring(bits)}
+
+      {:ok, _val} ->
+        {:error, :invalid_tags}
+
+      {:error, _err} = err ->
+        err
     end
   end
 
@@ -151,10 +156,12 @@ defmodule BACnet.Protocol.EventLogRecord do
   end
 
   defp parse_log_datum({:tagged, {2, _tags, 4}} = tags) do
-    with {:ok, {:real, real}} <- ApplicationTags.unfold_to_type(:real, tags) do
-      {:ok, {:time_change, real}}
-    else
-      {:error, _err} = err -> err
+    case ApplicationTags.unfold_to_type(:real, tags) do
+      {:ok, {:real, real}} ->
+        {:ok, {:time_change, real}}
+
+      {:error, _err} = err ->
+        err
     end
   end
 
@@ -169,10 +176,12 @@ defmodule BACnet.Protocol.EventLogRecord do
   end
 
   defp encode_log_datum(%ConfirmedEventNotification{} = value, _opts) do
-    with {:ok, %{parameters: params}} <- Common.encode_event_notification(value) do
-      {:ok, {:constructed, {1, params, 0}}}
-    else
-      {:error, _err} = err -> err
+    case Common.encode_event_notification(value) do
+      {:ok, %{parameters: params}} ->
+        {:ok, {:constructed, {1, params, 0}}}
+
+      {:error, _err} = err ->
+        err
     end
   end
 

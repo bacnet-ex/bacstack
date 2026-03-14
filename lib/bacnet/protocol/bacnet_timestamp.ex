@@ -114,17 +114,19 @@ defmodule BACnet.Protocol.BACnetTimestamp do
   end
 
   defp do_parse({:constructed, {2, ts, _len}}) when is_list(ts) do
-    with {:ok, {dt, _rest}} <- BACnetDateTime.parse(ts) do
-      result = %__MODULE__{
-        type: :datetime,
-        datetime: dt,
-        sequence_number: nil,
-        time: nil
-      }
+    case BACnetDateTime.parse(ts) do
+      {:ok, {dt, _rest}} ->
+        result = %__MODULE__{
+          type: :datetime,
+          datetime: dt,
+          sequence_number: nil,
+          time: nil
+        }
 
-      {:ok, result}
-    else
-      _term -> {:error, :invalid_tags}
+        {:ok, result}
+
+      _term ->
+        {:error, :invalid_tags}
     end
   end
 

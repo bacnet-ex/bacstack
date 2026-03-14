@@ -24,16 +24,22 @@ defmodule BACnet.Protocol.Services.Ack.ReadPropertyMultipleAck do
 
   @spec from_apdu(ComplexACK.t()) :: {:ok, t()} | {:error, term()}
   def from_apdu(%ComplexACK{service: @service_name} = ack) do
-    with {:ok, results} <- parse_results(ack.payload) do
-      struc = %__MODULE__{
-        results: results
-      }
+    case parse_results(ack.payload) do
+      {:ok, results} ->
+        struc = %__MODULE__{
+          results: results
+        }
 
-      {:ok, struc}
-    else
-      {:error, :invalid_tags} -> {:error, :invalid_service_ack}
-      {:error, :invalid_value_and_error} -> {:error, :invalid_service_ack}
-      {:error, _err} = err -> err
+        {:ok, struc}
+
+      {:error, :invalid_tags} ->
+        {:error, :invalid_service_ack}
+
+      {:error, :invalid_value_and_error} ->
+        {:error, :invalid_service_ack}
+
+      {:error, _err} = err ->
+        err
     end
   end
 

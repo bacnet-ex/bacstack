@@ -1647,11 +1647,12 @@ defmodule BACnet.Protocol.ObjectsMacro do
 
             cond do
               required_state and not has_key ->
-                with {:ok, default_val} <-
-                       Map.fetch(unquote(Macro.escape(default_properties_all)), name) do
-                  {:cont, {:ok, Map.put(properties, name, default_val)}}
-                else
-                  _else -> {:halt, {:error, {:missing_required_property, name}}}
+                case Map.fetch(unquote(Macro.escape(default_properties_all)), name) do
+                  {:ok, default_val} ->
+                    {:cont, {:ok, Map.put(properties, name, default_val)}}
+
+                  _else ->
+                    {:halt, {:error, {:missing_required_property, name}}}
                 end
 
               not required_state and has_key ->
@@ -2123,6 +2124,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
     get_field_data({:field, [], [name, typespec, []]}, env)
   end
 
+  # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
   defp get_field_data({:field, meta, [name, typespec, opts]}, env) do
     # Verify the property name is valid (skip "internal" properties)
     if name not in [:_metadata, :object_instance] and

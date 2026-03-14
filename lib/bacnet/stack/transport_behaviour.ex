@@ -278,7 +278,7 @@ defmodule BACnet.Stack.TransportBehaviour do
   rescue
     e -> {:error, {e, __STACKTRACE__}}
   catch
-    _, e -> {:error, e}
+    _kind, e -> {:error, e}
   end
 
   @spec do_encode_npci(iodata(), boolean(), Keyword.t()) :: iodata()

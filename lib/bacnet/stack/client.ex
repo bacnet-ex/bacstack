@@ -1904,128 +1904,16 @@ defmodule BACnet.Stack.Client do
           |> kw_put_new(:source, state.opts.npci_source)
           |> Keyword.put_new(:is_broadcast, state.transport_broadcast_addr == destination)
 
-        # Do basic NPCI size calculation and subtract it from the max APDU size
-        # 6 = APCI header, 2 = NPCI header
-        max_apdu_len =
-          max_apdu_len0 - 6 - 2 - if(send_opts[:source], do: 9, else: 0) -
-            if(send_opts[:destination], do: 10, else: 0)
-
-        apdu_length = IO.iodata_length(apdu_data)
-        max_segments = opts[:max_segments] || 2
-
-        apdu_too_long = apdu_length > max_apdu_len
-        apdu_supports_seg = EncoderProtocol.supports_segmentation(apdu)
-        supports_segments = supports_segmentation(opts[:segmentation_supported])
-
-        result =
-          cond do
-            apdu_too_long and not apdu_supports_seg ->
-              # If segmentation is not supported by the APDU type,
-              # send an abort and indiciate Abort APDU_TOO_LONG,
-              # but only if this is not a request to a remote device
-              resp =
-                if EncoderProtocol.is_response(apdu) do
-                  abort = %APDU.Abort{
-                    sent_by_server: true,
-                    invoke_id: apdu.invoke_id,
-                    reason: Constants.macro_assert_name(:abort_reason, :apdu_too_long)
-                  }
-
-                  Telemetry.execute_client_send_error(
-                    self(),
-                    destination,
-                    apdu,
-                    send_opts,
-                    abort,
-                    :apdu_too_long,
-                    state
-                  )
-
-                  trans_mod.send(portal, destination, abort, send_opts)
-                else
-                  :ok
-                end
-
-              # Return the send error if present, or our error (no error swallowing)
-              with :ok <- resp do
-                {:error, :apdu_too_long}
-              end
-
-            apdu_too_long and not supports_segments ->
-              # Segmentation not supported by the remote device,
-              # indicate Abort SEGMENTATION_NOT_SUPPORTED,
-              # but only if this is a response,
-              # if this is a request, we do not need to send anything
-              resp =
-                if EncoderProtocol.is_response(apdu) do
-                  abort = %APDU.Abort{
-                    sent_by_server: true,
-                    invoke_id: apdu.invoke_id,
-                    reason:
-                      Constants.macro_assert_name(:abort_reason, :segmentation_not_supported)
-                  }
-
-                  Telemetry.execute_client_send_error(
-                    self(),
-                    destination,
-                    apdu,
-                    send_opts,
-                    abort,
-                    :apdu_segmentation_unsupported,
-                    state
-                  )
-
-                  trans_mod.send(portal, destination, abort, send_opts)
-                else
-                  :ok
-                end
-
-              # Return the send error if present, or our error (no error swallowing)
-              with :ok <- resp do
-                {:error, :segmentation_not_supported}
-              end
-
-            apdu_too_long ->
-              Telemetry.execute_client_send(
-                self(),
-                destination,
-                apdu,
-                send_opts,
-                true,
-                state
-              )
-
-              seg_opts =
-                send_opts
-                |> Keyword.put(:callback_to, self())
-                |> Keyword.put(:callback_msg, {:apdu_timer_setup, key})
-
-              Segmentator.create_sequence(
-                state.segmentator,
-                {trans_mod, state.transport_pid, portal},
-                destination,
-                {%{
-                   apdu
-                   | proposed_window_size:
-                       Map.get(apdu, :proposed_window_size) || @default_window_size
-                 }, apdu_data},
-                max_apdu_len,
-                max_segments,
-                seg_opts
-              )
-
-            true ->
-              Telemetry.execute_client_send(
-                self(),
-                destination,
-                apdu,
-                send_opts,
-                false,
-                state
-              )
-
-              trans_mod.send(portal, destination, apdu_data, send_opts)
-          end
+        {result, apdu_too_long} =
+          do_send_data(
+            apdu,
+            send_opts,
+            destination,
+            portal,
+            device_id,
+            state,
+            {apdu_data, max_apdu_len0}
+          )
 
         if needs_tracking do
           case result do
@@ -2077,6 +1965,151 @@ defmodule BACnet.Stack.Client do
           end
         end
     end
+  end
+
+  @spec do_send_data(
+          Protocol.apdu(),
+          Keyword.t(),
+          term(),
+          TransportBehaviour.portal(),
+          non_neg_integer() | nil,
+          State.t(),
+          {iodata(), non_neg_integer()}
+        ) :: {result :: :ok | {:error, term()}, apdu_too_long :: boolean()}
+  defp do_send_data(
+         apdu,
+         send_opts,
+         destination,
+         portal,
+         device_id,
+         %State{transport_mod: trans_mod} = state,
+         {apdu_data, max_apdu_len0}
+       ) do
+    key = {destination, device_id, Map.get(apdu, :invoke_id)}
+
+    # Do basic NPCI size calculation and subtract it from the max APDU size
+    # 6 = APCI header, 2 = NPCI header
+    max_apdu_len =
+      max_apdu_len0 - 6 - 2 - if(send_opts[:source], do: 9, else: 0) -
+        if(send_opts[:destination], do: 10, else: 0)
+
+    apdu_length = IO.iodata_length(apdu_data)
+    max_segments = send_opts[:max_segments] || 2
+
+    apdu_too_long = apdu_length > max_apdu_len
+    apdu_supports_seg = EncoderProtocol.supports_segmentation(apdu)
+    supports_segments = supports_segmentation(send_opts[:segmentation_supported])
+
+    result =
+      cond do
+        apdu_too_long and not apdu_supports_seg ->
+          # If segmentation is not supported by the APDU type,
+          # send an abort and indiciate Abort APDU_TOO_LONG,
+          # but only if this is not a request to a remote device
+          resp =
+            if EncoderProtocol.is_response(apdu) do
+              abort = %APDU.Abort{
+                sent_by_server: true,
+                invoke_id: apdu.invoke_id,
+                reason: Constants.macro_assert_name(:abort_reason, :apdu_too_long)
+              }
+
+              Telemetry.execute_client_send_error(
+                self(),
+                destination,
+                apdu,
+                send_opts,
+                abort,
+                :apdu_too_long,
+                state
+              )
+
+              trans_mod.send(portal, destination, abort, send_opts)
+            else
+              :ok
+            end
+
+          # Return the send error if present, or our error (no error swallowing)
+          with :ok <- resp do
+            {:error, :apdu_too_long}
+          end
+
+        apdu_too_long and not supports_segments ->
+          # Segmentation not supported by the remote device,
+          # indicate Abort SEGMENTATION_NOT_SUPPORTED,
+          # but only if this is a response,
+          # if this is a request, we do not need to send anything
+          resp =
+            if EncoderProtocol.is_response(apdu) do
+              abort = %APDU.Abort{
+                sent_by_server: true,
+                invoke_id: apdu.invoke_id,
+                reason: Constants.macro_assert_name(:abort_reason, :segmentation_not_supported)
+              }
+
+              Telemetry.execute_client_send_error(
+                self(),
+                destination,
+                apdu,
+                send_opts,
+                abort,
+                :apdu_segmentation_unsupported,
+                state
+              )
+
+              trans_mod.send(portal, destination, abort, send_opts)
+            else
+              :ok
+            end
+
+          # Return the send error if present, or our error (no error swallowing)
+          with :ok <- resp do
+            {:error, :segmentation_not_supported}
+          end
+
+        apdu_too_long ->
+          Telemetry.execute_client_send(
+            self(),
+            destination,
+            apdu,
+            send_opts,
+            true,
+            state
+          )
+
+          seg_opts =
+            send_opts
+            |> Keyword.put(:callback_to, self())
+            |> Keyword.put(:callback_msg, {:apdu_timer_setup, key})
+
+          Segmentator.create_sequence(
+            state.segmentator,
+            {trans_mod, state.transport_pid, portal},
+            destination,
+            {%{
+               apdu
+               | proposed_window_size:
+                   Map.get(apdu, :proposed_window_size) || @default_window_size
+             }, apdu_data},
+            max_apdu_len,
+            max_segments,
+            seg_opts
+          )
+
+        true ->
+          Telemetry.execute_client_send(
+            self(),
+            destination,
+            apdu,
+            send_opts,
+            false,
+            state
+          )
+
+          trans_mod.send(portal, destination, apdu_data, send_opts)
+      end
+
+    {result, apdu_too_long}
   end
 
   @spec send_reply_for_unknown_enumeration(
@@ -2171,6 +2204,7 @@ defmodule BACnet.Stack.Client do
   defp kw_put_new(kw, _key, nil), do: kw
   defp kw_put_new(kw, key, val), do: Keyword.put_new(kw, key, val)
 
+  # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
   defp validate_start_link_opts(opts) do
     case opts[:apdu_retries] do
       nil ->

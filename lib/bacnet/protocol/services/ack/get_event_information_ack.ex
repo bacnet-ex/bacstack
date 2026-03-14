@@ -50,22 +50,26 @@ defmodule BACnet.Protocol.Services.Ack.GetEventInformationAck do
   def to_apdu(ack, invoke_id \\ 0)
 
   def to_apdu(%__MODULE__{} = ack, invoke_id) when invoke_id in 0..255 do
-    with {:ok, events} <- encode_events(ack.events) do
-      new_ack = %ComplexACK{
-        invoke_id: invoke_id,
-        sequence_number: nil,
-        proposed_window_size: nil,
-        service: @service_name,
-        payload: [
-          {:constructed, {0, events, 0}},
-          {:tagged, {1, <<intify(ack.more_events)>>, 1}}
-        ]
-      }
+    case encode_events(ack.events) do
+      {:ok, events} ->
+        new_ack = %ComplexACK{
+          invoke_id: invoke_id,
+          sequence_number: nil,
+          proposed_window_size: nil,
+          service: @service_name,
+          payload: [
+            {:constructed, {0, events, 0}},
+            {:tagged, {1, <<intify(ack.more_events)>>, 1}}
+          ]
+        }
 
-      {:ok, new_ack}
-    else
-      {:error, :missing_pattern} -> {:error, :invalid_service_ack}
-      {:error, _err} = err -> err
+        {:ok, new_ack}
+
+      {:error, :missing_pattern} ->
+        {:error, :invalid_service_ack}
+
+      {:error, _err} = err ->
+        err
     end
   end
 

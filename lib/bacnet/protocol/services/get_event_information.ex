@@ -62,6 +62,7 @@ defmodule BACnet.Protocol.Services.GetEventInformation do
           service: @service_name
         } = request
       ) do
+    # credo:disable-for-next-line Credo.Check.Readability.WithSingleClause
     with {:ok, last_received_object_identifier, _rest} <-
            pattern_extract_tags(
              request.parameters,

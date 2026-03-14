@@ -203,10 +203,12 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResult do
   defp create_error(nil), do: {:ok, nil}
 
   defp create_error({:constructed, {5, error, _len}}) do
-    with {:ok, {err, []}} <- BACnetError.parse(error) do
-      {:ok, err}
-    else
-      {:error, _err} = err -> err
+    case BACnetError.parse(error) do
+      {:ok, {err, []}} ->
+        {:ok, err}
+
+      {:error, _err} = err ->
+        err
     end
   end
 end

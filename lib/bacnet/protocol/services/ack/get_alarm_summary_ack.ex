@@ -22,15 +22,19 @@ defmodule BACnet.Protocol.Services.Ack.GetAlarmSummaryAck do
 
   @spec from_apdu(ComplexACK.t()) :: {:ok, t()} | {:error, term()}
   def from_apdu(%ComplexACK{service: @service_name} = ack) do
-    with {:ok, summary} <- parse_summaries(ack.payload) do
-      struc = %__MODULE__{
-        summaries: summary
-      }
+    case parse_summaries(ack.payload) do
+      {:ok, summary} ->
+        struc = %__MODULE__{
+          summaries: summary
+        }
 
-      {:ok, struc}
-    else
-      {:error, :invalid_tags} -> {:error, :invalid_service_ack}
-      {:error, _err} = err -> err
+        {:ok, struc}
+
+      {:error, :invalid_tags} ->
+        {:error, :invalid_service_ack}
+
+      {:error, _err} = err ->
+        err
     end
   end
 

@@ -36,15 +36,17 @@ defmodule BACnet.Protocol.LogMultipleRecord do
   @spec encode(t(), Keyword.t()) ::
           {:ok, ApplicationTags.encoding_list()} | {:error, term()}
   def encode(%__MODULE__{} = record, opts \\ []) do
-    with {:ok, log_data} <- encode_log_data(record.log_data, opts) do
-      params = [
-        {:constructed, {0, [date: record.timestamp.date, time: record.timestamp.time], 0}},
-        {:constructed, {1, log_data, 0}}
-      ]
+    case encode_log_data(record.log_data, opts) do
+      {:ok, log_data} ->
+        params = [
+          {:constructed, {0, [date: record.timestamp.date, time: record.timestamp.time], 0}},
+          {:constructed, {1, log_data, 0}}
+        ]
 
-      {:ok, params}
-    else
-      {:error, _err} = err -> err
+        {:ok, params}
+
+      {:error, _err} = err ->
+        err
     end
   end
 
@@ -175,10 +177,12 @@ defmodule BACnet.Protocol.LogMultipleRecord do
   end
 
   defp parse_log_data({:tagged, {2, _tags, 4}} = tags) do
-    with {:ok, {:real, change}} <- ApplicationTags.unfold_to_type(:real, tags) do
-      {:ok, {:time_change, change}}
-    else
-      {:error, _err} = err -> err
+    case ApplicationTags.unfold_to_type(:real, tags) do
+      {:ok, {:real, change}} ->
+        {:ok, {:time_change, change}}
+
+      {:error, _err} = err ->
+        err
     end
   end
 

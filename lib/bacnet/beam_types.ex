@@ -417,6 +417,7 @@ defmodule BACnet.BeamTypes do
     :string
   end
 
+  # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
   # Remote type (such as Date.t), resolve it based on type
   defp field_typespec_to_bactype(
          {{:., _any3, [ast, type]}, _any, params},

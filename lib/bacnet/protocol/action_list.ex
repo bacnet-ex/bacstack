@@ -19,22 +19,23 @@ defmodule BACnet.Protocol.ActionList do
   @spec encode(t(), Keyword.t()) ::
           {:ok, ApplicationTags.encoding_list()} | {:error, term()}
   def encode(%__MODULE__{} = list, opts \\ []) do
-    with {:ok, cmds} <-
-           Enum.reduce_while(list.actions, {:ok, []}, fn
-             cmd, {:ok, acc} ->
-               case ActionCommand.encode(cmd, opts) do
-                 {:ok, encoded} -> {:cont, {:ok, [encoded | acc]}}
-                 {:error, _err} = err -> {:halt, err}
-               end
-           end) do
-      cmdlist =
-        cmds
-        |> Enum.reverse()
-        |> List.flatten()
+    case Enum.reduce_while(list.actions, {:ok, []}, fn
+           cmd, {:ok, acc} ->
+             case ActionCommand.encode(cmd, opts) do
+               {:ok, encoded} -> {:cont, {:ok, [encoded | acc]}}
+               {:error, _err} = err -> {:halt, err}
+             end
+         end) do
+      {:ok, cmds} ->
+        cmdlist =
+          cmds
+          |> Enum.reverse()
+          |> List.flatten()
 
-      {:ok, [{:constructed, {0, cmdlist, 0}}]}
-    else
-      {:error, _err} = err -> err
+        {:ok, [{:constructed, {0, cmdlist, 0}}]}
+
+      {:error, _err} = err ->
+        err
     end
   end
 
@@ -47,24 +48,25 @@ defmodule BACnet.Protocol.ActionList do
   def parse(tags) when is_list(tags) do
     case tags do
       [{:constructed, {0, tags, _len}} | rest] ->
-        with {:ok, {actions, _rest}} <-
-               Enum.reduce_while(1..100_000//1, {:ok, {[], tags}}, fn
-                 _ind, {:ok, {acc, []}} ->
-                   {:halt, {:ok, {acc, []}}}
+        case Enum.reduce_while(1..100_000//1, {:ok, {[], tags}}, fn
+               _ind, {:ok, {acc, []}} ->
+                 {:halt, {:ok, {acc, []}}}
 
-                 _ind, {:ok, {acc, tags}} ->
-                   case ActionCommand.parse(tags) do
-                     {:ok, {cmd, rest}} -> {:cont, {:ok, {[cmd | acc], rest}}}
-                     {:error, _err} = err -> {:halt, err}
-                   end
-               end) do
-          list = %__MODULE__{
-            actions: Enum.reverse(actions)
-          }
+               _ind, {:ok, {acc, tags}} ->
+                 case ActionCommand.parse(tags) do
+                   {:ok, {cmd, rest}} -> {:cont, {:ok, {[cmd | acc], rest}}}
+                   {:error, _err} = err -> {:halt, err}
+                 end
+             end) do
+          {:ok, {actions, _rest}} ->
+            list = %__MODULE__{
+              actions: Enum.reverse(actions)
+            }
 
-          {:ok, {list, rest}}
-        else
-          {:error, _err} = err -> err
+            {:ok, {list, rest}}
+
+          {:error, _err} = err ->
+            err
         end
 
       _term ->

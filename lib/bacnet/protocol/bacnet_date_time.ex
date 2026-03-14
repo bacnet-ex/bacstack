@@ -82,15 +82,17 @@ defmodule BACnet.Protocol.BACnetDateTime do
   @spec parse(ApplicationTags.encoding_list()) ::
           {:ok, {t(), rest :: ApplicationTags.encoding_list()}} | {:error, term}
   def parse(tags) when is_list(tags) do
-    with [{:date, %BACnetDate{} = date}, {:time, %BACnetTime{} = time} | rest] <- tags do
-      dt = %__MODULE__{
-        date: date,
-        time: time
-      }
+    case tags do
+      [{:date, %BACnetDate{} = date}, {:time, %BACnetTime{} = time} | rest] ->
+        dt = %__MODULE__{
+          date: date,
+          time: time
+        }
 
-      {:ok, {dt, rest}}
-    else
-      _else -> {:error, :invalid_tags}
+        {:ok, {dt, rest}}
+
+      _else ->
+        {:error, :invalid_tags}
     end
   end
 

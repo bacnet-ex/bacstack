@@ -91,6 +91,7 @@ defmodule BACnet.Protocol.EventAlgorithms.UnsignedRange do
   > than pLowLimit, for pTimeDelayNormal, then indicate a transition to the
   > NORMAL event state.
   """
+  # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
   @spec execute(t()) ::
           {:event, new_state :: t(), Notify.t()}
           | {:delayed_event | :no_event, new_state :: t()}

@@ -576,7 +576,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
   defp do_validate_float_range(_value, :inf), do: true
   defp do_validate_float_range(_value, :infn), do: false
 
-  defp do_validate_float_range(value, value2) when is_float(value) and is_float(value),
+  defp do_validate_float_range(value, value2) when is_float(value) and is_float(value2),
     do: value <= value2
 
   @doc """
@@ -1129,6 +1129,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
     {:ok, value}
   end
 
+  # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
   defp process_make_property(object_mod, property_identifier, value, opts) do
     if function_exported?(object_mod, :get_properties_type_map, 0) do
       prop_type_map = object_mod.get_properties_type_map()
@@ -1183,36 +1184,37 @@ defmodule BACnet.Protocol.ObjectsUtility do
                 decode_property_value(type, decoder, property_identifier, value)
             end
 
-          with {:ok, decoder_value} <- decoder_result do
-            # If partials allowed and the value is not a list, extract the subtype
-            check_type =
-              if allow_partial and not is_list(value) do
-                case type do
-                  {:array, subtype} ->
-                    subtype
+          case decoder_result do
+            {:ok, decoder_value} ->
+              # If partials allowed and the value is not a list, extract the subtype
+              check_type =
+                if allow_partial and not is_list(value) do
+                  case type do
+                    {:array, subtype} ->
+                      subtype
 
-                  {:array, subtype, _size} ->
-                    subtype
+                    {:array, subtype, _size} ->
+                      subtype
 
-                  {:list, subtype} ->
-                    subtype
+                    {:list, subtype} ->
+                      subtype
 
-                  {:struct, PriorityArray} ->
-                    {:type_list, [Map.fetch!(prop_type_map, :present_value), {:literal, nil}]}
+                    {:struct, PriorityArray} ->
+                      {:type_list, [Map.fetch!(prop_type_map, :present_value), {:literal, nil}]}
 
-                  term ->
-                    term
+                    term ->
+                      term
+                  end
+                else
+                  type
                 end
+
+              if BeamTypes.check_type(check_type, decoder_value) do
+                {:ok, decoder_value}
               else
-                type
+                {:error, {:invalid_property_value, {property_identifier, decoder_value}}}
               end
 
-            if BeamTypes.check_type(check_type, decoder_value) do
-              {:ok, decoder_value}
-            else
-              {:error, {:invalid_property_value, {property_identifier, decoder_value}}}
-            end
-          else
             {:error, :invalid_tags} ->
               {:error, {:invalid_tags, {property_identifier, value}}}
 
@@ -1512,16 +1514,17 @@ defmodule BACnet.Protocol.ObjectsUtility do
   # Handle array struct subtypes differently
   defp cast_value_to_type({:array, {:struct, _sub} = subtype}, property, value, opts)
        when is_list(value) do
-    with {:ok, values} <-
-           Enum.reduce_while(value, {:ok, []}, fn item, {:ok, acc} ->
-             case cast_value_to_type(subtype, property, item, opts) do
-               {:ok, value} -> {:cont, {:ok, [value | acc]}}
-               term -> {:halt, term}
-             end
-           end) do
-      {:ok, BACnetArray.from_list(Enum.reverse(values))}
-    else
-      {:error, _err} = err -> err
+    case Enum.reduce_while(value, {:ok, []}, fn item, {:ok, acc} ->
+           case cast_value_to_type(subtype, property, item, opts) do
+             {:ok, value} -> {:cont, {:ok, [value | acc]}}
+             term -> {:halt, term}
+           end
+         end) do
+      {:ok, values} ->
+        {:ok, BACnetArray.from_list(Enum.reverse(values))}
+
+      {:error, _err} = err ->
+        err
     end
   end
 
@@ -1533,16 +1536,17 @@ defmodule BACnet.Protocol.ObjectsUtility do
   defp cast_value_to_type({:array, {:struct, _sub} = subtype, size}, property, value, opts)
        when is_integer(size) and is_list(value) do
     if Enum.count_until(value, size + 1) == size do
-      with {:ok, values} <-
-             Enum.reduce_while(value, {:ok, []}, fn item, {:ok, acc} ->
-               case cast_value_to_type(subtype, property, item, opts) do
-                 {:ok, value} -> {:cont, {:ok, [value | acc]}}
-                 term -> {:halt, term}
-               end
-             end) do
-        {:ok, BACnetArray.from_list(Enum.reverse(values), true)}
-      else
-        {:error, _err} = err -> err
+      case Enum.reduce_while(value, {:ok, []}, fn item, {:ok, acc} ->
+             case cast_value_to_type(subtype, property, item, opts) do
+               {:ok, value} -> {:cont, {:ok, [value | acc]}}
+               term -> {:halt, term}
+             end
+           end) do
+        {:ok, values} ->
+          {:ok, BACnetArray.from_list(Enum.reverse(values), true)}
+
+        {:error, _err} = err ->
+          err
       end
     else
       {:error, :bacnet_array_size_mismatch}
@@ -1583,16 +1587,17 @@ defmodule BACnet.Protocol.ObjectsUtility do
   end
 
   defp cast_value_to_type({:list, subtype}, property, value, opts) do
-    with {:ok, values} <-
-           Enum.reduce_while(List.wrap(value), {:ok, []}, fn item, {:ok, acc} ->
-             case cast_value_to_type(subtype, property, item, opts) do
-               {:ok, val} -> {:cont, {:ok, [val | acc]}}
-               term -> {:halt, term}
-             end
-           end) do
-      {:ok, Enum.reverse(values)}
-    else
-      {:error, _err} = err -> err
+    case Enum.reduce_while(List.wrap(value), {:ok, []}, fn item, {:ok, acc} ->
+           case cast_value_to_type(subtype, property, item, opts) do
+             {:ok, val} -> {:cont, {:ok, [val | acc]}}
+             term -> {:halt, term}
+           end
+         end) do
+      {:ok, values} ->
+        {:ok, Enum.reverse(values)}
+
+      {:error, _err} = err ->
+        err
     end
   end
 
@@ -1696,20 +1701,21 @@ defmodule BACnet.Protocol.ObjectsUtility do
     is_boolean = pv_type == :boolean
     sub_opts = %{opts | allow_nil: true}
 
-    with {:ok, values} <-
-           Enum.reduce_while(PriorityArray.to_list(value), {:ok, []}, fn
-             value, {:ok, acc} when is_boolean(value) and is_boolean ->
-               {:cont, {:ok, [{:enumerated, if(value, do: 1, else: 0)} | acc]}}
+    case Enum.reduce_while(PriorityArray.to_list(value), {:ok, []}, fn
+           value, {:ok, acc} when is_boolean(value) and is_boolean ->
+             {:cont, {:ok, [{:enumerated, if(value, do: 1, else: 0)} | acc]}}
 
-             value, {:ok, acc} ->
-               case cast_value_to_encoding(pv_type, :present_value, value, sub_opts) do
-                 {:ok, enc} -> {:cont, {:ok, [enc | acc]}}
-                 term -> {:halt, term}
-               end
-           end) do
-      {:ok, Enum.reverse(values)}
-    else
-      {:error, _err} = err -> err
+           value, {:ok, acc} ->
+             case cast_value_to_encoding(pv_type, :present_value, value, sub_opts) do
+               {:ok, enc} -> {:cont, {:ok, [enc | acc]}}
+               term -> {:halt, term}
+             end
+         end) do
+      {:ok, values} ->
+        {:ok, Enum.reverse(values)}
+
+      {:error, _err} = err ->
+        err
     end
   end
 
@@ -1751,16 +1757,17 @@ defmodule BACnet.Protocol.ObjectsUtility do
   end
 
   defp cast_value_to_encoding({:array, subtype}, property, %BACnetArray{} = array, opts) do
-    with {:ok, values} <-
-           BACnetArray.reduce_while(array, {:ok, []}, fn item, {:ok, acc} ->
-             case cast_value_to_encoding(subtype, property, item, opts) do
-               {:ok, value} -> {:cont, {:ok, [value | acc]}}
-               term -> {:halt, term}
-             end
-           end) do
-      {:ok, Enum.reverse(values)}
-    else
-      {:error, _err} = err -> err
+    case BACnetArray.reduce_while(array, {:ok, []}, fn item, {:ok, acc} ->
+           case cast_value_to_encoding(subtype, property, item, opts) do
+             {:ok, value} -> {:cont, {:ok, [value | acc]}}
+             term -> {:halt, term}
+           end
+         end) do
+      {:ok, values} ->
+        {:ok, Enum.reverse(values)}
+
+      {:error, _err} = err ->
+        err
     end
   end
 
@@ -1805,21 +1812,22 @@ defmodule BACnet.Protocol.ObjectsUtility do
   end
 
   defp cast_value_to_encoding({:list, subtype}, property, value, opts) do
-    with {:ok, values} <-
-           Enum.reduce_while(List.wrap(value), {:ok, []}, fn item, {:ok, acc} ->
-             case cast_value_to_encoding(subtype, property, item, opts) do
-               {:ok, val} -> {:cont, {:ok, [val | acc]}}
-               term -> {:halt, term}
-             end
-           end) do
-      new_values =
-        values
-        |> Enum.reverse()
-        |> List.flatten()
+    case Enum.reduce_while(List.wrap(value), {:ok, []}, fn item, {:ok, acc} ->
+           case cast_value_to_encoding(subtype, property, item, opts) do
+             {:ok, val} -> {:cont, {:ok, [val | acc]}}
+             term -> {:halt, term}
+           end
+         end) do
+      {:ok, values} ->
+        new_values =
+          values
+          |> Enum.reverse()
+          |> List.flatten()
 
-      {:ok, new_values}
-    else
-      {:error, _err} = err -> err
+        {:ok, new_values}
+
+      {:error, _err} = err ->
+        err
     end
   end
 
