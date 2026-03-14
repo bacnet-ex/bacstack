@@ -10,7 +10,7 @@ defmodule BACnet.Stack.Client do
   a Reject APDU with reason `:other` to the remote BACnet device,
   the application won't be informed in any way.
 
-  BACnet BVLL and BACnet NPDU are directly forwarded to the application, without any processing.
+  BACnet BVLL, BACnet NPDU and proprietary are directly forwarded to the application, without any processing.
 
   For  BACnet BVLL, the following message is sent:
   ```elixir
@@ -74,6 +74,9 @@ defmodule BACnet.Stack.Client do
   Outgoing service request APDUs validation can be explicitely disabled by configuring
   application environment `:bacstack` key `:client_prod_compilation` to `true`.
   If this is a dependency of your project, don't forget to `mix deps.compile --force bacstack`.
+
+  If this library is a dependency in a project, Mix always compiles dependencies in `:prod`.
+  To override this behaviour, see `mix help deps`.
   """
 
   alias BACnet.Protocol

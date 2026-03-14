@@ -8,6 +8,28 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
   but is also unique throughout the BACnet internetwork.
 
   (ASHRAE 135 - Clause 12.11)
+
+  For the following properties the BACnet device server needs to
+  take special care of when other BACnet user read or write to them:
+  - `active_cov_subscriptions`
+  - `apdu_timeout` (propagation on write)
+  - `auto_slave_discovery`
+  - `device_address_binding`
+  - `manual_slave_address_binding`
+  - `max_info_frames` (marked as "readonly" and "default" value should be `1`)
+    Propagation to the MS/TP Transport must be done by the BACnet device server
+    or user of the library, if not implemented in the device server.
+  - `max_master` (marked as "readonly" and "default" value should be `127`)
+    Propagation to the MS/TP Transport must be done by the BACnet device server
+    or user of the library, if not implemented in the device server.
+  - `number_of_apdu_retries` (propagation on write)
+  - `object_list`
+  - `slave_address_binding`
+  - `slave_proxy_enable`
+  - `structured_object_list`
+  - `utc_offset` (when handling UTC Time Synchronization)
+  - All properties related to Backup/Restore
+  - All properties related to (UTC) Time Synchronization
   """
 
   # TODO: Docs
@@ -136,13 +158,27 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
     )
 
     # Properties for when the device is capable of tracking date and time
-    field(:local_date, BACnetDate.t(), readonly: true, init_fun: &BACnetDate.utc_today/0)
-    field(:local_time, BACnetTime.t(), readonly: true, init_fun: &BACnetTime.utc_now/0)
+    field(:local_date, BACnetDate.t(),
+      readonly: true,
+      init_fun: &BACnetDate.utc_today/0,
+      annotation: [on_read_function: &update_property(&1, :local_date, BACnetDate.utc_today())]
+    )
+
+    field(:local_time, BACnetTime.t(),
+      readonly: true,
+      init_fun: &BACnetTime.utc_now/0,
+      annotation: [on_read_function: &update_property(&1, :local_time, BACnetTime.utc_now())]
+    )
 
     # Properties for COV reporting service
     field(:active_cov_subscriptions, [CovSubscription.t()], readonly: true, default: [])
 
     # Properties for (Utc)TimeSynchronization service
+    field(:time_synchronization_interval, non_neg_integer(),
+      default: 0,
+      implicit_relationship: :interval_offset
+    )
+
     field(:time_synchronization_recipients, [Recipient.t()],
       default: [],
       implicit_relationship: :interval_offset
@@ -242,7 +278,10 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
       bac_type: {:with_validator, :unsigned_integer, &(&1 >= 1 and &1 <= 127)}
     )
 
-    field(:max_info_frames, non_neg_integer(), readonly: true)
+    field(:max_info_frames, pos_integer(),
+      readonly: true,
+      bac_type: {:with_validator, :unsigned_integer, &(&1 >= 1)}
+    )
 
     # Virtual Terminal properties (not supported by this bacstack)
     # :vt_classes_supported, [BACnetVtClass.t()]

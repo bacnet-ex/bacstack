@@ -10,10 +10,19 @@ defmodule BACnet.Protocol.ObjectsMacro do
   Mix project, you will need to recompile bacstack with `mix deps.compile bacstack --force`.
 
   The following has to be taken care of when trying decode/encode properties:
-  - Check the annotations for decoder/encoder functions (single argument - the plain value (no tag encoding))
+  - Check the annotations for decoder/encoder functions (single argument - decoding: `Encoding` struct)
   - Check the annotations for `encode_as` primitive type declaration (i.e. used to declare enumerated booleans)
   - Check the properties types map - 99% should be covered by this (1% is covered by annotations)
   - Custom decoding/encoding by hand for special properties (not yet supported properties/objects)
+
+  BACnet device server implementations need to make sure to support `on_read_function` annotation,
+  which should always be called (single arity - the object itself and returns an ok-tuple object),
+  when another BACnet user is reading the property with such an annotation before returning
+  property value. Use cases are for example the BACnet device local time,
+  which should always be returned up to date and not a stale value.
+
+  Some properties need to be handled in a special way in the BACnet device server
+  for both reading and writing the property, no such annotation exists though.
   """
 
   alias BACnet.BeamTypes
