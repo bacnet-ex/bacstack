@@ -58,7 +58,7 @@ defmodule BACnet.Protocol.Services.Ack.ReadRangeAck do
          {:ok, first_seq_num, _rest} <-
            pattern_extract_tags(rest, {:tagged, {6, _t, _l}}, :unsigned_integer, true),
          :ok <-
-           if(ApplicationTags.valid_int?(first_seq_num, 32),
+           if(first_seq_num == nil or ApplicationTags.valid_int?(first_seq_num, 32),
              do: :ok,
              else: {:error, :invalid_first_sequence_number_value}
            ) do
@@ -92,7 +92,9 @@ defmodule BACnet.Protocol.Services.Ack.ReadRangeAck do
 
   def to_apdu(%__MODULE__{} = ack, invoke_id) when invoke_id in 0..255 do
     with :ok <-
-           if(ApplicationTags.valid_int?(ack.first_sequence_number, 32),
+           if(
+             ack.first_sequence_number == nil or
+               ApplicationTags.valid_int?(ack.first_sequence_number, 32),
              do: :ok,
              else: {:error, :invalid_first_sequence_number_value}
            ),

@@ -68,6 +68,7 @@ defmodule BACnet.Stack.TrendLogger do
   alias BACnet.Protocol.ObjectTypes.EventLog
   alias BACnet.Protocol.ObjectTypes.TrendLog
   alias BACnet.Protocol.ObjectTypes.TrendLogMultiple
+  alias BACnet.Protocol.PriorityArray
   alias BACnet.Protocol.PropertyValue
   alias BACnet.Protocol.Services.ConfirmedCovNotification
   alias BACnet.Protocol.Services.ConfirmedEventNotification
@@ -1710,13 +1711,25 @@ defmodule BACnet.Stack.TrendLogger do
               {:ok, term} -> {:ok, {:fun, term}}
               :error -> :cont
             end),
+         prop_type_map = mod.get_properties_type_map(),
          :cont <-
-           (case mod.get_properties_type_map() do
+           (case prop_type_map do
               %{^property => type} ->
                 # TODO: Support for more types (i.e. literal - how?)
                 case type do
                   {:constant, term} ->
                     {:ok, {:const, Constants.by_name_atom(term, value)}}
+
+                  # Needs to be explicitely handled (according to Elixir typechecker)
+                  {:struct, Encoding} ->
+                    {:ok, {:fun, &Encoding.to_encoding/1}}
+
+                  # Needs to be explicitely handled (according to Elixir typechecker)
+                  {:struct, PriorityArray} ->
+                    case Map.fetch(prop_type_map, :present_value) do
+                      {:ok, type} -> {:ok, {:type, type}}
+                      :error -> create_invalid_datatype_error()
+                    end
 
                   {:struct, term} ->
                     {:ok, {:fun, fn value -> term.encode(value) end}}

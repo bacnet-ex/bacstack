@@ -2797,17 +2797,29 @@ if Code.ensure_loaded?(Circuits.UART) do
     @spec update_received_statistics(frame_type() | :invalid_frame, State.t()) :: State.t()
     @spec update_sent_statistics(frame_type(), State.t()) :: State.t()
     if Mix.env() in [:dev, :test] do
-      defp update_received_statistics(type, %State{} = state) when is_atom(type) do
+      defp update_received_statistics(type, %State{} = state)
+           when is_atom(type) or
+                  (is_tuple(type) and tuple_size(type) == 2 and elem(type, 0) == :proprietary and
+                     is_integer(elem(type, 1))) do
         update_in(state, [Access.key(:statistics), :received, type], fn num ->
           (num || 0) + 1
         end)
       end
 
-      defp update_sent_statistics(type, %State{} = state) when is_atom(type) do
+      # Ignore invalid types (dont let it crash us)
+      defp update_received_statistics(_type, %State{} = state), do: state
+
+      defp update_sent_statistics(type, %State{} = state)
+           when is_atom(type) or
+                  (is_tuple(type) and tuple_size(type) == 2 and elem(type, 0) == :proprietary and
+                     is_integer(elem(type, 1))) do
         update_in(state, [Access.key(:statistics), :sent, type], fn num ->
           (num || 0) + 1
         end)
       end
+
+      # Ignore invalid types (dont let it crash us)
+      defp update_sent_statistics(_type, %State{} = state), do: state
     else
       defp update_received_statistics(_type, %State{} = state), do: state
       defp update_sent_statistics(_type, %State{} = state), do: state
