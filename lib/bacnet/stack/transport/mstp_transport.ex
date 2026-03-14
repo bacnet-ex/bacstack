@@ -12,7 +12,7 @@ if Code.ensure_loaded?(Circuits.UART) do
     Proprietary frames are sent to the defined `callback` as:
 
     ```elixir
-    {:proprietary, type :: 127..255, destination :: destination_address(), data :: iodata()}
+    {:proprietary, type :: 128..255, destination :: destination_address(), data :: iodata()}
     ```
     As defined by `t:BACnet.Stack.TransportBehaviour.transport_cb_frame/0`.
 
