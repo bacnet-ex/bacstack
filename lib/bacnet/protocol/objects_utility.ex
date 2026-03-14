@@ -69,17 +69,26 @@ defmodule BACnet.Protocol.ObjectsUtility do
     ObjectTypes.TrendLogMultiple
   ]
 
-  types_spec =
-    @types
-    |> Enum.map(fn type ->
-      quote do
-        unquote(type).t()
-      end
-    end)
-    |> Enum.sort(:desc)
-    |> Enum.reduce(fn field, acc ->
-      {:|, [], [field, acc]}
-    end)
+  @types_commandable [
+    ObjectTypes.AnalogOutput,
+    ObjectTypes.AnalogValue,
+    ObjectTypes.BinaryOutput,
+    ObjectTypes.BinaryValue,
+    ObjectTypes.BitstringValue,
+    ObjectTypes.CharacterStringValue,
+    ObjectTypes.DatePatternValue,
+    ObjectTypes.DateTimePatternValue,
+    ObjectTypes.DateTimeValue,
+    ObjectTypes.DateValue,
+    ObjectTypes.IntegerValue,
+    ObjectTypes.LargeAnalogValue,
+    ObjectTypes.MultistateOutput,
+    ObjectTypes.MultistateValue,
+    ObjectTypes.OctetStringValue,
+    ObjectTypes.PositiveIntegerValue,
+    ObjectTypes.TimePatternValue,
+    ObjectTypes.TimeValue
+  ]
 
   defmacrop get_fa_str() do
     {fun, arity} = __CALLER__.function
@@ -93,7 +102,36 @@ defmodule BACnet.Protocol.ObjectsUtility do
   @typedoc """
   BACnet object types that this module works with.
   """
-  @type bacnet_object :: unquote(types_spec)
+  @type bacnet_object ::
+          unquote(
+            @types
+            |> Enum.map(fn type ->
+              quote do
+                unquote(type).t()
+              end
+            end)
+            |> Enum.sort(:desc)
+            |> Enum.reduce(fn field, acc ->
+              {:|, [], [field, acc]}
+            end)
+          )
+
+  @typedoc """
+  Commandable BACnet object types that this module works with.
+  """
+  @type bacnet_object_commandable ::
+          unquote(
+            @types_commandable
+            |> Enum.map(fn type ->
+              quote do
+                unquote(type).t()
+              end
+            end)
+            |> Enum.sort(:desc)
+            |> Enum.reduce(fn field, acc ->
+              {:|, [], [field, acc]}
+            end)
+          )
 
   @typedoc """
   Valid options for `cast_property_to_value/4`.
@@ -134,6 +172,15 @@ defmodule BACnet.Protocol.ObjectsUtility do
   """
   defguard is_object(object)
            when is_struct(object) and :erlang.map_get(:__struct__, object) in @types
+
+  @doc """
+  Checks whether the given struct is a supported BACnet object (see `t:bacnet_object/0`)
+  and whether it is commandable (see `t:bacnet_object_commandable/0`).
+
+  Note: This guard is not widely used by this module itself, but may be useful for others.
+  """
+  defguard is_object_commandable(object)
+           when is_struct(object) and :erlang.map_get(:__struct__, object) in @types_commandable
 
   @doc """
   Checks whether the given BACnet object has Intrinsic Reporting enabled.
@@ -433,16 +480,16 @@ defmodule BACnet.Protocol.ObjectsUtility do
   This function also updates the present value.
 
   This function calls to the object module directly, as such it enforces the `t:bacnet_object/0` contract,
-  and additionally only objects with a priority array can be used.
+  and additionally only objects with a priority array can be used (commandable objects).
   """
-  @spec set_priority(bacnet_object(), 1..16, term()) ::
-          {:ok, bacnet_object()} | {:error, term()}
+  @spec set_priority(bacnet_object_commandable(), 1..16, term()) ::
+          {:ok, bacnet_object_commandable()} | {:error, term()}
   def set_priority(%{priority_array: nil} = _object, _priority, _value) do
     {:error, {:unknown_property, :priority_array}}
   end
 
   def set_priority(%bac{priority_array: %PriorityArray{} = _pa} = object, priority, value)
-      when is_object(object) do
+      when is_object_commandable(object) do
     bac.set_priority(object, priority, value)
   end
 

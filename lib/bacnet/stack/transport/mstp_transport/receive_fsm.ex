@@ -6,14 +6,12 @@ if Code.ensure_loaded?(Circuits.UART) do
     # and as such receives transport data directly.
 
     alias __MODULE__.StateData
-    alias BACnet.Protocol.Constants
     alias BACnet.Stack.Transport.MstpTransport
     alias BACnet.Stack.Transport.MstpTransport.EncodingTools
     alias Circuits.UART
 
     import BACnet.Internal, only: [log_debug: 1]
 
-    require Constants
     require Logger
 
     @behaviour :gen_statem
