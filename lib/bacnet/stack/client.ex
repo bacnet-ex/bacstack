@@ -510,6 +510,12 @@ defmodule BACnet.Stack.Client do
       including  replies sent to requests that were never meant for that request.
     - `max_apdu_length: pos_integer()` - Optional. The maximum APDU length
       the remote BACnet device supports (defaults to the transport max APDU length).
+      Limited by the transport max (extended) APDU length.
+      If the transport supports an extended APDU length, you need to make sure
+      the transport uses it, if it needs to be explicitely enabled.
+      For calculation, always the NPDU length is used, as it expresses how many
+      bytes for the APDU can actually be used without constraining the transport's
+      actual maximum transmission unit.
     - `max_segments: pos_integer()` - Optional. Maximum amount of segments the
       remote BACnet device can accept (defaults to 2).
     - `segmentation_supported: Constants.segmentation()` - Optional. Which kind
@@ -1902,11 +1908,21 @@ defmodule BACnet.Stack.Client do
       # Catch any errors when trying to encode the APDU
       bin = EncoderProtocol.encode(apdu)
 
-      # 50 is the minimum APDU size each device needs to support
       max_apdu_len =
         case Keyword.fetch(opts, :max_apdu_length) do
-          {:ok, val} -> min(max(val, 50), trans_mod.max_npdu_length())
-          _error -> trans_mod.max_npdu_length()
+          {:ok, val} ->
+            max_npdu =
+              if function_exported?(trans_mod, :max_ext_npdu_length, 0) do
+                trans_mod.max_ext_npdu_length()
+              else
+                trans_mod.max_npdu_length()
+              end
+
+            # 50 is the minimum APDU size each device needs to support
+            min(max(val, 50), max_npdu)
+
+          _error ->
+            trans_mod.max_npdu_length()
         end
 
       {bin, max_apdu_len}

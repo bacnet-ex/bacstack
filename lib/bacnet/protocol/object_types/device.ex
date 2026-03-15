@@ -47,6 +47,7 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
   alias BACnet.Protocol.Device.ServicesSupported
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.ObjectsMacro
+  alias BACnet.Protocol.ObjectsUtility.Internal
   alias BACnet.Protocol.Recipient
 
   require Constants
@@ -164,33 +165,14 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
     # Properties for when the device is capable of tracking date and time
     field(:local_date, BACnetDate.t(),
       readonly: true,
-      init_fun: &BACnetDate.utc_today/0,
-      annotation: [
-        # Maybe we want to use DateTime.now/1 with the correct TimeZone? (the configured default)
-        # We use DateTime instead of Date so when shifting the time, we get the correct date
-        on_read_function:
-          &update_property(
-            &1,
-            :local_date,
-            BACnetDate.from_date(
-              DateTime.to_date(DateTime.add(DateTime.utc_now(), -(&1[:utc_offset] || 0), :minute))
-            )
-          )
-      ]
+      init_fun: &Internal.init_fun_local_date/0,
+      annotation: [on_read_function: &update_local_date/1]
     )
 
     field(:local_time, BACnetTime.t(),
       readonly: true,
-      init_fun: &BACnetTime.utc_now/0,
-      annotation: [
-        # Maybe we want to use DateTime.now/1 with the correct TimeZone? (the configured default)
-        on_read_function:
-          &update_property(
-            &1,
-            :local_time,
-            BACnetTime.from_time(Time.add(Time.utc_now(), -(&1[:utc_offset] || 0), :minute))
-          )
-      ]
+      init_fun: &Internal.init_fun_local_time/0,
+      annotation: [on_read_function: &update_local_time/1]
     )
 
     # Properties for COV reporting service
@@ -343,6 +325,29 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
   end
 
   defp map_vendor_to_name(_id), do: ""
+
+  @spec update_local_date(t()) :: {:ok, t()} | {:error, term()}
+  defp update_local_date(%__MODULE__{} = obj) do
+    # Maybe we want to use DateTime.now/1 with the correct TimeZone? (the configured default)
+    # We use DateTime instead of Date so when shifting the time, we get the correct date
+    update_property(
+      obj,
+      :local_date,
+      BACnetDate.from_date(
+        DateTime.to_date(DateTime.add(DateTime.utc_now(), -(obj[:utc_offset] || 0), :minute))
+      )
+    )
+  end
+
+  @spec update_local_time(t()) :: {:ok, t()} | {:error, term()}
+  defp update_local_time(%__MODULE__{} = obj) do
+    # Maybe we want to use DateTime.now/1 with the correct TimeZone? (the configured default)
+    update_property(
+      obj,
+      :local_time,
+      BACnetTime.from_time(Time.add(Time.utc_now(), -(obj[:utc_offset] || 0), :minute))
+    )
+  end
 
   @spec inhibit_object_check(t()) :: {:ok, t()}
   defp inhibit_object_check(obj) do

@@ -16,6 +16,9 @@ if Code.ensure_loaded?(Circuits.UART) do
     ```
     As defined by `t:BACnet.Stack.TransportBehaviour.transport_cb_frame/0`.
 
+    Note: Currently `max_apdu_length/0` and `max_npdu_length/0` always return the max APDU as per 135-2012
+    and not the higher possible APDU as per 135-2016.
+
     It uses `Circuits.UART` to handle RS485 for us in active mode.
     If you want to use this transport, you'll have to add [`:circuits_uart`](https://hex.pm/packages/circuits_uart)
     to your `mix.exs` as dependency! It is an optional dependency and thus
@@ -376,6 +379,13 @@ if Code.ensure_loaded?(Circuits.UART) do
     def max_apdu_length(), do: @max_apdu
 
     @doc """
+    Get the maximum extended APDU length for this transport,
+    if the transport also supports a higher (extended) APDU.
+    """
+    @spec max_ext_apdu_length() :: pos_integer()
+    def max_ext_apdu_length(), do: @max_apdu_extended
+
+    @doc """
     Get the maximum NPDU length for this transport.
 
     The NPDU length contains the maximum transmittable size
@@ -387,6 +397,20 @@ if Code.ensure_loaded?(Circuits.UART) do
     """
     @spec max_npdu_length() :: pos_integer()
     def max_npdu_length(), do: @max_apdu
+
+    @doc """
+    Get the maximum extended NPDU length for this transport,
+    if the transport also supports a higher (extended) NPDU.
+
+    The NPDU length contains the maximum transmittable size
+    of the NPDU, including the APDU, without violating
+    the maximum transmission unit of the underlying transport.
+
+    Any necessary transport header (i.e. BVLL, LLC) must have
+    been taken into account when calculating this number.
+    """
+    @spec max_ext_npdu_length() :: pos_integer()
+    def max_ext_npdu_length(), do: @max_apdu_extended
 
     @doc """
     Opens/starts the Transport module. A process is started, that is linked to the caller process.

@@ -123,6 +123,12 @@ defmodule BACnet.Stack.TransportBehaviour do
   @callback max_apdu_length() :: pos_integer()
 
   @doc """
+  Get the maximum extended APDU length for this transport,
+  if the transport also supports a higher (extended) APDU.
+  """
+  @callback max_ext_apdu_length() :: pos_integer()
+
+  @doc """
   Get the maximum NPDU length for this transport.
 
   The NPDU length contains the maximum transmittable size
@@ -133,6 +139,19 @@ defmodule BACnet.Stack.TransportBehaviour do
   been taken into account when calculating this number.
   """
   @callback max_npdu_length() :: pos_integer()
+
+  @doc """
+  Get the maximum extended NPDU length for this transport,
+  if the transport also supports a higher (extended) NPDU.
+
+  The NPDU length contains the maximum transmittable size
+  of the NPDU, including the APDU, without violating
+  the maximum transmission unit of the underlying transport.
+
+  Any necessary transport header (i.e. BVLL, LLC) must have
+  been taken into account when calculating this number.
+  """
+  @callback max_ext_npdu_length() :: pos_integer()
 
   @doc """
   Get the broadcast address.
@@ -191,6 +210,8 @@ defmodule BACnet.Stack.TransportBehaviour do
               data :: EncoderProtocol.t() | iodata(),
               opts :: Keyword.t()
             ) :: :ok | {:error, term()}
+
+  @optional_callbacks max_ext_apdu_length: 0, max_ext_npdu_length: 0
 
   @doc """
   Produces a supervisor child spec based on the BACnet transport `open` callback, as such
