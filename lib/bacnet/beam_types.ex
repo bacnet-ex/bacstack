@@ -703,7 +703,7 @@ defmodule BACnet.BeamTypes do
     )
   end
 
-  defp get_beam_entity_for_module(module, env) do
+  defp get_beam_entity_for_module(module, env, retried \\ false) do
     # Find the bytecode in our compilation tracer, if not available,
     # check if the BEAM file exists and use it instead
 
@@ -734,11 +734,22 @@ defmodule BACnet.BeamTypes do
             if beam_path do
               beam_path
             else
-              raise CompileError,
-                description:
-                  "Missing bytecode for module #{inspect(module)}, unable to lookup types",
-                file: env.file,
-                line: env.line
+              # We retry when all methods fail, because there seems to be
+              # a race condition, where Code.ensure_compiled!/1 releases
+              # the lock, but the compilation tracer wasn't called and
+              # the BEAM file wasn't written yet - by retrying 100ms later,
+              # it seems that we can successfully resolve the race condition
+              # and not fail the complete compilation (tested with 200 full runs)
+              if retried do
+                raise CompileError,
+                  description:
+                    "Missing bytecode for module #{inspect(module)}, unable to lookup types",
+                  file: env.file,
+                  line: env.line
+              else
+                Process.sleep(100)
+                get_beam_entity_for_module(module, env, true)
+              end
             end
         end
 
