@@ -16,9 +16,6 @@ if Code.ensure_loaded?(Circuits.UART) do
     ```
     As defined by `t:BACnet.Stack.TransportBehaviour.transport_cb_frame/0`.
 
-    Note: Currently `max_apdu_length/0` and `max_npdu_length/0` always return the max APDU as per 135-2012
-    and not the higher possible APDU as per 135-2016.
-
     It uses `Circuits.UART` to handle RS485 for us in active mode.
     If you want to use this transport, you'll have to add [`:circuits_uart`](https://hex.pm/packages/circuits_uart)
     to your `mix.exs` as dependency! It is an optional dependency and thus
