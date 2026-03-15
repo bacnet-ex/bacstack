@@ -44,4 +44,5 @@ npm-debug.log
 /.mix/
 .*.exs
 .iex.exs
+.*.sh
 mix.lock
