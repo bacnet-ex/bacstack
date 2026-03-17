@@ -619,6 +619,11 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
   end
 
   @doc false
+  def handle_cast(_cast, %State{} = state) do
+    {:noreply, state}
+  end
+
+  @doc false
   def handle_info({:udp, _port, source_addr, sender_port, _data}, %State{} = state)
       when state.local_ip == source_addr and state.local_port == sender_port do
     # Ignore broadcasts from us
@@ -655,7 +660,7 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
     # If we have already determined that this is a packet from us, we can ignore the check here,
     # the result of this operation is not used
     is_packet_from_non_broadcast_socket =
-      if !is_packet_from_us and state.broadcast_rcv_port != nil and
+      if not is_packet_from_us and state.broadcast_rcv_port != nil and
            state.broadcast_rcv_port != rcv_port do
         case getifaddrs() do
           {:ok, ifs} ->
@@ -745,6 +750,10 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
 
   def handle_info({:udp_error, _port, :econnreset}, %State{} = state) do
     # Ignore unreachable destination (getting back ICMP unreachable)
+    {:noreply, state}
+  end
+
+  def handle_info(_msg, %State{} = state) do
     {:noreply, state}
   end
 

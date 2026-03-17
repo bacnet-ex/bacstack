@@ -452,7 +452,7 @@ defmodule BACnet.Stack.Transport.EthernetTransport do
 
   defp decode_packet(data, dst_mac, _src_mac) do
     bvlc =
-      if(dst_mac == get_broadcast_address(self()),
+      if(dst_mac == @broadcast_addr,
         do: :original_broadcast,
         else: :original_unicast
       )
