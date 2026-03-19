@@ -81,31 +81,17 @@ defmodule BACnet.BeamTypes do
 
   def check_type(:any, _value), do: true
 
-  def check_type(:boolean, value) when is_boolean(value), do: true
-  def check_type(:boolean, _value), do: false
+  def check_type(:boolean, value), do: is_boolean(value)
 
-  def check_type(:string, value) when is_binary(value), do: true
-  def check_type(:string, _value), do: false
+  def check_type(:string, value), do: is_binary(value) and String.valid?(value)
+  def check_type(:octet_string, value), do: is_binary(value)
 
-  def check_type(:octet_string, value) when is_binary(value), do: true
-  def check_type(:octet_string, _value), do: false
+  def check_type(:signed_integer, value), do: is_integer(value)
+  def check_type(:unsigned_integer, value), do: is_integer(value) and value >= 0
 
-  def check_type(:signed_integer, value) when is_integer(value), do: true
-  def check_type(:signed_integer, _value), do: false
+  def check_type(:real, value), do: is_float(value) or value in [:NaN, :inf, :infn]
 
-  def check_type(:unsigned_integer, value)
-      when is_integer(value) and value >= 0,
-      do: true
-
-  def check_type(:unsigned_integer, _value), do: false
-
-  def check_type(:real, value) when is_float(value), do: true
-  def check_type(:real, value) when value in [:NaN, :inf, :infn], do: true
-  def check_type(:real, _value), do: false
-
-  def check_type(:double, value) when is_float(value), do: true
-  def check_type(:double, value) when value in [:NaN, :inf, :infn], do: true
-  def check_type(:double, _value), do: false
+  def check_type(:double, value), do: is_float(value) or value in [:NaN, :inf, :infn]
 
   def check_type(:bitstring, value) when is_tuple(value) do
     value
@@ -142,32 +128,28 @@ defmodule BACnet.BeamTypes do
       when is_integer(fixed_size) and fixed_size >= 1,
       do: false
 
-  def check_type({:constant, type}, value) when is_atom(value),
-    do: Constants.has_by_name(type, value)
+  def check_type({:constant, type}, value) when is_atom(type),
+    do: is_atom(value) and Constants.has_by_name(type, value)
 
   def check_type({:in_list, values}, value) when is_list(values) do
     value in values
   end
 
-  def check_type({:in_range, low, high}, value) do
+  def check_type({:in_range, low, high}, value) when is_integer(low) and is_integer(high) do
     is_integer(value) and value >= low and value <= high
   end
 
   def check_type({:list, _type}, []), do: true
 
   def check_type({:list, type}, value) when is_list(value) do
-    if Enumerable.impl_for(value) do
-      Enum.all?(value, &check_type(type, &1))
-    else
-      false
-    end
+    Enum.all?(value, &check_type(type, &1))
   end
 
   def check_type({:list, _type}, _value), do: false
 
   def check_type({:literal, eq}, value), do: value === eq
 
-  def check_type({:tuple, subtypes}, value) when is_tuple(value) do
+  def check_type({:tuple, subtypes}, value) when is_list(subtypes) and is_tuple(value) do
     if length(subtypes) == tuple_size(value) do
       subtypes
       |> Enum.with_index()
@@ -179,7 +161,7 @@ defmodule BACnet.BeamTypes do
     end
   end
 
-  def check_type({:tuple, _subtypes}, _value), do: false
+  def check_type({:tuple, subtypes}, _value) when is_list(subtypes), do: false
 
   def check_type({:struct, type}, value) when is_struct(value, type) do
     if function_exported?(type, :valid?, 1) do
@@ -196,27 +178,37 @@ defmodule BACnet.BeamTypes do
   end
 
   def check_type({:with_validator, type, validator}, value) when is_function(validator, 1) do
-    if check_type(type, value) do
-      validator.(value)
-    else
-      false
-    end
+    check_type_validator(type, validator, value)
   end
 
   def check_type({:with_validator, type, validator_ast}, value) do
     {validator, _bind} = Code.eval_quoted(validator_ast, [], __ENV__)
-    check_type({:with_validator, type, validator}, value)
+    check_type_validator(type, validator, value)
   end
 
-  def check_type(type, _value), do: raise("Unknown type: #{inspect(type)}")
+  def check_type(type, _value) do
+    raise ArgumentError, "Unknown type: #{inspect(type)}"
+  end
+
+  # This clause is needed to prevent an infinite loop
+  defp check_type_validator(type, validator, value) do
+    if is_function(validator, 1) do
+      check_type(type, value) and validator.(value)
+    else
+      raise ArgumentError, "Only one arity functions are allowed for :with_validator"
+    end
+  end
 
   @doc """
   Generates `valid?/1` clause body based on the given module's `:t` typespec,
   it must reference a struct.
+
+  The variable used for the validation is called `t`.
+  Keys that start with an underline are ignored.
   """
   @spec generate_valid_clause(module(), Macro.Env.t()) :: Macro.t()
   def generate_valid_clause(module, env) when is_atom(module) do
-    validation = resolve_struct_type(module, :t, env)
+    validation = resolve_struct_type(module, :t, env, ignore_underlined_keys: true)
 
     if map_size(validation) == 0 do
       quote do
@@ -261,7 +253,7 @@ defmodule BACnet.BeamTypes do
   Tuple types such as `{binary(), integer()}` will be resolved to `{:tuple, [:octet_string, :integer]}`.
 
   ```elixir
-  iex(1)> resolve_struct_type(BACnet.Protocol.EventParameters.ChangeOfBitstring, :t, __ENV__)
+  iex> resolve_struct_type(BACnet.Protocol.EventParameters.ChangeOfBitstring, :t, __ENV__)
   %{
     alarm_values: {:list, :bitstring},
     bitmask: :bitstring,
@@ -292,10 +284,11 @@ defmodule BACnet.BeamTypes do
         {:type, _line, :map, fields} ->
           fields
           |> Map.new(fn
-            {:type, _line, :map_field_exact, [{:atom, 0, :__struct__}, {:atom, 0, ^module}]} ->
+            {:type, _line, :map_field_exact,
+             [{:atom, _num, :__struct__}, {:atom, _other, ^module}]} ->
               {:__drop__, nil}
 
-            {:type, _line, :map_field_exact, [{:atom, 0, key}, spec]} ->
+            {:type, _line, :map_field_exact, [{:atom, _num, key}, spec]} ->
               if ignore_underlined_keys and String.starts_with?(Atom.to_string(key), "_") do
                 {:__drop__, nil}
               else
@@ -308,8 +301,10 @@ defmodule BACnet.BeamTypes do
           |> Map.delete(:__drop__)
 
         _term ->
+          str_mod = String.replace("#{module}", "Elixir.", "")
+
           raise CompileError,
-            description: "Type #{module}.#{type} does not export the type as struct",
+            description: "Type #{str_mod}.#{type} does not export the type as struct",
             file: env.file,
             line: env.line
       end
@@ -329,6 +324,11 @@ defmodule BACnet.BeamTypes do
   # No type checking - this is an internal struct field
   defp field_typespec_to_bactype({:internal_metadata, _list, []}, _env, _opts) do
     nil
+  end
+
+  # Map true and false to boolean()
+  defp field_typespec_to_bactype(type, _env, _opts) when type in [true, false] do
+    :boolean
   end
 
   defp field_typespec_to_bactype(type, _env, _opts) when is_atom(type) do
@@ -399,7 +399,8 @@ defmodule BACnet.BeamTypes do
   end
 
   # Range expression x..y//z
-  defp field_typespec_to_bactype({:.., _list, [value1, value2, step]}, _env, _opts) do
+  defp field_typespec_to_bactype({range, _list, [value1, value2, step]}, _env, _opts)
+       when range in [:.., :..//] do
     {:in_list, Enum.to_list(value1..value2//step)}
   end
 
@@ -490,7 +491,7 @@ defmodule BACnet.BeamTypes do
           # BACnet.Array.t(...) - Error as more than a single parameter (subtype)
           _term ->
             raise CompileError,
-              description: "BACnetArray must have a single parameter",
+              description: "BACnetArray must have one or two parameters",
               file: env.file,
               line: env.line
         end
@@ -583,7 +584,7 @@ defmodule BACnet.BeamTypes do
 
   # Remote type (such as String.t)
   defp map_beam_typespec_data(
-         {:remote_type, _line, [{:atom, 0, module}, {:atom, 0, type}, args]},
+         {:remote_type, _line, [{:atom, _num, module}, {:atom, _other, type}, args]},
          env,
          _spec_module,
          opts
@@ -605,10 +606,10 @@ defmodule BACnet.BeamTypes do
         {:ann_type, _line, [{:var, _line2, _name}, {:type, _line3, _type, _args} = spec]} ->
           map_beam_typespec_data(spec, env, spec_module, opts)
 
-        {:atom, 0, atom_name} ->
+        {:atom, _num, atom_name} ->
           {:literal, atom_name}
 
-        {:remote_type, _line, [{:atom, 0, module}, {:atom, 0, type}, args]} ->
+        {:remote_type, _line, [{:atom, _num, module}, {:atom, _other, type}, args]} ->
           field_typespec_to_bactype(
             {{:., [], [module, type]}, [], args},
             env,
@@ -637,12 +638,16 @@ defmodule BACnet.BeamTypes do
   end
 
   # Map typespec (structs count as this)
-  defp map_beam_typespec_data({:type, _line, :map, definition}, env, _spec_module, _opts) do
+  defp map_beam_typespec_data({:type, _line, :map, definition}, env, _spec_module, _opts)
+       when not is_atom(definition) do
     # Check if it's a struct, if so, return the module name
     module =
       Enum.find_value(definition, fn
-        {:type, _line, :map_field_exact, [{:atom, 0, :__struct__}, {:atom, 0, module}]} -> module
-        _term -> false
+        {:type, _line, :map_field_exact, [{:atom, _num, :__struct__}, {:atom, _other, module}]} ->
+          module
+
+        _term ->
+          false
       end)
 
     if module do
@@ -687,6 +692,12 @@ defmodule BACnet.BeamTypes do
       end)
 
     {subtype, subtypes}
+  end
+
+  # Literal numbers or atoms
+  defp map_beam_typespec_data({type, _num, val}, _env, _spec_module, _opts)
+       when type in [:atom, :integer] do
+    {:literal, val}
   end
 
   # Custom local types
