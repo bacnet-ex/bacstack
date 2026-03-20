@@ -2734,17 +2734,26 @@ if Code.ensure_loaded?(Circuits.UART) do
       header = [3, destination, state.local_address, <<data_len::size(16)>>]
       header_crc = EncodingTools.calculate_header_crc(header, 0xFF)
 
-      # We need ones-complement of the DataCRC
-      data_crc = 0xFFFF - EncodingTools.calculate_data_crc(data, 0xFFFF)
+      data_payload =
+        if data_len > 0 do
+          # We need ones-complement of the DataCRC
+          data_crc = 0xFFFF - EncodingTools.calculate_data_crc(data, 0xFFFF)
+
+          [
+            data,
+            Bitwise.band(data_crc, 0xFF),
+            Bitwise.bsr(data_crc, 8)
+          ]
+        else
+          []
+        end
 
       payload = [
         @mstp_start_byte,
         @mstp_preamble_byte,
         header,
         header_crc,
-        data,
-        Bitwise.band(data_crc, 0xFF),
-        Bitwise.bsr(data_crc, 8)
+        data_payload
       ]
 
       send_uart_data(state, payload)
@@ -2764,17 +2773,26 @@ if Code.ensure_loaded?(Circuits.UART) do
       header = [4, state_data.source_address, state.local_address, <<data_len::size(16)>>]
       header_crc = EncodingTools.calculate_header_crc(header, 0xFF)
 
-      # We need ones-complement of the DataCRC
-      data_crc = 0xFFFF - EncodingTools.calculate_data_crc(data, 0xFFFF)
+      data_payload =
+        if data_len > 0 do
+          # We need ones-complement of the DataCRC
+          data_crc = 0xFFFF - EncodingTools.calculate_data_crc(data, 0xFFFF)
+
+          [
+            data,
+            Bitwise.band(data_crc, 0xFF),
+            Bitwise.bsr(data_crc, 8)
+          ]
+        else
+          []
+        end
 
       payload = [
         @mstp_start_byte,
         @mstp_preamble_byte,
         header,
         header_crc,
-        data,
-        Bitwise.band(data_crc, 0xFF),
-        Bitwise.bsr(data_crc, 8)
+        data_payload
       ]
 
       send_uart_data(state, payload)
@@ -2787,7 +2805,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       data_len = IO.iodata_length(data)
 
       log_debug_comm(state, fn ->
-        "BacMstpTransport: Sending BACnet-Data-Expecting-Reply  to MS/TP network " <>
+        "BacMstpTransport: Sending BACnet-Data-Expecting-Reply to MS/TP network " <>
           "with destination #{destination} " <>
           "and data length #{data_len} bytes"
       end)
@@ -2795,17 +2813,26 @@ if Code.ensure_loaded?(Circuits.UART) do
       header = [5, destination, state.local_address, <<data_len::size(16)>>]
       header_crc = EncodingTools.calculate_header_crc(header, 0xFF)
 
-      # We need ones-complement of the DataCRC
-      data_crc = 0xFFFF - EncodingTools.calculate_data_crc(data, 0xFFFF)
+      data_payload =
+        if data_len > 0 do
+          # We need ones-complement of the DataCRC
+          data_crc = 0xFFFF - EncodingTools.calculate_data_crc(data, 0xFFFF)
+
+          [
+            data,
+            Bitwise.band(data_crc, 0xFF),
+            Bitwise.bsr(data_crc, 8)
+          ]
+        else
+          []
+        end
 
       payload = [
         @mstp_start_byte,
         @mstp_preamble_byte,
         header,
         header_crc,
-        data,
-        Bitwise.band(data_crc, 0xFF),
-        Bitwise.bsr(data_crc, 8)
+        data_payload
       ]
 
       send_uart_data(state, payload)
@@ -2826,20 +2853,26 @@ if Code.ensure_loaded?(Circuits.UART) do
       header = [6, destination, state.local_address, <<data_len::size(16)>>]
       header_crc = EncodingTools.calculate_header_crc(header, 0xFF)
 
-      data_crc =
-        data
-        |> EncodingTools.calculate_data_crc(0xFFFF)
-        |> Bitwise.bnot()
-        |> Bitwise.band(0xFFFF)
+      data_payload =
+        if data_len > 0 do
+          # We need ones-complement of the DataCRC
+          data_crc = 0xFFFF - EncodingTools.calculate_data_crc(data, 0xFFFF)
+
+          [
+            data,
+            Bitwise.band(data_crc, 0xFF),
+            Bitwise.bsr(data_crc, 8)
+          ]
+        else
+          []
+        end
 
       payload = [
         @mstp_start_byte,
         @mstp_preamble_byte,
         header,
         header_crc,
-        data,
-        Bitwise.band(data_crc, 0xFF),
-        Bitwise.bsr(data_crc, 8)
+        data_payload
       ]
 
       send_uart_data(state, payload)

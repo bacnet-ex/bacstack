@@ -619,28 +619,50 @@ if Code.ensure_loaded?(Circuits.UART) do
           data_crc_header: Bitwise.bsl(state_data.data_crc_header, 8) + crc
       }
 
-      if state_data.data_crc == 0xF0B8 do
-        log_debug_comm(state_data, fn ->
-          "BacMstpTransport_ReceiveFSM: Received valid frame of type #{state_data.frame_type} " <>
-            "with data length #{state_data.data_length}"
-        end)
+      cond do
+        state_data.data_crc == 0xF0B8 ->
+          log_debug_comm(state_data, fn ->
+            "BacMstpTransport_ReceiveFSM: Received valid frame of type #{state_data.frame_type} " <>
+              "with data length #{state_data.data_length}"
+          end)
 
-        handle_mstp_frame(
-          %{
-            state_data
-            | input_buffer: IO.iodata_to_binary(Enum.reverse(state_data.input_buffer)),
-              data_crc_header: 0,
-              received_invalid_frame: false,
-              received_valid_frame: true
-          },
-          rest
-        )
-      else
-        Logger.warning(fn ->
-          "BacMstpTransport_ReceiveFSM: Received frame with bad data - moving to IDLE"
-        end)
+          handle_mstp_frame(
+            %{
+              state_data
+              | input_buffer: IO.iodata_to_binary(Enum.reverse(state_data.input_buffer)),
+                data_crc_header: 0,
+                received_invalid_frame: false,
+                received_valid_frame: true
+            },
+            rest
+          )
 
-        handle_receive_invalid_or_timeout(state_data, true, rest)
+        state_data.frame_type == :test_request ->
+          log_debug_comm(state_data, fn ->
+            "BacMstpTransport_ReceiveFSM: Received frame of type #{state_data.frame_type} " <>
+              "with data length #{state_data.data_length}, but data CRC does not match, " <>
+              "data will be dropped and frame will propagate without data"
+          end)
+
+          handle_mstp_frame(
+            %{
+              state_data
+              | input_buffer: [],
+                data_length: 0,
+                data_crc: 0,
+                data_crc_header: 0,
+                received_invalid_frame: false,
+                received_valid_frame: true
+            },
+            rest
+          )
+
+        true ->
+          Logger.warning(fn ->
+            "BacMstpTransport_ReceiveFSM: Received frame with bad data - moving to IDLE"
+          end)
+
+          handle_receive_invalid_or_timeout(state_data, true, rest)
       end
     end
 

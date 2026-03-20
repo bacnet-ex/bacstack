@@ -152,7 +152,7 @@ defmodule BACnet.BeamTypes do
   def check_type({:tuple, subtypes}, value) when is_list(subtypes) and is_tuple(value) do
     if length(subtypes) == tuple_size(value) do
       subtypes
-      |> Enum.with_index()
+      |> Stream.with_index()
       |> Enum.all?(fn {spec, index} ->
         check_type(spec, elem(value, index))
       end)
@@ -190,7 +190,6 @@ defmodule BACnet.BeamTypes do
     raise ArgumentError, "Unknown type: #{inspect(type)}"
   end
 
-  # This clause is needed to prevent an infinite loop
   defp check_type_validator(type, validator, value) do
     if is_function(validator, 1) do
       check_type(type, value) and validator.(value)
