@@ -9,6 +9,17 @@ if Code.ensure_loaded?(Circuits.UART) do
     up to 1476 bytes. When sending such large APDUs the receiving device must also support ASHRAE 135-2016,
     otherwise it will ignore us, and that's a sad thing to do! As such, sending large APDUs is opt-in.
 
+    It can act as a master or slave node, depending on the address this transport is started with.
+    As a slave node, it'll only be able to respond to request and never be able to initiate requests.
+    Master nodes actively participate in the Token Passing and are able to send MS/TP frames freely
+    when holding the token. Slave nodes are restricted to only responding to requests and also are
+    not able to use segmentation, since segmentation requires nodes to be able to send MS/TP frames
+    whenever needed.
+
+    The recommendation is to always start this transport as master node with a distinct and
+    unique address in the range `0..127`. Note that other MS/TP nodes `max_master_address`
+    needs to be considered when selecting an address.
+
     Proprietary frames are sent to the defined `callback` as:
 
     ```elixir
@@ -428,7 +439,7 @@ if Code.ensure_loaded?(Circuits.UART) do
     - `max_info_frames: pos_integer()` - Optional. This value specifies the maximum number of information
       frames the node may send before it must pass the token (defaults to `1`).
     - `max_master_address: 0..127` - Optional. The maximum master address that is used in the MS/TP network.
-      This is used for polling and successor determination. Defaults to `127`.
+      This is used for polling and successor determination (defaults to `127`).
     - `port_name: binary()` - Required. Name of the serial port (use `Circuits.UART.enumerate/0`).
     - `supervisor: Supervisor.supervisor()` - Optional. The task supervisor to use to spawn tasks under.
       Tasks are spawned to invoke the given callback. If no supervisor is given,
@@ -681,6 +692,7 @@ if Code.ensure_loaded?(Circuits.UART) do
     @spec send_test(GenServer.server(), source_address(), iodata()) ::
             {:ok, iodata()}
             | {:error, term()}
+            | {:error, :invalid_frame_response}
             | {:error, :slave_mode}
             | {:error, :token_passing_disabled}
     def send_test(portal, destination, data \\ "Hello World")
@@ -1923,6 +1935,16 @@ if Code.ensure_loaded?(Circuits.UART) do
           state_set_silence_timer(state, :timer_lost_token, @param_t_no_token)
         else
           state
+        end
+
+      # If a test is active, resolve it with an error
+      new_state =
+        if state.active_test do
+          GenServer.reply(state.active_test, {:error, :invalid_frame_response})
+
+          %{new_state | active_test: nil}
+        else
+          new_state
         end
 
       # Update received frame counter
