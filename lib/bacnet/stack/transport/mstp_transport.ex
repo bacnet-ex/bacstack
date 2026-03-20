@@ -2776,7 +2776,10 @@ if Code.ensure_loaded?(Circuits.UART) do
       data_payload =
         if data_len > 0 do
           # We need ones-complement of the DataCRC
-          data_crc = 0xFFFF - EncodingTools.calculate_data_crc(data, 0xFFFF)
+          # data_crc = 0xFFFF - EncodingTools.calculate_data_crc(data, 0xFFFF)
+
+          # Use Data CRC from frame
+          data_crc = state_data.data_crc_header
 
           [
             data,

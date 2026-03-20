@@ -616,7 +616,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       state_data = %{
         state_data
         | data_crc: EncodingTools.calculate_data_crc(crc, state_data.data_crc),
-          data_crc_header: Bitwise.bsl(state_data.data_crc_header, 8) + crc
+          data_crc_header: Bitwise.bsl(crc, 8) + state_data.data_crc_header
       }
 
       cond do
