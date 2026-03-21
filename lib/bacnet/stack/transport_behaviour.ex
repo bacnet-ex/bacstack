@@ -211,7 +211,16 @@ defmodule BACnet.Stack.TransportBehaviour do
               opts :: Keyword.t()
             ) :: :ok | {:error, term()}
 
-  @optional_callbacks max_ext_apdu_length: 0, max_ext_npdu_length: 0
+  @doc """
+  Sends a Reply-Postponed Frame to the destination, if supported by the Transport.
+
+  For some transports this is necessary in some situations, as such this is an optional callback,
+  with undefined options.
+  """
+  @callback reply_postponed(portal :: portal(), destination :: term(), opts :: Keyword.t()) ::
+              :ok | {:error, term()}
+
+  @optional_callbacks max_ext_apdu_length: 0, max_ext_npdu_length: 0, reply_postponed: 3
 
   @doc """
   Produces a supervisor child spec based on the BACnet transport `open` callback, as such

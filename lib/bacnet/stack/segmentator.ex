@@ -493,27 +493,55 @@ defmodule BACnet.Stack.Segmentator do
 
               Telemetry.execute_segmentator_sequence_start(self(), new_sequence, state)
 
-              # Send first segment and wait for Segment ACK
-              case module.send(portal, destination, Map.get(segments, 0), opts) do
+              # If the transport module support reply_postponed/3, send Reply-Postponed Frame
+              # ASHRAE 135 Clause 9.8 (it is unlikely another transport layer implements it for any other reason)
+              postponed_result =
+                if function_exported?(module, :reply_postponed, 3) do
+                  case module.reply_postponed(portal, destination, []) do
+                    :ok ->
+                      :ok
+
+                    # An error like :slave_mode is not continuable,
+                    # as only a master node can hold the token,
+                    # and we need the token for segmentation
+                    {:error, continuable}
+                    when continuable in [:no_reply_pending, :destination_is_not_expecting_reply] ->
+                      :ok
+
+                    {:error, _err} = err ->
+                      err
+                  end
+                else
+                  :ok
+                end
+
+              case postponed_result do
                 :ok ->
-                  new_state = %State{
-                    state
-                    | sequences: Map.put(state.sequences, id, new_sequence)
-                  }
+                  # Send first segment and wait for Segment ACK
+                  case module.send(portal, destination, Map.get(segments, 0), opts) do
+                    :ok ->
+                      new_state = %State{
+                        state
+                        | sequences: Map.put(state.sequences, id, new_sequence)
+                      }
 
-                  {:ok, new_state}
+                      {:ok, new_state}
 
-                {:error, _err} = error ->
-                  log_transport_send_error(error)
+                    {:error, _err} = error ->
+                      log_transport_send_error(error)
 
-                  Telemetry.execute_segmentator_sequence_stop(
-                    self(),
-                    new_sequence,
-                    :transport_error,
-                    state
-                  )
+                      Telemetry.execute_segmentator_sequence_stop(
+                        self(),
+                        new_sequence,
+                        :transport_error,
+                        state
+                      )
 
-                  {error, state}
+                      {error, state}
+                  end
+
+                _other ->
+                  {postponed_result, state}
               end
             else
               # Too many segments for the remote device, send BUFFER_OVERFLOW Abort

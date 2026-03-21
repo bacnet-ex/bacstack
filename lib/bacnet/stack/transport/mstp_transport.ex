@@ -621,6 +621,14 @@ if Code.ensure_loaded?(Circuits.UART) do
     end
 
     @doc """
+    Verifies whether the given destination is valid for the transport module.
+    """
+    @spec is_valid_destination(destination_address()) :: boolean()
+    def is_valid_destination(destination) do
+      is_integer(destination) and destination >= 0 and destination <= 255
+    end
+
+    @doc """
     Sends data to the BACnet network.
 
     Please note that not all MS/TP devices support extended APDUs (max. 1476 bytes)
@@ -792,11 +800,29 @@ if Code.ensure_loaded?(Circuits.UART) do
     end
 
     @doc """
-    Verifies whether the given destination is valid for the transport module.
+    Sends a Reply-Postponed Frame to the destination.
+
+    Sending an explicit Reply-Postponed Frame is necessary,
+    when the reply is to be segmented.
+    A segmented Complex-ACK APDU can only be transmitted
+    when we hold the token (ASHRAE 135 Clause 9.8).
+
+    There are no options at this time.
     """
-    @spec is_valid_destination(destination_address()) :: boolean()
-    def is_valid_destination(destination) do
-      is_integer(destination) and destination >= 0 and destination <= 255
+    @spec reply_postponed(
+            portal :: TransportBehaviour.portal(),
+            destination :: source_address(),
+            opts :: Keyword.t()
+          ) ::
+            :ok
+            | {:error, term()}
+            | {:error, :slave_mode}
+            | {:error, :no_reply_pending}
+            | {:error, :destination_is_not_expecting_reply}
+    def reply_postponed(portal, destination, opts \\ [])
+        when is_server(portal) and is_integer(destination) and destination >= 0 and
+               destination <= 254 and is_list(opts) do
+      GenServer.call(portal, {:reply_postponed, destination, opts}, @call_timeout)
     end
 
     @doc false
@@ -1311,6 +1337,63 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:stop, :normal, :ok, state}
     end
 
+    def handle_call(:get_state, _from, %State{} = state) do
+      log_debug(fn ->
+        "BacMstpTransport: Received get_state request"
+      end)
+
+      {:reply, state.transport_state, state}
+    end
+
+    def handle_call(:disable_token_passing, _from, %State{local_address: local_addr} = state)
+        when local_addr < @min_slave_addr do
+      log_debug(fn ->
+        "BacMstpTransport: Received disable_token_passing request during state " <>
+          String.upcase(Atom.to_string(state.transport_state))
+      end)
+
+      new_state = %{state | disable_token_passing: true}
+
+      {:reply, :ok, new_state}
+    end
+
+    def handle_call(:disable_token_passing, _from, %State{} = state) do
+      log_debug(fn ->
+        "BacMstpTransport: Received disable_token_passing reques in slave_mode"
+      end)
+
+      {:reply, {:error, :slave_mode}, state}
+    end
+
+    def handle_call({:configure, %{} = opts}, _from, %State{} = state) do
+      log_debug(fn -> "BacMstpTransport: Received configure request" end)
+
+      new_opts = Map.merge(state.opts, opts)
+
+      reply =
+        case Map.fetch(opts, :baudrate) do
+          {:ok, baudrate} ->
+            with :ok <- UART.configure(state.uart_pid, speed: baudrate) do
+              ReceiveFSM.configure(state.receive_fsm, %{
+                baudrate: baudrate,
+                log_communication: new_opts.log_communication_rcv
+              })
+            end
+
+          :error ->
+            :ok
+        end
+
+      case reply do
+        :ok ->
+          new_state = %{state | opts: new_opts}
+          {:reply, :ok, new_state}
+
+        _other ->
+          {:reply, reply, state}
+      end
+    end
+
     def handle_call(:get_local_address, _from, %State{} = state) do
       log_debug("BacMstpTransport: Received get_local_address request")
 
@@ -1357,7 +1440,7 @@ if Code.ensure_loaded?(Circuits.UART) do
 
       {reply, new_state} =
         send_frame_data_not_expecting_reply(
-          %{state | transport_state: :idle},
+          %{state | transport_state: :idle, answer_invoke_id: nil},
           destination,
           data
         )
@@ -1483,61 +1566,44 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:reply, {:error, :slave_mode}, state}
     end
 
-    def handle_call(:get_state, _from, %State{} = state) do
-      log_debug(fn ->
-        "BacMstpTransport: Received get_state request"
-      end)
-
-      {:reply, state.transport_state, state}
-    end
-
-    def handle_call(:disable_token_passing, _from, %State{local_address: local_addr} = state)
+    def handle_call(
+          {:reply_postponed, destination, _opts},
+          _from,
+          %State{local_address: local_addr, state_machine: %{source_address: source}} = state
+        )
         when local_addr < @min_slave_addr do
       log_debug(fn ->
-        "BacMstpTransport: Received disable_token_passing request during state " <>
-          String.upcase(Atom.to_string(state.transport_state))
+        "BacMstpTransport: Received reply_postponed request"
       end)
 
-      new_state = %{state | disable_token_passing: true}
+      {reply, new_state} =
+        cond do
+          source != destination ->
+            {{:error, :destination_is_not_expecting_reply}, state}
 
-      {:reply, :ok, new_state}
+          state.transport_state == :answer_data_request ->
+            # Remove the reply timer
+            state = state_cancel_silence_timer(state)
+            state = state_set_silence_timer(state, :timer_lost_token, @param_t_no_token)
+
+            case send_frame_reply_postponed(state, destination) do
+              {:ok, state} -> {:ok, %{state | transport_state: :idle, answer_invoke_id: nil}}
+              {:error, state} -> {{:error, :sending_failed}, state}
+            end
+
+          true ->
+            {{:error, :no_reply_pending}, state}
+        end
+
+      {:reply, reply, new_state}
     end
 
-    def handle_call(:disable_token_passing, _from, %State{} = state) do
+    def handle_call({:reply_postponed, _destination, _opts}, _from, %State{} = state) do
       log_debug(fn ->
-        "BacMstpTransport: Received disable_token_passing reques in slave_mode"
+        "BacMstpTransport: Received reply_postponed request in slave mode"
       end)
 
       {:reply, {:error, :slave_mode}, state}
-    end
-
-    def handle_call({:configure, %{} = opts}, _from, %State{} = state) do
-      log_debug(fn -> "BacMstpTransport: Received configure request" end)
-
-      new_opts = Map.merge(state.opts, opts)
-
-      reply =
-        case Map.fetch(opts, :baudrate) do
-          {:ok, baudrate} ->
-            with :ok <- UART.configure(state.uart_pid, speed: baudrate) do
-              ReceiveFSM.configure(state.receive_fsm, %{
-                baudrate: baudrate,
-                log_communication: new_opts.log_communication_rcv
-              })
-            end
-
-          :error ->
-            :ok
-        end
-
-      case reply do
-        :ok ->
-          new_state = %{state | opts: new_opts}
-          {:reply, :ok, new_state}
-
-        _other ->
-          {:reply, reply, state}
-      end
     end
 
     def handle_call(_call, _from, state) do
