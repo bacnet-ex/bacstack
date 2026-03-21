@@ -23,7 +23,7 @@ if Code.ensure_loaded?(Circuits.UART) do
     Proprietary frames are sent to the defined `callback` as:
 
     ```elixir
-    {:proprietary, type :: 128..255, destination :: destination_address(), data :: iodata()}
+    {:proprietary, {type :: 128..255, vendor_id :: 0..65_535}, destination :: destination_address(), data :: iodata()}
     ```
     As defined by `t:BACnet.Stack.TransportBehaviour.transport_cb_frame/0`.
 
@@ -2184,6 +2184,36 @@ if Code.ensure_loaded?(Circuits.UART) do
     #   {:noreply, state}
     # end
 
+    # defp handle_mstp_frame(
+    #        %State{local_address: addr} = state,
+    #        %StateData{destination_address: dest, opts: %{listening_mode: true}} = state_data
+    #      )
+    #      when dest not in [addr, @broadcast_addr] do
+    #   log_debug_comm(state, fn ->
+    #     "BacMstpTransport: Received valid frame of type #{inspect(state_data.frame_type)} " <>
+    #       "with data length " <> "#{state_data.data_length}, not meant for us but address #{dest}"
+    #   end)
+
+    #   case decode_packet(state_data) do
+    #     {:ok, {npci, decoded}} ->
+    #       after_decode_fanout_cb(
+    #         state,
+    #         state_data,
+    #         {:apdu,
+    #          if(state_data.destination_address == @broadcast_addr,
+    #            do: :original_broadcast,
+    #            else: :original_unicast
+    #          ), npci, decoded}
+    #       )
+
+    #     # If the packet is not meant for us, ignore any other return value
+    #     _other ->
+    #       :ok
+    #   end
+
+    #   {:noreply, state}
+    # end
+
     defp handle_mstp_frame(
            %State{local_address: addr, disable_token_passing: true} = state,
            %StateData{frame_type: :token, data_length: 0, destination_address: dest} = state_data
@@ -2437,10 +2467,17 @@ if Code.ensure_loaded?(Circuits.UART) do
           "#{state_data.data_length} and destination #{dest}"
       end)
 
+      {vendor_id, buffer} =
+        case state_data.input_buffer do
+          <<vendor_id::size(16), rest::binary>> -> {vendor_id, rest}
+          [b1, b2 | rest] -> {Bitwise.bsl(b1, 8) + b2, rest}
+          _other -> {0, state_data.input_buffer}
+        end
+
       after_decode_fanout_cb(
         state,
         state_data,
-        {:proprietary, type_num, dest, state_data.input_buffer}
+        {:proprietary, {type_num, vendor_id}, dest, buffer}
       )
 
       {:noreply, state}

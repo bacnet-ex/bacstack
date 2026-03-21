@@ -34,7 +34,7 @@ def deps do
 end
 ```
 
-The `env: Mix.env() ` part is recommended to add, so in development you get some more validation (i.e. `BACnet.Stack.Client.send`)
+The `env: Mix.env()` part is recommended to add, so in development you get some more validation (i.e. `BACnet.Stack.Client.send`)
 and in production you get better performance.
 You should test both development and production builds before shipping to production.
 If you omit `env`, then the library will be compiled in `prod` environment by Mix.
