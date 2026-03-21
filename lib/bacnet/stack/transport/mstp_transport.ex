@@ -753,10 +753,60 @@ if Code.ensure_loaded?(Circuits.UART) do
       GenServer.call(transport, :disable_token_passing)
     end
 
+    @doc """
+    Configures the transport.
+
+    Only some of the available `t:open_options/0` can be configured,
+    unsupported options can only be changed by re-starting the transport completely.
+
+    The following options are supported:
+    - `baudrate`
+    - `log_communication`
+    - `log_communication_rcv`
+    - `max_info_frames`
+    - `max_master_address`
+
+    For a description of each option, see `open/2`.
+
+    Note that reconfiguring the baudrate on the fly MAY lead to invalid frames!
+    May also lead to dropping token.
+    """
+    @spec configure(TransportBehaviour.transport(), open_options()) :: :ok | {:error, term()}
+    def configure(transport, opts) when is_server(transport) and is_list(opts) do
+      unless Keyword.keyword?(opts) do
+        raise ArgumentError, "configure/2 expected a keyword list, got: #{inspect(opts)}"
+      end
+
+      Enum.each(opts, fn
+        {:baudrate, val} when is_integer(val) and val > 0 ->
+          true
+
+        {:log_communication, val} when is_boolean(val) ->
+          true
+
+        {:log_communication_rcv, val} when is_boolean(val) ->
+          true
+
+        {:max_info_frames, val} when is_integer(val) and val > 0 ->
+          true
+
+        {:max_master_address, val} when is_integer(val) and val > 0 ->
+          true
+
+        {key, val} ->
+          raise ArgumentError,
+                "configure/2 received unsupported combination - key: " <>
+                  inspect(key) <> ", value: " <> inspect(val)
+      end)
+
+      GenServer.call(transport, {:configure, Map.new(opts)})
+    end
+
     @doc false
     def init({callback, opts}) do
       new_opts =
         opts
+        |> Map.put_new(:baudrate, 38_400)
         |> Map.put_new(:log_communication, false)
         |> Map.put_new(:max_info_frames, 1)
         |> Map.put_new(:max_master_address, @max_master_addr)
@@ -766,7 +816,7 @@ if Code.ensure_loaded?(Circuits.UART) do
         with {:ok, uart_pid} <- UART.start_link() do
           {UART.open(uart_pid, Map.fetch!(opts, :port_name),
              active: true,
-             speed: Map.get(opts, :baudrate, 38_400),
+             speed: new_opts.baudrate,
              data_bits: 8,
              stop_bits: 1,
              parity: :none,
@@ -1462,6 +1512,35 @@ if Code.ensure_loaded?(Circuits.UART) do
       end)
 
       {:reply, {:error, :slave_mode}, state}
+    end
+
+    def handle_call({:configure, %{} = opts}, _from, %State{} = state) do
+      log_debug(fn -> "BacMstpTransport: Received configure request" end)
+
+      new_opts = Map.merge(state.opts, opts)
+
+      reply =
+        case Map.fetch(opts, :baudrate) do
+          {:ok, baudrate} ->
+            with :ok <- UART.configure(state.uart_pid, speed: baudrate) do
+              ReceiveFSM.configure(state.receive_fsm, %{
+                baudrate: baudrate,
+                log_communication: new_opts.log_communication_rcv
+              })
+            end
+
+          :error ->
+            :ok
+        end
+
+      case reply do
+        :ok ->
+          new_state = %{state | opts: new_opts}
+          {:reply, :ok, new_state}
+
+        _other ->
+          {:reply, reply, state}
+      end
     end
 
     def handle_call(_call, _from, state) do

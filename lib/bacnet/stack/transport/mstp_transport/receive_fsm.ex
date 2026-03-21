@@ -94,6 +94,14 @@ if Code.ensure_loaded?(Circuits.UART) do
       :gen_statem.call(server, :reset_event_count)
     end
 
+    @doc """
+    Configures the options.
+    """
+    @spec configure(pid(), map() | Keyword.t()) :: :ok
+    def configure(server, opts) when is_pid(server) and (is_map(opts) or is_list(opts)) do
+      :gen_statem.call(server, {:configure, Map.new(opts)})
+    end
+
     @doc false
     def callback_mode(), do: [:handle_event_function, :state_enter]
 
@@ -207,6 +215,13 @@ if Code.ensure_loaded?(Circuits.UART) do
       log_debug(fn -> "BacMstpTransport_ReceiveFSM: Received reset_event_count call" end)
 
       {:keep_state, %{data | event_count: 0}, [{:reply, from, :ok}]}
+    end
+
+    # Handles :gen_statem.call({:configure, opts})
+    def handle_event({:call, from}, {:configure, %{} = opts}, _state, %StateData{} = data) do
+      log_debug(fn -> "BacMstpTransport_ReceiveFSM: Received configure call" end)
+
+      {:keep_state, %{data | opts: Map.merge(data.opts, opts)}, [{:reply, from, :ok}]}
     end
 
     # --- Receiving Data ---
