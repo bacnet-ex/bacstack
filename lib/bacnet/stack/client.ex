@@ -253,8 +253,7 @@ defmodule BACnet.Stack.Client do
               disable_app_timeout: boolean(),
               disable_invoke_id_management: boolean(),
               npci_source: NpciTarget.t() | nil,
-              segmented_rcv_window_overwrite: boolean(),
-              supervisor_mod: module()
+              segmented_rcv_window_overwrite: boolean()
             }
           }
 
@@ -380,9 +379,54 @@ defmodule BACnet.Stack.Client do
         :transport
       ])
 
-    validate_start_link_opts(opts2)
+    validate_start_link_opts(opts2, "start_link/1")
 
     GenServer.start_link(__MODULE__, Map.new(opts2), genserver_opts)
+  end
+
+  @doc """
+  Configure the client.
+
+  Only some of the available `t:start_options/0` can be configured,
+  unsupported options can only be changed by re-starting the client completely.
+
+  The following options are supported:
+  - `apdu_retries`
+  - `apdu_timeout`
+  - `disable_app_timeout` (note that current active timers will NOT be cancelled)
+  - `npci_source`
+  - `segmented_rcv_window_overwrite`
+
+  For a description of each option, see `start_link/1`.
+  """
+  @spec configure(server(), start_options()) :: :ok
+  def configure(server, opts) when is_server(server) and is_list(opts) do
+    unless Keyword.keyword?(opts) do
+      raise ArgumentError,
+            "configure/2 expected opts to be a keyword list, " <>
+              "got: #{inspect(opts)}"
+    end
+
+    validate_start_link_opts(opts, "configure/2", true)
+
+    Enum.each(opts, fn
+      # Supported options
+      {key, _val}
+      when key in [
+             :apdu_retries,
+             :apdu_timeout,
+             :disable_app_timeout,
+             :npci_source,
+             :segmented_rcv_window_overwrite
+           ] ->
+        true
+
+      {key, _val} ->
+        raise ArgumentError,
+              "configure/2 does not support option " <> inspect(key)
+    end)
+
+    GenServer.call(server, {:configure, Map.new(opts)})
   end
 
   @doc """
@@ -628,6 +672,11 @@ defmodule BACnet.Stack.Client do
   end
 
   @doc false
+  def handle_call({:configure, %{} = opts}, _from, %State{} = state) do
+    new_state = %{state | opts: Map.merge(state.opts, opts)}
+    {:reply, :ok, new_state}
+  end
+
   def handle_call(
         {:add_apdu_timeout, source_address, device_id, timeout},
         _from,
@@ -2247,7 +2296,8 @@ defmodule BACnet.Stack.Client do
   defp kw_put_new(kw, key, val), do: Keyword.put_new(kw, key, val)
 
   # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
-  defp validate_start_link_opts(opts) do
+  defp validate_start_link_opts(opts, mfa, skip_check \\ false)
+       when is_binary(mfa) and is_boolean(skip_check) do
     case opts[:apdu_retries] do
       nil ->
         :ok
@@ -2257,7 +2307,8 @@ defmodule BACnet.Stack.Client do
 
       term ->
         raise ArgumentError,
-              "start_link/1 expected apdu_retries to be a non negative integer, " <>
+              mfa <>
+                " expected apdu_retries to be a non negative integer, " <>
                 "got: #{inspect(term)}"
     end
 
@@ -2270,7 +2321,8 @@ defmodule BACnet.Stack.Client do
 
       term ->
         raise ArgumentError,
-              "start_link/1 expected apdu_timeout to be a positive integer, " <>
+              mfa <>
+                " expected apdu_timeout to be a positive integer, " <>
                 "got: #{inspect(term)}"
     end
 
@@ -2283,7 +2335,8 @@ defmodule BACnet.Stack.Client do
 
       term ->
         raise ArgumentError,
-              "start_link/1 expected disable_app_timeout to be a boolean, " <>
+              mfa <>
+                " expected disable_app_timeout to be a boolean, " <>
                 "got: #{inspect(term)}"
     end
 
@@ -2296,7 +2349,8 @@ defmodule BACnet.Stack.Client do
 
       term ->
         raise ArgumentError,
-              "start_link/1 expected disable_invoke_id_management to be a boolean, " <>
+              mfa <>
+                " expected disable_invoke_id_management to be a boolean, " <>
                 "got: #{inspect(term)}"
     end
 
@@ -2323,13 +2377,15 @@ defmodule BACnet.Stack.Client do
                      (is_tuple(&1) and tuple_size(&1) == 2))
                ) do
           raise ArgumentError,
-                "start_link/1 expected notification_receiver to be a Process destination or " <>
+                mfa <>
+                  " expected notification_receiver to be a Process destination or " <>
                   "list of Process destinations, got: #{inspect(term)}"
         end
 
       term ->
         raise ArgumentError,
-              "start_link/1 expected notification_receiver to be a Process destination or " <>
+              mfa <>
+                " expected notification_receiver to be a Process destination or " <>
                 "list of Process destinations, got: #{inspect(term)}"
     end
 
@@ -2342,7 +2398,8 @@ defmodule BACnet.Stack.Client do
 
       term ->
         raise ArgumentError,
-              "start_link/1 expected npci_source to be a NpciTarget, " <>
+              mfa <>
+                " expected npci_source to be a NpciTarget, " <>
                 "got: #{inspect(term)}"
     end
 
@@ -2361,7 +2418,8 @@ defmodule BACnet.Stack.Client do
 
       term ->
         raise ArgumentError,
-              "start_link/1 expected segmentator to be a GenServer name, " <>
+              mfa <>
+                " expected segmentator to be a GenServer name, " <>
                 "got: #{inspect(term)}"
     end
 
@@ -2380,7 +2438,8 @@ defmodule BACnet.Stack.Client do
 
       term ->
         raise ArgumentError,
-              "start_link/1 expected segments_store to be a GenServer name, " <>
+              mfa <>
+                " expected segments_store to be a GenServer name, " <>
                 "got: #{inspect(term)}"
     end
 
@@ -2393,7 +2452,8 @@ defmodule BACnet.Stack.Client do
 
       term ->
         raise ArgumentError,
-              "start_link/1 expected segmented_rcv_window_overwrite to be a boolean, " <>
+              mfa <>
+                " expected segmented_rcv_window_overwrite to be a boolean, " <>
                 "got: #{inspect(term)}"
     end
 
@@ -2420,29 +2480,32 @@ defmodule BACnet.Stack.Client do
 
       term ->
         raise ArgumentError,
-              "start_link/1 expected transport to be a tuple of module name " <>
+              mfa <>
+                " expected transport to be a tuple of module name " <>
                 "and TransportBehaviour.transport(), got: #{inspect(term)}"
     end
 
-    # Unwrap the transport module name
-    {transport_mod, _pid} =
-      case transport do
-        {mod, pid} -> {mod, pid}
-        mod -> {mod, nil}
+    if not skip_check do
+      # Unwrap the transport module name
+      {transport_mod, _pid} =
+        case transport do
+          {mod, pid} -> {mod, pid}
+          mod -> {mod, nil}
+        end
+
+      unless Code.ensure_loaded?(transport_mod) do
+        raise ArgumentError, "Given transport module #{inspect(transport_mod)} is not loaded"
       end
 
-    unless Code.ensure_loaded?(transport_mod) do
-      raise ArgumentError, "Given transport module #{inspect(transport_mod)} is not loaded"
-    end
-
-    unless Enum.any?(transport_mod.__info__(:attributes), fn
-             {:behaviour, TransportBehaviour} -> true
-             {:behaviour, [TransportBehaviour]} -> true
-             _else -> false
-           end) do
-      raise ArgumentError,
-            "Given transport module #{inspect(transport_mod)} does not " <>
-              "implement the BACnet transport behaviour"
+      unless Enum.any?(transport_mod.__info__(:attributes), fn
+               {:behaviour, TransportBehaviour} -> true
+               {:behaviour, [TransportBehaviour]} -> true
+               _else -> false
+             end) do
+        raise ArgumentError,
+              "Given transport module #{inspect(transport_mod)} does not " <>
+                "implement the BACnet transport behaviour"
+      end
     end
   end
 

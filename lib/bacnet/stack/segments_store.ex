@@ -30,7 +30,7 @@ defmodule BACnet.Stack.SegmentsStore do
   alias BACnet.Stack.Telemetry
   alias BACnet.Stack.TransportBehaviour
 
-  import BACnet.Internal, only: [log_debug: 1]
+  import BACnet.Internal, only: [is_server: 1, log_debug: 1]
 
   require Constants
   require Logger
@@ -108,7 +108,11 @@ defmodule BACnet.Stack.SegmentsStore do
               optional({source_address :: term(), invoke_id :: byte()}) =>
                 %BACnet.Stack.SegmentsStore.Sequence{}
             },
-            opts: map()
+            opts: %{
+              apdu_retries: non_neg_integer(),
+              apdu_timeout: pos_integer(),
+              max_segments: Constants.max_segments()
+            }
           }
 
     @fields [
@@ -143,6 +147,7 @@ defmodule BACnet.Stack.SegmentsStore do
 
   The following options are available, in addition to `t:GenServer.options/0`:
     - `apdu_retries: pos_integer()` - Optional. The amount of APDU receiving retries (defaults to 4).
+      Note that this option is only present for testing and must be kept at the default value for BACnet compliance.
     - `apdu_timeout: pos_integer()` - Optional. The APDU timeout to be waiting for a response, in ms (defaults to 3000ms).
     - `max_segments: Constants.max_segments()` - Optional. The maximum amount of segments to allow (defaults to `:more_than_64`).
       While `:unspecified` is allowed here, it shouldn't be used anywhere, because it makes it for the server unable to determine
@@ -154,10 +159,46 @@ defmodule BACnet.Stack.SegmentsStore do
       raise ArgumentError, "start_link/1 expected a keyword list, got: #{inspect(opts)}"
     end
 
-    {opts2, genserver_opts} = Keyword.split(opts, [:apdu_retries, :apdu_timeout])
-    validate_start_link_opts(opts2)
+    {opts2, genserver_opts} = Keyword.split(opts, [:apdu_retries, :apdu_timeout, :max_segments])
+    validate_start_link_opts(opts2, "start_link/1")
 
     GenServer.start_link(__MODULE__, Map.new(opts2), genserver_opts)
+  end
+
+  @doc """
+  Configure the segments store.
+
+  Only some of the available `t:start_options/0` can be configured,
+  unsupported options can only be changed by re-starting the segments store completely.
+
+  The following options are supported:
+  - `apdu_timeout`
+  - `max_segments`
+
+  For a description of each option, see `start_link/1`.
+  """
+  @spec configure(server(), start_options()) :: :ok
+  def configure(server, opts) when is_server(server) and is_list(opts) do
+    unless Keyword.keyword?(opts) do
+      raise ArgumentError,
+            "configure/2 expected opts to be a keyword list, " <>
+              "got: #{inspect(opts)}"
+    end
+
+    validate_start_link_opts(opts, "configure/2")
+
+    Enum.each(opts, fn
+      # Supported options
+      {key, _val}
+      when key in [:apdu_timeout, :max_segments] ->
+        true
+
+      {key, _val} ->
+        raise ArgumentError,
+              "configure/2 does not support option " <> inspect(key)
+    end)
+
+    GenServer.call(server, {:configure, Map.new(opts)})
   end
 
   @doc """
@@ -190,7 +231,7 @@ defmodule BACnet.Stack.SegmentsStore do
         source_address,
         opts \\ []
       )
-      when is_list(opts) do
+      when is_server(server) and is_list(opts) do
     if transport.is_valid_destination(source_address) do
       GenServer.call(server, {:segment, incomplete, {transport, portal}, source_address, opts})
     else
@@ -223,19 +264,19 @@ defmodule BACnet.Stack.SegmentsStore do
         ) :: :ok
   def cancel(server, source_address, apdu)
 
-  def cancel(server, source_address, %APDU.Abort{} = abort),
+  def cancel(server, source_address, %APDU.Abort{} = abort) when is_server(server),
     do: GenServer.cast(server, {:cancel, abort.invoke_id, source_address})
 
-  def cancel(server, source_address, %APDU.Error{} = error),
+  def cancel(server, source_address, %APDU.Error{} = error) when is_server(server),
     do: GenServer.cast(server, {:cancel, error.invoke_id, source_address})
 
-  def cancel(server, source_address, %APDU.Reject{} = reject),
+  def cancel(server, source_address, %APDU.Reject{} = reject) when is_server(server),
     do: GenServer.cast(server, {:cancel, reject.invoke_id, source_address})
 
-  def cancel(server, source_address, %APDU.SimpleACK{} = simple),
+  def cancel(server, source_address, %APDU.SimpleACK{} = simple) when is_server(server),
     do: GenServer.cast(server, {:cancel, simple.invoke_id, source_address})
 
-  def cancel(server, source_address, invoke_id) when invoke_id in 0..255 do
+  def cancel(server, source_address, invoke_id) when is_server(server) and invoke_id in 0..255 do
     GenServer.cast(server, {:cancel, invoke_id, source_address})
   end
 
@@ -258,6 +299,11 @@ defmodule BACnet.Stack.SegmentsStore do
   end
 
   @doc false
+  def handle_call({:configure, %{} = opts}, _from, %State{} = state) do
+    new_state = %{state | opts: Map.merge(state.opts, opts)}
+    {:reply, :ok, new_state}
+  end
+
   def handle_call(
         {:segment, %IncompleteAPDU{} = incomplete, {module, portal} = transport, source_addr,
          send_opts},
@@ -835,7 +881,7 @@ defmodule BACnet.Stack.SegmentsStore do
         "SegmentsStore: Unable to send APDU, transport error: #{inspect(error)}"
       end)
 
-  defp validate_start_link_opts(opts) do
+  defp validate_start_link_opts(opts, mfa) when is_binary(mfa) do
     case opts[:apdu_retries] do
       nil ->
         :ok
@@ -845,7 +891,7 @@ defmodule BACnet.Stack.SegmentsStore do
 
       term ->
         raise ArgumentError,
-              "start_link/1 expected apdu_retries to be an integer, got: #{inspect(term)}"
+              mfa <> " expected apdu_retries to be an integer, got: #{inspect(term)}"
     end
 
     case opts[:apdu_timeout] do
@@ -857,14 +903,14 @@ defmodule BACnet.Stack.SegmentsStore do
 
       term ->
         raise ArgumentError,
-              "start_link/1 expected apdu_timeout to be an integer, got: #{inspect(term)}"
+              mfa <> " expected apdu_timeout to be an integer, got: #{inspect(term)}"
     end
 
     case opts[:max_segments] do
       nil ->
         :ok
 
-      term when is_integer(term) ->
+      term when is_integer(term) and term >= 2 and term <= 64 ->
         :ok
 
       term when term == :more_than_64 or term == :unspecified ->
@@ -872,7 +918,9 @@ defmodule BACnet.Stack.SegmentsStore do
 
       term ->
         raise ArgumentError,
-              "start_link/1 expected max_segments to be an integer or the atom unspecified or more_than_64, got: #{inspect(term)}"
+              mfa <>
+                " expected max_segments to be an integer (2/4/8/16/32/64) or " <>
+                "the atom unspecified or more_than_64, got: #{inspect(term)}"
     end
   end
 end

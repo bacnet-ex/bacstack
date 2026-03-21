@@ -90,7 +90,7 @@ defmodule BACnet.Protocol.Constants do
   @typedoc """
   The maximum amount of segments for segmented requests or responses.
   """
-  @type max_segments :: 1..64 | :more_than_64 | :unspecified
+  @type max_segments :: 2 | 4 | 8 | 16 | 32 | 64 | :more_than_64 | :unspecified
 
   ###############################
 

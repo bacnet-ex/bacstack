@@ -36,7 +36,7 @@ defmodule BACnet.Stack.Segmentator do
   alias BACnet.Stack.Telemetry
   alias BACnet.Stack.TransportBehaviour
 
-  import BACnet.Internal, only: [log_debug: 1]
+  import BACnet.Internal, only: [is_server: 1, log_debug: 1]
 
   require Constants
   require Logger
@@ -121,7 +121,10 @@ defmodule BACnet.Stack.Segmentator do
               optional({destination_address :: term(), invoke_id :: byte()}) =>
                 %BACnet.Stack.Segmentator.Sequence{}
             },
-            opts: map()
+            opts: %{
+              apdu_retries: non_neg_integer(),
+              apdu_timeout: pos_integer()
+            }
           }
 
     @fields [:sequences, :opts]
@@ -161,9 +164,45 @@ defmodule BACnet.Stack.Segmentator do
     end
 
     {opts2, genserver_opts} = Keyword.split(opts, [:apdu_retries, :apdu_timeout])
-    validate_start_link_opts(opts2)
+    validate_start_link_opts(opts2, "start_link/1")
 
     GenServer.start_link(__MODULE__, Map.new(opts2), genserver_opts)
+  end
+
+  @doc """
+  Configure the segmentator.
+
+  Only some of the available `t:start_options/0` can be configured,
+  unsupported options can only be changed by re-starting the segmentator completely.
+
+  The following options are supported:
+  - `apdu_retries`
+  - `apdu_timeout`
+
+  For a description of each option, see `start_link/1`.
+  """
+  @spec configure(server(), start_options()) :: :ok
+  def configure(server, opts) when is_server(server) and is_list(opts) do
+    unless Keyword.keyword?(opts) do
+      raise ArgumentError,
+            "configure/2 expected opts to be a keyword list, " <>
+              "got: #{inspect(opts)}"
+    end
+
+    validate_start_link_opts(opts, "configure/2")
+
+    Enum.each(opts, fn
+      # Supported options
+      {key, _val}
+      when key in [:apdu_retries, :apdu_timeout] ->
+        true
+
+      {key, _val} ->
+        raise ArgumentError,
+              "configure/2 does not support option " <> inspect(key)
+    end)
+
+    GenServer.call(server, {:configure, Map.new(opts)})
   end
 
   @doc """
@@ -213,7 +252,7 @@ defmodule BACnet.Stack.Segmentator do
         max_segments,
         opts
       )
-      when is_atom(transport_module) and window in 1..127 and
+      when is_server(server) and is_atom(transport_module) and window in 1..127 and
              max_apdu_size in @min_apdu..@max_apdu and
              is_integer(max_segments) and is_list(opts) do
     unless Keyword.keyword?(opts) do
@@ -238,7 +277,7 @@ defmodule BACnet.Stack.Segmentator do
         max_segments,
         opts
       )
-      when is_atom(transport_module) and window in 1..127 and
+      when is_server(server) and is_atom(transport_module) and window in 1..127 and
              max_apdu_size in @min_apdu..@max_apdu and
              is_integer(max_segments) and is_list(opts) do
     unless Keyword.keyword?(opts) do
@@ -263,7 +302,7 @@ defmodule BACnet.Stack.Segmentator do
         max_segments,
         opts
       )
-      when is_atom(transport_module) and window in 1..127 and
+      when is_server(server) and is_atom(transport_module) and window in 1..127 and
              max_apdu_size in @min_apdu..@max_apdu and
              is_integer(max_segments) and is_list(opts) do
     GenServer.call(
@@ -282,7 +321,7 @@ defmodule BACnet.Stack.Segmentator do
         max_segments,
         opts
       )
-      when is_atom(transport_module) and window in 1..127 and
+      when is_server(server) and is_atom(transport_module) and window in 1..127 and
              max_apdu_size in @min_apdu..@max_apdu and
              is_integer(max_segments) and is_list(opts) do
     GenServer.call(
@@ -308,19 +347,19 @@ defmodule BACnet.Stack.Segmentator do
           APDU.Abort.t() | APDU.Error.t() | APDU.Reject.t() | APDU.SegmentACK.t()
         ) ::
           :ok | {:error, term()}
-  def handle_apdu(server, destination, %APDU.Abort{} = apdu) do
+  def handle_apdu(server, destination, %APDU.Abort{} = apdu) when is_server(server) do
     GenServer.call(server, {:ack, destination, apdu})
   end
 
-  def handle_apdu(server, destination, %APDU.Error{} = apdu) do
+  def handle_apdu(server, destination, %APDU.Error{} = apdu) when is_server(server) do
     GenServer.call(server, {:ack, destination, apdu})
   end
 
-  def handle_apdu(server, destination, %APDU.Reject{} = apdu) do
+  def handle_apdu(server, destination, %APDU.Reject{} = apdu) when is_server(server) do
     GenServer.call(server, {:ack, destination, apdu})
   end
 
-  def handle_apdu(server, destination, %APDU.SegmentACK{} = apdu) do
+  def handle_apdu(server, destination, %APDU.SegmentACK{} = apdu) when is_server(server) do
     GenServer.call(server, {:ack, destination, apdu})
   end
 
@@ -342,6 +381,11 @@ defmodule BACnet.Stack.Segmentator do
   end
 
   @doc false
+  def handle_call({:configure, %{} = opts}, _from, %State{} = state) do
+    new_state = %{state | opts: Map.merge(state.opts, opts)}
+    {:reply, :ok, new_state}
+  end
+
   def handle_call(
         {:create, {module, transport, portal}, destination, apdu, opts, apdu_size, max_segments},
         _from,
@@ -949,7 +993,7 @@ defmodule BACnet.Stack.Segmentator do
         "Segmentator: Unable to send APDU, transport error: #{inspect(error)}"
       end)
 
-  defp validate_start_link_opts(opts) do
+  defp validate_start_link_opts(opts, mfa) when is_binary(mfa) do
     case opts[:apdu_retries] do
       nil ->
         :ok
@@ -959,7 +1003,7 @@ defmodule BACnet.Stack.Segmentator do
 
       term ->
         raise ArgumentError,
-              "start_link/1 expected apdu_retries to be an integer, got: #{inspect(term)}"
+              mfa <> " expected apdu_retries to be an integer, got: #{inspect(term)}"
     end
 
     case opts[:apdu_timeout] do
@@ -971,7 +1015,7 @@ defmodule BACnet.Stack.Segmentator do
 
       term ->
         raise ArgumentError,
-              "start_link/1 expected apdu_timeout to be an integer, got: #{inspect(term)}"
+              mfa <> " expected apdu_timeout to be an integer, got: #{inspect(term)}"
     end
   end
 end

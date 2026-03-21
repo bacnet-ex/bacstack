@@ -576,7 +576,7 @@ if Code.ensure_loaded?(Circuits.UART) do
 
         {key, _val} ->
           raise ArgumentError,
-                "configure/2 does not supported option " <> inspect(key)
+                "configure/2 does not support option " <> inspect(key)
       end)
 
       GenServer.call(transport, {:configure, Map.new(opts)})

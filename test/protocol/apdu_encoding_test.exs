@@ -467,7 +467,7 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
   test "encoding invalid confirmed service request 4" do
     assert {:error,
             %ArgumentError{
-              message: "Proposed window size must be nil or between 0 and 255 inclusive, got: 256"
+              message: "Proposed window size must be nil or between 1 and 127 inclusive, got: 256"
             }} =
              APDU.ConfirmedServiceRequest.encode(%APDU.ConfirmedServiceRequest{
                segmented_response_accepted: true,

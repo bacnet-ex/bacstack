@@ -299,9 +299,9 @@ defmodule BACnet.Protocol.APDU.ConfirmedServiceRequest do
       end
 
       unless is_nil(apdu.proposed_window_size) or
-               (apdu.proposed_window_size >= 0 and apdu.proposed_window_size <= 255) do
+               (apdu.proposed_window_size >= 1 and apdu.proposed_window_size <= 127) do
         raise ArgumentError,
-              "Proposed window size must be nil or between 0 and 255 inclusive, " <>
+              "Proposed window size must be nil or between 1 and 127 inclusive, " <>
                 "got: #{inspect(apdu.proposed_window_size)}"
       end
 
