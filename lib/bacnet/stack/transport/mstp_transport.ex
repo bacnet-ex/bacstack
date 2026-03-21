@@ -484,7 +484,7 @@ if Code.ensure_loaded?(Circuits.UART) do
           :supervisor
         ])
 
-      validate_open_opts(opts2)
+      validate_open_opts(opts2, "open/2")
 
       GenServer.start_link(__MODULE__, {callback, Map.new(opts2)}, genserver_opts)
     end
@@ -495,6 +495,91 @@ if Code.ensure_loaded?(Circuits.UART) do
     @spec close(GenServer.server()) :: :ok
     def close(transport) when is_server(transport) do
       GenServer.call(transport, :close)
+    end
+
+    @doc """
+    Get the current transport state.
+
+    This function is important when disabling token passing and
+    waiting for the transport to transition to the IDLE or NO_TOKEN state,
+    to then be able to shut down the transport gracefully.
+
+    See also `disable_token_passing/1`.
+    """
+    @spec get_state(TransportBehaviour.transport()) :: :idle | :no_token | atom()
+    def get_state(transport) when is_server(transport) do
+      GenServer.call(transport, :get_state)
+    end
+
+    @doc """
+    Disables the transport's token passing (only if master node).
+
+    Disabling the token passing will try to pass on the token, if held,
+    as soon as possible, but only if the successor is known.
+    If the successor is unknown or a timeout occurrs, the token will be dropped.
+    The consequence of dropping the token will be that the remaining
+    MS/TP master nodes will notice the lost token and generate a new token.
+
+    Whether it transitions to IDLE or NO_TOKEN state depends on
+    its current state and could even change later on from IDLE to NO_TOKEN.
+    Once the transport reaches IDLE or NO_TOKEN, the transport can be
+    safely shut down.
+
+    When the token passing is disabled, sending any frame that does not
+    involve sending a reply is disabled and return an error.
+
+    After disabling the transport token passing, it can only be re-enabled
+    by restarting the transport.
+    """
+    @spec disable_token_passing(TransportBehaviour.transport()) :: :ok | {:error, term()}
+    def disable_token_passing(transport) when is_server(transport) do
+      GenServer.call(transport, :disable_token_passing)
+    end
+
+    @doc """
+    Configures the transport.
+
+    Only some of the available `t:open_options/0` can be configured,
+    unsupported options can only be changed by re-starting the transport completely.
+
+    The following options are supported:
+    - `baudrate`
+    - `log_communication`
+    - `log_communication_rcv`
+    - `max_info_frames`
+    - `max_master_address`
+
+    For a description of each option, see `open/2`.
+
+    Note that reconfiguring the baudrate on the fly MAY lead to invalid frames!
+    May also lead to dropping token.
+    """
+    @spec configure(TransportBehaviour.transport(), open_options()) :: :ok | {:error, term()}
+    def configure(transport, opts) when is_server(transport) and is_list(opts) do
+      unless Keyword.keyword?(opts) do
+        raise ArgumentError, "configure/2 expected a keyword list, got: #{inspect(opts)}"
+      end
+
+      validate_open_opts(opts, "configure/2")
+
+      Enum.each(opts, fn
+        # Supported options
+        {key, _val}
+        when key in [
+               :baudrate,
+               :log_communication,
+               :log_communication_rcv,
+               :max_info_frames,
+               :max_master_address
+             ] ->
+          true
+
+        {key, _val} ->
+          raise ArgumentError,
+                "configure/2 does not supported option " <> inspect(key)
+      end)
+
+      GenServer.call(transport, {:configure, Map.new(opts)})
     end
 
     @doc """
@@ -712,94 +797,6 @@ if Code.ensure_loaded?(Circuits.UART) do
     @spec is_valid_destination(destination_address()) :: boolean()
     def is_valid_destination(destination) do
       is_integer(destination) and destination >= 0 and destination <= 255
-    end
-
-    @doc """
-    Get the current transport state.
-
-    This function is important when disabling token passing and
-    waiting for the transport to transition to the IDLE or NO_TOKEN state,
-    to then be able to shut down the transport gracefully.
-
-    See also `disable_token_passing/1`.
-    """
-    @spec get_state(TransportBehaviour.transport()) :: :idle | :no_token | atom()
-    def get_state(transport) when is_server(transport) do
-      GenServer.call(transport, :get_state)
-    end
-
-    @doc """
-    Disables the transport's token passing (only if master node).
-
-    Disabling the token passing will try to pass on the token, if held,
-    as soon as possible, but only if the successor is known.
-    If the successor is unknown or a timeout occurrs, the token will be dropped.
-    The consequence of dropping the token will be that the remaining
-    MS/TP master nodes will notice the lost token and generate a new token.
-
-    Whether it transitions to IDLE or NO_TOKEN state depends on
-    its current state and could even change later on from IDLE to NO_TOKEN.
-    Once the transport reaches IDLE or NO_TOKEN, the transport can be
-    safely shut down.
-
-    When the token passing is disabled, sending any frame that does not
-    involve sending a reply is disabled and return an error.
-
-    After disabling the transport token passing, it can only be re-enabled
-    by restarting the transport.
-    """
-    @spec disable_token_passing(TransportBehaviour.transport()) :: :ok | {:error, term()}
-    def disable_token_passing(transport) when is_server(transport) do
-      GenServer.call(transport, :disable_token_passing)
-    end
-
-    @doc """
-    Configures the transport.
-
-    Only some of the available `t:open_options/0` can be configured,
-    unsupported options can only be changed by re-starting the transport completely.
-
-    The following options are supported:
-    - `baudrate`
-    - `log_communication`
-    - `log_communication_rcv`
-    - `max_info_frames`
-    - `max_master_address`
-
-    For a description of each option, see `open/2`.
-
-    Note that reconfiguring the baudrate on the fly MAY lead to invalid frames!
-    May also lead to dropping token.
-    """
-    @spec configure(TransportBehaviour.transport(), open_options()) :: :ok | {:error, term()}
-    def configure(transport, opts) when is_server(transport) and is_list(opts) do
-      unless Keyword.keyword?(opts) do
-        raise ArgumentError, "configure/2 expected a keyword list, got: #{inspect(opts)}"
-      end
-
-      Enum.each(opts, fn
-        {:baudrate, val} when is_integer(val) and val > 0 ->
-          true
-
-        {:log_communication, val} when is_boolean(val) ->
-          true
-
-        {:log_communication_rcv, val} when is_boolean(val) ->
-          true
-
-        {:max_info_frames, val} when is_integer(val) and val > 0 ->
-          true
-
-        {:max_master_address, val} when is_integer(val) and val > 0 ->
-          true
-
-        {key, val} ->
-          raise ArgumentError,
-                "configure/2 received unsupported combination - key: " <>
-                  inspect(key) <> ", value: " <> inspect(val)
-      end)
-
-      GenServer.call(transport, {:configure, Map.new(opts)})
     end
 
     @doc false
@@ -3279,7 +3276,7 @@ if Code.ensure_loaded?(Circuits.UART) do
     end
 
     # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
-    defp validate_open_opts(opts) do
+    defp validate_open_opts(opts, mfa) when is_binary(mfa) do
       case opts[:baudrate] do
         nil ->
           :ok
@@ -3289,21 +3286,23 @@ if Code.ensure_loaded?(Circuits.UART) do
 
         term ->
           raise ArgumentError,
-                "open/2 expected baudrate to be a non negative integer, " <>
+                mfa <>
+                  " expected baudrate to be a non negative integer, " <>
                   "got: #{inspect(term)}"
       end
 
       case opts[:local_address] do
         nil ->
           raise ArgumentError,
-                "open/2 expected local_address to be present (absent in opts)"
+                mfa <> " expected local_address to be present (absent in opts)"
 
         term when is_integer(term) and term >= @min_master_addr and term <= @max_slave_addr ->
           :ok
 
         term ->
           raise ArgumentError,
-                "open/2 expected local_address to be a valid address in the range of 0-254, " <>
+                mfa <>
+                  " expected local_address to be a valid address in the range of 0-254, " <>
                   "got: #{inspect(term)}"
       end
 
@@ -3316,7 +3315,8 @@ if Code.ensure_loaded?(Circuits.UART) do
 
         term ->
           raise ArgumentError,
-                "open/2 expected log_communication to be a boolean, " <>
+                mfa <>
+                  " expected log_communication to be a boolean, " <>
                   "got: #{inspect(term)}"
       end
 
@@ -3329,7 +3329,8 @@ if Code.ensure_loaded?(Circuits.UART) do
 
         term ->
           raise ArgumentError,
-                "open/2 expected log_communication_rcv to be a boolean, " <>
+                mfa <>
+                  " expected log_communication_rcv to be a boolean, " <>
                   "got: #{inspect(term)}"
       end
 
@@ -3342,7 +3343,8 @@ if Code.ensure_loaded?(Circuits.UART) do
 
         term ->
           raise ArgumentError,
-                "open/2 expected max_info_frames to be a positive integer, " <>
+                mfa <>
+                  " expected max_info_frames to be a positive integer, " <>
                   "got: #{inspect(term)}"
       end
 
@@ -3355,21 +3357,23 @@ if Code.ensure_loaded?(Circuits.UART) do
 
         term ->
           raise ArgumentError,
-                "open/2 expected max_master_address to be an integer in the range 0-127, " <>
+                mfa <>
+                  " expected max_master_address to be an integer in the range 0-127, " <>
                   "got: #{inspect(term)}"
       end
 
       case opts[:port_name] do
         nil ->
           raise ArgumentError,
-                "open/2 expected port_name to be present (absent in opts)"
+                mfa <> " expected port_name to be present (absent in opts)"
 
         term when is_binary(term) ->
           :ok
 
         term ->
           raise ArgumentError,
-                "open/2 expected port_name to be a binary, " <>
+                mfa <>
+                  " expected port_name to be a binary, " <>
                   "got: #{inspect(term)}"
       end
 
@@ -3394,7 +3398,8 @@ if Code.ensure_loaded?(Circuits.UART) do
 
         term ->
           raise ArgumentError,
-                "open/2 expected supervisor to be a valid supervisor reference, " <>
+                mfa <>
+                  " expected supervisor to be a valid supervisor reference, " <>
                   "got: #{inspect(term)}"
       end
     end
