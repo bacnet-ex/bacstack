@@ -614,17 +614,18 @@ if Code.ensure_loaded?(Circuits.UART) do
     @doc """
     Checks whether the given destination is an address that needs to be routed.
     """
-    @spec is_destination_routed(GenServer.server(), destination_address() | term()) ::
+    @spec destination_routed?(GenServer.server(), destination_address() | term()) ::
             boolean()
-    def is_destination_routed(transport, destination) when is_server(transport) do
-      GenServer.call(transport, {:is_destination_routed, destination})
+    def destination_routed?(transport, destination) when is_server(transport) do
+      # GenServer.call(transport, {:destination_routed?, destination})
+      not valid_destination?(destination)
     end
 
     @doc """
     Verifies whether the given destination is valid for the transport module.
     """
-    @spec is_valid_destination(destination_address()) :: boolean()
-    def is_valid_destination(destination) do
+    @spec valid_destination?(destination_address()) :: boolean()
+    def valid_destination?(destination) do
       is_integer(destination) and destination >= 0 and destination <= 255
     end
 
@@ -669,7 +670,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       invoke_id =
         cond do
           is_struct(data) ->
-            if not EncoderProtocol.is_request(data) do
+            if not EncoderProtocol.request?(data) do
               case data do
                 %{invoke_id: invoke_id} -> invoke_id
                 _other -> nil
@@ -1400,18 +1401,18 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:reply, state.local_address, state}
     end
 
-    def handle_call({:is_destination_routed, destination}, _from, %State{} = state)
+    def handle_call({:destination_routed?, destination}, _from, %State{} = state)
         when is_integer(destination) do
       log_debug(fn ->
-        "BacMstpTransport: Received is_destination_routed request for #{inspect(destination)}"
+        "BacMstpTransport: Received destination_routed? request for #{inspect(destination)}"
       end)
 
-      {:reply, !is_valid_destination(destination), state}
+      {:reply, not valid_destination?(destination), state}
     end
 
-    def handle_call({:is_destination_routed, destination}, _from, state) do
+    def handle_call({:destination_routed?, destination}, _from, state) do
       log_debug(fn ->
-        "BacMstpTransport: Received (non-MSTP) is_destination_routed request for #{inspect(destination)}"
+        "BacMstpTransport: Received (non-MSTP) destination_routed? request for #{inspect(destination)}"
       end)
 
       {:reply, true, state}

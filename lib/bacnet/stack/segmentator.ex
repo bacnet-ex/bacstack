@@ -410,7 +410,7 @@ defmodule BACnet.Stack.Segmentator do
         {{:error, :already_exists}, state}
       else
         new_apdu_struct =
-          if module.is_destination_routed(transport, destination) do
+          if module.destination_routed?(transport, destination) do
             log_debug(fn ->
               "Segmentator: Overriding window size (destination routing) for " <>
                 "#{inspect(destination)}:#{inspect(apdu_struct.invoke_id)}"
@@ -471,7 +471,7 @@ defmodule BACnet.Stack.Segmentator do
                 transport: transport,
                 portal: portal,
                 destination: destination,
-                server: EncoderProtocol.is_response(apdu_struct),
+                server: EncoderProtocol.response?(apdu_struct),
                 invoke_id: apdu_struct.invoke_id,
                 sequence_number: 0,
                 # Window size will be overwritten by SegmentACK later
@@ -546,7 +546,7 @@ defmodule BACnet.Stack.Segmentator do
             else
               # Too many segments for the remote device, send BUFFER_OVERFLOW Abort
               abort = %APDU.Abort{
-                sent_by_server: EncoderProtocol.is_response(apdu_struct),
+                sent_by_server: EncoderProtocol.response?(apdu_struct),
                 invoke_id: apdu_struct.invoke_id,
                 reason: Constants.macro_assert_name(:abort_reason, :buffer_overflow)
               }

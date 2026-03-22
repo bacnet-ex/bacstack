@@ -15,7 +15,7 @@ defmodule BACnet.Test.Protocol.Services.DeviceCommunicationControlTest do
   end
 
   test "is confirmed" do
-    assert true == DeviceCommunicationControl.is_confirmed()
+    assert true == DeviceCommunicationControl.confirmed?()
   end
 
   test "decoding DeviceCommunicationControl" do
@@ -379,7 +379,7 @@ defmodule BACnet.Test.Protocol.Services.DeviceCommunicationControlTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%DeviceCommunicationControl{
+             ServicesProtocol.confirmed?(%DeviceCommunicationControl{
                state: :disable,
                time_duration: nil,
                password: nil

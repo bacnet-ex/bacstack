@@ -20,7 +20,7 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeTest do
   end
 
   test "is confirmed" do
-    assert true == ReadRange.is_confirmed()
+    assert true == ReadRange.confirmed?()
   end
 
   test "decoding ReadRange by position" do
@@ -962,7 +962,7 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%ReadRange{
+             ServicesProtocol.confirmed?(%ReadRange{
                object_identifier: %ObjectIdentifier{
                  type: :trend_log,
                  instance: 1

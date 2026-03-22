@@ -18,7 +18,7 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
   end
 
   test "is confirmed" do
-    assert true == WritePropertyMultiple.is_confirmed()
+    assert true == WritePropertyMultiple.confirmed?()
   end
 
   test "decoding WritePropertyMultiple" do
@@ -255,7 +255,7 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%WritePropertyMultiple{
+             ServicesProtocol.confirmed?(%WritePropertyMultiple{
                list: []
              })
   end

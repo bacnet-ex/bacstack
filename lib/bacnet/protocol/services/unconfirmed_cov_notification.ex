@@ -54,8 +54,8 @@ defmodule BACnet.Protocol.Services.UnconfirmedCovNotification do
   @doc """
   Whether the service is of type confirmed or unconfirmed.
   """
-  @spec is_confirmed() :: false
-  def is_confirmed(), do: false
+  @spec confirmed?() :: false
+  def confirmed?(), do: false
 
   @doc """
   Converts the given Unconfirmed Service Request into an Unconfirmed COV Notification Service.
@@ -104,8 +104,8 @@ defmodule BACnet.Protocol.Services.UnconfirmedCovNotification do
     @spec get_name(@for.t()) :: atom()
     def get_name(%@for{} = _service), do: @for.get_name()
 
-    @spec is_confirmed(@for.t()) :: boolean()
-    def is_confirmed(%@for{} = _service), do: @for.is_confirmed()
+    @spec confirmed?(@for.t()) :: boolean()
+    def confirmed?(%@for{} = _service), do: @for.confirmed?()
 
     @spec to_apdu(@for.t(), Keyword.t()) ::
             {:ok, Protocol.APDU.UnconfirmedServiceRequest.t()}

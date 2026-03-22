@@ -17,7 +17,7 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyMultipleTest do
   end
 
   test "is confirmed" do
-    assert true == ReadPropertyMultiple.is_confirmed()
+    assert true == ReadPropertyMultiple.confirmed?()
   end
 
   test "decoding ReadPropertyMultiple" do
@@ -330,7 +330,7 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyMultipleTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%ReadPropertyMultiple{
+             ServicesProtocol.confirmed?(%ReadPropertyMultiple{
                list: [
                  %AccessSpecification{
                    object_identifier: %ObjectIdentifier{

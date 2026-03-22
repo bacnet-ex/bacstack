@@ -52,8 +52,8 @@ defmodule BACnet.Protocol.Services.RemoveListElement do
   @doc """
   Whether the service is of type confirmed or unconfirmed.
   """
-  @spec is_confirmed() :: true
-  def is_confirmed(), do: true
+  @spec confirmed?() :: true
+  def confirmed?(), do: true
 
   @doc """
   Converts the given Confirmed Service Request into a Remove List Element Service.
@@ -156,8 +156,8 @@ defmodule BACnet.Protocol.Services.RemoveListElement do
     @spec get_name(@for.t()) :: atom()
     def get_name(%@for{} = _service), do: @for.get_name()
 
-    @spec is_confirmed(@for.t()) :: boolean()
-    def is_confirmed(%@for{} = _service), do: @for.is_confirmed()
+    @spec confirmed?(@for.t()) :: boolean()
+    def confirmed?(%@for{} = _service), do: @for.confirmed?()
 
     @spec to_apdu(@for.t(), Keyword.t()) ::
             {:ok, Protocol.APDU.ConfirmedServiceRequest.t()}

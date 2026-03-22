@@ -12,8 +12,8 @@ defprotocol BACnet.Protocol.Services.Protocol do
   @doc """
   Whether the service is of type confirmed or unconfirmed.
   """
-  @spec is_confirmed(t()) :: boolean()
-  def is_confirmed(service)
+  @spec confirmed?(t()) :: boolean()
+  def confirmed?(service)
 
   @doc """
   Get a service request APDU for this service.

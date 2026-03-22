@@ -15,7 +15,7 @@ defmodule BACnet.Test.Protocol.Services.UnconfirmedCovNotificationTest do
   end
 
   test "is confirmed" do
-    assert false == UnconfirmedCovNotification.is_confirmed()
+    assert false == UnconfirmedCovNotification.confirmed?()
   end
 
   test "decoding UnconfirmedCovNotification" do
@@ -262,7 +262,7 @@ defmodule BACnet.Test.Protocol.Services.UnconfirmedCovNotificationTest do
 
   test "protocol implementation is confirmed" do
     assert false ==
-             ServicesProtocol.is_confirmed(%UnconfirmedCovNotification{
+             ServicesProtocol.confirmed?(%UnconfirmedCovNotification{
                process_identifier: 99,
                initiating_device: %BACnet.Protocol.ObjectIdentifier{
                  type: :device,

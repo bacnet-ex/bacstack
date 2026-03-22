@@ -15,7 +15,7 @@ defmodule BACnet.Test.Protocol.Services.AcknowledgeAlarmTest do
   end
 
   test "is confirmed" do
-    assert true == AcknowledgeAlarm.is_confirmed()
+    assert true == AcknowledgeAlarm.confirmed?()
   end
 
   test "decoding AcknowledgeAlarm" do
@@ -301,7 +301,7 @@ defmodule BACnet.Test.Protocol.Services.AcknowledgeAlarmTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%AcknowledgeAlarm{
+             ServicesProtocol.confirmed?(%AcknowledgeAlarm{
                process_identifier: 13_580,
                event_object: %BACnet.Protocol.ObjectIdentifier{type: :device, instance: 13_580},
                event_state_acknowledged: :normal,

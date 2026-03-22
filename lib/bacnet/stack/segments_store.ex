@@ -232,7 +232,7 @@ defmodule BACnet.Stack.SegmentsStore do
         opts \\ []
       )
       when is_server(server) and is_list(opts) do
-    if transport.is_valid_destination(source_address) do
+    if transport.valid_destination?(source_address) do
       GenServer.call(server, {:segment, incomplete, {transport, portal}, source_address, opts})
     else
       {:error, :invalid_source_address, true}

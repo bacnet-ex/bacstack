@@ -17,7 +17,7 @@ defmodule BACnet.Test.Protocol.Services.GetEnrollmentSummaryTest do
   end
 
   test "is confirmed" do
-    assert true == GetEnrollmentSummary.is_confirmed()
+    assert true == GetEnrollmentSummary.confirmed?()
   end
 
   test "decoding GetEnrollmentSummary" do
@@ -387,7 +387,7 @@ defmodule BACnet.Test.Protocol.Services.GetEnrollmentSummaryTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%GetEnrollmentSummary{
+             ServicesProtocol.confirmed?(%GetEnrollmentSummary{
                acknowledgment_filter: :not_acked,
                enrollment_filter: nil,
                event_state_filter: nil,

@@ -16,7 +16,7 @@ defmodule BACnet.Test.Protocol.Services.DeleteObjectTest do
   end
 
   test "is confirmed" do
-    assert true == DeleteObject.is_confirmed()
+    assert true == DeleteObject.confirmed?()
   end
 
   test "decoding DeleteObject" do
@@ -98,7 +98,7 @@ defmodule BACnet.Test.Protocol.Services.DeleteObjectTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%DeleteObject{
+             ServicesProtocol.confirmed?(%DeleteObject{
                object_specifier: %ObjectIdentifier{type: :analog_input, instance: 15}
              })
   end

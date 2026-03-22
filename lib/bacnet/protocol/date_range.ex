@@ -25,8 +25,8 @@ defmodule BACnet.Protocol.DateRange do
   """
   @spec get_date_range(t()) :: {:ok, Date.Range.t()} | {:error, term()}
   def get_date_range(%__MODULE__{} = date_range) do
-    if is_date_specific_enough_for_date_range(date_range.start_date) and
-         is_date_specific_enough_for_date_range(date_range.end_date) do
+    if date_specific_enough_for_date_range?(date_range.start_date) and
+         date_specific_enough_for_date_range?(date_range.end_date) do
       with {:ok, start_date} <- BACnetDate.to_date(date_range.start_date),
            {:ok, end_date} <- BACnetDate.to_date(date_range.end_date) do
         {:ok, Date.range(start_date, end_date)}
@@ -88,15 +88,15 @@ defmodule BACnet.Protocol.DateRange do
         } = _t
       ) do
     BACnetDate.valid?(start_date) and BACnetDate.valid?(end_date) and
-      is_valid_date_range(start_date, end_date)
+      valid_date_range?(start_date, end_date)
   end
 
   def valid?(%__MODULE__{} = _t), do: false
 
-  @spec is_valid_date_range(BACnetDate.t(), BACnetDate.t()) :: boolean()
-  defp is_valid_date_range(%BACnetDate{} = start_date, %BACnetDate{} = end_date) do
-    {any1, all1} = is_date_any_unspecified(start_date)
-    {any2, all2} = is_date_any_unspecified(end_date)
+  @spec valid_date_range?(BACnetDate.t(), BACnetDate.t()) :: boolean()
+  defp valid_date_range?(%BACnetDate{} = start_date, %BACnetDate{} = end_date) do
+    {any1, all1} = date_any_unspecified?(start_date)
+    {any2, all2} = date_any_unspecified?(end_date)
 
     # ASHRAE 135-2012: A date may be unspecific or a specific date only
     (not any1 and not any2 and BACnetDate.compare(start_date, end_date) != :gt) or
@@ -107,22 +107,22 @@ defmodule BACnet.Protocol.DateRange do
 
   @date_keys Map.keys(Map.from_struct(BACnetDate.__struct__()))
 
-  defp is_date_any_unspecified(%BACnetDate{
+  defp date_any_unspecified?(%BACnetDate{
          unquote_splicing(Enum.map(@date_keys, &{&1, :unspecified}))
        }),
        do: {true, true}
 
   for key <- @date_keys do
-    defp is_date_any_unspecified(%BACnetDate{unquote(key) => :unspecified}), do: {true, false}
+    defp date_any_unspecified?(%BACnetDate{unquote(key) => :unspecified}), do: {true, false}
   end
 
-  defp is_date_any_unspecified(%BACnetDate{month: :odd}), do: {true, false}
-  defp is_date_any_unspecified(%BACnetDate{month: :even}), do: {true, false}
-  defp is_date_any_unspecified(%BACnetDate{day: :odd}), do: {true, false}
-  defp is_date_any_unspecified(%BACnetDate{day: :even}), do: {true, false}
-  defp is_date_any_unspecified(%BACnetDate{} = _date), do: {false, false}
+  defp date_any_unspecified?(%BACnetDate{month: :odd}), do: {true, false}
+  defp date_any_unspecified?(%BACnetDate{month: :even}), do: {true, false}
+  defp date_any_unspecified?(%BACnetDate{day: :odd}), do: {true, false}
+  defp date_any_unspecified?(%BACnetDate{day: :even}), do: {true, false}
+  defp date_any_unspecified?(%BACnetDate{} = _date), do: {false, false}
 
-  defp is_date_specific_enough_for_date_range(%BACnetDate{
+  defp date_specific_enough_for_date_range?(%BACnetDate{
          year: year,
          month: mon,
          day: day,
@@ -131,5 +131,5 @@ defmodule BACnet.Protocol.DateRange do
        when is_integer(year) and is_integer(mon) and (is_integer(day) or day == :last),
        do: true
 
-  defp is_date_specific_enough_for_date_range(%BACnetDate{} = _date), do: false
+  defp date_specific_enough_for_date_range?(%BACnetDate{} = _date), do: false
 end

@@ -16,7 +16,7 @@ defmodule BACnet.Test.Protocol.Services.GetEventInformationTest do
   end
 
   test "is confirmed" do
-    assert true == GetEventInformation.is_confirmed()
+    assert true == GetEventInformation.confirmed?()
   end
 
   test "decoding GetEventInformation" do
@@ -142,7 +142,7 @@ defmodule BACnet.Test.Protocol.Services.GetEventInformationTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%GetEventInformation{
+             ServicesProtocol.confirmed?(%GetEventInformation{
                last_received_object_identifier: nil
              })
   end

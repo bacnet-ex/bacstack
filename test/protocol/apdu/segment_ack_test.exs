@@ -21,7 +21,7 @@ defmodule BACnet.Test.Protocol.APDU.SegmentAckTest do
 
   test "EncoderProtocol is request" do
     assert false ==
-             EncoderProtocol.is_request(%SegmentACK{
+             EncoderProtocol.request?(%SegmentACK{
                negative_ack: false,
                sent_by_server: true,
                invoke_id: 70,
@@ -32,7 +32,7 @@ defmodule BACnet.Test.Protocol.APDU.SegmentAckTest do
 
   test "EncoderProtocol is response" do
     assert true ==
-             EncoderProtocol.is_response(%SegmentACK{
+             EncoderProtocol.response?(%SegmentACK{
                negative_ack: false,
                sent_by_server: true,
                invoke_id: 70,

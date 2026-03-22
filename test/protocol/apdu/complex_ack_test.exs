@@ -21,7 +21,7 @@ defmodule BACnet.Test.Protocol.APDU.ComplexAckTest do
 
   test "EncoderProtocol is request" do
     assert false ==
-             EncoderProtocol.is_request(%ComplexACK{
+             EncoderProtocol.request?(%ComplexACK{
                invoke_id: 70,
                service: :atomic_write_file,
                payload: [tagged: {0, <<1, 184>>, 2}],
@@ -32,7 +32,7 @@ defmodule BACnet.Test.Protocol.APDU.ComplexAckTest do
 
   test "EncoderProtocol is response" do
     assert true ==
-             EncoderProtocol.is_response(%ComplexACK{
+             EncoderProtocol.response?(%ComplexACK{
                invoke_id: 70,
                service: :atomic_write_file,
                payload: [tagged: {0, <<1, 184>>, 2}],

@@ -17,7 +17,7 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyTest do
   end
 
   test "is confirmed" do
-    assert true == WriteProperty.is_confirmed()
+    assert true == WriteProperty.confirmed?()
   end
 
   test "decoding WriteProperty" do
@@ -355,7 +355,7 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%WriteProperty{
+             ServicesProtocol.confirmed?(%WriteProperty{
                object_identifier: %ObjectIdentifier{
                  type: :analog_value,
                  instance: 1

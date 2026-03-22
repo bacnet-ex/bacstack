@@ -30,7 +30,7 @@ defmodule BACnet.Test.Protocol.APDU.UnconfirmedServiceRequestTest do
 
   test "EncoderProtocol is request" do
     assert true ==
-             EncoderProtocol.is_request(%UnconfirmedServiceRequest{
+             EncoderProtocol.request?(%UnconfirmedServiceRequest{
                service: :i_am,
                parameters: [
                  object_identifier: %ObjectIdentifier{
@@ -46,7 +46,7 @@ defmodule BACnet.Test.Protocol.APDU.UnconfirmedServiceRequestTest do
 
   test "EncoderProtocol is response" do
     assert false ==
-             EncoderProtocol.is_response(%UnconfirmedServiceRequest{
+             EncoderProtocol.response?(%UnconfirmedServiceRequest{
                service: :i_am,
                parameters: [
                  object_identifier: %ObjectIdentifier{

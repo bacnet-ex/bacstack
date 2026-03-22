@@ -224,16 +224,16 @@ defmodule BACnet.Stack.Transport.EthernetTransport do
 
   Always returns `false` due to how Ethernet works (no routing).
   """
-  @spec is_destination_routed(GenServer.server(), mac_address() | term()) :: boolean()
-  def is_destination_routed(transport, _destination) when is_server(transport) do
+  @spec destination_routed?(GenServer.server(), mac_address() | term()) :: boolean()
+  def destination_routed?(transport, _destination) when is_server(transport) do
     false
   end
 
   @doc """
   Verifies whether the given destination is valid for the transport module.
   """
-  @spec is_valid_destination(mac_address() | term()) :: boolean()
-  def is_valid_destination(destination) do
+  @spec valid_destination?(mac_address() | term()) :: boolean()
+  def valid_destination?(destination) do
     is_binary(destination) and byte_size(destination) == 6
   end
 
@@ -261,7 +261,7 @@ defmodule BACnet.Stack.Transport.EthernetTransport do
     end
 
     with :ok <-
-           (if is_valid_destination(destination) do
+           (if valid_destination?(destination) do
               :ok
             else
               {:error, :invalid_destination}

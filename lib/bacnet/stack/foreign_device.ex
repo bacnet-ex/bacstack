@@ -1011,7 +1011,7 @@ defmodule BACnet.Stack.ForeignDevice do
               "got: #{inspect(term)}"
     end
 
-    unless is_ip_port(opts[:bbmd]) do
+    unless ip_port?(opts[:bbmd]) do
       raise ArgumentError,
         message:
           "start_link/1 expected bbmd to be a BBMD IPv4 address and port tuple, " <>
@@ -1069,14 +1069,14 @@ defmodule BACnet.Stack.ForeignDevice do
   end
 
   # Checks if given argument is an IP:Port tuple
-  defp is_ip_port({{ip_a, ip_b, ip_c, ip_d}, port})
+  defp ip_port?({{ip_a, ip_b, ip_c, ip_d}, port})
        when is_integer(ip_a) and ip_a in 0..255 and is_integer(ip_b) and ip_b in 0..255 and
               is_integer(ip_c) and ip_c in 0..255 and is_integer(ip_d) and ip_d in 0..255 and
               is_integer(port) and port in 1..65_535,
        do: true
 
   # Currently IPv6 is a delicate matter (due to BVLL handling in BACnet.Protocol and the BVLL structs)
-  # defp is_ip_port({{ip_a, ip_b, ip_c, ip_d, ip_e, ip_f, ip_g, ip_h}, port})
+  # defp ip_port?({{ip_a, ip_b, ip_c, ip_d, ip_e, ip_f, ip_g, ip_h}, port})
   #      when is_integer(ip_a) and ip_a in 0..65_535 and is_integer(ip_b) and ip_b in 0..65_535 and
   #             is_integer(ip_c) and ip_c in 0..65_535 and is_integer(ip_d) and ip_d in 0..65_535 and
   #             is_integer(ip_e) and ip_e in 0..65_535 and is_integer(ip_f) and ip_f in 0..65_535 and
@@ -1084,5 +1084,5 @@ defmodule BACnet.Stack.ForeignDevice do
   #             is_integer(port) and port in 1..65_535,
   #      do: true
 
-  defp is_ip_port(_term), do: false
+  defp ip_port?(_term), do: false
 end

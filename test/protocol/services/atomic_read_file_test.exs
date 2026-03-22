@@ -16,7 +16,7 @@ defmodule BACnet.Test.Protocol.Services.AtomicReadFile do
   end
 
   test "is confirmed" do
-    assert true == AtomicReadFile.is_confirmed()
+    assert true == AtomicReadFile.confirmed?()
   end
 
   test "decoding AtomicReadFile stream access" do
@@ -216,7 +216,7 @@ defmodule BACnet.Test.Protocol.Services.AtomicReadFile do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%AtomicReadFile{
+             ServicesProtocol.confirmed?(%AtomicReadFile{
                object_identifier: %ObjectIdentifier{type: :file, instance: 15},
                stream_access: true,
                start_position: 0,

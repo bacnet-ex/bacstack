@@ -25,7 +25,7 @@ defmodule BACnet.Test.Protocol.APDU.ErrorTest do
 
   test "EncoderProtocol is request" do
     assert false ==
-             EncoderProtocol.is_request(%Error{
+             EncoderProtocol.request?(%Error{
                class: :services,
                code: :password_failure,
                invoke_id: 2,
@@ -40,7 +40,7 @@ defmodule BACnet.Test.Protocol.APDU.ErrorTest do
 
   test "EncoderProtocol is response" do
     assert true ==
-             EncoderProtocol.is_response(%Error{
+             EncoderProtocol.response?(%Error{
                class: :services,
                code: :password_failure,
                invoke_id: 2,

@@ -16,7 +16,7 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyTest do
   end
 
   test "is confirmed" do
-    assert true == ReadProperty.is_confirmed()
+    assert true == ReadProperty.confirmed?()
   end
 
   test "decoding ReadProperty" do
@@ -163,7 +163,7 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%ReadProperty{
+             ServicesProtocol.confirmed?(%ReadProperty{
                object_identifier: %ObjectIdentifier{
                  type: :analog_output,
                  instance: 101

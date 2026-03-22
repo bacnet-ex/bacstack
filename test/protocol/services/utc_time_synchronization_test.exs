@@ -17,7 +17,7 @@ defmodule BACnet.Test.Protocol.Services.UtcTimeSynchronizationTest do
   end
 
   test "is confirmed" do
-    assert false == UtcTimeSynchronization.is_confirmed()
+    assert false == UtcTimeSynchronization.confirmed?()
   end
 
   test "decoding UtcTimeSynchronization" do
@@ -136,7 +136,7 @@ defmodule BACnet.Test.Protocol.Services.UtcTimeSynchronizationTest do
 
   test "protocol implementation is confirmed" do
     assert false ==
-             ServicesProtocol.is_confirmed(%UtcTimeSynchronization{
+             ServicesProtocol.confirmed?(%UtcTimeSynchronization{
                date: %BACnetDate{
                  year: 1992,
                  month: 11,

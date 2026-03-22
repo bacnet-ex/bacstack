@@ -9,7 +9,7 @@ defmodule BACnet.Protocol.Services.Behaviour do
   @doc """
   Whether the service is of type confirmed or unconfirmed.
   """
-  @callback is_confirmed() :: boolean()
+  @callback confirmed?() :: boolean()
 
   @doc """
   Get a service request APDU for this service.

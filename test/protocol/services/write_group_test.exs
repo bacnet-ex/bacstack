@@ -17,7 +17,7 @@ defmodule BACnet.Test.Protocol.Services.WriteGroupTest do
   end
 
   test "is confirmed" do
-    assert false == WriteGroup.is_confirmed()
+    assert false == WriteGroup.confirmed?()
   end
 
   test "decoding WriteGroup" do
@@ -440,7 +440,7 @@ defmodule BACnet.Test.Protocol.Services.WriteGroupTest do
 
   test "protocol implementation is confirmed" do
     assert false ==
-             ServicesProtocol.is_confirmed(%WriteGroup{
+             ServicesProtocol.confirmed?(%WriteGroup{
                group_number: 23,
                write_priority: 8,
                changelist: [],

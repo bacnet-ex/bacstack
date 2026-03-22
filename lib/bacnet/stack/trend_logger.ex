@@ -505,7 +505,7 @@ defmodule BACnet.Stack.TrendLogger do
 
         true ->
           new_log = %Log{
-            enabled: is_log_enabled(object, state),
+            enabled: log_enabled?(object, state),
             object: object,
             mode: if(is_struct(object, EventLog), do: :triggered, else: object.logging_type),
             buffer: log_buff_mod.new(if(object.buffer_size > 0, do: object.buffer_size)),
@@ -547,7 +547,7 @@ defmodule BACnet.Stack.TrendLogger do
 
               new_log = %Log{
                 log
-                | enabled: is_log_enabled(new_object, acc),
+                | enabled: log_enabled?(new_object, acc),
                   buffer:
                     log_buff_mod.checkin(log.buffer, create_record(log, new_enable, id, acc)),
                   object: new_object
@@ -570,7 +570,7 @@ defmodule BACnet.Stack.TrendLogger do
 
           new_log = %{
             log
-            | enabled: is_log_enabled(new_object, state),
+            | enabled: log_enabled?(new_object, state),
               buffer: log_buff_mod.checkin(log.buffer, create_record(log, new_enable, id, state)),
               object: new_object
           }
@@ -796,7 +796,7 @@ defmodule BACnet.Stack.TrendLogger do
 
           new_log = %Log{
             log
-            | enabled: is_log_enabled(object, state),
+            | enabled: log_enabled?(object, state),
               mode: if(is_struct(object, EventLog), do: :triggered, else: object.logging_type),
               object: object
           }
@@ -1064,7 +1064,7 @@ defmodule BACnet.Stack.TrendLogger do
          %Log{object: %{start_time: %BACnetDateTime{}, stop_time: %BACnetDateTime{}} = object} =
              log},
         %State{} = acc ->
-          new_enabled = is_log_enabled(object, acc)
+          new_enabled = log_enabled?(object, acc)
 
           if new_enabled != log.enabled do
             new_log = %Log{
@@ -1113,10 +1113,10 @@ defmodule BACnet.Stack.TrendLogger do
   defp make_interval(0), do: 1000
   defp make_interval(log_interval), do: log_interval * 100
 
-  @spec is_log_enabled(object(), State.t()) :: boolean()
-  defp is_log_enabled(object, state)
+  @spec log_enabled?(object(), State.t()) :: boolean()
+  defp log_enabled?(object, state)
 
-  defp is_log_enabled(
+  defp log_enabled?(
          %{
            enable: true,
            start_time: %BACnetDateTime{} = start,
@@ -1130,8 +1130,8 @@ defmodule BACnet.Stack.TrendLogger do
       match?(:gt, BACnetDateTime.compare(now, stop))
   end
 
-  defp is_log_enabled(%{enable: true, start_time: nil, stop_time: nil}, _state), do: true
-  defp is_log_enabled(_object, _state), do: false
+  defp log_enabled?(%{enable: true, start_time: nil, stop_time: nil}, _state), do: true
+  defp log_enabled?(_object, _state), do: false
 
   defp increment_seq_number(seq_number) when seq_number >= 4_294_967_295, do: 1
   defp increment_seq_number(seq_number), do: seq_number + 1

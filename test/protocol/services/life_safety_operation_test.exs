@@ -16,7 +16,7 @@ defmodule BACnet.Test.Protocol.Services.LifeSafetyOperationTest do
   end
 
   test "is confirmed" do
-    assert true == LifeSafetyOperation.is_confirmed()
+    assert true == LifeSafetyOperation.confirmed?()
   end
 
   test "decoding LifeSafetyOperation" do
@@ -263,7 +263,7 @@ defmodule BACnet.Test.Protocol.Services.LifeSafetyOperationTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%LifeSafetyOperation{
+             ServicesProtocol.confirmed?(%LifeSafetyOperation{
                requesting_process_identifier: 18,
                requesting_source: "MDL",
                request: :reset,

@@ -990,7 +990,7 @@ defmodule BACnet.Stack.BBMD do
         # Check if messages was received NOT through directed broadcast
         # (if peer is routed, it was not directed broadcast but unicast)
         # In that case, we do a local broadcast
-        if trans_mod.is_destination_routed(state.client.transport, source_address) do
+        if trans_mod.destination_routed?(state.client.transport, source_address) do
           case Client.send(state.client.ref, state.client.broadcast_addr, apdu,
                  bvlc:
                    <<Constants.macro_by_name(:bvlc_result_purpose, :bvlc_forwarded_npdu),
@@ -1308,7 +1308,7 @@ defmodule BACnet.Stack.BBMD do
 
           cond do
             # As defined by ASHRAE 135 Annex J.4.5
-            not trans_mod.is_destination_routed(trans_pid, source_address) ->
+            not trans_mod.destination_routed?(trans_pid, source_address) ->
               log_debug(fn ->
                 "BBMD: Skip distribute broadcast APDU to destination " <>
                   format_ip(destination) <>

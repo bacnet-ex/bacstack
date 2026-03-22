@@ -18,7 +18,7 @@ defmodule BACnet.Test.Protocol.APDU.RejectTest do
 
   test "EncoderProtocol is request" do
     assert false ==
-             EncoderProtocol.is_request(%Reject{
+             EncoderProtocol.request?(%Reject{
                invoke_id: 70,
                reason: :buffer_overflow
              })
@@ -26,7 +26,7 @@ defmodule BACnet.Test.Protocol.APDU.RejectTest do
 
   test "EncoderProtocol is response" do
     assert true ==
-             EncoderProtocol.is_response(%Reject{
+             EncoderProtocol.response?(%Reject{
                invoke_id: 70,
                reason: :buffer_overflow
              })

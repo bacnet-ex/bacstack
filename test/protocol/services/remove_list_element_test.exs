@@ -17,7 +17,7 @@ defmodule BACnet.Test.Protocol.Services.RemoveListElementTest do
   end
 
   test "is confirmed" do
-    assert true == RemoveListElement.is_confirmed()
+    assert true == RemoveListElement.confirmed?()
   end
 
   test "decoding RemoveListElement" do
@@ -326,7 +326,7 @@ defmodule BACnet.Test.Protocol.Services.RemoveListElementTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%RemoveListElement{
+             ServicesProtocol.confirmed?(%RemoveListElement{
                object_identifier: %ObjectIdentifier{
                  type: :group,
                  instance: 3

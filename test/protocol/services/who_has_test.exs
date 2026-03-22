@@ -16,7 +16,7 @@ defmodule BACnet.Test.Protocol.Services.WhoHasTest do
   end
 
   test "is confirmed" do
-    assert false == WhoHas.is_confirmed()
+    assert false == WhoHas.confirmed?()
   end
 
   test "decoding WhoHas by name" do
@@ -255,7 +255,7 @@ defmodule BACnet.Test.Protocol.Services.WhoHasTest do
 
   test "protocol implementation is confirmed" do
     assert false ==
-             ServicesProtocol.is_confirmed(%WhoHas{
+             ServicesProtocol.confirmed?(%WhoHas{
                device_id_low_limit: 134_224_227,
                device_id_high_limit: 167_778_659,
                object: %ObjectIdentifier{

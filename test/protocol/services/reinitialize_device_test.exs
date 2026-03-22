@@ -15,7 +15,7 @@ defmodule BACnet.Test.Protocol.Services.ReinitializeDeviceTest do
   end
 
   test "is confirmed" do
-    assert true == ReinitializeDevice.is_confirmed()
+    assert true == ReinitializeDevice.confirmed?()
   end
 
   test "decoding ReinitializeDevice" do
@@ -192,7 +192,7 @@ defmodule BACnet.Test.Protocol.Services.ReinitializeDeviceTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%ReinitializeDevice{
+             ServicesProtocol.confirmed?(%ReinitializeDevice{
                reinitialized_state: :coldstart,
                password: nil
              })

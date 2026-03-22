@@ -241,7 +241,7 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
     the ethernet  interface adapters will be enumerated and
     the IP address of the given interface will be used to bind to.
     Use `:none` to not bind explicitely to a specific ethernet interface adapter, which in turn will automatically
-    bind to all ethernet interfaces and all destinations will be marked as "routed" (`is_destination_routed/2`).
+    bind to all ethernet interfaces and all destinations will be marked as "routed" (`destination_routed?/2`).
     As a consequence, broadcast traffic may not be sent to the network you may want to and some devices will not reply
     to such broadcasts (`255.255.255.255`),
     unless you explicitely specify the correct broadcast address as destination when sending BACnet frames.
@@ -341,16 +341,16 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
   @doc """
   Checks whether the given destination is an address that needs to be routed.
   """
-  @spec is_destination_routed(GenServer.server(), iplink_address() | term()) :: boolean()
-  def is_destination_routed(transport, destination) when is_server(transport) do
-    GenServer.call(transport, {:is_destination_routed, destination})
+  @spec destination_routed?(GenServer.server(), iplink_address() | term()) :: boolean()
+  def destination_routed?(transport, destination) when is_server(transport) do
+    GenServer.call(transport, {:destination_routed?, destination})
   end
 
   @doc """
   Verifies whether the given destination is valid for the transport module.
   """
-  @spec is_valid_destination(iplink_address() | term()) :: boolean()
-  def is_valid_destination(destination) do
+  @spec valid_destination?(iplink_address() | term()) :: boolean()
+  def valid_destination?(destination) do
     case destination do
       {{ip_a, ip_b, ip_c, ip_d}, port}
       when ip_a in 1..255 and ip_b in 0..255 and ip_c in 0..255 and
@@ -585,10 +585,10 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
     {:reply, {state.broadcast_addr, state.local_port}, state}
   end
 
-  def handle_call({:is_destination_routed, {destination, _port}}, _from, %State{} = state)
+  def handle_call({:destination_routed?, {destination, _port}}, _from, %State{} = state)
       when is_tuple(destination) and tuple_size(destination) == 4 do
     log_debug(fn ->
-      "BacIPv4Transport: Received is_destination_routed request for #{inspect(destination)}"
+      "BacIPv4Transport: Received destination_routed? request for #{inspect(destination)}"
     end)
 
     routed =
@@ -600,9 +600,9 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
     {:reply, routed, state}
   end
 
-  def handle_call({:is_destination_routed, destination}, _from, state) do
+  def handle_call({:destination_routed?, destination}, _from, state) do
     log_debug(fn ->
-      "BacIPv4Transport: Received (non-IP) is_destination_routed request for #{inspect(destination)}"
+      "BacIPv4Transport: Received (non-IP) destination_routed? request for #{inspect(destination)}"
     end)
 
     {:reply, true, state}

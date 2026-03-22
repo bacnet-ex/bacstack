@@ -16,7 +16,7 @@ defmodule BACnet.Test.Protocol.Services.AtomicWriteFile do
   end
 
   test "is confirmed" do
-    assert true == AtomicWriteFile.is_confirmed()
+    assert true == AtomicWriteFile.confirmed?()
   end
 
   test "decoding AtomicWriteFile stream access" do
@@ -292,7 +292,7 @@ defmodule BACnet.Test.Protocol.Services.AtomicWriteFile do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%AtomicWriteFile{
+             ServicesProtocol.confirmed?(%AtomicWriteFile{
                object_identifier: %ObjectIdentifier{
                  instance: 154,
                  type: :file

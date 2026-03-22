@@ -15,7 +15,7 @@ defmodule BACnet.Test.Protocol.Services.ConfirmedPrivateTransferTest do
   end
 
   test "is confirmed" do
-    assert true == ConfirmedPrivateTransfer.is_confirmed()
+    assert true == ConfirmedPrivateTransfer.confirmed?()
   end
 
   test "decoding ConfirmedPrivateTransfer" do
@@ -214,7 +214,7 @@ defmodule BACnet.Test.Protocol.Services.ConfirmedPrivateTransferTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%ConfirmedPrivateTransfer{
+             ServicesProtocol.confirmed?(%ConfirmedPrivateTransfer{
                vendor_id: 25,
                service_number: 8,
                parameters: [

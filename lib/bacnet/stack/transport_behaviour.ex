@@ -176,12 +176,12 @@ defmodule BACnet.Stack.TransportBehaviour do
   @doc """
   Checks whether the given destination is an address that needs to be routed.
   """
-  @callback is_destination_routed(transport :: transport(), address :: term()) :: boolean()
+  @callback destination_routed?(transport :: transport(), address :: term()) :: boolean()
 
   @doc """
   Verifies whether the given destination is valid for the transport module.
   """
-  @callback is_valid_destination(destination :: term()) :: boolean()
+  @callback valid_destination?(destination :: term()) :: boolean()
 
   @doc """
   Sends data to the BACnet network.

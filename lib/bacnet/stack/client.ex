@@ -796,7 +796,7 @@ defmodule BACnet.Stack.Client do
     log_debug(fn -> "Client: Received send request" end)
 
     try do
-      trans_mod.is_valid_destination(destination)
+      trans_mod.valid_destination?(destination)
     catch
       _kind, e -> {:reply, {:error, {e, __STACKTRACE__}}, state}
     else
@@ -1254,7 +1254,7 @@ defmodule BACnet.Stack.Client do
 
         incomplete_apdu =
           if state.opts.segmented_rcv_window_overwrite and
-               trans_mod.is_destination_routed(state.transport_pid, source_address) do
+               trans_mod.destination_routed?(state.transport_pid, source_address) do
             IncompleteAPDU.set_window_size(incomplete, 1)
           else
             incomplete
@@ -2098,7 +2098,7 @@ defmodule BACnet.Stack.Client do
           # send an abort and indiciate Abort APDU_TOO_LONG,
           # but only if this is not a request to a remote device
           resp =
-            if EncoderProtocol.is_response(apdu) do
+            if EncoderProtocol.response?(apdu) do
               abort = %APDU.Abort{
                 sent_by_server: true,
                 invoke_id: apdu.invoke_id,
@@ -2131,7 +2131,7 @@ defmodule BACnet.Stack.Client do
           # but only if this is a response,
           # if this is a request, we do not need to send anything
           resp =
-            if EncoderProtocol.is_response(apdu) do
+            if EncoderProtocol.response?(apdu) do
               abort = %APDU.Abort{
                 sent_by_server: true,
                 invoke_id: apdu.invoke_id,

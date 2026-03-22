@@ -17,7 +17,7 @@ defmodule BACnet.Test.Protocol.Services.TimeSynchronizationTest do
   end
 
   test "is confirmed" do
-    assert false == TimeSynchronization.is_confirmed()
+    assert false == TimeSynchronization.confirmed?()
   end
 
   test "decoding TimeSynchronization" do
@@ -136,7 +136,7 @@ defmodule BACnet.Test.Protocol.Services.TimeSynchronizationTest do
 
   test "protocol implementation is confirmed" do
     assert false ==
-             ServicesProtocol.is_confirmed(%TimeSynchronization{
+             ServicesProtocol.confirmed?(%TimeSynchronization{
                date: %BACnetDate{
                  year: 1992,
                  month: 11,

@@ -15,14 +15,14 @@ defprotocol BACnet.Stack.EncoderProtocol do
   @doc """
   Whether the struct is a request.
   """
-  @spec is_request(t()) :: boolean()
-  def is_request(apdu)
+  @spec request?(t()) :: boolean()
+  def request?(apdu)
 
   @doc """
   Whether the struct is a response.
   """
-  @spec is_response(t()) :: boolean()
-  def is_response(apdu)
+  @spec response?(t()) :: boolean()
+  def response?(apdu)
 
   @doc """
   Encodes the struct into a BACnet APDU binary packet.

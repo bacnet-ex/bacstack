@@ -18,7 +18,7 @@ defmodule BACnet.Test.Protocol.Services.IAmTest do
   end
 
   test "is confirmed" do
-    assert false == IAm.is_confirmed()
+    assert false == IAm.confirmed?()
   end
 
   test "decoding IAm" do
@@ -178,7 +178,7 @@ defmodule BACnet.Test.Protocol.Services.IAmTest do
 
   test "protocol implementation is confirmed" do
     assert false ==
-             ServicesProtocol.is_confirmed(%IAm{
+             ServicesProtocol.confirmed?(%IAm{
                device: %ObjectIdentifier{
                  instance: 111,
                  type: :device

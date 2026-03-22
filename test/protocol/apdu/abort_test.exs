@@ -19,7 +19,7 @@ defmodule BACnet.Test.Protocol.APDU.AbortTest do
 
   test "EncoderProtocol is request" do
     assert false ==
-             EncoderProtocol.is_request(%Abort{
+             EncoderProtocol.request?(%Abort{
                sent_by_server: true,
                invoke_id: 70,
                reason: :application_exceeded_reply_time
@@ -28,7 +28,7 @@ defmodule BACnet.Test.Protocol.APDU.AbortTest do
 
   test "EncoderProtocol is response" do
     assert true ==
-             EncoderProtocol.is_response(%Abort{
+             EncoderProtocol.response?(%Abort{
                sent_by_server: true,
                invoke_id: 70,
                reason: :application_exceeded_reply_time

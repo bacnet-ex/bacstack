@@ -192,14 +192,14 @@ defmodule BACnet.Protocol.APDU.ConfirmedServiceRequest do
     @doc """
     Whether the struct is a request.
     """
-    @spec is_request(@for.t()) :: boolean()
-    def is_request(%@for{} = _apdu), do: true
+    @spec request?(@for.t()) :: boolean()
+    def request?(%@for{} = _apdu), do: true
 
     @doc """
     Whether the struct is a response.
     """
-    @spec is_response(@for.t()) :: boolean()
-    def is_response(%@for{} = _apdu), do: false
+    @spec response?(@for.t()) :: boolean()
+    def response?(%@for{} = _apdu), do: false
 
     @spec encode(@for.t()) :: iodata()
     def encode(%@for{} = apdu) do

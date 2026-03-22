@@ -18,7 +18,7 @@ defmodule BACnet.Test.Protocol.APDU.SimpleAckTest do
 
   test "EncoderProtocol is request" do
     assert false ==
-             EncoderProtocol.is_request(%SimpleACK{
+             EncoderProtocol.request?(%SimpleACK{
                service: :write_property,
                invoke_id: 70
              })
@@ -26,7 +26,7 @@ defmodule BACnet.Test.Protocol.APDU.SimpleAckTest do
 
   test "EncoderProtocol is response" do
     assert true ==
-             EncoderProtocol.is_response(%SimpleACK{
+             EncoderProtocol.response?(%SimpleACK{
                service: :write_property,
                invoke_id: 70
              })

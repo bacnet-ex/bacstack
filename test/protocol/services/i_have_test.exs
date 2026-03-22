@@ -16,7 +16,7 @@ defmodule BACnet.Test.Protocol.Services.IHaveTest do
   end
 
   test "is confirmed" do
-    assert false == IHave.is_confirmed()
+    assert false == IHave.confirmed?()
   end
 
   test "decoding IHave" do
@@ -158,7 +158,7 @@ defmodule BACnet.Test.Protocol.Services.IHaveTest do
 
   test "protocol implementation is confirmed" do
     assert false ==
-             ServicesProtocol.is_confirmed(%IHave{
+             ServicesProtocol.confirmed?(%IHave{
                device: %ObjectIdentifier{
                  type: :device,
                  instance: 8

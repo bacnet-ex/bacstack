@@ -15,7 +15,7 @@ defmodule BACnet.Test.Protocol.Services.GetAlarmSummaryTest do
   end
 
   test "is confirmed" do
-    assert true == GetAlarmSummary.is_confirmed()
+    assert true == GetAlarmSummary.confirmed?()
   end
 
   test "decoding GetAlarmSummary" do
@@ -70,7 +70,7 @@ defmodule BACnet.Test.Protocol.Services.GetAlarmSummaryTest do
   end
 
   test "protocol implementation is confirmed" do
-    assert true == ServicesProtocol.is_confirmed(%GetAlarmSummary{})
+    assert true == ServicesProtocol.confirmed?(%GetAlarmSummary{})
   end
 
   test "protocol implementation to APDU" do

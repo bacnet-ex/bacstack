@@ -33,7 +33,7 @@ defmodule BACnet.Test.Protocol.APDU.ConfirmedServiceRequestTest do
 
   test "EncoderProtocol is request" do
     assert true ==
-             EncoderProtocol.is_request(%ConfirmedServiceRequest{
+             EncoderProtocol.request?(%ConfirmedServiceRequest{
                segmented_response_accepted: true,
                max_apdu: 1476,
                max_segments: 4,
@@ -54,7 +54,7 @@ defmodule BACnet.Test.Protocol.APDU.ConfirmedServiceRequestTest do
 
   test "EncoderProtocol is response" do
     assert false ==
-             EncoderProtocol.is_response(%ConfirmedServiceRequest{
+             EncoderProtocol.response?(%ConfirmedServiceRequest{
                segmented_response_accepted: true,
                max_apdu: 1476,
                max_segments: 4,

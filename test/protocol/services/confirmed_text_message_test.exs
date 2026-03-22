@@ -15,7 +15,7 @@ defmodule BACnet.Test.Protocol.Services.ConfirmedTextMessageTest do
   end
 
   test "is confirmed" do
-    assert true == ConfirmedTextMessage.is_confirmed()
+    assert true == ConfirmedTextMessage.confirmed?()
   end
 
   test "decoding ConfirmedTextMessage" do
@@ -264,7 +264,7 @@ defmodule BACnet.Test.Protocol.Services.ConfirmedTextMessageTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%ConfirmedTextMessage{
+             ServicesProtocol.confirmed?(%ConfirmedTextMessage{
                source_device: %BACnet.Protocol.ObjectIdentifier{type: :device, instance: 5},
                class: "null",
                priority: :urgent,

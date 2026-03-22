@@ -17,7 +17,7 @@ defmodule BACnet.Test.Protocol.Services.AddListElementTest do
   end
 
   test "is confirmed" do
-    assert true == AddListElement.is_confirmed()
+    assert true == AddListElement.confirmed?()
   end
 
   test "decoding AddListElement" do
@@ -270,7 +270,7 @@ defmodule BACnet.Test.Protocol.Services.AddListElementTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%AddListElement{
+             ServicesProtocol.confirmed?(%AddListElement{
                object_identifier: %ObjectIdentifier{
                  type: :group,
                  instance: 3

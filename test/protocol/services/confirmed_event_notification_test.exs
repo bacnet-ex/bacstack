@@ -21,7 +21,7 @@ defmodule BACnet.Test.Protocol.Services.ConfirmedEventNotificationTest do
   end
 
   test "is confirmed" do
-    assert true == ConfirmedEventNotification.is_confirmed()
+    assert true == ConfirmedEventNotification.confirmed?()
   end
 
   test "decoding ConfirmedEventNotification" do
@@ -619,7 +619,7 @@ defmodule BACnet.Test.Protocol.Services.ConfirmedEventNotificationTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%ConfirmedEventNotification{
+             ServicesProtocol.confirmed?(%ConfirmedEventNotification{
                process_identifier: 123,
                initiating_device: %ObjectIdentifier{
                  type: :device,

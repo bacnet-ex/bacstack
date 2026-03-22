@@ -17,7 +17,7 @@ defmodule BACnet.Test.Protocol.Services.SubscribeCovPropertyTest do
   end
 
   test "is confirmed" do
-    assert true == SubscribeCovProperty.is_confirmed()
+    assert true == SubscribeCovProperty.confirmed?()
   end
 
   test "decoding SubscribeCovProperty" do
@@ -403,7 +403,7 @@ defmodule BACnet.Test.Protocol.Services.SubscribeCovPropertyTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%SubscribeCovProperty{
+             ServicesProtocol.confirmed?(%SubscribeCovProperty{
                process_identifier: 18,
                monitored_object: %ObjectIdentifier{
                  type: :analog_input,

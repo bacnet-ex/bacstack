@@ -18,7 +18,7 @@ defmodule BACnet.Test.Protocol.Services.CreateObjectTest do
   end
 
   test "is confirmed" do
-    assert true == CreateObject.is_confirmed()
+    assert true == CreateObject.confirmed?()
   end
 
   test "decoding CreateObject with object type" do
@@ -277,7 +277,7 @@ defmodule BACnet.Test.Protocol.Services.CreateObjectTest do
 
   test "protocol implementation is confirmed" do
     assert true ==
-             ServicesProtocol.is_confirmed(%CreateObject{
+             ServicesProtocol.confirmed?(%CreateObject{
                object_specifier: :file,
                initial_values: []
              })
