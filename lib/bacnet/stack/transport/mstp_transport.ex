@@ -613,18 +613,20 @@ if Code.ensure_loaded?(Circuits.UART) do
 
     @doc """
     Checks whether the given destination is an address that needs to be routed.
+
+    Returns true for any non-valid `destination_address()`, because they need
+    to be routed by a BACnet router residing on this transport layer/network.
     """
     @spec destination_routed?(GenServer.server(), destination_address() | term()) ::
             boolean()
     def destination_routed?(transport, destination) when is_server(transport) do
-      # GenServer.call(transport, {:destination_routed?, destination})
       not valid_destination?(destination)
     end
 
     @doc """
     Verifies whether the given destination is valid for the transport module.
     """
-    @spec valid_destination?(destination_address()) :: boolean()
+    @spec valid_destination?(destination_address() | term()) :: boolean()
     def valid_destination?(destination) do
       is_integer(destination) and destination >= 0 and destination <= 255
     end
@@ -1399,23 +1401,6 @@ if Code.ensure_loaded?(Circuits.UART) do
       log_debug("BacMstpTransport: Received get_local_address request")
 
       {:reply, state.local_address, state}
-    end
-
-    def handle_call({:destination_routed?, destination}, _from, %State{} = state)
-        when is_integer(destination) do
-      log_debug(fn ->
-        "BacMstpTransport: Received destination_routed? request for #{inspect(destination)}"
-      end)
-
-      {:reply, not valid_destination?(destination), state}
-    end
-
-    def handle_call({:destination_routed?, destination}, _from, state) do
-      log_debug(fn ->
-        "BacMstpTransport: Received (non-MSTP) destination_routed? request for #{inspect(destination)}"
-      end)
-
-      {:reply, true, state}
     end
 
     def handle_call(

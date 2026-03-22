@@ -222,11 +222,12 @@ defmodule BACnet.Stack.Transport.EthernetTransport do
   @doc """
   Checks whether the given destination is an address that needs to be routed.
 
-  Always returns `false` due to how Ethernet works (no routing).
+  Returns true for any non-valid `mac_address()`, because they need
+  to be routed by a BACnet router residing on this transport layer/network.
   """
   @spec destination_routed?(GenServer.server(), mac_address() | term()) :: boolean()
-  def destination_routed?(transport, _destination) when is_server(transport) do
-    false
+  def destination_routed?(transport, destination) when is_server(transport) do
+    not valid_destination?(destination)
   end
 
   @doc """

@@ -343,7 +343,7 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
   """
   @spec destination_routed?(GenServer.server(), iplink_address() | term()) :: boolean()
   def destination_routed?(transport, destination) when is_server(transport) do
-    GenServer.call(transport, {:destination_routed?, destination})
+    GenServer.call(transport, {:is_destination_routed, destination})
   end
 
   @doc """
@@ -585,10 +585,10 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
     {:reply, {state.broadcast_addr, state.local_port}, state}
   end
 
-  def handle_call({:destination_routed?, {destination, _port}}, _from, %State{} = state)
+  def handle_call({:is_destination_routed, {destination, _port}}, _from, %State{} = state)
       when is_tuple(destination) and tuple_size(destination) == 4 do
     log_debug(fn ->
-      "BacIPv4Transport: Received destination_routed? request for #{inspect(destination)}"
+      "BacIPv4Transport: Received is_destination_routed request for #{inspect(destination)}"
     end)
 
     routed =
@@ -600,9 +600,9 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
     {:reply, routed, state}
   end
 
-  def handle_call({:destination_routed?, destination}, _from, state) do
+  def handle_call({:is_destination_routed, destination}, _from, state) do
     log_debug(fn ->
-      "BacIPv4Transport: Received (non-IP) destination_routed? request for #{inspect(destination)}"
+      "BacIPv4Transport: Received (non-IP) is_destination_routed request for #{inspect(destination)}"
     end)
 
     {:reply, true, state}
