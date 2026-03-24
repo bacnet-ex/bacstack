@@ -31,6 +31,7 @@ if Code.ensure_loaded?(Circuits.UART) do
             uart_port: pid(),
             local_address: 0..254,
             opts: %{
+              autobaud: boolean(),
               baudrate: non_neg_integer(),
               log_communication: boolean()
             },
@@ -83,6 +84,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       new_opts =
         opts
         |> Map.new()
+        |> Map.put_new(:autobaud, false)
         |> Map.put_new(:baudrate, 38_400)
         |> Map.put_new(:log_communication, false)
 

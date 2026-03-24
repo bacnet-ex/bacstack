@@ -31,6 +31,27 @@ if Code.ensure_loaded?(Circuits.UART) do
     If you want to use this transport, you'll have to add [`:circuits_uart`](https://hex.pm/packages/circuits_uart)
     to your `mix.exs` as dependency! It is an optional dependency and thus
     by default not present when you install this library.
+
+    ### Autobaud
+
+    This transport implements automatically detecting the used baudrate by listening to the network ("autobaud").
+    Once it detects a valid BACnet frame, the baudrate that detected the frame will be used and autobaud will be disabled.
+    If there's no valid BACnet frame in a short time window (~5.5s) or an invalid frame is detected,
+    then the next baudrate will be tried. It will go through all defined baudrates specified by the BACnet protocol.
+    If no valid BACnet frame has been detected and all baudrates have been tested, the transport will fallback
+    to baudrate `38_400` - a Logger warning will be issued.
+    Autobaud can be manually re-enabled through `configure/2` - **note that all communication will be unrecoverable dropped**!
+
+    The following baudrates will be tried in this order: 9600, 19_200, 38_400, 57_600, 76_800, 115_200.
+
+    Autobaud can be used by specifying `baudrate: :auto` when starting the transport (recommended way to use autobaud).
+    Autobaud can also be manually enabled through `configure/2` - but communication is disruptive and thus not recommended.
+
+    > #### Empty Network {: .warning}
+    >
+    > Autobaud requires at least one active device on the MS/TP network!
+    > If there are no active devices (other than itself) on the network,
+    > it will fail to detect the baudrate and fallback to the default.
     """
 
     # TODO: Convert Master Node FSM to :gen_statem?
@@ -84,6 +105,9 @@ if Code.ensure_loaded?(Circuits.UART) do
     @apdu_timer_factor 0.95
     @call_timeout Application.compile_env(:bacstack, :mstp_transport_call_timeout, 60_000)
 
+    @autobaud_timeout_timer 5500
+    @autobaud_default_baudrates [9600, 19_200, 38_400, 57_600, 76_800, 115_200]
+
     # The number of tokens received or used before a Poll For Master cycle is executed
     @param_n_poll 50
 
@@ -123,6 +147,11 @@ if Code.ensure_loaded?(Circuits.UART) do
     # Unit: ms
     @param_t_slot 10
 
+    # The minimum time after the end of the stop bit of the final octet of a received frame
+    # before a node may enable its EIA-485 driver.
+    # Unit: Bit times
+    @param_t_turnaround 40
+
     # The maximum time a node may wait after reception of the token or a Poll For Master frame before
     # sending the first octet of a frame
     # Unit: ms
@@ -161,6 +190,7 @@ if Code.ensure_loaded?(Circuits.UART) do
               | :done_with_token
               | :use_token
               | :wait_for_reply
+              | :autobaud_detection
 
       @type send_item ::
               {destination :: byte(), send_and_wait :: boolean() | :raw | :test,
@@ -178,8 +208,11 @@ if Code.ensure_loaded?(Circuits.UART) do
               send_queue: :queue.queue(send_item()),
               send_timer: :timer.tref() | nil,
               disable_token_passing: boolean(),
+              autobaud_baudrate: non_neg_integer() | nil,
+              autobaud_baudrates_pending: [non_neg_integer()] | nil,
+              autobaud_timer: term() | nil,
               opts: %{
-                baudrate: non_neg_integer(),
+                baudrate: non_neg_integer() | :auto,
                 local_address: 0..254,
                 log_communication: boolean(),
                 max_info_frames: pos_integer(),
@@ -188,6 +221,10 @@ if Code.ensure_loaded?(Circuits.UART) do
                 supervisor: Supervisor.supervisor()
               },
               statistics: %{
+                optional(:rcv_timestamp) => non_neg_integer(),
+                optional(:received_to_send) =>
+                  {min :: non_neg_integer(), last :: non_neg_integer(), max :: non_neg_integer()}
+                  | nil,
                 received: %{
                   optional(:invalid_frame) => non_neg_integer(),
                   optional(MstpTransport.frame_type()) => non_neg_integer()
@@ -210,6 +247,9 @@ if Code.ensure_loaded?(Circuits.UART) do
         :send_queue,
         :send_timer,
         :disable_token_passing,
+        :autobaud_baudrate,
+        :autobaud_baudrates_pending,
+        :autobaud_timer,
         :opts,
         :statistics
       ]
@@ -306,7 +346,7 @@ if Code.ensure_loaded?(Circuits.UART) do
     Valid open options. For a description of each, see `open/2`.
     """
     @type open_option ::
-            {:baudrate, non_neg_integer()}
+            {:baudrate, non_neg_integer() | :auto}
             | {:local_address, source_address()}
             | {:log_communication, boolean()}
             | {:log_communication_rcv, boolean()}
@@ -431,7 +471,8 @@ if Code.ensure_loaded?(Circuits.UART) do
     RS485 data. The portal is the same transport PID/port, as access to the MS/TP network must be coordinated.
 
     This transport takes the following options, in addition to `t:GenServer.options/0`:
-    - `baudrate: non_neg_integer` - Optional. The baud rate to use (defaults to `38400`).
+    - `baudrate: non_neg_integer | :auto` - Optional. The baud rate to use (defaults to `38400`).
+      See the module documentation regarding the autobaud feature.
     - `local_address: source_address()` - Required. The address to use - must be unique in the BACnet MS/TP network.
       Addresses 0-127 are for master nodes, while 128-254 are for slave nodes.
     - `log_communication: boolean()` - Optional. Logs all communication (debug), excluding receive states.
@@ -484,7 +525,7 @@ if Code.ensure_loaded?(Circuits.UART) do
           :supervisor
         ])
 
-      validate_open_opts(opts2, "open/2")
+      validate_open_opts(opts2, "open/2", false)
 
       GenServer.start_link(__MODULE__, {callback, Map.new(opts2)}, genserver_opts)
     end
@@ -560,7 +601,7 @@ if Code.ensure_loaded?(Circuits.UART) do
         raise ArgumentError, "configure/2 expected a keyword list, got: #{inspect(opts)}"
       end
 
-      validate_open_opts(opts, "configure/2")
+      validate_open_opts(opts, "configure/2", true)
 
       Enum.each(opts, fn
         # Supported options
@@ -838,11 +879,20 @@ if Code.ensure_loaded?(Circuits.UART) do
         |> Map.put_new(:max_master_address, @max_master_addr)
         |> Map.put_new(:supervisor, nil)
 
+      # We only make sure we have a valid baudrate in case of autobaud
+      baudrate =
+        if new_opts.baudrate == :auto do
+          [baudrate | _rest] = @autobaud_default_baudrates
+          baudrate
+        else
+          new_opts.baudrate
+        end
+
       result =
         with {:ok, uart_pid} <- UART.start_link() do
           {UART.open(uart_pid, Map.fetch!(opts, :port_name),
              active: true,
-             speed: new_opts.baudrate,
+             speed: baudrate,
              data_bits: 8,
              stop_bits: 1,
              parity: :none,
@@ -885,6 +935,9 @@ if Code.ensure_loaded?(Circuits.UART) do
                 send_queue: :queue.new(),
                 send_timer: nil,
                 disable_token_passing: false,
+                autobaud_baudrate: nil,
+                autobaud_baudrates_pending: nil,
+                autobaud_timer: nil,
                 opts: new_opts,
                 statistics: %{
                   received: %{},
@@ -916,6 +969,26 @@ if Code.ensure_loaded?(Circuits.UART) do
     end
 
     @doc false
+    def handle_continue(
+          :initialize,
+          %State{opts: %{baudrate: :auto}} = state
+        ) do
+      # This is the initialize phase for auto baudrate -
+      # once we find the correct baudrate, the transport state gets resetted to :initialize
+      # and the real initialize phase gets called and executed
+
+      # Get first baudrate and "queue" the rest as pending
+      [baudrate | rest] = @autobaud_default_baudrates
+
+      # Cancel silence timer (necessary when autobaud-ing after transport started up)
+      state = state_cancel_silence_timer(state)
+
+      # Update transport state - that isn't done automatically
+      state = %{state | transport_state: :autobaud_detection}
+
+      autobaud_switch_baudrate(state, baudrate, rest, true)
+    end
+
     def handle_continue(
           :initialize,
           %State{local_address: local_addr, state_machine: state_machine} = state
@@ -1375,6 +1448,9 @@ if Code.ensure_loaded?(Circuits.UART) do
 
       reply =
         case Map.fetch(opts, :baudrate) do
+          {:ok, :auto} ->
+            :auto
+
           {:ok, baudrate} ->
             with :ok <- UART.configure(state.uart_pid, speed: baudrate) do
               ReceiveFSM.configure(state.receive_fsm, %{
@@ -1391,6 +1467,11 @@ if Code.ensure_loaded?(Circuits.UART) do
         :ok ->
           new_state = %{state | opts: new_opts}
           {:reply, :ok, new_state}
+
+        :auto ->
+          # Switch to AUTOBAUD_DETECTION state and let initialize continue callback do the rest
+          new_state = %{state | transport_state: :autobaud_detection, opts: new_opts}
+          {:reply, :ok, new_state, {:continue, :initialize}}
 
         _other ->
           {:reply, reply, state}
@@ -1922,7 +2003,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:noreply,
        state_set_silence_timer(
          state_clear_silence_timer(%{state | transport_state: :no_token}),
-         {:timer_generate_token, System.time_offset(:millisecond)},
+         {:timer_generate_token, System.monotonic_time(:millisecond)},
          max(trunc(@param_t_slot * state.state_machine.ts), 0)
        )}
     end
@@ -1957,7 +2038,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       end)
 
       # Assert timer was received BEFORE the next station would generate a new token
-      if System.time_offset(:millisecond) - ts_offset <
+      if System.monotonic_time(:millisecond) - ts_offset <
            @param_t_slot * (state.state_machine.ts + 1) do
         Logger.info(fn ->
           "BacMstpTransport: Token has been lost and generating token now - " <>
@@ -2049,6 +2130,77 @@ if Code.ensure_loaded?(Circuits.UART) do
         end
 
       {:noreply, new_state}
+    end
+
+    def handle_info(
+          :received_valid_frame_autobaud,
+          %State{transport_state: :autobaud_detection} = state
+        ) do
+      log_debug(fn ->
+        "BacMstpTransport: Received received_valid_frame_autobaud message from MS/TP Receive FSM"
+      end)
+
+      # Cancel lingering timer
+      if state.autobaud_timer do
+        Process.cancel_timer(state.autobaud_timer)
+
+        # Clear messagebox
+        receive do
+          :autobaud_timer -> :ok
+        after
+          0 -> :ok
+        end
+      end
+
+      new_state = %{
+        state
+        | transport_state: :initialize,
+          autobaud_baudrate: nil,
+          autobaud_baudrates_pending: nil,
+          autobaud_timer: nil,
+          opts: %{state.opts | baudrate: state.autobaud_baudrate}
+      }
+
+      ReceiveFSM.configure(state.receive_fsm, autobaud: false, baudrate: new_state.opts.baudrate)
+
+      # Now that we've found the correct baudrate, initialize the node fully
+      {:noreply, new_state, {:continue, :initialize}}
+    end
+
+    def handle_info(
+          :received_invalid_frame,
+          %State{transport_state: :autobaud_detection, autobaud_baudrates_pending: []} = state
+        ) do
+      log_debug(fn ->
+        "BacMstpTransport: Received received_invalid_frame message from MS/TP Receive FSM " <>
+          "during autobaud detection phase"
+      end)
+
+      Logger.warning(fn ->
+        "BacMstpTransport: Autobaud failed to discover baudrate - defaulting to 38_400 baudrate"
+      end)
+
+      case autobaud_switch_baudrate(state, 38_400, [], false) do
+        {:noreply, new_state} ->
+          {:noreply,
+           %{new_state | transport_state: :idle, opts: %{state.opts | baudrate: 38_400}},
+           {:continue, :initialize}}
+
+        other ->
+          other
+      end
+    end
+
+    def handle_info(:received_invalid_frame, %State{transport_state: :autobaud_detection} = state) do
+      [new_baudrate | rest] = state.autobaud_baudrates_pending
+
+      log_debug(fn ->
+        "BacMstpTransport: Received received_invalid_frame message from MS/TP Receive FSM " <>
+          "during autobaud detection phase, changing baudrate from #{state.autobaud_baudrate} " <>
+          "to #{new_baudrate}"
+      end)
+
+      autobaud_switch_baudrate(state, new_baudrate, rest, true)
     end
 
     def handle_info(:received_invalid_frame, %State{} = state) do
@@ -2187,6 +2339,12 @@ if Code.ensure_loaded?(Circuits.UART) do
         "BacMstpTransport: Received received_data message from MS/TP Receive FSM"
       end)
 
+      # state = %{
+      #   state
+      #   | statistics:
+      #       Map.put(state.statistics, :rcv_timestamp, System.monotonic_time(:microsecond))
+      # }
+
       cond do
         # State SawTokenUser: Assume that a frame has been sent by the new token user
         state.transport_state == :pass_token and data_length >= @param_n_min_octets ->
@@ -2219,8 +2377,90 @@ if Code.ensure_loaded?(Circuits.UART) do
       end
     end
 
+    def handle_info(
+          :autobaud_timer,
+          %State{transport_state: :autobaud_detection, autobaud_baudrates_pending: []} = state
+        ) do
+      log_debug(fn -> "BacMstpTransport: Received autobaud_timer timer message" end)
+
+      Logger.warning(fn ->
+        "BacMstpTransport: Autobaud failed to discover baudrate - defaulting to 38_400 baudrate"
+      end)
+
+      case autobaud_switch_baudrate(state, 38_400, [], false) do
+        {:noreply, new_state} ->
+          {:noreply,
+           %{new_state | transport_state: :idle, opts: %{state.opts | baudrate: 38_400}},
+           {:continue, :initialize}}
+
+        other ->
+          other
+      end
+    end
+
+    def handle_info(:autobaud_timer, %State{transport_state: :autobaud_detection} = state) do
+      [new_baudrate | rest] = state.autobaud_baudrates_pending
+
+      log_debug(fn ->
+        "BacMstpTransport: Received autobaud_timer timer message, " <>
+          "changing baudrate from #{state.autobaud_baudrate} " <>
+          "to #{new_baudrate}"
+      end)
+
+      autobaud_switch_baudrate(state, new_baudrate, rest, true)
+    end
+
     def handle_info(_info, state) do
       {:noreply, state}
+    end
+
+    @spec autobaud_switch_baudrate(
+            State.t(),
+            non_neg_integer(),
+            [non_neg_integer()],
+            boolean()
+          ) :: {:noreply, State.t()} | {:stop, term(), State.t()}
+    defp autobaud_switch_baudrate(
+           %State{} = state,
+           new_baudrate,
+           pending_baudrates,
+           new_timer
+         )
+         when is_integer(new_baudrate) and is_list(pending_baudrates) and is_boolean(new_timer) do
+      # Cancel lingering timer
+      if state.autobaud_timer do
+        Process.cancel_timer(state.autobaud_timer)
+
+        # Clear messagebox
+        receive do
+          :autobaud_timer -> :ok
+        after
+          0 -> :ok
+        end
+      end
+
+      case UART.configure(state.uart_pid, speed: new_baudrate) do
+        :ok ->
+          ReceiveFSM.configure(state.receive_fsm, autobaud: new_timer, baudrate: new_baudrate)
+
+          {:noreply,
+           %{
+             state
+             | autobaud_baudrate: if(new_timer, do: new_baudrate),
+               autobaud_baudrates_pending: if(new_timer, do: pending_baudrates),
+               autobaud_timer:
+                 if(new_timer,
+                   do: Process.send_after(self(), :autobaud_timer, @autobaud_timeout_timer)
+                 ),
+               active_test: nil,
+               answer_invoke_id: nil,
+               send_queue: :queue.new(),
+               send_timer: nil
+           }}
+
+        {:error, err} ->
+          {:stop, {:uart_error_during_autobaud, err}, state}
+      end
     end
 
     @spec handle_mstp_frame(State.t(), StateData.t()) ::
@@ -3153,6 +3393,15 @@ if Code.ensure_loaded?(Circuits.UART) do
 
     @spec send_uart_data(State.t(), iodata()) :: {:ok, State.t()} | {:error, State.t()}
     defp send_uart_data(%State{} = state, data) do
+      # Update statistics (calculate when we want to send data vs. when we received last data)
+      # state = update_rcv_send_statistics(state)
+
+      # ASHRAE 135 Clause 9.2.3
+      # Receive to Transmit turn-around:
+      # A node shall not enable its EIA-485 driver for at least Tturnaround
+      # after the node receives the final stop bit of any octet
+      state = sleep_send_uart_data(state)
+
       log_debug_comm(state, fn ->
         "BacMstpTransport: Sending data to MS/TP network with data length #{IO.iodata_length(data)}"
       end)
@@ -3213,6 +3462,64 @@ if Code.ensure_loaded?(Circuits.UART) do
       end
     end
 
+    @spec sleep_send_uart_data(State.t()) :: State.t()
+    defp sleep_send_uart_data(%State{} = state) do
+      # We should just always sleep the Tturnaround time
+      # This is needed so devices can switch around from sending to receiving
+
+      # At worst 4.2ms -> 5ms @9600kbit/s / 1.1ms -> 2ms @38_400kbit/s
+      # See also comment in send_uart_data/2
+
+      turnaround_time = calculate_bittimes_to_us(@param_t_turnaround, state)
+      sleep_time = max(1, trunc(Float.ceil(turnaround_time / 1000)))
+
+      log_debug_comm(state, fn ->
+        "BacMstpTransport: Sleeping in send_uart_data/2 for #{sleep_time}ms (turnaround time: #{turnaround_time}us)"
+      end)
+
+      Process.sleep(sleep_time)
+      state
+    end
+
+    # This is the version that uses the statistics to calculate
+    # when we last received and then only sleeps as long as necessary
+    # defp sleep_send_uart_data(%State{} = state) do
+    #   case state.statistics.received_to_send do
+    #     {_min, last, _max} ->
+    #       wait_time =
+    #         calculate_bittimes_to_us(@param_t_turnaround, state) - last
+
+    #       # Wait if longer than 50us (that's really short and shouldn't be an issue,
+    #       # since we have a delay between writing and actually writing due to UART Port implementation detail)
+    #       if wait_time > 50 do
+    #         sleep_time = max(1, trunc(wait_time / 1000))
+
+    #         log_debug_comm(state, fn ->
+    #           "BacMstpTransport: Sleeping in send_uart_data/2 for #{sleep_time}ms (wait time: #{wait_time}us)"
+    #         end)
+
+    #         Process.sleep(sleep_time)
+    #       end
+
+    #       receive do
+    #         # Whoops! Collision? We received data on the serial while sleeping!
+    #         {:received_data, data_length} ->
+    #           # Call the message callback manually
+    #           return = handle_info({:received_data, data_length}, state)
+    #           %State{} = new_state = elem(return, 1)
+
+    #           # Update received_to_send statistics, then check sleep again
+    #           new_state = update_rcv_send_statistics(new_state)
+    #           sleep_send_uart_data(new_state)
+    #       after
+    #         0 -> state
+    #       end
+
+    #     _other ->
+    #       state
+    #   end
+    # end
+
     @spec state_clear_silence_timer(State.t()) :: State.t()
     defp state_clear_silence_timer(%State{state_machine: state_machine} = state) do
       %{state | state_machine: %{state_machine | silence_timer: nil, silence_timestamp: nil}}
@@ -3255,7 +3562,7 @@ if Code.ensure_loaded?(Circuits.UART) do
         | state_machine: %{
             state_machine
             | silence_timer: Process.send_after(self(), message, timeout),
-              silence_timestamp: System.time_offset(:millisecond)
+              silence_timestamp: System.monotonic_time(:millisecond)
           }
       }
     end
@@ -3309,7 +3616,54 @@ if Code.ensure_loaded?(Circuits.UART) do
       defp update_sent_statistics(_type, %State{} = state), do: state
     end
 
+    # @spec update_rcv_send_statistics(State.t()) :: State.t()
+    # defp update_rcv_send_statistics(%State{} = state) do
+    #   %{
+    #     state
+    #     | statistics:
+    #         Map.update(state.statistics, :received_to_send, nil, fn
+    #           {min, _last, max} when state.statistics.rcv_timestamp != nil ->
+    #             new = System.monotonic_time(:microsecond)
+    #             last = new - state.statistics.rcv_timestamp
+
+    #             # Do not accept 0 as min value
+    #             new_min =
+    #               cond do
+    #                 last == 0 -> min
+    #                 min == 0 -> last
+    #                 true -> min(min, last)
+    #               end
+
+    #             {new_min, last, max(max, last)}
+
+    #           nil when state.statistics.rcv_timestamp != nil ->
+    #             new = System.monotonic_time(:microsecond)
+    #             last = new - state.statistics.rcv_timestamp
+
+    #             {last, last, last}
+
+    #           other ->
+    #             other
+    #         end)
+    #   }
+    # end
+
     #### Helpers ####
+
+    # Calculates based on the baudrate and the amount of bit times the necessary time in us
+    @spec calculate_bittimes_to_us(non_neg_integer(), State.t()) :: ms :: non_neg_integer()
+    defp calculate_bittimes_to_us(bittimes, state)
+
+    defp calculate_bittimes_to_us(bittimes, %State{
+           opts: %{baudrate: :auto},
+           autobaud_baudrate: baud
+         }) do
+      trunc(1_000_000 / baud * bittimes)
+    end
+
+    defp calculate_bittimes_to_us(bittimes, %State{opts: %{baudrate: baud}}) do
+      trunc(1_000_000 / baud * bittimes)
+    end
 
     # Spawns a new task (either supervisored or not) and invokes the function,
     # ignoring any errors that may occur by the callback
@@ -3365,9 +3719,13 @@ if Code.ensure_loaded?(Circuits.UART) do
     end
 
     # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
-    defp validate_open_opts(opts, mfa) when is_binary(mfa) do
+    defp validate_open_opts(opts, mfa, skip_check)
+         when is_binary(mfa) and is_boolean(skip_check) do
       case opts[:baudrate] do
         nil ->
+          :ok
+
+        :auto ->
           :ok
 
         term when is_integer(term) and term >= 0 ->
@@ -3382,8 +3740,10 @@ if Code.ensure_loaded?(Circuits.UART) do
 
       case opts[:local_address] do
         nil ->
-          raise ArgumentError,
-                mfa <> " expected local_address to be present (absent in opts)"
+          if not skip_check do
+            raise ArgumentError,
+                  mfa <> " expected local_address to be present (absent in opts)"
+          end
 
         term when is_integer(term) and term >= @min_master_addr and term <= @max_slave_addr ->
           :ok
@@ -3453,8 +3813,10 @@ if Code.ensure_loaded?(Circuits.UART) do
 
       case opts[:port_name] do
         nil ->
-          raise ArgumentError,
-                mfa <> " expected port_name to be present (absent in opts)"
+          if not skip_check do
+            raise ArgumentError,
+                  mfa <> " expected port_name to be present (absent in opts)"
+          end
 
         term when is_binary(term) ->
           :ok

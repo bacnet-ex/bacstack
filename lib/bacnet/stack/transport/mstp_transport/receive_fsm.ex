@@ -33,9 +33,10 @@ if Code.ensure_loaded?(Circuits.UART) do
     # a receiving node may discard the frame
     # (Implementations may use larger values for this timeout, not to exceed 100 milliseconds)
     # Unit: Bit times
-    # 60 * 30 = 93ms for 19.2kbits/s
+    # 60 * 15 = 93ms for 9.6kbits/s
+    # 60 * 15 = 23ms for 38.4kbits/s
     # 60 * 30 = 46ms for 38.4kbits/s
-    @param_t_frame_abort 60 * 30
+    @param_t_frame_abort 60 * 15
 
     @param_n_min_cobs_type 32
     @param_n_max_cobs_type 127
@@ -70,6 +71,7 @@ if Code.ensure_loaded?(Circuits.UART) do
         when is_pid(transport) and is_pid(uart_port) and is_list(opts) do
       {my_opts, gen_opts} =
         Keyword.split(opts, [
+          :autobaud,
           :baudrate,
           :local_address,
           :log_communication
@@ -454,6 +456,13 @@ if Code.ensure_loaded?(Circuits.UART) do
           (state_data.frame_type_raw >= @param_n_min_cobs_type and
              state_data.frame_type_raw <= @param_n_max_cobs_type and
              state_data.data_length + 2 > @param_n_max_cobs_length)
+
+      # If we're doing autobaud (no baudrate detected yet), tell the Transport Master
+      # when a valid frame has been detected as soon as frame header is good,
+      # we don't need to wait until all data received and validated
+      if good_header and not frame_too_long and state_data.opts.autobaud do
+        send(state_data.transport_master, :received_valid_frame_autobaud)
+      end
 
       cond do
         not good_header ->
