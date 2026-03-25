@@ -444,7 +444,9 @@ if Code.ensure_loaded?(Circuits.UART) do
         "BacMstpTransport_ReceiveFSM: Received data header index 5 header CRC -> #{crc}"
       end)
 
-      good_header = !(crc != state_data.header_crc or state_data.source_address == 255)
+      good_header =
+        !(0x55 != EncodingTools.calculate_header_crc(crc, state_data.header_crc) or
+            state_data.source_address == 255)
 
       frame_too_long =
         ((state_data.frame_type_raw < @param_n_min_cobs_type or

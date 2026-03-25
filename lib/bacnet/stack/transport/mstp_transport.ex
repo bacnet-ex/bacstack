@@ -3202,7 +3202,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       end)
 
       header = [0, destination, state.local_address, 0, 0]
-      crc = EncodingTools.calculate_header_crc(header, 0xFF)
+      crc = 0xFF - EncodingTools.calculate_header_crc(header, 0xFF)
       payload = [@mstp_start_byte, @mstp_preamble_byte, header, crc]
 
       send_uart_data(state, payload)
@@ -3217,7 +3217,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       end)
 
       header = [1, destination, state.local_address, 0, 0]
-      crc = EncodingTools.calculate_header_crc(header, 0xFF)
+      crc = 0xFF - EncodingTools.calculate_header_crc(header, 0xFF)
       payload = [@mstp_start_byte, @mstp_preamble_byte, header, crc]
 
       with {:ok, state} <- send_uart_data(state, payload) do
@@ -3235,7 +3235,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       end)
 
       header = [2, destination, state.local_address, 0, 0]
-      crc = EncodingTools.calculate_header_crc(header, 0xFF)
+      crc = 0xFF - EncodingTools.calculate_header_crc(header, 0xFF)
       payload = [@mstp_start_byte, @mstp_preamble_byte, header, crc]
 
       send_uart_data(state, payload)
@@ -3252,7 +3252,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       data_len = IO.iodata_length(data)
 
       header = [3, destination, state.local_address, <<data_len::size(16)>>]
-      header_crc = EncodingTools.calculate_header_crc(header, 0xFF)
+      header_crc = 0xFF - EncodingTools.calculate_header_crc(header, 0xFF)
 
       data_payload =
         if data_len > 0 do
@@ -3291,7 +3291,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       data_len = state_data.data_length
 
       header = [4, state_data.source_address, state.local_address, <<data_len::size(16)>>]
-      header_crc = EncodingTools.calculate_header_crc(header, 0xFF)
+      header_crc = 0xFF - EncodingTools.calculate_header_crc(header, 0xFF)
 
       data_payload =
         if data_len > 0 do
@@ -3334,7 +3334,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       end)
 
       header = [5, destination, state.local_address, <<data_len::size(16)>>]
-      header_crc = EncodingTools.calculate_header_crc(header, 0xFF)
+      header_crc = 0xFF - EncodingTools.calculate_header_crc(header, 0xFF)
 
       data_payload =
         if data_len > 0 do
@@ -3374,7 +3374,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       end)
 
       header = [6, destination, state.local_address, <<data_len::size(16)>>]
-      header_crc = EncodingTools.calculate_header_crc(header, 0xFF)
+      header_crc = 0xFF - EncodingTools.calculate_header_crc(header, 0xFF)
 
       data_payload =
         if data_len > 0 do
@@ -3410,7 +3410,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       end)
 
       header = [7, destination, state.local_address, 0, 0]
-      crc = EncodingTools.calculate_header_crc(header, 0xFF)
+      crc = 0xFF - EncodingTools.calculate_header_crc(header, 0xFF)
       payload = [@mstp_start_byte, @mstp_preamble_byte, header, crc]
 
       send_uart_data(state, payload)
@@ -3433,7 +3433,7 @@ if Code.ensure_loaded?(Circuits.UART) do
           cobs_len = IO.iodata_length(cobs_data) - 2
 
           header = [32, destination, state.local_address, <<cobs_len::size(16)>>]
-          header_crc = EncodingTools.calculate_header_crc(header, 0xFF)
+          header_crc = 0xFF - EncodingTools.calculate_header_crc(header, 0xFF)
 
           payload = [@mstp_start_byte, @mstp_preamble_byte, header, header_crc, cobs_data]
 
@@ -3467,7 +3467,7 @@ if Code.ensure_loaded?(Circuits.UART) do
           cobs_len = IO.iodata_length(cobs_data) - 2
 
           header = [33, destination, state.local_address, <<cobs_len::size(16)>>]
-          header_crc = EncodingTools.calculate_header_crc(header, 0xFF)
+          header_crc = 0xFF - EncodingTools.calculate_header_crc(header, 0xFF)
 
           payload = [@mstp_start_byte, @mstp_preamble_byte, header, header_crc, cobs_data]
 
