@@ -221,10 +221,8 @@ if Code.ensure_loaded?(Circuits.UART) do
                 supervisor: Supervisor.supervisor()
               },
               statistics: %{
-                optional(:rcv_timestamp) => non_neg_integer(),
-                optional(:received_to_send) =>
-                  {min :: non_neg_integer(), last :: non_neg_integer(), max :: non_neg_integer()}
-                  | nil,
+                previous_state: master_state() | slave_state(),
+                states: %{optional(master_state() | slave_state()) => non_neg_integer()},
                 received: %{
                   optional(:invalid_frame) => non_neg_integer(),
                   optional(MstpTransport.frame_type()) => non_neg_integer()
@@ -550,6 +548,20 @@ if Code.ensure_loaded?(Circuits.UART) do
     @spec get_state(TransportBehaviour.transport()) :: :idle | :no_token | atom()
     def get_state(transport) when is_server(transport) do
       GenServer.call(transport, :get_state)
+    end
+
+    @doc """
+    Get the current active baudrate.
+
+    `{:auto, non_neg_integer()}` is returned during autobaud detection,
+    when it has not finished yet. The contained number is the current active baudrate.
+    Once autobaud detection finishes, this function will return a plain number
+    with the current active baudrate.
+    """
+    @spec get_baudrate(TransportBehaviour.transport()) ::
+            non_neg_integer() | {:auto, non_neg_integer()}
+    def get_baudrate(transport) when is_server(transport) do
+      GenServer.call(transport, :get_baudrate)
     end
 
     @doc """
@@ -940,6 +952,8 @@ if Code.ensure_loaded?(Circuits.UART) do
                 autobaud_timer: nil,
                 opts: new_opts,
                 statistics: %{
+                  previous_state: :initialize,
+                  states: %{},
                   received: %{},
                   sent: %{}
                 }
@@ -969,10 +983,16 @@ if Code.ensure_loaded?(Circuits.UART) do
     end
 
     @doc false
-    def handle_continue(
-          :initialize,
-          %State{opts: %{baudrate: :auto}} = state
-        ) do
+    def handle_continue(arg, %State{} = state) do
+      arg
+      |> do_handle_continue(state)
+      |> update_state_statistics()
+    end
+
+    defp do_handle_continue(
+           :initialize,
+           %State{opts: %{baudrate: :auto}} = state
+         ) do
       # This is the initialize phase for auto baudrate -
       # once we find the correct baudrate, the transport state gets resetted to :initialize
       # and the real initialize phase gets called and executed
@@ -989,11 +1009,11 @@ if Code.ensure_loaded?(Circuits.UART) do
       autobaud_switch_baudrate(state, baudrate, rest, true)
     end
 
-    def handle_continue(
-          :initialize,
-          %State{local_address: local_addr, state_machine: state_machine} = state
-        )
-        when local_addr < @min_slave_addr do
+    defp do_handle_continue(
+           :initialize,
+           %State{local_address: local_addr, state_machine: state_machine} = state
+         )
+         when local_addr < @min_slave_addr do
       # Initialize master node
       {:noreply,
        state_set_silence_timer(
@@ -1015,24 +1035,24 @@ if Code.ensure_loaded?(Circuits.UART) do
        )}
     end
 
-    def handle_continue(
-          :initialize,
-          %State{local_address: local_addr, state_machine: state_machine} = state
-        ) do
+    defp do_handle_continue(
+           :initialize,
+           %State{local_address: local_addr, state_machine: state_machine} = state
+         ) do
       # Initialize slave node
       {:noreply,
        %{state | state_machine: %{state_machine | ts: local_addr}, transport_state: :idle}}
     end
 
-    def handle_continue(
-          :use_token,
-          %State{
-            local_address: local_addr,
-            state_machine: state_machine,
-            disable_token_passing: true
-          } = state
-        )
-        when local_addr < @min_slave_addr do
+    defp do_handle_continue(
+           :use_token,
+           %State{
+             local_address: local_addr,
+             state_machine: state_machine,
+             disable_token_passing: true
+           } = state
+         )
+         when local_addr < @min_slave_addr do
       log_debug(fn ->
         "BacMstpTransport: Reached state USE_TOKEN, but token passing is disabled, " <>
           "switching to DONE_WITH_TOKEN"
@@ -1047,11 +1067,11 @@ if Code.ensure_loaded?(Circuits.UART) do
     end
 
     # We received a TOKEN frame, which hands us over the token, so enter USE_TOKEN state
-    def handle_continue(
-          :use_token,
-          %State{local_address: local_addr, state_machine: state_machine} = state
-        )
-        when local_addr < @min_slave_addr do
+    defp do_handle_continue(
+           :use_token,
+           %State{local_address: local_addr, state_machine: state_machine} = state
+         )
+         when local_addr < @min_slave_addr do
       log_debug(fn ->
         "BacMstpTransport: Reached state USE_TOKEN"
       end)
@@ -1141,17 +1161,17 @@ if Code.ensure_loaded?(Circuits.UART) do
     # DONE_WITH_TOKEN state may be entered on the following conditions [OR]:
     # - USE_TOKEN nothing to send, send with no wait
     # - WAIT_FOR_REPLY timed out, invalid frame, reply received or reply postponed
-    def handle_continue(
-          :done_with_token,
-          %State{
-            local_address: local_addr,
-            state_machine: %{frame_count: frame_count},
-            disable_token_passing: false,
-            opts: %{max_info_frames: max_frames}
-          } =
-            state
-        )
-        when local_addr < @min_slave_addr and frame_count < max_frames do
+    defp do_handle_continue(
+           :done_with_token,
+           %State{
+             local_address: local_addr,
+             state_machine: %{frame_count: frame_count},
+             disable_token_passing: false,
+             opts: %{max_info_frames: max_frames}
+           } =
+             state
+         )
+         when local_addr < @min_slave_addr and frame_count < max_frames do
       # State SendAnotherFrame: Send another frame until frame_count reaches max
       # USE_TOKEN will set frame_count to max_frames when state NothingToSend is reached
       log_debug(fn ->
@@ -1161,15 +1181,15 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:noreply, %{state | transport_state: :use_token}, {:continue, :use_token}}
     end
 
-    def handle_continue(
-          :done_with_token,
-          %State{
-            local_address: local_addr,
-            state_machine: %{sole_master: false, ns: ns, ts: ts} = state_machine
-          } =
-            state
-        )
-        when local_addr < @min_slave_addr and ns == ts do
+    defp do_handle_continue(
+           :done_with_token,
+           %State{
+             local_address: local_addr,
+             state_machine: %{sole_master: false, ns: ns, ts: ts} = state_machine
+           } =
+             state
+         )
+         when local_addr < @min_slave_addr and ns == ts do
       # State NextStationUnknown
       ps = rem(ts + 1, state.opts.max_master_address + 1)
 
@@ -1192,16 +1212,16 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:noreply, state}
     end
 
-    def handle_continue(
-          :done_with_token,
-          %State{
-            local_address: local_addr,
-            disable_token_passing: false,
-            state_machine: %{sole_master: true, token_count: tokens} = state_machine
-          } =
-            state
-        )
-        when local_addr < @min_slave_addr and tokens < @param_n_poll - 1 do
+    defp do_handle_continue(
+           :done_with_token,
+           %State{
+             local_address: local_addr,
+             disable_token_passing: false,
+             state_machine: %{sole_master: true, token_count: tokens} = state_machine
+           } =
+             state
+         )
+         when local_addr < @min_slave_addr and tokens < @param_n_poll - 1 do
       # State SoleMaster
       if false and :queue.is_empty(state.send_queue) do
         # This may be used in the future... but not now
@@ -1232,18 +1252,18 @@ if Code.ensure_loaded?(Circuits.UART) do
       end
     end
 
-    def handle_continue(
-          :done_with_token,
-          %State{
-            local_address: local_addr,
-            state_machine:
-              %{sole_master: sole_master, ns: ns, ts: ts, token_count: tokens} = state_machine
-          } =
-            state
-        )
-        when local_addr < @min_slave_addr and
-               (not sole_master or ns == rem(ts + 1, state.opts.max_master_address + 1)) and
-               tokens < @param_n_poll - 1 do
+    defp do_handle_continue(
+           :done_with_token,
+           %State{
+             local_address: local_addr,
+             state_machine:
+               %{sole_master: sole_master, ns: ns, ts: ts, token_count: tokens} = state_machine
+           } =
+             state
+         )
+         when local_addr < @min_slave_addr and
+                (not sole_master or ns == rem(ts + 1, state.opts.max_master_address + 1)) and
+                tokens < @param_n_poll - 1 do
       # State SendToken: The comparison of NS and TS+1 eliminates the Poll For Master
       #                  if there are no addresses between TS and NS, since there is
       #                  no address at which a new master node may be found in that case
@@ -1279,17 +1299,18 @@ if Code.ensure_loaded?(Circuits.UART) do
     # If token passing is disabled, do not engage maintenance PFM, instead:
     # - If successor known, pass it to the successor
     # - If successor unknown, drop the token
-    def handle_continue(
-          :done_with_token,
-          %State{
-            local_address: local_addr,
-            disable_token_passing: false,
-            state_machine: %{ns: ns, ps: ps, token_count: tokens} = state_machine
-          } =
-            state
-        )
-        when local_addr < @min_slave_addr and ns != rem(ps + 1, state.opts.max_master_address + 1) and
-               tokens >= @param_n_poll - 1 do
+    defp do_handle_continue(
+           :done_with_token,
+           %State{
+             local_address: local_addr,
+             disable_token_passing: false,
+             state_machine: %{ns: ns, ps: ps, token_count: tokens} = state_machine
+           } =
+             state
+         )
+         when local_addr < @min_slave_addr and
+                ns != rem(ps + 1, state.opts.max_master_address + 1) and
+                tokens >= @param_n_poll - 1 do
       # State SendMaintenancePFM
       ps = rem(ps + 1, state.opts.max_master_address + 1)
 
@@ -1308,17 +1329,18 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:noreply, state}
     end
 
-    def handle_continue(
-          :done_with_token,
-          %State{
-            local_address: local_addr,
-            state_machine:
-              %{sole_master: false, ns: ns, ps: ps, token_count: tokens} = state_machine
-          } =
-            state
-        )
-        when local_addr < @min_slave_addr and ns == rem(ps + 1, state.opts.max_master_address + 1) and
-               tokens >= @param_n_poll - 1 do
+    defp do_handle_continue(
+           :done_with_token,
+           %State{
+             local_address: local_addr,
+             state_machine:
+               %{sole_master: false, ns: ns, ps: ps, token_count: tokens} = state_machine
+           } =
+             state
+         )
+         when local_addr < @min_slave_addr and
+                ns == rem(ps + 1, state.opts.max_master_address + 1) and
+                tokens >= @param_n_poll - 1 do
       # State ResetMaintenancePFM
       log_debug(fn ->
         "BacMstpTransport: Reached state DONE_WITH_TOKEN and pass token to known successor (ResetMaintenancePFM) " <>
@@ -1350,11 +1372,11 @@ if Code.ensure_loaded?(Circuits.UART) do
       end
     end
 
-    def handle_continue(
-          :done_with_token,
-          %State{local_address: local_addr, disable_token_passing: true} = state
-        )
-        when local_addr < @min_slave_addr do
+    defp do_handle_continue(
+           :done_with_token,
+           %State{local_address: local_addr, disable_token_passing: true} = state
+         )
+         when local_addr < @min_slave_addr do
       log_debug(fn ->
         "BacMstpTransport: Reached state DONE_WITH_TOKEN with disabled token passing, " <>
           "but successor is unknown - dropping the token as action"
@@ -1368,17 +1390,18 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:noreply, new_state}
     end
 
-    def handle_continue(
-          :done_with_token,
-          %State{
-            local_address: local_addr,
-            state_machine:
-              %{sole_master: true, ns: ns, ps: ps, token_count: tokens} = state_machine
-          } =
-            state
-        )
-        when local_addr < @min_slave_addr and ns == rem(ps + 1, state.opts.max_master_address + 1) and
-               tokens >= @param_n_poll - 1 do
+    defp do_handle_continue(
+           :done_with_token,
+           %State{
+             local_address: local_addr,
+             state_machine:
+               %{sole_master: true, ns: ns, ps: ps, token_count: tokens} = state_machine
+           } =
+             state
+         )
+         when local_addr < @min_slave_addr and
+                ns == rem(ps + 1, state.opts.max_master_address + 1) and
+                tokens >= @param_n_poll - 1 do
       # State SoleMasterRestartMaintenancePFM
       ps = rem(ns + 1, state.opts.max_master_address + 1)
 
@@ -1404,7 +1427,13 @@ if Code.ensure_loaded?(Circuits.UART) do
     end
 
     @doc false
-    def handle_call(:close, _from, %State{} = state) do
+    def handle_call(arg, from, %State{} = state) do
+      arg
+      |> do_handle_call(from, state)
+      |> update_state_statistics()
+    end
+
+    defp do_handle_call(:close, _from, %State{} = state) do
       log_debug("BacMstpTransport: Received close request")
 
       ReceiveFSM.close(state.receive_fsm)
@@ -1413,7 +1442,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:stop, :normal, :ok, state}
     end
 
-    def handle_call(:get_state, _from, %State{} = state) do
+    defp do_handle_call(:get_state, _from, %State{} = state) do
       log_debug(fn ->
         "BacMstpTransport: Received get_state request"
       end)
@@ -1421,8 +1450,22 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:reply, state.transport_state, state}
     end
 
-    def handle_call(:disable_token_passing, _from, %State{local_address: local_addr} = state)
-        when local_addr < @min_slave_addr do
+    defp do_handle_call(:get_baudrate, _from, %State{} = state) do
+      log_debug(fn ->
+        "BacMstpTransport: Received get_baudrate request"
+      end)
+
+      baud =
+        case state.opts.baudrate do
+          :auto -> {:auto, state.autobaud_baudrate}
+          int -> int
+        end
+
+      {:reply, baud, state}
+    end
+
+    defp do_handle_call(:disable_token_passing, _from, %State{local_address: local_addr} = state)
+         when local_addr < @min_slave_addr do
       log_debug(fn ->
         "BacMstpTransport: Received disable_token_passing request during state " <>
           String.upcase(Atom.to_string(state.transport_state))
@@ -1433,7 +1476,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:reply, :ok, new_state}
     end
 
-    def handle_call(:disable_token_passing, _from, %State{} = state) do
+    defp do_handle_call(:disable_token_passing, _from, %State{} = state) do
       log_debug(fn ->
         "BacMstpTransport: Received disable_token_passing reques in slave_mode"
       end)
@@ -1441,7 +1484,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:reply, {:error, :slave_mode}, state}
     end
 
-    def handle_call({:configure, %{} = opts}, _from, %State{} = state) do
+    defp do_handle_call({:configure, %{} = opts}, _from, %State{} = state) do
       log_debug(fn -> "BacMstpTransport: Received configure request" end)
 
       new_opts = Map.merge(state.opts, opts)
@@ -1454,6 +1497,7 @@ if Code.ensure_loaded?(Circuits.UART) do
           {:ok, baudrate} ->
             with :ok <- UART.configure(state.uart_pid, speed: baudrate) do
               ReceiveFSM.configure(state.receive_fsm, %{
+                autobaud: false,
                 baudrate: baudrate,
                 log_communication: new_opts.log_communication_rcv
               })
@@ -1465,12 +1509,47 @@ if Code.ensure_loaded?(Circuits.UART) do
 
       case reply do
         :ok ->
-          new_state = %{state | opts: new_opts}
-          {:reply, :ok, new_state}
+          # Cancel lingering timer
+          if state.autobaud_timer do
+            Process.cancel_timer(state.autobaud_timer)
+
+            # Clear messagebox
+            receive do
+              :autobaud_timer -> :ok
+            after
+              0 -> :ok
+            end
+          end
+
+          new_trans_state =
+            if state.transport_state == :autobaud_detection do
+              :idle
+            else
+              state.transport_state
+            end
+
+          new_state = %{
+            state
+            | transport_state: new_trans_state,
+              autobaud_baudrate: nil,
+              autobaud_baudrates_pending: nil,
+              autobaud_timer: nil,
+              opts: new_opts
+          }
+
+          if state.transport_state == :autobaud_detection do
+            {:reply, :ok, new_state, {:continue, :initialize}}
+          else
+            {:reply, :ok, new_state}
+          end
 
         :auto ->
-          # Switch to AUTOBAUD_DETECTION state and let initialize continue callback do the rest
+          # Cancel any pending silence timers when switching to AUTOBAUD
+          state = state_cancel_silence_timer(state)
+
           new_state = %{state | transport_state: :autobaud_detection, opts: new_opts}
+
+          # Switch to AUTOBAUD_DETECTION state and let initialize continue callback do the rest
           {:reply, :ok, new_state, {:continue, :initialize}}
 
         _other ->
@@ -1478,24 +1557,24 @@ if Code.ensure_loaded?(Circuits.UART) do
       end
     end
 
-    def handle_call(:get_local_address, _from, %State{} = state) do
+    defp do_handle_call(:get_local_address, _from, %State{} = state) do
       log_debug("BacMstpTransport: Received get_local_address request")
 
       {:reply, state.local_address, state}
     end
 
-    def handle_call(
-          {:send, destination, send_and_wait, data, _data_length, invoke_id},
-          _from,
-          %State{
-            state_machine: %{source_address: source} = _state_machine,
-            transport_state: :answer_data_request,
-            answer_invoke_id: answer_invoke_id
-          } =
-            state
-        )
-        when destination == source and not send_and_wait and not is_nil(invoke_id) and
-               invoke_id == answer_invoke_id do
+    defp do_handle_call(
+           {:send, destination, send_and_wait, data, _data_length, invoke_id},
+           _from,
+           %State{
+             state_machine: %{source_address: source} = _state_machine,
+             transport_state: :answer_data_request,
+             answer_invoke_id: answer_invoke_id
+           } =
+             state
+         )
+         when destination == source and not send_and_wait and not is_nil(invoke_id) and
+                invoke_id == answer_invoke_id do
       # If we are in ANSWER_DATA_REQUEST state and destination is the source,
       # check if it's an answer and invoke_id matches (invoke_id is nil if it's not an answer)
       log_debug(fn ->
@@ -1515,16 +1594,16 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:reply, reply, new_state}
     end
 
-    def handle_call(
-          {:send, destination, _send_and_wait, _data, _data_length, invoke_id},
-          _from,
-          %State{
-            local_address: local_addr,
-            transport_state: :idle
-          } =
-            state
-        )
-        when local_addr >= @min_slave_addr and not is_nil(invoke_id) do
+    defp do_handle_call(
+           {:send, destination, _send_and_wait, _data, _data_length, invoke_id},
+           _from,
+           %State{
+             local_address: local_addr,
+             transport_state: :idle
+           } =
+             state
+         )
+         when local_addr >= @min_slave_addr and not is_nil(invoke_id) do
       # If we are in we are in slave mode,
       # check if it's an answer and invoke_id matches (invoke_id is nil if it's not an answer)
       # This is the sign that we CAN NOT reply deferred
@@ -1536,12 +1615,12 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:reply, {:error, :app_timeout}, state}
     end
 
-    def handle_call(
-          {:send, _destination, _send_and_wait, _data, _data_length, _invoke_id},
-          _from,
-          %State{local_address: local_addr, disable_token_passing: true} = state
-        )
-        when local_addr < @min_slave_addr do
+    defp do_handle_call(
+           {:send, _destination, _send_and_wait, _data, _data_length, _invoke_id},
+           _from,
+           %State{local_address: local_addr, disable_token_passing: true} = state
+         )
+         when local_addr < @min_slave_addr do
       log_debug(fn ->
         "BacMstpTransport: Received send request while token passing is disabled"
       end)
@@ -1549,12 +1628,12 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:reply, {:error, :token_passing_disabled}, state}
     end
 
-    def handle_call(
-          {:send, destination, send_and_wait, data, data_length, _invoke_id},
-          _from,
-          %State{local_address: local_addr} = state
-        )
-        when local_addr < @min_slave_addr do
+    defp do_handle_call(
+           {:send, destination, send_and_wait, data, data_length, _invoke_id},
+           _from,
+           %State{local_address: local_addr} = state
+         )
+         when local_addr < @min_slave_addr do
       log_debug(fn ->
         "BacMstpTransport: Received send request for #{inspect(destination)}"
       end)
@@ -1572,11 +1651,11 @@ if Code.ensure_loaded?(Circuits.UART) do
       end
     end
 
-    def handle_call(
-          {:send, _destination, _send_and_wait, _data, _data_length, _invoke_id},
-          _from,
-          %State{} = state
-        ) do
+    defp do_handle_call(
+           {:send, _destination, _send_and_wait, _data, _data_length, _invoke_id},
+           _from,
+           %State{} = state
+         ) do
       log_debug(fn ->
         "BacMstpTransport: Received send request in slave mode"
       end)
@@ -1584,12 +1663,12 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:reply, {:error, :slave_mode}, state}
     end
 
-    def handle_call(
-          {:send_test, _destination, _data},
-          _from,
-          %State{local_address: local_addr, disable_token_passing: true} = state
-        )
-        when local_addr < @min_slave_addr do
+    defp do_handle_call(
+           {:send_test, _destination, _data},
+           _from,
+           %State{local_address: local_addr, disable_token_passing: true} = state
+         )
+         when local_addr < @min_slave_addr do
       log_debug(fn ->
         "BacMstpTransport: Received send_test request while token passing is disabled"
       end)
@@ -1597,12 +1676,12 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:reply, {:error, :token_passing_disabled}, state}
     end
 
-    def handle_call(
-          {:send_test, destination, data},
-          from,
-          %State{local_address: local_addr} = state
-        )
-        when local_addr < @min_slave_addr do
+    defp do_handle_call(
+           {:send_test, destination, data},
+           from,
+           %State{local_address: local_addr} = state
+         )
+         when local_addr < @min_slave_addr do
       log_debug(fn ->
         "BacMstpTransport: Received send_test request for #{inspect(destination)}"
       end)
@@ -1621,11 +1700,11 @@ if Code.ensure_loaded?(Circuits.UART) do
       end
     end
 
-    def handle_call(
-          {:send_test, _destination, _data},
-          _from,
-          %State{} = state
-        ) do
+    defp do_handle_call(
+           {:send_test, _destination, _data},
+           _from,
+           %State{} = state
+         ) do
       log_debug(fn ->
         "BacMstpTransport: Received send_test request in slave mode"
       end)
@@ -1633,12 +1712,12 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:reply, {:error, :slave_mode}, state}
     end
 
-    def handle_call(
-          {:reply_postponed, destination, _opts},
-          _from,
-          %State{local_address: local_addr, state_machine: %{source_address: source}} = state
-        )
-        when local_addr < @min_slave_addr do
+    defp do_handle_call(
+           {:reply_postponed, destination, _opts},
+           _from,
+           %State{local_address: local_addr, state_machine: %{source_address: source}} = state
+         )
+         when local_addr < @min_slave_addr do
       log_debug(fn ->
         "BacMstpTransport: Received reply_postponed request"
       end)
@@ -1665,7 +1744,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:reply, reply, new_state}
     end
 
-    def handle_call({:reply_postponed, _destination, _opts}, _from, %State{} = state) do
+    defp do_handle_call({:reply_postponed, _destination, _opts}, _from, %State{} = state) do
       log_debug(fn ->
         "BacMstpTransport: Received reply_postponed request in slave mode"
       end)
@@ -1673,7 +1752,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:reply, {:error, :slave_mode}, state}
     end
 
-    def handle_call(_call, _from, state) do
+    defp do_handle_call(_call, _from, state) do
       {:noreply, state}
     end
 
@@ -1683,7 +1762,13 @@ if Code.ensure_loaded?(Circuits.UART) do
     end
 
     @doc false
-    def handle_info({:serial_crash, reason}, %State{} = state) do
+    def handle_info(arg, %State{} = state) do
+      arg
+      |> do_handle_info(state)
+      |> update_state_statistics()
+    end
+
+    defp do_handle_info({:serial_crash, reason}, %State{} = state) do
       # This message is either sent by ReceiveFSM or when writing UART fails
       Logger.error(fn ->
         "BacMstpTransport: UART error encountered and shutting down, error: " <> inspect(reason)
@@ -1696,19 +1781,19 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:stop, {:uart_error, reason}, state}
     end
 
-    def handle_info(:wakeup_use_token, %State{} = state) do
+    defp do_handle_info(:wakeup_use_token, %State{} = state) do
       {:noreply, state, {:continue, :use_token}}
     end
 
-    def handle_info(
-          :timer_rcv_timeout,
-          %State{
-            state_machine: %{retry_count: retry} = state_machine,
-            transport_state: :pass_token
-          } =
-            state
-        )
-        when retry < @param_n_retry_token do
+    defp do_handle_info(
+           :timer_rcv_timeout,
+           %State{
+             state_machine: %{retry_count: retry} = state_machine,
+             transport_state: :pass_token
+           } =
+             state
+         )
+         when retry < @param_n_retry_token do
       # State RetrySendToken
       log_debug(fn ->
         "BacMstpTransport: Received receive timeout timer message at state PASS_TOKEN - retrying"
@@ -1734,12 +1819,12 @@ if Code.ensure_loaded?(Circuits.UART) do
       end
     end
 
-    def handle_info(
-          :timer_rcv_timeout,
-          %State{state_machine: %{ns: ns, ts: ts} = state_machine, transport_state: :pass_token} =
-            state
-        )
-        when ts == rem(ns + 1, state.opts.max_master_address + 1) do
+    defp do_handle_info(
+           :timer_rcv_timeout,
+           %State{state_machine: %{ns: ns, ts: ts} = state_machine, transport_state: :pass_token} =
+             state
+         )
+         when ts == rem(ns + 1, state.opts.max_master_address + 1) do
       # State FindNewSuccessorUnknown
       log_debug(fn ->
         "BacMstpTransport: Received receive timeout timer message at state PASS_TOKEN - " <>
@@ -1765,10 +1850,10 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:noreply, state}
     end
 
-    def handle_info(
-          :timer_rcv_timeout,
-          %State{state_machine: %{} = state_machine, transport_state: :pass_token} = state
-        ) do
+    defp do_handle_info(
+           :timer_rcv_timeout,
+           %State{state_machine: %{} = state_machine, transport_state: :pass_token} = state
+         ) do
       # State FindNewSuccessor
       log_debug(fn ->
         "BacMstpTransport: Received receive timeout timer message at state PASS_TOKEN - " <>
@@ -1794,13 +1879,13 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:noreply, state}
     end
 
-    def handle_info(
-          :timer_rcv_timeout,
-          %State{
-            state_machine: %{sole_master: true} = state_machine,
-            transport_state: :poll_for_master
-          } = state
-        ) do
+    defp do_handle_info(
+           :timer_rcv_timeout,
+           %State{
+             state_machine: %{sole_master: true} = state_machine,
+             transport_state: :poll_for_master
+           } = state
+         ) do
       # State SoleMaster: There was no valid reply to the periodic poll by the sole known master for other masters
       log_debug(fn ->
         "BacMstpTransport: Received receive timeout timer message at state POLL_FOR_MASTER (sole master)"
@@ -1817,14 +1902,14 @@ if Code.ensure_loaded?(Circuits.UART) do
        }), {:continue, :use_token}}
     end
 
-    def handle_info(
-          :timer_rcv_timeout,
-          %State{
-            state_machine: %{ns: ns, ts: ts} = state_machine,
-            transport_state: :poll_for_master
-          } = state
-        )
-        when ns != ts do
+    defp do_handle_info(
+           :timer_rcv_timeout,
+           %State{
+             state_machine: %{ns: ns, ts: ts} = state_machine,
+             transport_state: :poll_for_master
+           } = state
+         )
+         when ns != ts do
       # State DoneWithPFM: There was no valid reply to the maintenance poll for a master
       log_debug(fn ->
         "BacMstpTransport: Received receive timeout timer message at state POLL_FOR_MASTER (known successor)"
@@ -1854,14 +1939,14 @@ if Code.ensure_loaded?(Circuits.UART) do
       end
     end
 
-    def handle_info(
-          :timer_rcv_timeout,
-          %State{
-            state_machine: %{ns: ns, ts: ts, ps: ps} = state_machine,
-            transport_state: :poll_for_master
-          } = state
-        )
-        when ns == ts and rem(ps + 1, state.opts.max_master_address + 1) != ts do
+    defp do_handle_info(
+           :timer_rcv_timeout,
+           %State{
+             state_machine: %{ns: ns, ts: ts, ps: ps} = state_machine,
+             transport_state: :poll_for_master
+           } = state
+         )
+         when ns == ts and rem(ps + 1, state.opts.max_master_address + 1) != ts do
       # State SendNextPFM: There was no valid reply by the PS, so try to poll the next master
       log_debug(fn ->
         "BacMstpTransport: Received receive timeout timer message at state POLL_FOR_MASTER (unknown successor)"
@@ -1884,14 +1969,14 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:noreply, state}
     end
 
-    def handle_info(
-          :timer_rcv_timeout,
-          %State{
-            state_machine: %{ns: ns, ts: ts, ps: ps} = state_machine,
-            transport_state: :poll_for_master
-          } = state
-        )
-        when ns == ts and rem(ps + 1, state.opts.max_master_address + 1) == ts do
+    defp do_handle_info(
+           :timer_rcv_timeout,
+           %State{
+             state_machine: %{ns: ns, ts: ts, ps: ps} = state_machine,
+             transport_state: :poll_for_master
+           } = state
+         )
+         when ns == ts and rem(ps + 1, state.opts.max_master_address + 1) == ts do
       # DeclareSoleMaster: No known successor and no previous polled master has answered (none alive)
       log_debug(fn ->
         "BacMstpTransport: Received receive timeout timer message at state POLL_FOR_MASTER (declaring sole master)"
@@ -1912,10 +1997,10 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:noreply, new_state, {:continue, :use_token}}
     end
 
-    def handle_info(
-          :timer_rcv_timeout,
-          %State{state_machine: state_machine, transport_state: :wait_for_reply} = state
-        ) do
+    defp do_handle_info(
+           :timer_rcv_timeout,
+           %State{state_machine: state_machine, transport_state: :wait_for_reply} = state
+         ) do
       log_debug(fn ->
         "BacMstpTransport: Received receive timeout timer message at state WAIT_FOR_REPLY"
       end)
@@ -1939,7 +2024,7 @@ if Code.ensure_loaded?(Circuits.UART) do
        }), {:continue, :done_with_token}}
     end
 
-    def handle_info(:timer_rcv_timeout, %State{disable_token_passing: true} = state) do
+    defp do_handle_info(:timer_rcv_timeout, %State{disable_token_passing: true} = state) do
       log_debug(fn ->
         "BacMstpTransport: Received receive timeout timer message while token passing is disabled, " <>
           "if we were holding the token, we will drop it now"
@@ -1951,10 +2036,10 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:noreply, new_state}
     end
 
-    def handle_info(
-          :timer_rcv_timeout,
-          %State{} = state
-        ) do
+    defp do_handle_info(
+           :timer_rcv_timeout,
+           %State{} = state
+         ) do
       log_debug(fn ->
         "BacMstpTransport: Received receive timeout timer message at state " <>
           String.upcase(Atom.to_string(state.transport_state))
@@ -1963,7 +2048,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:noreply, state_cancel_silence_timer(state)}
     end
 
-    def handle_info(:timer_lost_token, %State{disable_token_passing: true} = state) do
+    defp do_handle_info(:timer_lost_token, %State{disable_token_passing: true} = state) do
       log_debug(fn ->
         "BacMstpTransport: Received lost token timer message while token passing is disabled, " <>
           "ignoring it and transitioning to NO_TOKEN"
@@ -1976,15 +2061,15 @@ if Code.ensure_loaded?(Circuits.UART) do
     end
 
     # LostToken can only be in effect during state IDLE (and if not sole master)
-    def handle_info(
-          :timer_lost_token,
-          %State{
-            local_address: local_addr,
-            transport_state: :idle,
-            state_machine: %{sole_master: false}
-          } = state
-        )
-        when local_addr < @min_slave_addr do
+    defp do_handle_info(
+           :timer_lost_token,
+           %State{
+             local_address: local_addr,
+             transport_state: :idle,
+             state_machine: %{sole_master: false}
+           } = state
+         )
+         when local_addr < @min_slave_addr do
       log_debug(fn ->
         "BacMstpTransport: Received lost token timer message during state IDLE"
       end)
@@ -2010,16 +2095,16 @@ if Code.ensure_loaded?(Circuits.UART) do
 
     # This message is sent by the ReceiveFSM
     # As slave, we ignore this
-    def handle_info(
-          :timer_lost_token,
-          %State{} = state
-        ),
-        do: {:noreply, state_clear_silence_timer(state)}
+    defp do_handle_info(
+           :timer_lost_token,
+           %State{} = state
+         ),
+         do: {:noreply, state_clear_silence_timer(state)}
 
-    def handle_info(
-          {:timer_generate_token, _ts_offset},
-          %State{disable_token_passing: true} = state
-        ) do
+    defp do_handle_info(
+           {:timer_generate_token, _ts_offset},
+           %State{disable_token_passing: true} = state
+         ) do
       log_debug(fn ->
         "BacMstpTransport: Received generate token timer message while token passing is disabled, " <>
           "ignoring it and continue staying in NO_TOKEN state"
@@ -2029,10 +2114,10 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:noreply, state}
     end
 
-    def handle_info(
-          {:timer_generate_token, ts_offset},
-          %State{state_machine: state_machine, transport_state: :no_token} = state
-        ) do
+    defp do_handle_info(
+           {:timer_generate_token, ts_offset},
+           %State{state_machine: state_machine, transport_state: :no_token} = state
+         ) do
       log_debug(fn ->
         "BacMstpTransport: Received generate token timer message"
       end)
@@ -2073,14 +2158,14 @@ if Code.ensure_loaded?(Circuits.UART) do
       end
     end
 
-    def handle_info(
-          {:timer_retry_token_handoff, _ns},
-          %State{
-            state_machine: state_machine,
-            transport_state: :pass_token,
-            disable_token_passing: true
-          } = state
-        ) do
+    defp do_handle_info(
+           {:timer_retry_token_handoff, _ns},
+           %State{
+             state_machine: state_machine,
+             transport_state: :pass_token,
+             disable_token_passing: true
+           } = state
+         ) do
       log_debug(fn ->
         "BacMstpTransport: Received retry token handoff timer message during token passing is disabled, " <>
           "ignoring it, if we are holding the token, it will be dropped and transitioning to NO_TOKEN state"
@@ -2094,10 +2179,10 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:noreply, new_state}
     end
 
-    def handle_info(
-          {:timer_retry_token_handoff, ns},
-          %State{state_machine: state_machine, transport_state: :pass_token} = state
-        ) do
+    defp do_handle_info(
+           {:timer_retry_token_handoff, ns},
+           %State{state_machine: state_machine, transport_state: :pass_token} = state
+         ) do
       log_debug(fn ->
         "BacMstpTransport: Received retry token handoff timer message"
       end)
@@ -2108,10 +2193,10 @@ if Code.ensure_loaded?(Circuits.UART) do
       )
     end
 
-    def handle_info(
-          :timer_answer_timeout,
-          %State{state_machine: state_machine} = state
-        ) do
+    defp do_handle_info(
+           :timer_answer_timeout,
+           %State{state_machine: state_machine} = state
+         ) do
       log_debug(fn ->
         "BacMstpTransport: Received answer timeout timer message - sending REPLY_POSTPONED"
       end)
@@ -2132,12 +2217,17 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:noreply, new_state}
     end
 
-    def handle_info(
-          :received_valid_frame_autobaud,
-          %State{transport_state: :autobaud_detection} = state
-        ) do
+    defp do_handle_info(
+           :received_valid_frame_autobaud,
+           %State{transport_state: :autobaud_detection} = state
+         ) do
       log_debug(fn ->
-        "BacMstpTransport: Received received_valid_frame_autobaud message from MS/TP Receive FSM"
+        "BacMstpTransport: Received received_valid_frame_autobaud message from MS/TP Receive FSM, " <>
+          "we found a valid frame at baudrate #{state.autobaud_baudrate}"
+      end)
+
+      Logger.info(fn ->
+        "BacMstpTransport: Autobaud selected baudrate #{state.autobaud_baudrate}"
       end)
 
       # Cancel lingering timer
@@ -2167,10 +2257,10 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:noreply, new_state, {:continue, :initialize}}
     end
 
-    def handle_info(
-          :received_invalid_frame,
-          %State{transport_state: :autobaud_detection, autobaud_baudrates_pending: []} = state
-        ) do
+    defp do_handle_info(
+           :received_invalid_frame,
+           %State{transport_state: :autobaud_detection, autobaud_baudrates_pending: []} = state
+         ) do
       log_debug(fn ->
         "BacMstpTransport: Received received_invalid_frame message from MS/TP Receive FSM " <>
           "during autobaud detection phase"
@@ -2191,7 +2281,10 @@ if Code.ensure_loaded?(Circuits.UART) do
       end
     end
 
-    def handle_info(:received_invalid_frame, %State{transport_state: :autobaud_detection} = state) do
+    defp do_handle_info(
+           :received_invalid_frame,
+           %State{transport_state: :autobaud_detection} = state
+         ) do
       [new_baudrate | rest] = state.autobaud_baudrates_pending
 
       log_debug(fn ->
@@ -2203,7 +2296,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       autobaud_switch_baudrate(state, new_baudrate, rest, true)
     end
 
-    def handle_info(:received_invalid_frame, %State{} = state) do
+    defp do_handle_info(:received_invalid_frame, %State{} = state) do
       log_debug(fn ->
         "BacMstpTransport: Received received_invalid_frame message from MS/TP Receive FSM"
       end)
@@ -2238,11 +2331,11 @@ if Code.ensure_loaded?(Circuits.UART) do
     # During ANSWER_DATA_REQUEST state we MUST NOT receive any data,
     # no one should be sending any data anyway and instead wait for our answer
     # (The actual answer or REPLY_POSTPONED frame)
-    def handle_info(
-          {:received_frame, %StateData{} = data},
-          %State{} = state
-        )
-        when state.transport_state == :answer_data_request do
+    defp do_handle_info(
+           {:received_frame, %StateData{} = data},
+           %State{} = state
+         )
+         when state.transport_state == :answer_data_request do
       log_debug(fn ->
         "BacMstpTransport: Received unexpected received_frame message from MS/TP Receive FSM in " <>
           "ANSWER_DATA_REQUEST state - dropping frame"
@@ -2263,21 +2356,21 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:noreply, state}
     end
 
-    def handle_info(
-          {:received_frame, %StateData{} = data},
-          %State{} = state
-        )
-        when (state.transport_state == :poll_for_master and
-                (data.destination_address != state.local_address or
-                   data.frame_type != :reply_to_poll_for_master)) or
-               (state.transport_state == :wait_for_reply and
-                  (data.destination_address != state.local_address or
-                     data.frame_type not in [
-                       :test_response,
-                       :bacnet_data_not_expecting_reply,
-                       :bacnet_extended_data_not_expecting_reply,
-                       :reply_postponed
-                     ])) do
+    defp do_handle_info(
+           {:received_frame, %StateData{} = data},
+           %State{} = state
+         )
+         when (state.transport_state == :poll_for_master and
+                 (data.destination_address != state.local_address or
+                    data.frame_type != :reply_to_poll_for_master)) or
+                (state.transport_state == :wait_for_reply and
+                   (data.destination_address != state.local_address or
+                      data.frame_type not in [
+                        :test_response,
+                        :bacnet_data_not_expecting_reply,
+                        :bacnet_extended_data_not_expecting_reply,
+                        :reply_postponed
+                      ])) do
       log_debug(fn ->
         "BacMstpTransport: Received unexpected received_frame message from MS/TP Receive FSM in " <>
           String.upcase(Atom.to_string(state.transport_state)) <>
@@ -2307,10 +2400,10 @@ if Code.ensure_loaded?(Circuits.UART) do
       {:noreply, new_state}
     end
 
-    def handle_info(
-          {:received_frame, %StateData{} = data},
-          %State{} = state
-        ) do
+    defp do_handle_info(
+           {:received_frame, %StateData{} = data},
+           %State{} = state
+         ) do
       log_debug_comm(state, fn ->
         "BacMstpTransport: Received received_frame message from MS/TP Receive FSM"
       end)
@@ -2334,7 +2427,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       handle_mstp_frame(state, data)
     end
 
-    def handle_info({:received_data, data_length}, %State{} = state) do
+    defp do_handle_info({:received_data, data_length}, %State{} = state) do
       log_debug_comm(state, fn ->
         "BacMstpTransport: Received received_data message from MS/TP Receive FSM"
       end)
@@ -2377,10 +2470,10 @@ if Code.ensure_loaded?(Circuits.UART) do
       end
     end
 
-    def handle_info(
-          :autobaud_timer,
-          %State{transport_state: :autobaud_detection, autobaud_baudrates_pending: []} = state
-        ) do
+    defp do_handle_info(
+           :autobaud_timer,
+           %State{transport_state: :autobaud_detection, autobaud_baudrates_pending: []} = state
+         ) do
       log_debug(fn -> "BacMstpTransport: Received autobaud_timer timer message" end)
 
       Logger.warning(fn ->
@@ -2398,7 +2491,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       end
     end
 
-    def handle_info(:autobaud_timer, %State{transport_state: :autobaud_detection} = state) do
+    defp do_handle_info(:autobaud_timer, %State{transport_state: :autobaud_detection} = state) do
       [new_baudrate | rest] = state.autobaud_baudrates_pending
 
       log_debug(fn ->
@@ -2410,7 +2503,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       autobaud_switch_baudrate(state, new_baudrate, rest, true)
     end
 
-    def handle_info(_info, state) do
+    defp do_handle_info(_info, state) do
       {:noreply, state}
     end
 
@@ -3611,9 +3704,81 @@ if Code.ensure_loaded?(Circuits.UART) do
 
       # Ignore invalid types (dont let it crash us)
       defp update_sent_statistics(_type, %State{} = state), do: state
+
+      @spec update_state_statistics(var) :: var
+            when var:
+                   {atom(), State.t()}
+                   | {atom(), term(), State.t()}
+                   | {atom(), State.t(), term()}
+                   | {atom(), term(), State.t(), term()}
+      defp update_state_statistics(
+             {_type, %State{statistics: %{previous_state: prev}, transport_state: now}} = return
+           )
+           when prev == now,
+           do: return
+
+      defp update_state_statistics({type, %State{transport_state: now} = state})
+           when is_atom(type) do
+        {type, update_state_statistics_map(state, now)}
+      end
+
+      defp update_state_statistics(
+             {_type, _reply, %State{statistics: %{previous_state: prev}, transport_state: now}} =
+               return
+           )
+           when prev == now,
+           do: return
+
+      defp update_state_statistics({type, reply, %State{transport_state: now} = state})
+           when is_atom(type) do
+        {type, reply, update_state_statistics_map(state, now)}
+      end
+
+      defp update_state_statistics(
+             {_type, %State{statistics: %{previous_state: prev}, transport_state: now}, _cont} =
+               return
+           )
+           when prev == now,
+           do: return
+
+      defp update_state_statistics({type, %State{transport_state: now} = state, cont})
+           when is_atom(type) do
+        {type, update_state_statistics_map(state, now), cont}
+      end
+
+      defp update_state_statistics(
+             {_type, _reply, %State{statistics: %{previous_state: prev}, transport_state: now},
+              _cont} = return
+           )
+           when prev == now,
+           do: return
+
+      defp update_state_statistics({type, reply, %State{transport_state: now} = state, cont})
+           when is_atom(type) do
+        {type, reply, update_state_statistics_map(state, now), cont}
+      end
+
+      # defp update_state_statistics(value), do: value
+
+      @spec update_state_statistics_map(State.t(), atom()) :: State.t()
+      defp update_state_statistics_map(%State{} = state, key) when is_atom(key) do
+        state
+        |> update_in([Access.key(:statistics), :states, key], fn
+          nil -> 1
+          counter -> counter + 1
+        end)
+        |> update_in([Access.key(:statistics), :previous_state], fn
+          _old -> state.transport_state
+        end)
+      end
     else
+      @compile {:inline,
+                update_received_statistics: 2,
+                update_sent_statistics: 2,
+                update_state_statistics: 1}
       defp update_received_statistics(_type, %State{} = state), do: state
       defp update_sent_statistics(_type, %State{} = state), do: state
+      defp update_state_statistics(return), do: return
     end
 
     # @spec update_rcv_send_statistics(State.t()) :: State.t()
