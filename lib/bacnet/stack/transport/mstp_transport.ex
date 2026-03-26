@@ -207,6 +207,7 @@ if Code.ensure_loaded?(Circuits.UART) do
               answer_invoke_id: non_neg_integer() | nil,
               send_queue: :queue.queue(send_item()),
               send_timer: :timer.tref() | nil,
+              disable_maintenance_pfm: boolean(),
               disable_token_passing: boolean(),
               autobaud_baudrate: non_neg_integer() | nil,
               autobaud_baudrates_pending: [non_neg_integer()] | nil,
@@ -244,6 +245,7 @@ if Code.ensure_loaded?(Circuits.UART) do
         :answer_invoke_id,
         :send_queue,
         :send_timer,
+        :disable_maintenance_pfm,
         :disable_token_passing,
         :autobaud_baudrate,
         :autobaud_baudrates_pending,
@@ -865,11 +867,7 @@ if Code.ensure_loaded?(Circuits.UART) do
 
     There are no options at this time.
     """
-    @spec reply_postponed(
-            portal :: TransportBehaviour.portal(),
-            destination :: source_address(),
-            opts :: Keyword.t()
-          ) ::
+    @spec reply_postponed(TransportBehaviour.portal(), source_address(), Keyword.t()) ::
             :ok
             | {:error, term()}
             | {:error, :slave_mode}
@@ -879,6 +877,20 @@ if Code.ensure_loaded?(Circuits.UART) do
         when is_server(portal) and is_integer(destination) and destination >= 0 and
                destination <= 254 and is_list(opts) do
       GenServer.call(portal, {:reply_postponed, destination, opts}, @call_timeout)
+    end
+
+    @doc """
+    Enables or disables maintenance POLL_FOR_MASTER in the case the successor node is known.
+    If the successor node is unknown, POLL_FOR_MASTER will be regardless done.
+
+    This function is only for development and testing purpose. It must not be used in production.
+    Periodic maintenance polling for masters is required to find new nodes in between this node
+    and the next current successor node. Nodes may come up and go down any time, which
+    the BACnet specification accounts for and thus includes a POLL_FOR_MASTER mechanism.
+    """
+    @spec set_maintenance_pfm(TransportBehaviour.transport(), boolean()) :: :ok
+    def set_maintenance_pfm(transport, state) when is_server(transport) and is_boolean(state) do
+      GenServer.call(transport, {:disable_maintenance_pfm, not state})
     end
 
     @doc false
@@ -946,6 +958,7 @@ if Code.ensure_loaded?(Circuits.UART) do
                 answer_invoke_id: nil,
                 send_queue: :queue.new(),
                 send_timer: nil,
+                disable_maintenance_pfm: false,
                 disable_token_passing: false,
                 autobaud_baudrate: nil,
                 autobaud_baudrates_pending: nil,
@@ -1294,6 +1307,33 @@ if Code.ensure_loaded?(Circuits.UART) do
           {:noreply,
            state_set_silence_timer(state, {:timer_retry_token_handoff, ns}, @param_t_slot)}
       end
+    end
+
+    defp do_handle_continue(
+           :done_with_token,
+           %State{
+             local_address: local_addr,
+             disable_maintenance_pfm: true,
+             disable_token_passing: false,
+             state_machine: %{ns: ns, ps: ps, token_count: tokens} = state_machine
+           } =
+             state
+         )
+         when local_addr < @min_slave_addr and
+                ns != rem(ps + 1, state.opts.max_master_address + 1) and
+                tokens >= @param_n_poll - 1 do
+      log_debug(fn ->
+        "BacMstpTransport: Reached state DONE_WITH_TOKEN and skipping maintenance POLL_FOR_MASTER, " <>
+          "skipping to USE_TOKEN instead (maintenance PFM disabled)"
+      end)
+
+      new_state = %{
+        state
+        | state_machine: %{state_machine | frame_count: 0, token_count: 0},
+          transport_state: :use_token
+      }
+
+      {:noreply, new_state, {:continue, :use_token}}
     end
 
     # If token passing is disabled, do not engage maintenance PFM, instead:
@@ -1750,6 +1790,16 @@ if Code.ensure_loaded?(Circuits.UART) do
       end)
 
       {:reply, {:error, :slave_mode}, state}
+    end
+
+    defp do_handle_call({:disable_maintenance_pfm, pfm_state}, _from, %State{} = state)
+         when is_boolean(pfm_state) do
+      log_debug(fn ->
+        "BacMstpTransport: Received disable_maintenance_pfm request with " <>
+          "value #{pfm_state}"
+      end)
+
+      {:reply, :ok, %{state | disable_maintenance_pfm: pfm_state}}
     end
 
     defp do_handle_call(_call, _from, state) do
