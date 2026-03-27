@@ -444,9 +444,8 @@ if Code.ensure_loaded?(Circuits.UART) do
         "BacMstpTransport_ReceiveFSM: Received data header index 5 header CRC -> #{crc}"
       end)
 
-      good_header =
-        !(0x55 != EncodingTools.calculate_header_crc(crc, state_data.header_crc) or
-            state_data.source_address == 255)
+      actual_crc = EncodingTools.calculate_header_crc(crc, state_data.header_crc)
+      good_header = 0x55 == actual_crc and state_data.source_address < 255
 
       frame_too_long =
         ((state_data.frame_type_raw < @param_n_min_cobs_type or
@@ -469,7 +468,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       cond do
         not good_header ->
           Logger.warning(fn ->
-            "BacMstpTransport_ReceiveFSM: Received data with bad header, expected crc: #{crc}, actual crc: #{state_data.header_crc}"
+            "BacMstpTransport_ReceiveFSM: Received data with bad header, expected crc: #{0x55}, actual crc: #{actual_crc}"
           end)
 
           handle_receive_invalid_or_timeout(state_data, true, rest)

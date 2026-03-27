@@ -32,6 +32,33 @@ if Code.ensure_loaded?(Circuits.UART) do
     to your `mix.exs` as dependency! It is an optional dependency and thus
     by default not present when you install this library.
 
+    ### Logger warning spam due to bad data/devices/network
+
+    If you have bad devices or the MS/TP network has some physical troubles and
+    the received data is invalid (CRC mismatch), then the specific module used
+    for the receive state machine will log warnings.
+    You may want to silence those, if you are not interested in those.
+
+    You can do this at runtime using
+
+    ```elixir
+    Logger.put_module_level(BACnet.Stack.Transport.MstpTransport.ReceiveFSM, :error)
+    ```
+
+    or using the `config.exs` (purging at compile time):
+
+    ```elixir
+    config :logger,
+      compile_time_purge_matching: [
+        [
+          level_lower_than: :error,
+          module: BACnet.Stack.Transport.MstpTransport.ReceiveFSM
+        ]
+      ]
+    ```
+
+    Note that this will also remove info or debugging output (`log_communication_rcv` option of this transport).
+
     ### Autobaud
 
     This transport implements automatically detecting the used baudrate by listening to the network ("autobaud").
