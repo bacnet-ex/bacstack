@@ -217,7 +217,7 @@ if Code.ensure_loaded?(Circuits.UART) do
                 local_address: 0..254,
                 log_communication: boolean(),
                 max_info_frames: pos_integer(),
-                max_master_address: 0..127,
+                max_master_address: 1..127,
                 port_name: binary(),
                 supervisor: Supervisor.supervisor()
               },
@@ -351,7 +351,7 @@ if Code.ensure_loaded?(Circuits.UART) do
             | {:log_communication, boolean()}
             | {:log_communication_rcv, boolean()}
             | {:max_info_frames, pos_integer()}
-            | {:max_master_address, 0..127}
+            | {:max_master_address, 1..127}
             | {:port_name, binary()}
             | {:supervisor, Supervisor.supervisor()}
             | GenServer.option()
@@ -479,7 +479,7 @@ if Code.ensure_loaded?(Circuits.UART) do
     - `log_communication_rcv: boolean()` - Optional. Logs all communication (debug) of receive states.
     - `max_info_frames: pos_integer()` - Optional. This value specifies the maximum number of information
       frames the node may send before it must pass the token (defaults to `1`).
-    - `max_master_address: 0..127` - Optional. The maximum master address that is used in the MS/TP network.
+    - `max_master_address: 1..127` - Optional. The maximum master address that is used in the MS/TP network.
       This is used for polling and successor determination (defaults to `127`).
     - `port_name: binary()` - Required. Name of the serial port (use `Circuits.UART.enumerate/0`).
     - `supervisor: Supervisor.supervisor()` - Optional. The task supervisor to use to spawn tasks under.
@@ -840,7 +840,7 @@ if Code.ensure_loaded?(Circuits.UART) do
     This function will block until the Test-Response APDU has arrived
     or the timeout triggers.
     """
-    @spec send_test(GenServer.server(), source_address(), iodata()) ::
+    @spec send_test(TransportBehaviour.portal(), source_address(), iodata()) ::
             {:ok, iodata()}
             | {:error, term()}
             | {:error, :invalid_frame_response}
@@ -1828,7 +1828,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       ReceiveFSM.close(state.receive_fsm)
       UART.close(state.uart_pid)
 
-      {:stop, {:uart_error, reason}, state}
+      exit({:uart_error, reason})
     end
 
     defp do_handle_info(:wakeup_use_token, %State{} = state) do
@@ -4016,13 +4016,13 @@ if Code.ensure_loaded?(Circuits.UART) do
         nil ->
           :ok
 
-        term when is_integer(term) and term >= @min_master_addr and term <= @max_master_addr ->
+        term when is_integer(term) and term >= 1 and term <= 127 ->
           :ok
 
         term ->
           raise ArgumentError,
                 mfa <>
-                  " expected max_master_address to be an integer in the range 0-127, " <>
+                  " expected max_master_address to be an integer in the range 1-127, " <>
                   "got: #{inspect(term)}"
       end
 
