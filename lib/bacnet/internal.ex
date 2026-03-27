@@ -31,6 +31,38 @@ defmodule BACnet.Internal do
                   (is_tuple(server) and tuple_size(server) == 3 and elem(server, 0) == :via and
                      is_atom(elem(server, 1)))
 
+  @doc """
+  Returns the AST of the given `do` block,
+  if this is not run as a dependency
+  (this is the currently active Mix project being worked on).
+  """
+  if @in_library do
+    defmacro do_if_in_library(do: ast) do
+      ast
+    end
+  else
+    defmacro do_if_in_library(do: _ast) do
+      nil
+    end
+  end
+
+  @doc """
+  Returns the AST of the given `do` block,
+  if this is not run as a dependency
+  (this is the currently active Mix project being worked on) or
+  debugging is enabled (Logger level `:debug` and app env `:bacstack, :debug` set to `true`.
+  """
+  if @in_library or
+       (Logger.level() == :debug and Application.compile_env(:bacstack, :debug, false)) do
+    defmacro do_if_in_library_or_debugging(do: ast) do
+      ast
+    end
+  else
+    defmacro do_if_in_library_or_debugging(do: _ast) do
+      nil
+    end
+  end
+
   # Enable debug logging (through this module) if
   # - this library is the app [OR]
   # - Logger.level() = :debug and :debug = true

@@ -34,6 +34,8 @@ if Code.ensure_loaded?(Circuits.UART) do
 
     ### Logger warning spam due to bad data/devices/network
 
+    This section is only relevant if you're working on this project or have bacstack debugging enabled.
+
     If you have bad devices or the MS/TP network has some physical troubles and
     the received data is invalid (CRC mismatch), then the specific module used
     for the receive state machine will log warnings.

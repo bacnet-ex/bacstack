@@ -10,7 +10,7 @@ if Code.ensure_loaded?(Circuits.UART) do
     alias BACnet.Stack.Transport.MstpTransport.EncodingTools
     alias Circuits.UART
 
-    import BACnet.Internal, only: [log_debug: 1]
+    import BACnet.Internal, only: [do_if_in_library_or_debugging: 1, log_debug: 1]
 
     require Logger
 
@@ -467,9 +467,12 @@ if Code.ensure_loaded?(Circuits.UART) do
 
       cond do
         not good_header ->
-          Logger.warning(fn ->
-            "BacMstpTransport_ReceiveFSM: Received data with bad header, expected crc: #{0x55}, actual crc: #{actual_crc}"
-          end)
+          # Only log CRC warnings if we're working on this project or debugging enabled
+          do_if_in_library_or_debugging do
+            Logger.warning(fn ->
+              "BacMstpTransport_ReceiveFSM: Received data with bad header, expected crc: #{0x55}, actual crc: #{actual_crc}"
+            end)
+          end
 
           handle_receive_invalid_or_timeout(state_data, true, rest)
 
