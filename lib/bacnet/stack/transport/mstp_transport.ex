@@ -1,9 +1,11 @@
 if Code.ensure_loaded?(Circuits.UART) do
   defmodule BACnet.Stack.Transport.MstpTransport do
     @moduledoc """
-    Highly experimental transport for BACnet MS/TP.
+    The BACnet transport for BACnet MS/TP (Master-Slave/Token Passing)
+    on a physical two wire electrical bus system called EIA-485 (RS485).
 
-    MS/TP stands for Master-Slave/Token-Passing and uses EIA-485 (RS485) as electrical transport.
+    This transport should be considered experimental, but it is fairly tested
+    with BACnet certified devices and BACnet stack C open source implementation.
 
     This transport implementation supports ASHRAE 135-2016 and as such COBS encoding to allow frames
     up to 1476 bytes. When sending such large APDUs the receiving device must also support ASHRAE 135-2016,
