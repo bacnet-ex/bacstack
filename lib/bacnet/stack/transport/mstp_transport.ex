@@ -1346,12 +1346,13 @@ if Code.ensure_loaded?(Circuits.UART) do
              local_address: local_addr,
              disable_maintenance_pfm: true,
              disable_token_passing: false,
-             state_machine: %{ns: ns, ps: ps, token_count: tokens} = state_machine
+             state_machine: %{ns: ns, ps: ps, ts: ts, token_count: tokens} = state_machine
            } =
              state
          )
          when local_addr < @min_slave_addr and
                 ns != rem(ps + 1, state.opts.max_master_address + 1) and
+                ns != ts and
                 tokens >= @param_n_poll - 1 do
       log_debug(fn ->
         "BacMstpTransport: Reached state DONE_WITH_TOKEN and skipping maintenance POLL_FOR_MASTER, " <>
