@@ -34,6 +34,27 @@ if Code.ensure_loaded?(Circuits.UART) do
     to your `mix.exs` as dependency! It is an optional dependency and thus
     by default not present when you install this library.
 
+    ### Autobaud
+
+    This transport implements automatically detecting the used baudrate by listening to the network ("autobaud").
+    Once it detects a valid BACnet frame, the baudrate that detected the frame will be used and autobaud will be disabled.
+    If there's no valid BACnet frame in a short time window (~5.5s) or an invalid frame is detected,
+    then the next baudrate will be tried. It will go through all defined baudrates specified by the BACnet protocol.
+    If no valid BACnet frame has been detected and all baudrates have been tested, the transport will fallback
+    to baudrate `38_400` - a Logger warning will be issued.
+    Autobaud can be manually re-enabled through `configure/2` - **note that all communication will be unrecoverable dropped**!
+
+    The following baudrates will be tried in this order: 9600, 19_200, 38_400, 57_600, 76_800, 115_200.
+
+    Autobaud can be used by specifying `baudrate: :auto` when starting the transport (recommended way to use autobaud).
+    Autobaud can also be manually enabled through `configure/2` - but communication is disruptive and thus not recommended.
+
+    > #### Empty Network {: .warning}
+    >
+    > Autobaud requires at least one active device on the MS/TP network!
+    > If there are no active devices (other than itself) on the network,
+    > it will fail to detect the baudrate and fallback to the default.
+
     ### Logger warning spam due to bad data/devices/network
 
     This section is only relevant if you're working on this project or have bacstack debugging enabled.
@@ -62,27 +83,6 @@ if Code.ensure_loaded?(Circuits.UART) do
     ```
 
     Note that this will also remove info or debugging output (`log_communication_rcv` option of this transport).
-
-    ### Autobaud
-
-    This transport implements automatically detecting the used baudrate by listening to the network ("autobaud").
-    Once it detects a valid BACnet frame, the baudrate that detected the frame will be used and autobaud will be disabled.
-    If there's no valid BACnet frame in a short time window (~5.5s) or an invalid frame is detected,
-    then the next baudrate will be tried. It will go through all defined baudrates specified by the BACnet protocol.
-    If no valid BACnet frame has been detected and all baudrates have been tested, the transport will fallback
-    to baudrate `38_400` - a Logger warning will be issued.
-    Autobaud can be manually re-enabled through `configure/2` - **note that all communication will be unrecoverable dropped**!
-
-    The following baudrates will be tried in this order: 9600, 19_200, 38_400, 57_600, 76_800, 115_200.
-
-    Autobaud can be used by specifying `baudrate: :auto` when starting the transport (recommended way to use autobaud).
-    Autobaud can also be manually enabled through `configure/2` - but communication is disruptive and thus not recommended.
-
-    > #### Empty Network {: .warning}
-    >
-    > Autobaud requires at least one active device on the MS/TP network!
-    > If there are no active devices (other than itself) on the network,
-    > it will fail to detect the baudrate and fallback to the default.
     """
 
     # TODO: Convert Master Node FSM to :gen_statem?
