@@ -280,7 +280,7 @@ defmodule BACnet.Stack.TrendLogger do
     end
 
     {opts2, genserver_opts} =
-      Keyword.split(opts, [:cov_cb, :log_buffer_module, :lookup_cb, :state])
+      Keyword.split(opts, [:cov_cb, :log_buffer_module, :lookup_cb, :state, :timezone])
 
     validate_start_link_opts(opts2)
 
@@ -2164,7 +2164,7 @@ defmodule BACnet.Stack.TrendLogger do
 
       term ->
         raise ArgumentError,
-              "start_link/1 expected supervisor to be a supervisor identifier (process destiantion), " <>
+              "start_link/1 expected supervisor to be a supervisor identifier (process destination), " <>
                 "got: #{inspect(term)}"
     end
 
