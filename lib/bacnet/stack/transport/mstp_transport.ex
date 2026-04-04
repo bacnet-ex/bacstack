@@ -1860,7 +1860,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       ReceiveFSM.close(state.receive_fsm)
       UART.close(state.uart_pid)
 
-      exit({:uart_error, reason})
+      {:stop, {:uart_error, reason}, state}
     end
 
     defp do_handle_info(:wakeup_use_token, %State{} = state) do
