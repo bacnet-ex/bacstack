@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.1">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>BACnet.Stack.Transport.MstpTransport — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-YJO4MOOW.css" />
+
+    <script defer src="dist/sidebar_items-B7BF6AB8.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-YU4BZFVS.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr>Stack.<wbr>Transport.<wbr>MstpTransport</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0)</small>
+
+    </h1>
+
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L2" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>The BACnet transport for BACnet MS/TP (Master-Slave/Token Passing)
+on a physical two wire electrical bus system called EIA-485 (RS485).</p><p>This transport should be considered experimental, but it is fairly tested
+with BACnet certified devices and BACnet stack C open source implementation.</p><p>This transport implementation supports ASHRAE 135-2016 and as such COBS encoding to allow frames
+up to 1476 bytes. When sending such large APDUs the receiving device must also support ASHRAE 135-2016,
+otherwise it will ignore us, and that's a sad thing to do! As such, sending large APDUs is opt-in.</p><p>It can act as a master or slave node, depending on the address this transport is started with.
+As a slave node, it'll only be able to respond to request and never be able to initiate requests.
+Master nodes actively participate in the Token Passing and are able to send MS/TP frames freely
+when holding the token. Slave nodes are restricted to only responding to requests and also are
+not able to use segmentation, since segmentation requires nodes to be able to send MS/TP frames
+whenever needed.</p><p>The recommendation is to always start this transport as master node with a distinct and
+unique address in the range <code class="inline">0..127</code>. Note that other MS/TP nodes <code class="inline">max_master_address</code>
+needs to be considered when selecting an address.</p><p>Proprietary frames are sent to the defined <code class="inline">callback</code> as:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="7350960985-1">{</span><span class="ss">:proprietary</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7350960985-2">{</span><span class="n">type</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="mi">128</span><span class="o">..</span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="n">vendor_id</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="mi">0</span><span class="o">..</span><span class="mi">65_535</span><span class="p" data-group-id="7350960985-2">}</span><span class="p">,</span><span class="w"> </span><span class="n">destination</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="n">destination_address</span><span class="p" data-group-id="7350960985-3">(</span><span class="p" data-group-id="7350960985-3">)</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="n">iodata</span><span class="p" data-group-id="7350960985-4">(</span><span class="p" data-group-id="7350960985-4">)</span><span class="p" data-group-id="7350960985-1">}</span></code></pre><p>As defined by <a href="BACnet.Stack.TransportBehaviour.html#t:transport_cb_frame/0"><code class="inline">BACnet.Stack.TransportBehaviour.transport_cb_frame/0</code></a>.</p><p>It uses <a href="https://hexdocs.pm/circuits_uart/1.5.5/Circuits.UART.html"><code class="inline">Circuits.UART</code></a> to handle RS485 for us in active mode.
+If you want to use this transport, you'll have to add <a href="https://hex.pm/packages/circuits_uart"><code class="inline">:circuits_uart</code></a>
+to your <code class="inline">mix.exs</code> as dependency! It is an optional dependency and thus
+by default not present when you install this library.</p><h3 id="module-autobaud" class="section-heading"><a href="#module-autobaud" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Autobaud</span></h3><p>This transport implements automatically detecting the used baudrate by listening to the network (&quot;autobaud&quot;).
+Once it detects a valid BACnet frame, the baudrate that detected the frame will be used and autobaud will be disabled.
+If there's no valid BACnet frame in a short time window (~5.5s) or an invalid frame is detected,
+then the next baudrate will be tried. It will go through all defined baudrates specified by the BACnet protocol.
+If no valid BACnet frame has been detected and all baudrates have been tested, the transport will fallback
+to baudrate <code class="inline">38_400</code> - a Logger warning will be issued.
+Autobaud can be manually re-enabled through <a href="#configure/2"><code class="inline">configure/2</code></a> - <strong>note that all communication will be unrecoverable dropped</strong>!</p><p>The following baudrates will be tried in this order: 9600, 19_200, 38_400, 57_600, 76_800, 115_200.</p><p>Autobaud can be used by specifying <code class="inline">baudrate: :auto</code> when starting the transport (recommended way to use autobaud).
+Autobaud can also be manually enabled through <a href="#configure/2"><code class="inline">configure/2</code></a> - but communication is disruptive and thus not recommended.</p><section role="note" class="admonition warning"><h4 class="admonition-title warning">Empty Network</h4><p>Autobaud requires at least one active device on the MS/TP network!
+If there are no active devices (other than itself) on the network,
+it will fail to detect the baudrate and fallback to the default.</p></section><h3 id="module-logger-warning-spam-due-to-bad-data-devices-network" class="section-heading"><a href="#module-logger-warning-spam-due-to-bad-data-devices-network" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Logger warning spam due to bad data/devices/network</span></h3><p>This section is only relevant if you're working on this project or have bacstack debugging enabled.</p><p>If you have bad devices or the MS/TP network has some physical troubles and
+the received data is invalid (CRC mismatch), then the specific module used
+for the receive state machine will log warnings.
+You may want to silence those, if you are not interested in those.</p><p>You can do this at runtime using</p><pre><code class="makeup elixir" translate="no"><span class="nc">Logger</span><span class="o">.</span><span class="n">put_module_level</span><span class="p" data-group-id="9233108255-1">(</span><span class="nc">BACnet.Stack.Transport.MstpTransport.ReceiveFSM</span><span class="p">,</span><span class="w"> </span><span class="ss">:error</span><span class="p" data-group-id="9233108255-1">)</span></code></pre><p>or using the <code class="inline">config.exs</code> (purging at compile time):</p><pre><code class="makeup elixir" translate="no"><span class="n">config</span><span class="w"> </span><span class="ss">:logger</span><span class="p">,</span><span class="w">
+  </span><span class="ss">compile_time_purge_matching</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3239258810-1">[</span><span class="w">
+    </span><span class="p" data-group-id="3239258810-2">[</span><span class="w">
+      </span><span class="ss">level_lower_than</span><span class="p">:</span><span class="w"> </span><span class="ss">:error</span><span class="p">,</span><span class="w">
+      </span><span class="ss">module</span><span class="p">:</span><span class="w"> </span><span class="nc">BACnet.Stack.Transport.MstpTransport.ReceiveFSM</span><span class="w">
+    </span><span class="p" data-group-id="3239258810-2">]</span><span class="w">
+  </span><span class="p" data-group-id="3239258810-1">]</span></code></pre><p>Note that this will also remove info or debugging output (<code class="inline">log_communication_rcv</code> option of this transport).</p>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-types summary">
+  <h3>
+    <a href="#types">Types</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:destination_address/0" data-no-tooltip="" translate="no">destination_address()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>The destination address is an integer in the range of 0-255,
+where 255 means broadcast.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:frame_type/0" data-no-tooltip="" translate="no">frame_type()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Valid MS/TP frame types.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:open_option/0" data-no-tooltip="" translate="no">open_option()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Valid open options. For a description of each, see <a href="#open/2"><code class="inline">open/2</code></a>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:open_options/0" data-no-tooltip="" translate="no">open_options()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>List of open options.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:send_option/0" data-no-tooltip="" translate="no">send_option()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Valid send options. For a description of each, see <a href="#send/4"><code class="inline">send/4</code></a>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:send_options/0" data-no-tooltip="" translate="no">send_options()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>List of send options.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:source_address/0" data-no-tooltip="" translate="no">source_address()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>The source address is an integer in the range of 0-254.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#bacnet_protocol/0" data-no-tooltip="" translate="no">bacnet_protocol()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the BACnet transport protocol this transport implements.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#child_spec/1" data-no-tooltip="" translate="no">child_spec(init_arg)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Produces a supervisor child spec.
+It will call <code class="inline">child_spec(callback, opts)</code> with the given 2-element list elements.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#child_spec/2" data-no-tooltip="" translate="no">child_spec(callback, opts)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Produces a supervisor child spec based on the BACnet transport <code class="inline">open</code> callback, as such
+it will take the <code class="inline">callback</code> and <code class="inline">opts</code> for <a href="#open/2"><code class="inline">open/2</code></a>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#close/1" data-no-tooltip="" translate="no">close(transport)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Closes the Transport module.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#configure/2" data-no-tooltip="" translate="no">configure(transport, opts)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Configures the transport.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#destination_routed?/2" data-no-tooltip="" translate="no">destination_routed?(transport, destination)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks whether the given destination is an address that needs to be routed.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#disable_token_passing/1" data-no-tooltip="" translate="no">disable_token_passing(transport)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Disables the transport's token passing (only if master node).</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_baudrate/1" data-no-tooltip="" translate="no">get_baudrate(transport)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the current active baudrate.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_broadcast_address/1" data-no-tooltip="" translate="no">get_broadcast_address(transport)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the broadcast address.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_local_address/1" data-no-tooltip="" translate="no">get_local_address(transport)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the local address.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_portal/1" data-no-tooltip="" translate="no">get_portal(transport)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the transport module portal for the given transport PID/port.
+Transport modules may return the input as output, if the same
+PID or port is used for sending.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_state/1" data-no-tooltip="" translate="no">get_state(transport)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the current transport state.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#max_apdu_length/0" data-no-tooltip="" translate="no">max_apdu_length()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the maximum APDU length for this transport.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#max_ext_apdu_length/0" data-no-tooltip="" translate="no">max_ext_apdu_length()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the maximum extended APDU length for this transport,
+if the transport also supports a higher (extended) APDU.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#max_ext_npdu_length/0" data-no-tooltip="" translate="no">max_ext_npdu_length()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the maximum extended NPDU length for this transport,
+if the transport also supports a higher (extended) NPDU.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#max_npdu_length/0" data-no-tooltip="" translate="no">max_npdu_length()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the maximum NPDU length for this transport.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#open/2" data-no-tooltip="" translate="no">open(callback, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Opens/starts the Transport module. A process is started, that is linked to the caller process.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#reply_postponed/3" data-no-tooltip="" translate="no">reply_postponed(portal, destination, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Sends a Reply-Postponed Frame to the destination.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#send/4" data-no-tooltip="" translate="no">send(portal, destination, data, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Sends data to the BACnet network.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#send_test/3" data-no-tooltip="" translate="no">send_test(portal, destination, data \\ &quot;Hello World&quot;)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Sends a Test-Request APDU to the specified destination.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#set_maintenance_pfm/2" data-no-tooltip="" translate="no">set_maintenance_pfm(transport, state)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Enables or disables maintenance POLL_FOR_MASTER in the case the successor node is known.
+If the successor node is unknown, POLL_FOR_MASTER will be regardless done.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#valid_destination?/1" data-no-tooltip="" translate="no">valid_destination?(destination)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Verifies whether the given destination is valid for the transport module.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h2>
+
+    <div class="types-list">
+<section class="detail" id="t:destination_address/0">
+
+  <div class="detail-header">
+    <a href="#t:destination_address/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">destination_address()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L413" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> destination_address() :: 0..255</pre>
+
+      </div>
+
+<p>The destination address is an integer in the range of 0-255,
+where 255 means broadcast.</p>
+  </section>
+</section>
+<section class="detail" id="t:frame_type/0">
+
+  <div class="detail-header">
+    <a href="#t:frame_type/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">frame_type()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L362" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> frame_type() ::
+  :unknown
+  | (t_0 :: :token)
+  | (t_1 :: :poll_for_master)
+  | (t_2 :: :reply_to_poll_for_master)
+  | (t_3 :: :test_request)
+  | (t_4 :: :test_response)
+  | (t_5 :: :bacnet_data_expecting_reply)
+  | (t_6 :: :bacnet_data_not_expecting_reply)
+  | (t_7 :: :reply_postponed)
+  | (t_32 :: :bacnet_extended_data_expecting_reply)
+  | (t_33 :: :bacnet_extended_data_not_expecting_reply)
+  | (t_prop :: {:proprietary, 128..255})</pre>
+
+      </div>
+
+<p>Valid MS/TP frame types.</p><p>The <code class="inline">t_{number}</code> &quot;name&quot; corresponds to the frame type number.</p><p>Frame Type 32 + 33 were added in ASHRAE 135-2016 (they allow octets &gt; 501).</p>
+  </section>
+</section>
+<section class="detail" id="t:open_option/0">
+
+  <div class="detail-header">
+    <a href="#t:open_option/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">open_option()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L379" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> open_option() ::
+  {:baudrate, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>() | :auto}
+  | {:local_address, <a href="#t:source_address/0">source_address</a>()}
+  | {:log_communication, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | {:log_communication_rcv, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | {:max_info_frames, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()}
+  | {:max_master_address, 1..127}
+  | {:port_name, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()}
+  | {:supervisor, <a href="https://hexdocs.pm/elixir/Supervisor.html#t:supervisor/0">Supervisor.supervisor</a>()}
+  | <a href="https://hexdocs.pm/elixir/GenServer.html#t:option/0">GenServer.option</a>()</pre>
+
+      </div>
+
+<p>Valid open options. For a description of each, see <a href="#open/2"><code class="inline">open/2</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="t:open_options/0">
+
+  <div class="detail-header">
+    <a href="#t:open_options/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">open_options()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L393" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> open_options() :: [<a href="#t:open_option/0">open_option</a>()]</pre>
+
+      </div>
+
+<p>List of open options.</p>
+  </section>
+</section>
+<section class="detail" id="t:send_option/0">
+
+  <div class="detail-header">
+    <a href="#t:send_option/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">send_option()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L398" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> send_option() ::
+  {:allow_extended_apdu, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | {:raw, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | {:use_extended_apdu, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | <a href="BACnet.Stack.TransportBehaviour.html#t:transport_send_option/0">BACnet.Stack.TransportBehaviour.transport_send_option</a>()</pre>
+
+      </div>
+
+<p>Valid send options. For a description of each, see <a href="#send/4"><code class="inline">send/4</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="t:send_options/0">
+
+  <div class="detail-header">
+    <a href="#t:send_options/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">send_options()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L407" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> send_options() :: [<a href="#t:send_option/0">send_option</a>()]</pre>
+
+      </div>
+
+<p>List of send options.</p>
+  </section>
+</section>
+<section class="detail" id="t:source_address/0">
+
+  <div class="detail-header">
+    <a href="#t:source_address/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">source_address()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L418" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> source_address() :: 0..254</pre>
+
+      </div>
+
+<p>The source address is an integer in the range of 0-254.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="bacnet_protocol/0">
+
+  <div class="detail-header">
+    <a href="#bacnet_protocol/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">bacnet_protocol()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L454" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> bacnet_protocol() :: <a href="BACnet.Stack.TransportBehaviour.html#t:transport_protocol/0">BACnet.Stack.TransportBehaviour.transport_protocol</a>()</pre>
+
+      </div>
+
+<p>Get the BACnet transport protocol this transport implements.</p>
+  </section>
+</section>
+<section class="detail" id="child_spec/1">
+
+  <div class="detail-header">
+    <a href="#child_spec/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">child_spec(init_arg)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L427" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> child_spec(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">list</a>()) :: <a href="https://hexdocs.pm/elixir/Supervisor.html#t:child_spec/0">Supervisor.child_spec</a>()</pre>
+
+      </div>
+
+<p>Produces a supervisor child spec.
+It will call <code class="inline">child_spec(callback, opts)</code> with the given 2-element list elements.</p><p>See also <a href="https://hexdocs.pm/elixir/Supervisor.html#child_spec/2"><code class="inline">Supervisor.child_spec/2</code></a> for the rest of the behaviour.</p>
+  </section>
+</section>
+<section class="detail" id="child_spec/2">
+
+  <div class="detail-header">
+    <a href="#child_spec/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">child_spec(callback, opts)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L441" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> child_spec(<a href="BACnet.Stack.TransportBehaviour.html#t:transport_callback/0">BACnet.Stack.TransportBehaviour.transport_callback</a>(), <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()) ::
+  <a href="https://hexdocs.pm/elixir/Supervisor.html#t:child_spec/0">Supervisor.child_spec</a>()</pre>
+
+      </div>
+
+<p>Produces a supervisor child spec based on the BACnet transport <code class="inline">open</code> callback, as such
+it will take the <code class="inline">callback</code> and <code class="inline">opts</code> for <a href="#open/2"><code class="inline">open/2</code></a>.</p><p>See also <a href="https://hexdocs.pm/elixir/Supervisor.html#child_spec/2"><code class="inline">Supervisor.child_spec/2</code></a> for the rest of the behaviour.</p>
+  </section>
+</section>
+<section class="detail" id="close/1">
+
+  <div class="detail-header">
+    <a href="#close/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">close(transport)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L568" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> close(<a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>()) :: :ok</pre>
+
+      </div>
+
+<p>Closes the Transport module.</p>
+  </section>
+</section>
+<section class="detail" id="configure/2">
+
+  <div class="detail-header">
+    <a href="#configure/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">configure(transport, opts)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L644" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> configure(<a href="BACnet.Stack.TransportBehaviour.html#t:transport/0">BACnet.Stack.TransportBehaviour.transport</a>(), <a href="#t:open_options/0">open_options</a>()) ::
+  :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Configures the transport.</p><p>Only some of the available <a href="#t:open_options/0"><code class="inline">open_options/0</code></a> can be configured,
+unsupported options can only be changed by re-starting the transport completely.</p><p>The following options are supported:</p><ul><li><code class="inline">baudrate</code></li><li><code class="inline">log_communication</code></li><li><code class="inline">log_communication_rcv</code></li><li><code class="inline">max_info_frames</code></li><li><code class="inline">max_master_address</code></li></ul><p>For a description of each option, see <a href="#open/2"><code class="inline">open/2</code></a>.</p><p>Note that reconfiguring the baudrate on the fly MAY lead to invalid frames!
+May also lead to dropping token.</p>
+  </section>
+</section>
+<section class="detail" id="destination_routed?/2">
+
+  <div class="detail-header">
+    <a href="#destination_routed?/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">destination_routed?(transport, destination)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L708" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> destination_routed?(<a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(), <a href="#t:destination_address/0">destination_address</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()) ::
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks whether the given destination is an address that needs to be routed.</p><p>Returns true for any non-valid <code class="inline">destination_address()</code>, because they need
+to be routed by a BACnet router residing on this transport layer/network.</p>
+  </section>
+</section>
+<section class="detail" id="disable_token_passing/1">
+
+  <div class="detail-header">
+    <a href="#disable_token_passing/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">disable_token_passing(transport)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L621" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> disable_token_passing(<a href="BACnet.Stack.TransportBehaviour.html#t:transport/0">BACnet.Stack.TransportBehaviour.transport</a>()) ::
+  :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Disables the transport's token passing (only if master node).</p><p>Disabling the token passing will try to pass on the token, if held,
+as soon as possible, but only if the successor is known.
+If the successor is unknown or a timeout occurrs, the token will be dropped.
+The consequence of dropping the token will be that the remaining
+MS/TP master nodes will notice the lost token and generate a new token.</p><p>Whether it transitions to IDLE or NO_TOKEN state depends on
+its current state and could even change later on from IDLE to NO_TOKEN.
+Once the transport reaches IDLE or NO_TOKEN, the transport can be
+safely shut down.</p><p>When the token passing is disabled, sending any frame that does not
+involve sending a reply is disabled and return an error.</p><p>After disabling the transport token passing, it can only be re-enabled
+by restarting the transport.</p>
+  </section>
+</section>
+<section class="detail" id="get_baudrate/1">
+
+  <div class="detail-header">
+    <a href="#get_baudrate/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_baudrate(transport)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L596" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_baudrate(<a href="BACnet.Stack.TransportBehaviour.html#t:transport/0">BACnet.Stack.TransportBehaviour.transport</a>()) ::
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>() | {:auto, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()}</pre>
+
+      </div>
+
+<p>Get the current active baudrate.</p><p><code class="inline">{:auto, non_neg_integer()}</code> is returned during autobaud detection,
+when it has not finished yet. The contained number is the current active baudrate.
+Once autobaud detection finishes, this function will return a plain number
+with the current active baudrate.</p>
+  </section>
+</section>
+<section class="detail" id="get_broadcast_address/1">
+
+  <div class="detail-header">
+    <a href="#get_broadcast_address/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_broadcast_address(transport)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L675" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_broadcast_address(<a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>()) :: <a href="#t:destination_address/0">destination_address</a>()</pre>
+
+      </div>
+
+<p>Get the broadcast address.</p>
+  </section>
+</section>
+<section class="detail" id="get_local_address/1">
+
+  <div class="detail-header">
+    <a href="#get_local_address/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_local_address(transport)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L683" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_local_address(<a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>()) :: <a href="#t:source_address/0">source_address</a>()</pre>
+
+      </div>
+
+<p>Get the local address.</p>
+  </section>
+</section>
+<section class="detail" id="get_portal/1">
+
+  <div class="detail-header">
+    <a href="#get_portal/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_portal(transport)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L696" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_portal(<a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>()) :: <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>()</pre>
+
+      </div>
+
+<p>Get the transport module portal for the given transport PID/port.
+Transport modules may return the input as output, if the same
+PID or port is used for sending.</p><p>This is used to get the portal before having received data from
+the transport module, so data can be sent prior to reception.</p>
+  </section>
+</section>
+<section class="detail" id="get_state/1">
+
+  <div class="detail-header">
+    <a href="#get_state/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_state(transport)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L582" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_state(<a href="BACnet.Stack.TransportBehaviour.html#t:transport/0">BACnet.Stack.TransportBehaviour.transport</a>()) ::
+  :idle | :no_token | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>()</pre>
+
+      </div>
+
+<p>Get the current transport state.</p><p>This function is important when disabling token passing and
+waiting for the transport to transition to the IDLE or NO_TOKEN state,
+to then be able to shut down the transport gracefully.</p><p>See also <a href="#disable_token_passing/1"><code class="inline">disable_token_passing/1</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="max_apdu_length/0">
+
+  <div class="detail-header">
+    <a href="#max_apdu_length/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">max_apdu_length()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L460" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> max_apdu_length() :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()</pre>
+
+      </div>
+
+<p>Get the maximum APDU length for this transport.</p>
+  </section>
+</section>
+<section class="detail" id="max_ext_apdu_length/0">
+
+  <div class="detail-header">
+    <a href="#max_ext_apdu_length/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">max_ext_apdu_length()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L467" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> max_ext_apdu_length() :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()</pre>
+
+      </div>
+
+<p>Get the maximum extended APDU length for this transport,
+if the transport also supports a higher (extended) APDU.</p>
+  </section>
+</section>
+<section class="detail" id="max_ext_npdu_length/0">
+
+  <div class="detail-header">
+    <a href="#max_ext_npdu_length/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">max_ext_npdu_length()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L494" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> max_ext_npdu_length() :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()</pre>
+
+      </div>
+
+<p>Get the maximum extended NPDU length for this transport,
+if the transport also supports a higher (extended) NPDU.</p><p>The NPDU length contains the maximum transmittable size
+of the NPDU, including the APDU, without violating
+the maximum transmission unit of the underlying transport.</p><p>Any necessary transport header (i.e. BVLL, LLC) must have
+been taken into account when calculating this number.</p>
+  </section>
+</section>
+<section class="detail" id="max_npdu_length/0">
+
+  <div class="detail-header">
+    <a href="#max_npdu_length/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">max_npdu_length()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L480" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> max_npdu_length() :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()</pre>
+
+      </div>
+
+<p>Get the maximum NPDU length for this transport.</p><p>The NPDU length contains the maximum transmittable size
+of the NPDU, including the APDU, without violating
+the maximum transmission unit of the underlying transport.</p><p>Any necessary transport header (i.e. BVLL, LLC) must have
+been taken into account when calculating this number.</p>
+  </section>
+</section>
+<section class="detail" id="open/2">
+
+    <span id="open/1"></span>
+
+  <div class="detail-header">
+    <a href="#open/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">open(callback, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L524" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> open(
+  callback :: <a href="BACnet.Stack.TransportBehaviour.html#t:transport_callback/0">BACnet.Stack.TransportBehaviour.transport_callback</a>(),
+  opts :: <a href="#t:open_options/0">open_options</a>()
+) :: {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pid</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Opens/starts the Transport module. A process is started, that is linked to the caller process.</p><p>See the <a href="BACnet.Stack.TransportBehaviour.html"><code class="inline">BACnet.Stack.TransportBehaviour</code></a> documentation for more information.</p><p>In the case of this BACnet MS/TP transport, the transport PID/port is a <a href="https://hexdocs.pm/elixir/GenServer.html"><code class="inline">GenServer</code></a> receiving and sending
+RS485 data. The portal is the same transport PID/port, as access to the MS/TP network must be coordinated.</p><p>This transport takes the following options, in addition to <a href="https://hexdocs.pm/elixir/GenServer.html#t:options/0"><code class="inline">GenServer.options/0</code></a>:</p><ul><li><p><code class="inline">baudrate: non_neg_integer | :auto</code> - Optional. The baud rate to use (defaults to <code class="inline">38400</code>).
+See the module documentation regarding the autobaud feature.</p></li><li><code class="inline">local_address: source_address()</code> - Required. The address to use - must be unique in the BACnet MS/TP network.
+Addresses 0-127 are for master nodes, while 128-254 are for slave nodes.</li><li><code class="inline">log_communication: boolean()</code> - Optional. Logs all communication (debug), excluding receive states.</li><li><code class="inline">log_communication_rcv: boolean()</code> - Optional. Logs all communication (debug) of receive states.</li><li><code class="inline">max_info_frames: pos_integer()</code> - Optional. This value specifies the maximum number of information
+frames the node may send before it must pass the token (defaults to <code class="inline">1</code>).</li><li><code class="inline">max_master_address: 1..127</code> - Optional. The maximum master address that is used in the MS/TP network.
+This is used for polling and successor determination (defaults to <code class="inline">127</code>).</li><li><code class="inline">port_name: binary()</code> - Required. Name of the serial port (use <a href="https://hexdocs.pm/circuits_uart/1.5.5/Circuits.UART.html#enumerate/0"><code class="inline">Circuits.UART.enumerate/0</code></a>).</li><li><code class="inline">supervisor: Supervisor.supervisor()</code> - Optional. The task supervisor to use to spawn tasks under.
+Tasks are spawned to invoke the given callback. If no supervisor is given,
+the tasks will be spawned unsupervised.</li></ul>
+  </section>
+</section>
+<section class="detail" id="reply_postponed/3">
+
+    <span id="reply_postponed/2"></span>
+
+  <div class="detail-header">
+    <a href="#reply_postponed/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">reply_postponed(portal, destination, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L907" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> reply_postponed(
+  <a href="BACnet.Stack.TransportBehaviour.html#t:portal/0">BACnet.Stack.TransportBehaviour.portal</a>(),
+  <a href="#t:source_address/0">source_address</a>(),
+  <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()
+) ::
+  :ok
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}
+  | {:error, :slave_mode}
+  | {:error, :no_reply_pending}
+  | {:error, :destination_is_not_expecting_reply}</pre>
+
+      </div>
+
+<p>Sends a Reply-Postponed Frame to the destination.</p><p>Sending an explicit Reply-Postponed Frame is necessary,
+when the reply is to be segmented.
+A segmented Complex-ACK APDU can only be transmitted
+when we hold the token (ASHRAE 135 Clause 9.8).</p><p>There are no options at this time.</p>
+  </section>
+</section>
+<section class="detail" id="send/4">
+
+    <span id="send/3"></span>
+
+  <div class="detail-header">
+    <a href="#send/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">send(portal, destination, data, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L746" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> send(
+  <a href="https://hexdocs.pm/elixir/GenServer.html#t:server/0">GenServer.server</a>(),
+  <a href="#t:destination_address/0">destination_address</a>(),
+  <a href="BACnet.Stack.EncoderProtocol.html#t:t/0">BACnet.Stack.EncoderProtocol.t</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">iodata</a>(),
+  <a href="#t:send_options/0">send_options</a>()
+) ::
+  :ok
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}
+  | {:error, :slave_mode}
+  | {:error, :token_passing_disabled}</pre>
+
+      </div>
+
+<p>Sends data to the BACnet network.</p><p>Please note that not all MS/TP devices support extended APDUs (max. 1476 bytes)
+and thus you should make sure they do when sending large APDUs,
+or always default to the maximum as defined by ASHRAE 135-2012 (before 135-2016).</p><p>See the <a href="BACnet.Stack.TransportBehaviour.html"><code class="inline">BACnet.Stack.TransportBehaviour</code></a> documentation for more information.
+The option <code class="inline">skip_headers</code> has no effect.</p><p>In addition, the following options are available:</p><ul><li><code class="inline">allow_extended_apdu: boolean()</code> - Optional. Allow to send APDUs up to 1476 bytes,
+instead of 501 bytes. Extended APDUs require support of ASHRAE 135-2016 and newer.</li><li><code class="inline">use_extended_apdu: boolean()</code> - Optional. Uses the extended APDU frame type to
+send the APDU (APDU length must be min. 5 bytes) - <code class="inline">allow_extended_apdu</code> must be <code class="inline">true</code>.</li><li><code class="inline">raw: boolean()</code> - Optional. Sends raw data to the transport layer.
+The data MUST be BACnet MS/TP conform data.</li></ul>
+  </section>
+</section>
+<section class="detail" id="send_test/3">
+
+    <span id="send_test/2"></span>
+
+  <div class="detail-header">
+    <a href="#send_test/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">send_test(portal, destination, data \\ &quot;Hello World&quot;)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L880" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> send_test(<a href="BACnet.Stack.TransportBehaviour.html#t:portal/0">BACnet.Stack.TransportBehaviour.portal</a>(), <a href="#t:source_address/0">source_address</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">iodata</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">iodata</a>()}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}
+  | {:error, :invalid_frame_response}
+  | {:error, :slave_mode}
+  | {:error, :token_passing_disabled}</pre>
+
+      </div>
+
+<p>Sends a Test-Request APDU to the specified destination.</p><p>If the destination exists and is reachable, it will send the data back unchanged
+(or no data at all, if it for some reason unable to read the data).
+The destination must not be <code class="inline">255</code> (broadcast).
+The data must be less than 502 bytes long.</p><p>This function will block until the Test-Response APDU has arrived
+or the timeout triggers.</p>
+  </section>
+</section>
+<section class="detail" id="set_maintenance_pfm/2">
+
+  <div class="detail-header">
+    <a href="#set_maintenance_pfm/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">set_maintenance_pfm(transport, state)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L923" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> set_maintenance_pfm(<a href="BACnet.Stack.TransportBehaviour.html#t:transport/0">BACnet.Stack.TransportBehaviour.transport</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()) ::
+  :ok</pre>
+
+      </div>
+
+<p>Enables or disables maintenance POLL_FOR_MASTER in the case the successor node is known.
+If the successor node is unknown, POLL_FOR_MASTER will be regardless done.</p><p>This function is only for development and testing purpose. It must not be used in production.
+Periodic maintenance polling for masters is required to find new nodes in between this node
+and the next current successor node. Nodes may come up and go down any time, which
+the BACnet specification accounts for and thus includes a POLL_FOR_MASTER mechanism.</p>
+  </section>
+</section>
+<section class="detail" id="valid_destination?/1">
+
+  <div class="detail-header">
+    <a href="#valid_destination?/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">valid_destination?(destination)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/stack/transport/mstp_transport.ex#L716" class="icon-action" rel="help" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> valid_destination?(<a href="#t:destination_address/0">destination_address</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Verifies whether the given destination is valid for the transport module.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.1) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>
