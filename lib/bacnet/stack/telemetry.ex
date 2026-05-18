@@ -80,7 +80,7 @@ defmodule BACnet.Stack.Telemetry do
             :telemetry.event_metadata()
           ) :: :ok
     defp execute_event(event, measurements, metadata) do
-      spawn(fn -> :telemetry.execute(event, measurements, metadata) end)
+      spawn(:telemetry, :execute, [event, measurements, metadata])
       :ok
     end
 
