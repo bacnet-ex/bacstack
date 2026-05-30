@@ -4,9 +4,47 @@ defmodule BACnet.Protocol.Services.AddListElement do
 
   The Add List Element service is used to add elements to a list property.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The AddListElement service is used by a client BACnet-user to add one or more list elements
   > to an object property that is a list.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > After verifying the validity of the request, the responding BACnet-user shall attempt to modify the object identified in the
+  > 'Object Identifier' parameter. If the identified object exists and has the property specified in the 'Property Identifier'
+  > parameter, an attempt shall be made to add all of the elements specified in the 'List of Elements' parameter to the specified
+  > property. If this attempt is successful, a 'Result(+)' primitive shall be issued.
+  > When comparing elements in the List of Elements with elements in the specified property, the complete element shall be
+  > compared unless the property description specifies otherwise. If one or more of the elements is already present in the list, it
+  > shall be updated with the provided element, that is, the existing element is over-written with the provided element.
+  > Optionally, if the provided element is exactly the same as the existing element in every way, it can be ignored, that is, not
+  > added to the list. Ignoring an element that already exists shall not cause the service to fail.
+  > If the specified object does not exist, the specified property does not exist, or the specified property is not a list, then the
+  > service shall fail and a 'Result(-)' response primitive shall be issued. If one or more elements cannot be added to, or updated
+  > in, the list, a 'Result(-)' response primitive shall be issued and no elements shall be added to, or updated in, the list.
+  > The effect of this service shall be to add to, or update in, the list all of the specified elements, or to neither add nor update any
+  > elements at all.
+
+  #### Result(-) Errors (ASHRAE 135)
+
+  The 'Result(-)' parameter shall indicate that the service request failed and none of the specified elements were added to the
+  list. The reason for failure is specified by the 'Error Type' parameter.
+
+  The 'Error Class' and 'Error Code' to be returned for specific situations are as follows:
+
+  | Situation | Error Class | Error Code |
+  |-----------|-------------|------------|
+  | Specified object does not exist. | OBJECT | UNKNOWN_OBJECT |
+  | Specified property does not exist. | PROPERTY | UNKNOWN_PROPERTY |
+  | The element datatype does not match the property. | PROPERTY | INVALID_DATATYPE |
+  | The data being written has a datatype not supported by the property. | PROPERTY | DATATYPE_NOT_SUPPORTED |
+  | The element value is out of range for the property. | PROPERTY | VALUE_OUT_OF_RANGE |
+  | The specified property is currently not modifiable by the requester. | PROPERTY | WRITE_ACCESS_DENIED |
+  | There is not enough free memory for the element. | RESOURCES | NO_SPACE_TO_ADD_LIST_ELEMENT |
+  | The property or specified array element is not a list. | RESOURCES | PROPERTY_IS_NOT_A_LIST |
+  | An array index is provided but the property is not an array. | PROPERTY | PROPERTY_IS_NOT_AN_ARRAY |
+  | An array index is provided that is outside the range existing in the property. | PROPERTY | INVALID_ARRAY_INDEX |
   """
 
   alias BACnet.Protocol

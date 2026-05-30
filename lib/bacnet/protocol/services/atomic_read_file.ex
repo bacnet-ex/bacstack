@@ -4,9 +4,45 @@ defmodule BACnet.Protocol.Services.AtomicReadFile do
 
   The Atomic Read File service is used to atomically read from a file on a device.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The AtomicReadFile Service is used by a client BACnet-user to perform an open-read-close operation on the contents of the
   > specified file. The file may be accessed as records or as a stream of octets.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > The responding BACnet-user shall first verify the validity of the 'File Identifier' parameter and return a 'Result(-)' response
+  > with the appropriate error class and code if the File object is unknown, if there is currently another AtomicReadFile or
+  > AtomicWriteFile service in progress, or if the File object is currently inaccessible for another reason. If the 'File Start
+  > Position' parameter or the 'File Start Record' parameter is either less than 0 or exceeds the actual file size, then the appropriate
+  > error is returned in a 'Result(-)' response. If not, then the responding BACnet-user shall read the number of octets specified by
+  > 'Requested Octet Count' or the number of records specified by 'Requested Record Count'. If the number of remaining octets
+  > or records is less than the requested amount, then the length of the 'File Data' returned or 'Returned Record Count' shall
+  > indicate the actual number read. If the returned response contains the last octet or record of the file, then the 'End Of File'
+  > parameter shall be TRUE, otherwise FALSE.
+
+  #### Result(+) Response (ASHRAE 135)
+
+  On success, the responding BACnet-user returns a 'Result(+)' primitive containing:
+
+  - 'End Of File' - TRUE if this response contains the last octet/record of the file, FALSE otherwise.
+  - 'File Data' or 'Returned Record Count' + record data - Depending on whether stream or record access was requested.
+
+  The amount of data returned may be less than requested if the end of file is reached.
+
+  #### Result(-) Errors (ASHRAE 135)
+
+  The 'Result(-)' parameter shall indicate that the service request has failed in its entirety. The reason for the failure shall be
+  specified by the 'Error Type' parameter.
+
+  The 'Error Class' and 'Error Code' to be returned for specific situations are as follows:
+
+  | Situation | Error Class | Error Code |
+  |-----------|-------------|------------|
+  | The File object does not exist. | OBJECT | UNKNOWN_OBJECT |
+  | 'File Start Record' is out of range. | SERVICES | INVALID_FILE_START_POSITION |
+  | Incorrect File access method. | SERVICES | INVALID_FILE_ACCESS_METHOD |
+  | A non-File Object Identifier was provided. | SERVICES | INCONSISTENT_OBJECT_TYPE |
   """
 
   alias BACnet.Protocol

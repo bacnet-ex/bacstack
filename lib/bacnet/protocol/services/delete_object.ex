@@ -4,12 +4,32 @@ defmodule BACnet.Protocol.Services.DeleteObject do
 
   The Delete Object service is used to delete an existing object in the remote device.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The DeleteObject service is used by a client BACnet-user to delete an existing object. Although this service is general in the
   > sense that it can be applied to any object type, it is expected that most objects in a control system cannot be deleted by this
   > service because they are protected as a security feature. There are some objects, however, that may be created and deleted
   > dynamically. Group objects and Event Enrollment objects are examples. This service is primarily used to delete objects of
   > these types but may also be used to remove vendor-specific deletable objects.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > After verifying the validity of the request, the responding BACnet-user shall attempt to delete the object specified by the
+  > 'Object Identifier' parameter of the request/indication primitive. If the specified object exists and can be deleted, it shall be
+  > deleted and the 'Result(+)' primitive shall be issued. If the specified object does not exist or cannot be deleted, then the
+  > 'Result(-)' primitive shall be issued.
+
+  #### Result(-) Errors (ASHRAE 135)
+
+  The 'Result(-)' parameter shall indicate that the service request failed and the specified object was not deleted. The reason for
+  failure is specified in the 'Error type' parameter.
+
+  The 'Error Class' and 'Error Code' to be returned for specific situations are as follows:
+
+  | Situation | Error Class | Error Code |
+  |-----------|-------------|------------|
+  | The object to be deleted does not exist. | OBJECT | UNKNOWN_OBJECT |
+  | The object exists but cannot be deleted. | OBJECT | OBJECT_DELETION_NOT_PERMITTED |
   """
 
   alias BACnet.Protocol

@@ -4,10 +4,22 @@ defmodule BACnet.Protocol.Services.TimeSynchronization do
 
   The Time Synchronization service is used to send the correct local date and time onto the BACnet network or to a single recipient.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The TimeSynchronization service is used by a requesting BACnet-user to notify a remote device of the correct current time.
   > This service may be broadcast, multicast, or addressed to a single recipient. Its purpose is to notify recipients of the correct
   > current time so that devices may synchronize their internal clocks with one another.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > Since this is an unconfirmed service, no response primitives are expected. A device receiving a TimeSynchronization
+  > service indication shall update its local representation of time. This change shall be reflected in the Local_Time and
+  > Local_Date properties of the Device object. No restrictions on the use of this service exist when it is invoked at the request
+  > of an operator. Otherwise, the use of this service is controlled by the value of the Time_Synchronization_Recipients property
+  > in the Device object. When the Time_Synchronization_Recipients list is of length zero, a device may not automatically send
+  > a TimeSynchronization request. When Time_Synchronization_Recipients list is of length one or more, a device may
+  > automatically send a TimeSynchronization request but only to the devices or addresses contained in the
+  > Time_Synchronization_Recipients list.
   """
 
   alias BACnet.Protocol

@@ -4,10 +4,38 @@ defmodule BACnet.Protocol.Services.RemoveListElement do
 
   The Remove List Element service is used to remove elements from a list property.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The RemoveListElement service is used by a client BACnet-user to remove one or more elements from the property of an
   > object that is a list. If an element is itself a list, the entire element shall be removed. This service does not operate on nested
   > lists.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > After verifying the validity of the request, the responding BACnet-user shall attempt to modify the object identified in the
+  > 'Object Identifier' parameter. If the identified object exists and it has the property specified in the 'Property Identifier'
+  > parameter, an attempt shall be made to remove the elements in the 'List of Elements' from the property of the object.
+  > When comparing elements of the service with entries in the affected list, the complete element shall be compared unless the
+  > property description specifies otherwise. If one or more of the elements does not exist or cannot be removed because of
+  > insufficient authority, none of the elements shall be removed and a 'Result(-)' response primitive shall be issued.
+
+  #### Result(-) Errors (ASHRAE 135)
+
+  The 'Result(-)' parameter shall indicate that the service request failed. The reason for failure is specified by the 'Error Type'
+  parameter. None of the elements of the specified object shall be removed.
+
+  The 'Error Class' and 'Error Code' to be returned for specific situations are as follows:
+
+  | Situation | Error Class | Error Code |
+  |-----------|-------------|------------|
+  | Specified object does not exist. | OBJECT | UNKNOWN_OBJECT |
+  | Specified property does not exist. | PROPERTY | UNKNOWN_PROPERTY |
+  | The element datatype does not match the property. | PROPERTY | INVALID_DATATYPE |
+  | The specified property is currently not modifiable by the requestor. | PROPERTY | WRITE_ACCESS_DENIED |
+  | A list element to be removed is not present. | SERVICES | LIST_ELEMENT_NOT_FOUND |
+  | The property or specified array element is not a list. | RESOURCES | PROPERTY_IS_NOT_A_LIST |
+  | An array index is provided but the property is not an array. | PROPERTY | PROPERTY_IS_NOT_AN_ARRAY |
+  | An array index is provided that is outside the range existing in the property. | PROPERTY | INVALID_ARRAY_INDEX |
   """
 
   alias BACnet.Protocol

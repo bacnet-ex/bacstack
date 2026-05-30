@@ -1,8 +1,6 @@
 defmodule BACnet.Internal do
   @moduledoc false
 
-  # TODO: Docs
-
   require Logger
 
   @compile {:inline, intify: 1}

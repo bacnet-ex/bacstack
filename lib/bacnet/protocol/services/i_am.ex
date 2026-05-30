@@ -7,7 +7,8 @@ defmodule BACnet.Protocol.Services.IAm do
   to broadcast an I-Am upon startup or after a significant configuration change so that other
   devices and operators can discover them without explicit polling.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The I-Am service is used to respond to Who-Is service requests. However, the IAm service request may be issued at any time.
   > It does not need to be preceded by the receipt of a Who-Is service request.
   > In particular, a device may wish to broadcast an I-Am service request when it powers up. The network address is derived either
@@ -17,6 +18,14 @@ defmodule BACnet.Protocol.Services.IAm do
   The I-Am carries the device's object identifier, the maximum APDU size it supports,
   its segmentation capability, and its vendor identifier. This information allows clients
   to decide how to communicate with the device efficiently.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > The sending BACnet-user shall broadcast or unicast the I-Am unconfirmed request. If the I-Am is broadcast, this broadcast
+  > may be on the local network only, a remote network only, or globally on all networks at the discretion of the application. If
+  > the I-Am is being sent in response to a previously received Who-Is, then the I-Am shall be sent in such a manner that the
+  > BACnet-user that sent the Who-Is will receive the resulting I-Am. Since the request is unconfirmed, no further action is
+  > required. A BACnet-user may issue an I-Am service request at any time.
   """
 
   alias BACnet.Protocol

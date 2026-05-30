@@ -5,10 +5,28 @@ defmodule BACnet.Protocol.Services.ConfirmedCovNotification do
   The Confirmed COV Notification service is used to notify a subscriber of a changed value or changed values and requires an
   acknowledge by the subscriber of reception of this event notification.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The ConfirmedCOVNotification service is used to notify subscribers about changes that may have occurred to the properties
   > of a particular object. Subscriptions for COV notifications are made using the SubscribeCOV service or the
   > SubscribeCOVProperty service.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > After verifying the validity of the request, the responding BACnet-user shall take whatever local actions have been assigned
+  > to the indicated COV and issue a 'Result(+)' service primitive. If the service request cannot be executed, a 'Result(-)' service
+  > primitive shall be issued indicating the error encountered.
+
+  #### Result(-) Errors (ASHRAE 135)
+
+  The 'Result(-)' parameter shall indicate that the service request has failed. The reason for failure shall be specified by the
+  'Error Type' parameter.
+
+  The 'Error Class' and 'Error Code' to be returned for specific situations are as follows:
+
+  | Situation | Error Class | Error Code |
+  |-----------|-------------|------------|
+  | No subscription exists for the specified object, property, and process identifier. Devices may ignore this condition and return a BACnet-SimpleACK-PDU. | SERVICES | UNKNOWN_SUBSCRIPTION |
   """
 
   alias BACnet.Protocol

@@ -5,12 +5,46 @@ defmodule BACnet.Protocol.Services.GetEventInformation do
   The Get Event Information service is used to get a list of active event states from a device.
   Active event states refers to all abnormal events of event-initiating objects.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The GetEventInformation service is used by a client BACnet-user to obtain a summary of all "active event states". The term
   > "active event states" refers to all event-initiating objects that
   >   (a) have an Event_State property whose value is not equal to NORMAL, or
   >   (b) have an Acked_Transitions property, which has at least one of the bits (TO_OFFNORMAL, TO_FAULT, TO_NORMAL) set to FALSE.
   > This service is intended to be implemented in all devices that generate event notifications.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > After verifying the validity of the request, the responding BACnet-user shall search for all event-initiating objects that do not
+  > have an Event_Detection_Enable property with a value of FALSE and that meet the following conditions, beginning with the
+  > object following (in whatever internal ordering of objects is used by the responding device) the object specified by the 'Last
+  > Received Object Identifier' parameter, if present:
+  > (a) have an Event_State property whose value is not equal to NORMAL, or
+  > (b) have an Acked_Transitions property that has at least one of the following bits (TO_OFFNORMAL, TO_FAULT,
+  > TO_NORMAL) set to FALSE.
+  > A positive response containing the event summaries for objects found in this search shall be constructed. If no objects are
+  > found that meet these criteria, then a list of length zero shall be returned. As many of the included objects as can be returned
+  > within the APDU shall be returned. If more objects exist that meet the criteria but cannot be returned in the APDU, the 'More
+  > Events' parameter shall be set to TRUE, otherwise it shall be set to FALSE.
+
+  #### Result(+) Response (ASHRAE 135)
+
+  On success, the responding BACnet-user returns a 'Result(+)' primitive containing:
+
+  - A list of event summaries for all qualifying objects.
+  - 'More Events' - A Boolean indicating whether additional events exist that could not fit in this response (used for pagination).
+
+  Each summary includes the object identifier, event state, acknowledged transitions, event timestamps, etc.
+
+  #### Result(-) Errors (ASHRAE 135)
+
+  The 'Result(-)' parameter shall indicate that the service request has failed. The reason for failure shall be specified by the
+  'Error Type' parameter.
+
+  The 'Error Class' and 'Error Code' are per Clause 18, with the following specific case noted in the specification:
+
+  If the 'Last Received Object Identifier' parameter (when provided) has become invalid in the responding device, the service
+  shall return an error with Error Class = OBJECT and Error Code = UNKNOWN_OBJECT.
   """
 
   alias BACnet.Protocol

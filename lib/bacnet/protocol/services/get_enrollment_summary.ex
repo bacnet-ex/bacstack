@@ -5,10 +5,33 @@ defmodule BACnet.Protocol.Services.GetEnrollmentSummary do
   The Get Enrollment Summary service is used to get a list of event-initiating objects.
   Several different filters may be applied.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The GetEnrollmentSummary service is used by a client BACnet-user to obtain a summary of event-initiating objects. Several
   > different filters may be applied to define the search criteria. This service may be used to obtain summaries of objects with any
   > event type and is thus a superset of the functionality provided by the GetAlarmSummary Service.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > After verifying the validity of the request, the responding BACnet-user shall search for all event-initiating objects that meet
+  > the search criteria specified in the request primitive. The search criteria are the logical conjunctions of all of the explicitly
+  > stated filters and the default values for any filters that were omitted in the request primitive. Any object that has an
+  > Event_Detection_Enable property with a value of FALSE shall be ignored. A positive response containing the enrollment
+  > summaries for objects found in this search shall be constructed. If no objects are found that meet these criteria, then a list of
+  > length zero shall be returned.
+
+  #### Result(+) Response (ASHRAE 135)
+
+  On success, the responding BACnet-user returns a 'Result(+)' primitive containing a list of enrollment summaries.
+  Each summary includes the object identifier, event type, and notification class of qualifying event-initiating objects.
+  If no objects meet the search criteria, an empty list is returned.
+
+  #### Result(-) Errors (ASHRAE 135)
+
+  The 'Result(-)' parameter shall indicate that the service request has failed. The reason for failure shall be specified by the
+  'Error Type' parameter.
+
+  The 'Error Class' and 'Error Code' are per Clause 18 (no service-specific situations are defined beyond the general cases).
   """
 
   alias BACnet.Protocol

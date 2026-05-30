@@ -4,9 +4,68 @@ defmodule BACnet.Protocol.Services.ReadRange do
 
   The Read Range service is used to read range of a property of an object.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The ReadRange service is used by a client BACnet-user to read a specific range of data items representing a subset of data
   > available within a specified object property. The service may be used with any list or array of lists property.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > The responding BACnet-user shall first verify the validity of the 'Object Identifier', 'Property Identifier' and 'Property Array
+  > Index' parameters and return a 'Result(-)' response with the appropriate error class and code if the object or property is
+  > unknown, if the referenced data is not a list or array, or if it is currently inaccessible for another reason.
+  > If the 'Range' parameter is not present, then the responding BACnet-user shall read and attempt to return all of the available
+  > items in the list or array. If the 'Range' parameter is present and specifies the 'By Position' parameters, then the responding
+  > BACnet-user shall read and attempt to return all of the items specified. The items specified include the item at the index
+  > specified by the 'Reference Index' plus up to 'Count' - 1 items following if 'Count' is positive, or up to -1 - 'Count' items
+  > preceding if 'Count' is negative. The first element of a list shall be associated with index 1.
+  > If the 'Range' parameter is present and specifies the 'By Time' parameter, then the responding BACnet-user shall read and
+  > attempt to return all of the items specified. If 'By Time' parameters are specified and the property values are not timestamped
+  > an error shall be returned. If 'Count' is positive, the records specified include the first record with a timestamp newer than
+  > 'Reference Time' plus up to 'Count'-1 items following. If 'Count' is negative, the records specified include the newest record
+  > with a timestamp older than 'Reference Time' and up to -1-'Count' records preceding. The sequence number of the first item
+  > returned shall be included in the response. The items shall be returned in chronological order.
+  > If the 'Range' parameter is present and specifies the 'By Sequence Number' parameters, then the responding BACnet-user
+  > shall read and attempt to return all of the items specified. The items specified are all items with a sequence number in the
+  > range 'Reference Sequence Number' to 'Reference Sequence Number' plus 'Count'-1 if 'Count' is positive, or in the range
+  > 'Reference Sequence Number' plus 'Count'+1 to 'Reference Sequence' if 'Count' is negative.
+  > To avoid missing items when using chained time-based reads, the first item in the desired set should be found using the 'By
+  > Time' form of the 'Range' parameter. Subsequent requests to retrieve the remaining items in the desired set should use the 'By
+  > Sequence Number' form of the 'Range' parameter.
+  > The returned response shall convey the number of items read and returned using the 'Item Count' parameter. The actual items
+  > shall be returned in the 'Item Data' parameter. If the returned response includes the first positional index and a 'By Position'
+  > request had been made, or the oldest sequence number and a 'By Sequence Number' or 'By Time' request had been made, then
+  > the 'Result Flags' parameter shall contain the FIRST_ITEM flag set to TRUE; otherwise it shall be FALSE.
+  > If the returned response includes the last positional index and a 'By Position' request had been made, or the newest sequence
+  > number and a 'By Sequence Number' or 'By Time' request had been made, then the 'Result Flags' shall contain the
+  > LAST_ITEM flag set to TRUE; otherwise it shall be FALSE.
+  > If there are no items in the list that match the 'Range' parameter criteria, then a Result(+) shall be returned with an 'Item
+  > Count' of 0 and no 'First Sequence Number' parameter.
+
+  #### Result(+) Response (ASHRAE 135)
+
+  On success, the responding BACnet-user returns a 'Result(+)' primitive containing:
+
+  - 'Item Count' - The number of items returned.
+  - 'Item Data' - The list of items read (BACnetARRAY of the appropriate datatype).
+  - 'Result Flags' - A bit string indicating whether the first item ('FIRST_ITEM') and/or last item ('LAST_ITEM') of the list were returned.
+  - 'First Sequence Number' (optional) - Present when the 'By Sequence Number' or 'By Time' form of 'Range' was used. Indicates the sequence number of the first item returned.
+
+  If no items matched the request criteria, a 'Result(+)' is still returned with 'Item Count' = 0 and no 'First Sequence Number'.
+
+  #### Result(-) Errors (ASHRAE 135)
+
+  The 'Result(-)' parameter shall indicate that the service request has failed. The reason for the failure shall be specified by the
+  'Error Type' parameter.
+
+  The 'Error Class' and 'Error Code' to be returned for specific situations are as follows:
+
+  | Situation | Error Class | Error Code |
+  |-----------|-------------|------------|
+  | Specified property does not exist. The specified property is currently not readable by the requester. | PROPERTY | UNKNOWN_PROPERTY / READ_ACCESS_DENIED |
+  | Property is not a list or array of lists | SERVICES | PROPERTY_IS_NOT_A_LIST |
+  | An array index is provided but the property is not an array. | PROPERTY | PROPERTY_IS_NOT_AN_ARRAY |
+  | An array index is provided that is outside the range existing in the property. | PROPERTY | INVALID_ARRAY_INDEX |
   """
 
   alias BACnet.Protocol

@@ -5,7 +5,8 @@ defmodule BACnet.Protocol.Services.UnconfirmedTextMessage do
   The Unconfirmed Text Message service is used to send a text message to one or more devices. What devices do with
   the text message is a local matter of the recipient.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The UnconfirmedTextMessage service is used by a client BACnet-user to send a text message to one or more BACnet
   > devices. This service may be broadcast, multicast, or addressed to a single recipient. This service may be used in cases
   > where confirmation that the text message was received is not required. Messages may be prioritized into normal or urgent
@@ -13,6 +14,15 @@ defmodule BACnet.Protocol.Services.UnconfirmedTextMessage do
   > string. This classification may be used by receiving BACnet devices to determine how to handle the text message. For
   > example, the message class might indicate a particular output device on which to print text or a set of actions to take when
   > the text message is received. In any case, the interpretation of the class is a local matter.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > Since this is an unconfirmed service, no response primitives are expected. Actions taken in response to this service request
+  > are a local matter. However, typically the receiving device(s) would take the text block specified by the 'Message'
+  > parameter and display or print or file them according to the classification specified by the 'Message Class' parameter. If the
+  > 'Message Class' parameter is omitted, then some general class might be assumed. If 'Message Priority' is URGENT, then
+  > clearly the messages should be considered as more important than existing NORMAL messages, which may be awaiting
+  > printing or some other action.
   """
 
   alias BACnet.Protocol

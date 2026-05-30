@@ -4,10 +4,46 @@ defmodule BACnet.Protocol.Services.AtomicWriteFile do
 
   The Atomic Write File service is used to atomically write to a file on a device.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The AtomicWriteFile Service is used by a client BACnet-user to perform an open-write-close operation of an OCTET
   > STRING into a specified position or a list of OCTET STRINGs into a specified group of records in a file. The file may be
   > accessed as records or as a stream of octets.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > The responding BACnet-user shall first verify the validity of the 'File Identifier' parameter and return a 'Result(-)' response
+  > with the appropriate error class and code if the File object is unknown, if there is currently another AtomicReadFile or
+  > AtomicWriteFile service in progress, or if the File object is currently inaccessible for another reason. If the 'File Start
+  > Position' parameter or the 'File Start Record' parameter exceeds the actual file size, then the file shall be extended to the size
+  > indicated, but the contents of any intervening octets or records shall be a local matter. If either of these parameters has the
+  > special value -1, then the write operation shall be treated as an append to the current end of file. Then the responding
+  > BACnet-user shall write the number of octets specified by 'File Data' or the number of records specified by the 'Record Count'
+  > to the file. If the write fails for any reason, then a 'Result(-)' response with the appropriate error class and code shall be
+  > returned. If the write succeeds in its entirety, then a 'Result(+)' response shall be returned. The 'File Start Position' or 'File
+  > Start Record' shall indicate the actual position or record at which data were written.
+
+  #### Result(+) Response (ASHRAE 135)
+
+  On success, the responding BACnet-user returns a 'Result(+)' primitive containing the actual 'File Start Position' or 'File Start Record'
+  at which the data was written. This may differ from the requested position if the special value -1 (append) was used or if the file was extended.
+
+  #### Result(-) Errors (ASHRAE 135)
+
+  The 'Result(-)' parameter shall indicate that the service request has failed in its entirety. The reason for the failure shall be
+  specified by the 'Error Type' parameter.
+
+  The 'Error Class' and 'Error Code' to be returned for specific situations are as follows:
+
+  | Situation | Error Class | Error Code |
+  |-----------|-------------|------------|
+  | The File object does not exist. | OBJECT | UNKNOWN_OBJECT |
+  | 'File Start Record' is out of range. | SERVICES | INVALID_FILE_START_POSITION |
+  | Incorrect File access method. | SERVICES | INVALID_FILE_ACCESS_METHOD |
+  | Write to a read-only File. | SERVICES | FILE_ACCESS_DENIED |
+  | A syntax error is encountered in the message after the file has been partially modified during the execution of this service. | SERVICES | INVALID_TAG |
+  | The File object is full | OBJECT | FILE_FULL |
+  | A non-File Object Identifier was provided | SERVICES | INCONSISTENT_OBJECT_TYPE |
   """
 
   alias BACnet.Protocol

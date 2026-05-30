@@ -5,7 +5,8 @@ defmodule BACnet.Protocol.Services.ConfirmedTextMessage do
   The Confirmed Text Message service is used to send a text message to one devices. What the device does with
   the text message is a local matter of the recipient.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The ConfirmedTextMessage service is used by a client BACnet-user to send a text message to another BACnet device. This
   > service is not a broadcast or multicast service. This service may be used in cases when confirmation that the text message
   > was received is required. The confirmation does not guarantee that a human operator has seen the message. Messages may
@@ -13,6 +14,25 @@ defmodule BACnet.Protocol.Services.ConfirmedTextMessage do
   > class code or class identification string. This classification may be used by the receiving BACnet device to determine how
   > to handle the text message. For example, the message class might indicate a particular output device on which to print text
   > or a set of actions to take when the text is received. In any case, the interpretation of the class is a local matter.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > After verifying the validity of the request, the responding BACnet-user shall take whatever local actions have been assigned
+  > to the indicated 'Message Class' and issue a 'Result(+)' service primitive. If the service request cannot be executed, a
+  > 'Result(-)' service primitive shall be issued indicating the encountered error. Other than the requirement to return a success
+  > or failure response, actions taken in response to this notification are a local matter. However, typically the receiving device
+  > would take the text specified by the 'Message' parameter and display, print, or file it according to the classification
+  > specified by the 'Message Class' parameter. If the 'Message Class' parameter is omitted, then some general class might be
+  > assumed. If 'Message Priority' is URGENT, then clearly the messages should be considered as more important than existing
+  > NORMAL messages, which may be awaiting printing or some other action.
+
+  #### Result(-) Errors (ASHRAE 135)
+
+  The 'Result(-)' parameter shall indicate that the service request has failed. The reason for failure shall be specified by the
+  'Error Type' parameter.
+
+  The 'Error Class' and 'Error Code' are per Clause 18. The service procedure notes that errors during local handling of the
+  message (display/print/file) are a local matter after the Result(-) has been returned.
   """
 
   alias BACnet.Protocol

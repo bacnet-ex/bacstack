@@ -5,13 +5,32 @@ defmodule BACnet.Protocol.Services.LifeSafetyOperation do
   The Life Safety Operation service is used to provide a mechanism for human operators to silence audible or visual appliances,
   reset notification appliances, or unsilence previously silenced appliances.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The LifeSafetyOperation service is intended for use in fire, life safety and security systems to provide a mechanism for
   > conveying specific instructions from a human operator to accomplish any of the following objectives:
   >   (a) silence audible or visual notification appliances,
   >   (b) reset latched notification appliances, or
   >   (c) unsilence previously silenced audible or visual notification appliances.
   > Ensuring that the LifeSafetyOperation request actually comes from a person with appropriate authority is a local matter.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > The responding BACnet-user shall first verify the validity of the 'Object Identifier' parameter and return a 'Result(-)' response
+  > with the appropriate error class and code if the 'Request' is invalid or if the 'Object Identifier' parameter is present and
+  > specifies an object that is either unknown or does not represent an appropriate request for this object type.
+  > If the 'Object Identifier' parameter is not present, then the responding BACnet-user shall attempt to operate all applicable
+  > objects in the device based on the 'Request' parameter. If the 'Object Identifier' parameter is present, the responding
+  > BACnet-user shall attempt to silence or reset the object specified in the 'Object Identifier' parameter based on the 'Request'
+  > parameter. In either case, the responding BACnet-user shall issue a Result(+) primitive.
+
+  #### Result(-) Errors (ASHRAE 135)
+
+  The 'Result(-)' parameter shall indicate that the service request has failed. The reason for the failure shall be specified by the
+  'Error Type' parameter.
+
+  The 'Error Class' and 'Error Code' are per Clause 18. The service procedure specifically validates the 'Request' and (if
+  present) the 'Object Identifier' parameter; invalid values result in an appropriate error from Clause 18.
   """
 
   alias BACnet.Protocol

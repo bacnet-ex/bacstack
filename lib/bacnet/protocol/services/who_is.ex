@@ -6,7 +6,8 @@ defmodule BACnet.Protocol.Services.WhoIs do
   or operator workstation to locate other devices on the local network or across
   a routed internetwork by asking devices to identify themselves.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The Who-Is service is used by a sending BACnet-user to determine the device object identifier, the network address, or both,
   > of other BACnet devices that share the same internetwork. The Who-Is service is an unconfirmed service.
   > The Who-Is service may be used to determine the device object identifier and network addresses of all devices on the network,
@@ -20,6 +21,18 @@ defmodule BACnet.Protocol.Services.WhoIs do
   A Who-Is can be broadcast with no parameters to discover every device, or it can be
   restricted by device instance range to locate a specific device when only its
   object identifier is known. Every responding device answers with an I-Am.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > The sending BACnet-user shall transmit the Who-Is unconfirmed request, normally using a broadcast address. If the 'Device
+  > Instance Range Low Limit' and 'Device Instance Range High Limit' parameters are omitted, then all receiving BACnet-users
+  > shall return their Device Object_Identifier in individual responses using the I-Am service. If the 'Device Instance Range Low
+  > Limit' and 'Device Instance Range High Limit' parameters are present, then only those receiving BACnet-users whose Device
+  > Object_Identifier instance number falls within the range 'Device Instance Range Low Limit' ≤ Device Object_Identifier
+  > Instance Number ≤ 'Device Instance Range High Limit' shall return their Device Object_Identifier using the I-Am service.
+  > If the receiving BACnet-user has a Slave_Proxy_Enable property and the Slave_Proxy_Enable for the receiving port is
+  > TRUE, then the BACnet-user shall respond with an I-Am unconfirmed request for each of the slave devices on the MS/TP
+  > network that are present in the Slave_Address_Binding property and that match the device range parameters.
   """
 
   alias BACnet.Protocol

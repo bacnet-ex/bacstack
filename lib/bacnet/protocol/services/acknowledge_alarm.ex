@@ -4,12 +4,50 @@ defmodule BACnet.Protocol.Services.AcknowledgeAlarm do
 
   The Acknowledge Alarm service is used to acknowledge a human operator has seen the alarm notification.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > In some systems a device may need to know that an operator has seen the alarm notification. The AcknowledgeAlarm service
   > is used by a notification-client to acknowledge that a human operator has seen and responded to an event notification with
   > 'AckRequired' = TRUE. Ensuring that the acknowledgment actually comes from a person with appropriate authority is a local
   > matter. This service may be used in conjunction with either the ConfirmedEventNotification service or the
   > UnconfirmedEventNotification service.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > After verifying the validity of the request, the responding BACnet-user shall attempt to locate the specified object. If the
+  > object exists and if the 'Time Stamp' parameter matches the most recent time for the event being acknowledged, then the bit
+  > in the Acked_Transitions property of the object that corresponds to the value of the 'Event State Acknowledged' parameter
+  > shall be set to 1, a 'Result(+)' primitive shall be issued, and an event notification with a 'Notify Type' parameter equal to
+  > ACK_NOTIFICATION shall be issued. Otherwise, a 'Result(-)' primitive shall be issued. An acknowledgment notification
+  > shall use the same type of service (confirmed or unconfirmed) directed to the same recipients to which a confirmed or
+  > unconfirmed event notification for the same transition type would be sent. The Time Stamp conveyed in the acknowledgment
+  > notification shall not be derived from the Time Stamp of the original event notification, but rather the time at which the
+  > acknowledgment notification is generated. A device shall not fail to process, or issue a Result(-), upon receiving an
+  > AcknowledgeAlarm service request containing an 'Acknowledgment Source' parameter in an unsupported character set. In
+  > this case, it is a local matter whether the 'Acknowledgment Source' parameter is used as provided or whether a character
+  > string, in a supported character set, of length 0 is used in its place.
+
+  #### Result(+) Response (ASHRAE 135)
+
+  On success, a 'Result(+)' primitive is returned and an event notification with 'Notify Type' = ACK_NOTIFICATION is issued
+  to the same recipients that would receive a normal event notification for that transition type.
+
+  #### Result(-) Errors (ASHRAE 135)
+
+  The 'Result(-)' parameter shall indicate that the service request failed. The reason for failure is specified by the 'Error Type'
+  parameter.
+
+  This parameter consists of two components: (1) 'Error Class' and (2) 'Error Code'. See Clause 18.
+
+  The 'Error Class' and 'Error Code' to be returned for specific situations are as follows:
+
+  | Situation | Error Class | Error Code |
+  |-----------|-------------|------------|
+  | The object does not exist. | OBJECT | UNKNOWN_OBJECT |
+  | The object exists but does not support or is not configured for event generation. | OBJECT | NO_ALARM_CONFIGURED |
+  | The requesting BACnet device does not have appropriate authorization to Acknowledge this alarm. | SERVICES | SERVICE_REQUEST_DENIED |
+  | The timestamp provided in the AcknowledgeAlarm message does not match with the latest timestamp for the transition being acknowledged. | SERVICES | INVALID_TIMESTAMP |
+  | The 'Event State Acknowledged' does not match the 'To State' parameter of the original Event Notification message. An 'Event State Acknowledged' of OFFNORMAL shall match any off-normal event state. | SERVICES | INVALID_EVENT_STATE |
   """
 
   alias BACnet.Protocol

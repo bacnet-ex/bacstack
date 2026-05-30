@@ -5,7 +5,8 @@ defmodule BACnet.Protocol.Services.SubscribeCov do
   The Subscribe COV service is used to subscribe to changes of an object. The standardized objects that may optionally
   provide COV support and the change of value algorithms they shall employ are summarized in ASHRAE 135 Table 13-1.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The SubscribeCOV service is used by a COV-client to subscribe for the receipt of notifications of changes that may occur to
   > the properties of a particular object. Certain BACnet standard objects may optionally support COV reporting. If a standard
   > object provides COV reporting, then changes of value of specific properties of the object, in some cases based on
@@ -18,6 +19,49 @@ defmodule BACnet.Protocol.Services.SubscribeCov do
   > when changes occur after the subscription has been established. The ConfirmedCOVNotification and
   > UnconfirmedCOVNotification services are used by the COV-server device to convey change notifications. The choice of
   > confirmed or unconfirmed service is made at the time the subscription is established.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > If neither 'Lifetime' nor 'Issue Confirmed Notifications' are present, then the request shall be considered to be a cancellation.
+  > Any COV context that already exists for the same BACnet address contained in the PDU that carries the SubscribeCOV
+  > request and has the same 'Subscriber Process Identifier' and 'Monitored Object Identifier' shall be disabled and a 'Result(+)'
+  > returned. Cancellations that are issued for which no matching COV context can be found shall succeed as if a context had
+  > existed, returning 'Result(+)'. If the 'Lifetime' parameter is not present but the 'Issue Confirmed Notifications' parameter is
+  > present, then a value of zero (indefinite lifetime) shall be assumed for the lifetime. If the 'Issue Confirmed Notifications'
+  > parameter is present but the object to be monitored does not support COV reporting, then a 'Result(-)' shall be returned. If
+  > the object to be monitored does support COV reporting, then a check shall be made to locate an existing COV context for the
+  > same BACnet address contained in the PDU that carries the SubscribeCOV request and has the same 'Subscriber Process
+  > Identifier' and 'Monitored Object Identifier'. If an existing COV context is found, then the request shall be considered a
+  > re-subscription and shall succeed as if the subscription had been newly created.
+  > If no COV context can be found that matches the request, then a new COV context shall be established that contains the
+  > BACnet address from the PDU that carries the SubscribeCOV request and the same 'Subscriber Process Identifier' and
+  > 'Monitored Object Identifier'. If no context can be created, then a 'Result(-)' shall be returned.
+  > If a new context is created, or a re-subscription is received, then the COV context shall be initialized and given a lifetime as
+  > specified by the 'Lifetime' parameter, if present, or zero if the 'Lifetime' parameter is not present. The subscription shall be
+  > automatically cancelled after that many seconds have elapsed unless a re-subscription is received. A lifetime of zero shall
+  > indicate that the subscription is indefinite and no automatic cancellation shall occur. In either case, a 'Result(+)' shall be
+  > returned. A ConfirmedCOVNotification or UnconfirmedCOVNotification shall be issued as soon as possible after the
+  > successful completion of a subscription or re-subscription request, as specified by the 'Issue Confirmed Notifications'
+  > parameter.
+
+  #### Result(+) Response (ASHRAE 135)
+
+  On success, a 'Result(+)' primitive is returned. Additionally, if this is a new subscription or re-subscription,
+  a ConfirmedCOVNotification or UnconfirmedCOVNotification (as requested) is issued as soon as possible containing the current values.
+
+  #### Result(-) Errors (ASHRAE 135)
+
+  The 'Result(-)' parameter shall indicate that the service request has failed. The reason for failure shall be specified by the
+  'Error Type' parameter.
+
+  The 'Error Class' and 'Error Code' to be returned for specific situations are as follows:
+
+  | Situation | Error Class | Error Code |
+  |-----------|-------------|------------|
+  | Specified object does not exist | OBJECT | UNKNOWN_OBJECT |
+  | Specified object does not support COV notifications | OBJECT | OPTIONAL_FUNCTIONALITY_NOT_SUPPORTED |
+  | No context can be created due to resource limitations | RESOURCES | NO_SPACE_TO_ADD_LIST_ELEMENT |
+  | The Lifetime parameter is out of the range supported by the device | SERVICES | VALUE_OUT_OF_RANGE |
   """
 
   alias BACnet.Protocol

@@ -4,12 +4,18 @@ defmodule BACnet.Protocol.Services.UnconfirmedCovNotification do
 
   The Unconfirmed COV Notification service is used to notify a subscriber of a changed value or changed values.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The UnconfirmedCOVNotification Service is used to notify subscribers about changes that may have occurred to the
   > properties of a particular object, or to distribute object properties of wide interest (such as outside air conditions) to many
   > devices simultaneously without a subscription. Subscriptions for COV notifications are made using the SubscribeCOV
   > service. For unsubscribed notifications, the algorithm for determining when to issue this service is a local matter and may be
   > based on a change of value, periodic updating, or some other criteria.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > Since this is an unconfirmed service, no response primitives are expected. Actions taken in response to this notification are a
+  > local matter.
   """
 
   alias BACnet.Protocol

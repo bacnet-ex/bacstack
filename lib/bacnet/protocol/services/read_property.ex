@@ -4,12 +4,42 @@ defmodule BACnet.Protocol.Services.ReadProperty do
 
   The Read Property service is used to read a property of an object.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The ReadProperty service is used by a client BACnet-user to request the value of one property of one BACnet Object. This
   > service allows read access to any property of any object, whether a BACnet-defined object or not.
-  """
 
-  # TODO: Read Property ACK
+  #### Service Procedure (ASHRAE 135)
+
+  > After verifying the validity of the request, the responding BACnet-user shall attempt to access the specified property of the
+  > specified object. If the access is successful, a 'Result(+)' primitive, which returns the accessed value, shall be generated. If the
+  > access fails, a 'Result(-)' primitive shall be generated, indicating the reason for the failure.
+  > When the object-type in the Object Identifier parameter contains the value 'Device Object' and the instance in the 'Object
+  > Identifier' parameter contains the value 4194303, the responding BACnet-user shall treat the Object Identifier as if it correctly
+  > matched the local Device object. This allows the device instance of a device that does not generate I-Am messages to be
+  > determined.
+
+  #### Result(+) Response (ASHRAE 135)
+
+  On success, the responding BACnet-user returns a 'Result(+)' primitive containing the value of the requested property.
+  If the property is an array and no array index was specified, the entire array is returned.
+  If an array index was specified, only that element is returned.
+
+  #### Result(-) Errors (ASHRAE 135)
+
+  The 'Result(-)' parameter shall indicate that the service request has failed in its entirety. The reason for the failure shall be
+  specified by the 'Error Type' parameter.
+
+  The 'Error Class' and 'Error Code' to be returned for specific situations are as follows:
+
+  | Situation | Error Class | Error Code |
+  |-----------|-------------|------------|
+  | Specified object does not exist. | OBJECT | UNKNOWN_OBJECT |
+  | Specified property does not exist. | PROPERTY | UNKNOWN_PROPERTY |
+  | An array index is provided but the property is not an array. | PROPERTY | PROPERTY_IS_NOT_AN_ARRAY |
+  | An array index is provided that is outside the range existing in the property. | PROPERTY | INVALID_ARRAY_INDEX |
+  | The property is not accessible using this service. | PROPERTY | READ_ACCESS_DENIED |
+  """
 
   alias BACnet.Protocol
   alias BACnet.Protocol.ApplicationTags

@@ -5,12 +5,41 @@ defmodule BACnet.Protocol.Services.ReinitializeDevice do
   The Device Communication Control service is used to instruct a device to reboot or reset to a predefined state,
   or to control backup or restore services.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The ReinitializeDevice service is used by a client BACnet-user to instruct a remote device to reboot itself (cold start), reset
   > itself to some predefined initial state (warm start), or to control the backup or restore procedure. Resetting or rebooting a
   > device is primarily initiated by a human operator for diagnostic purposes. Use of this service during the backup or restore
   > procedure is usually initiated on behalf of the user by the device controlling the backup or restore. Due to the sensitive
   > nature of this service, a password may be required by the responding BACnet-user prior to executing the service.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > After verifying the validity of the request, including the 'Reinitialized State of Device' and 'Password' parameters, the
+  > responding BACnet-user shall pre-empt all other outstanding requests and respond with a 'Result(+)' primitive. If the
+  > request is valid and 'Reinitialized State of Device' is WARMSTART or COLDSTART, then the responding BACnet-user
+  > shall immediately proceed to perform any applicable shut-down procedures prior to reinitializing the device as specified by
+  > the requesting BACnet-user in the request. If 'Reinitialized State of Device' is WARMSTART and the device is not ready due
+  > to its initial characterization being in progress, a 'Result(-)' response primitive shall be issued.
+  > If 'Reinitialized State of Device' is one of STARTBACKUP, ENDBACKUP, STARTRESTORE, ENDRESTORE, or
+  > ABORTRESTORE and communication has been disabled due to receipt of a DeviceCommunicationControl request with
+  > 'Enable/Disable' equal to DISABLE, the responding BACnet user shall respond with a Result(-) primitive. Otherwise, the
+  > responding BACnet user shall behave as described in Clause 19.1.
+  > If the password is invalid or is absent when one is required, an Error-PDU with 'error class' of SECURITY and 'error code'
+  > of PASSWORD_FAILURE shall be issued.
+
+  #### Result(-) Errors (ASHRAE 135)
+
+  The 'Result(-)' parameter shall indicate that the service request has failed. The reason for the failure shall be specified by the
+  'Error Type' parameter.
+
+  The 'Error Class' and 'Error Code' to be returned for specific situations are as follows:
+
+  | Situation | Error Class | Error Code |
+  |-----------|-------------|------------|
+  | The password is invalid or absent when one is required. | SECURITY | PASSWORD_FAILURE |
+  | The device is in the process of being configured. | DEVICE | CONFIGURATION_IN_PROGRESS |
+  | Communication has been disabled due to receipt of a DeviceCommunicationControl request. | SERVICES | COMMUNICATION_DISABLED |
   """
 
   alias BACnet.Protocol

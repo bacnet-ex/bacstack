@@ -4,7 +4,8 @@ defmodule BACnet.Protocol.Services.UnconfirmedEventNotification do
 
   The Unconfirmed Event Notification service is used to notify a subscriber of an event that has occurred.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The UnconfirmedEventNotification service is used by a notification-server to notify a remote device that an event has
   > occurred. Its purpose is to notify recipients that an event has occurred, but confirmation that the notification was received is
   > not required. Applications that require confirmation that the notification was received by the remote device should use the
@@ -13,6 +14,11 @@ defmodule BACnet.Protocol.Services.UnconfirmedEventNotification do
   > AcknowledgeAlarm service. Thus, using an unconfirmed service to announce the alarm has no effect on the ability to
   > confirm that an operator has been notified. Any device that executes this service shall support programmable process
   > identifiers to allow broadcast and multicast 'Process Identifier' parameters to be assigned on a per installation basis.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > Since this is an unconfirmed service, no response primitives are expected. Actions taken in response to this notification are a
+  > local matter.
   """
 
   alias BACnet.Protocol

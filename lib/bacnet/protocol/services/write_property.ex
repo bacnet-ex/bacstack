@@ -4,13 +4,43 @@ defmodule BACnet.Protocol.Services.WriteProperty do
 
   The Write Property service is used to write to a property of an object, if commandable, with priority.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The WriteProperty service is used by a client BACnet-user to modify the value of a single specified property of a BACnet
   > object. This service potentially allows write access to any property of any object, whether a BACnet-defined object or not.
   > Some implementors may wish to restrict write access to certain properties of certain objects. In such cases, an attempt to
   > modify a restricted property shall result in the return of an error of 'Error Class' PROPERTY and 'Error Code'
   > WRITE_ACCESS_DENIED. Note that these restricted properties may be accessible through the use of Virtual Terminal
   > services or other means at the discretion of the implementor.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > After verifying the validity of the request, the responding BACnet-user shall attempt to modify the specified property of the
+  > specified object using the value provided in the 'Property Value' parameter. If the modification attempt is successful, a
+  > 'Result(+)' primitive shall be issued. If the modification attempt fails, a 'Result(-)' primitive shall be issued indicating the
+  > reason for the failure. Interpretation of the conditional Priority parameter shall be as defined in Clause 19.
+
+  #### Result(-) Errors (ASHRAE 135)
+
+  The 'Result(-)' parameter shall indicate that the service request has failed in its entirety. The reason for the failure shall be
+  specified by the 'Error Type' parameter.
+
+  The 'Error Class' and 'Error Code' to be returned for specific situations are as follows:
+
+  | Situation | Error Class | Error Code |
+  |-----------|-------------|------------|
+  | Specified object does not exist. | OBJECT | UNKNOWN_OBJECT |
+  | Specified property does not exist. | PROPERTY | UNKNOWN_PROPERTY |
+  | An array index is provided but the property is not an array. | PROPERTY | PROPERTY_IS_NOT_AN_ARRAY |
+  | An array index is provided that is outside the range existing in the property. | PROPERTY | INVALID_ARRAY_INDEX |
+  | The specified property is currently not writable by the requestor. | PROPERTY | WRITE_ACCESS_DENIED |
+  | The datatype of the value provided is incorrect for the specified property. | PROPERTY | INVALID_DATATYPE |
+  | The property is Object_Name and the name is already in use in the device. | PROPERTY | DUPLICATE_NAME |
+  | The property is Object Identifier and the identifier is already in use in the device. | PROPERTY | DUPLICATE_OBJECT_ID |
+  | The value provided is outside the range of values that the property can take on. | PROPERTY | VALUE_OUT_OF_RANGE |
+  | There is not enough space to store the new value. | RESOURCES | NO_SPACE_TO_WRITE_PROPERTY |
+  | The data being written has a datatype not supported by the property. | PROPERTY | DATATYPE_NOT_SUPPORTED |
+  | The Priority parameter is not within the defined range of 1..16. This condition may be ignored if the property is not commandable. | SERVICES | PARAMETER_OUT_OF_RANGE |
   """
 
   alias BACnet.Protocol

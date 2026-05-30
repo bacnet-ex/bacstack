@@ -4,13 +4,42 @@ defmodule BACnet.Protocol.Services.DeviceCommunicationControl do
 
   The Device Communication Control service is used to control the communication of a device.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The DeviceCommunicationControl service is used by a client BACnet-user to instruct a remote device to stop initiating and
   > optionally stop responding to all APDUs (except DeviceCommunicationControl or, if supported, ReinitializeDevice) on the
   > communication network or internetwork for a specified duration of time. This service is primarily used by a human operator
   > for diagnostic purposes. A password may be required from the client BACnet-user prior to executing the service. The time
   > duration may be set to "indefinite," meaning communication must be re-enabled by a DeviceCommunicationControl or, if
   > supported, ReinitializeDevice service, not by time.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > After verifying the validity of the request, including the 'Time Duration' and 'Password' parameters, the responding
+  > BACnet-user shall respond with a 'Result(+)' service primitive. If the request is valid and the 'Enable/Disable' parameter is
+  > DISABLE, the responding BACnet-user shall discontinue responding to any subsequent messages except
+  > DeviceCommunicationControl and, if supported, ReinitializeDevice messages, and shall discontinue initiating messages. If
+  > the request is valid and the 'Enable/Disable' parameter is DISABLE_INITIATION, the responding BACnet-user shall
+  > discontinue the initiation of messages except for I-Am requests issued in accordance with the Who-Is service procedure.
+  > Communication shall be disabled in this manner until either the 'Time Duration' has expired or a valid
+  > DeviceCommunicationControl (with 'Enable/Disable' = ENABLE) or, if supported, a valid ReinitializeDevice (with
+  > 'Reinitialized State of Device' = WARMSTART or COLDSTART) message is received.
+  > If the responding BACnet-user does not have a clock and the 'Time Duration' parameter is not set to "indefinite," the APDU
+  > shall be ignored and a 'Result(-)' service primitive shall be issued. If the 'Password' parameter is invalid or absent when a
+  > password is required, the APDU shall be ignored and an Error-PDU with 'error class' = SECURITY and 'error code' =
+  > PASSWORD_FAILURE shall be issued.
+
+  #### Result(-) Errors (ASHRAE 135)
+
+  The 'Result(-)' parameter shall indicate that the service request has failed. The reason for failure shall be specified by the
+  'Error Type' parameter.
+
+  The 'Error Class' and 'Error Code' to be returned for specific situations are as follows:
+
+  | Situation | Error Class | Error Code |
+  |-----------|-------------|------------|
+  | The password is invalid or absent when one is required. | SECURITY | PASSWORD_FAILURE |
+  | The device does not have a clock and the 'Time Duration' parameter is not set to "indefinite". | SERVICES | OPTIONAL_FUNCTIONALITY_NOT_SUPPORTED |
   """
 
   alias BACnet.Protocol

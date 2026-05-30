@@ -4,10 +4,24 @@ defmodule BACnet.Protocol.Services.UtcTimeSynchronization do
 
   The UTC Time Synchronization service is used to send the correct UTC date and time onto the BACnet network or to a single recipient.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The UTCTimeSynchronization service is used by a requesting BACnet-user to notify one or more remote devices of the
   > correct Universal Time Coordinated (UTC). This service may be broadcast, multicast, or addressed to a single recipient.
   > Its purpose is to notify recipients of the correct UTC so that devices may synchronize their internal clocks with one another.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > Since this is an unconfirmed service, no response primitives are expected. A device receiving a UTCTimeSynchronization
+  > service indication shall update its local representation of time and date by subtracting the value of the 'UTC_Offset' property
+  > of the Device object from the 'Time' parameter and taking the 'Daylight_Savings_Status' property of the Device object into
+  > account as appropriate to the locality. This change shall be reflected in the Local_Time and Local_Date properties of the
+  > Device object. No restrictions on the use of this service exist when it is invoked at the request of an operator. Otherwise, the
+  > initiation of this service by a device is controlled by the value of the UTC_Time_Synchronization_Recipients property in the
+  > Device object. When the UTC_Time_Synchronization_Recipients list is of length zero, a device may not automatically send a
+  > UTCTimeSynchronization request. When UTC_Time_Synchronization_Recipients list is of length one or more, a device may
+  > automatically send a UTCTimeSynchronization request but only to the devices or addresses contained in the
+  > UTC_Time_Synchronization_Recipients list.
   """
 
   alias BACnet.Protocol

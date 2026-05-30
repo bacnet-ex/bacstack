@@ -4,7 +4,8 @@ defmodule BACnet.Protocol.Services.WriteGroup do
 
   The Write Group service is used to write efficiently values to a large number of devices and objects.
 
-  Service Description (ASHRAE 135):
+  #### Service Description (ASHRAE 135)
+
   > The purpose of WriteGroup is to facilitate the efficient distribution of values to a large number of devices and objects.
   > WriteGroup provides compact representations for data values that allow rapid transfer of many values. See Clause 12-53 and
   > Figure 12-10.
@@ -18,6 +19,22 @@ defmodule BACnet.Protocol.Services.WriteGroup do
   > The WriteGroup service may be unicast, multicast, broadcast locally, on a particular remote network, or using the global
   > BACnet network address. Since global broadcasts are generally discouraged, the use of multiple directed broadcasts is
   > preferred.
+
+  #### Service Procedure (ASHRAE 135)
+
+  > Since this is an unconfirmed service, no response primitives are expected. The sending BACnet-user shall transmit the
+  > WriteGroup unconfirmed request using a unicast, multicast or broadcast address. A broadcast may be sent locally, to a
+  > remote BACnet network number, or using the global BACnet network address.
+  > If the 'Group Number' is non-zero, and the receiving BACnet-user has been configured to be a member of the control group
+  > 'Group Number' by virtue of having that group number in any of the array elements of the Control_Groups property of any of
+  > its Channel objects, then for each (channel number, overridingPriority, value) tuple provided in the 'Change List' parameter,
+  > the receiving BACnet-user shall attempt to write to the Channel object(s) whose Channel_Number property(s) match that
+  > channel number with the indicated value. If no Channel object's Channel_Number property matches the provided channel
+  > number, then that value shall be ignored.
+  > If the optional field overridingPriority is provided, it shall specify the priority for writing the value. Otherwise the 'Write
+  > Priority' parameter shall specify the priority for writing.
+  > If a BACnetGroupChannelValue specifies a NULL value, it shall serve the same function as if NULL had been used with
+  > WriteProperty. The failure of any particular write shall not prevent the remaining writes from taking place.
   """
 
   alias BACnet.Protocol
