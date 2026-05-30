@@ -9,8 +9,6 @@ defmodule BACnet.Protocol.ObjectTypes.Group do
   (ASHRAE 135 - Clause 12.14)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.AccessSpecification
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.ReadAccessResult
@@ -19,7 +17,7 @@ defmodule BACnet.Protocol.ObjectTypes.Group do
   use BACnet.Protocol.ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring a Group object.
   """
   @type object_opts :: common_object_opts()
 

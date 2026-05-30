@@ -1,5 +1,40 @@
 defmodule BACnet.Protocol.Destination do
-  # TODO: Docs
+  @moduledoc """
+  A Destination describes where and when event notifications should be sent for a
+  particular recipient. It is the core data structure used inside Notification Class
+  objects to define the distribution list for alarms and events.
+
+  Each destination combines a Recipient (which can be a device, a broadcast address,
+  or an unicast address), a process identifier that the recipient
+  will use to correlate the notification, a flag indicating whether confirmed or
+  unconfirmed notifications should be used, the set of transitions (to-offnormal,
+  to-fault, to-normal) that should trigger a notification, and a time window
+  (valid days + from/to time) during which the subscription is active.
+
+  This structure allows very fine-grained control over alarm routing. For example,
+  a critical high-priority alarm can be sent 24/7 to an operator workstation with
+  confirmed notifications, while the same alarm can be sent only during business
+  hours via unconfirmed notifications to a logging server. The time and day
+  restrictions are evaluated by the Notification Class object itself when deciding
+  whether to forward an event.
+
+  ### Examples (Doc Test)
+
+  ```elixir
+  iex> destination = %Destination{
+  ...>   recipient: %Recipient{type: :device, device: %ObjectIdentifier{type: :device, instance: 123}, address: nil},
+  ...>   process_identifier: 1,
+  ...>   issue_confirmed_notifications: true,
+  ...>   transitions: %EventTransitionBits{to_offnormal: true, to_fault: true, to_normal: true},
+  ...>   valid_days: %DaysOfWeek{monday: true, tuesday: true, wednesday: true, thursday: true, friday: true, saturday: false, sunday: false},
+  ...>   from_time: %BACnetTime{hour: 8, minute: 0, second: 0, hundredth: 0},
+  ...>   to_time: %BACnetTime{hour: 18, minute: 0, second: 0, hundredth: 0}
+  ...> }
+  iex> destination.process_identifier
+  1
+  ```
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -9,7 +44,7 @@ defmodule BACnet.Protocol.Destination do
   alias BACnet.Protocol.Recipient
 
   @typedoc """
-  Represents a BACnet destination.
+  Represents the target and timing constraints for an event or COV notification.
   """
   @type t :: %__MODULE__{
           recipient: Recipient.t(),

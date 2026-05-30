@@ -1,5 +1,16 @@
 defmodule BACnet.Protocol.Services.Ack.ReadPropertyMultipleAck do
-  # TODO: Docs
+  @moduledoc """
+  The Read Property Multiple Acknowledgment is the response to a successful
+  Read Property Multiple service request.
+
+  It contains a list of Read Access Result structures, one for each object that
+  was queried. Each result in turn contains the object identifier and the
+  individual property values (or errors) that were requested for that object.
+
+  This service is the primary mechanism used by clients to efficiently poll
+  large numbers of properties from one or more devices. The acknowledgment can
+  be quite large and is frequently segmented.
+  """
 
   alias BACnet.Protocol.APDU.ComplexACK
   alias BACnet.Protocol.Constants
@@ -7,6 +18,9 @@ defmodule BACnet.Protocol.Services.Ack.ReadPropertyMultipleAck do
 
   require Constants
 
+  @typedoc """
+  The response to a Read Property Multiple request, containing results for each object/property group.
+  """
   @type t :: %__MODULE__{
           results: [ReadAccessResult.t()]
         }
@@ -22,6 +36,9 @@ defmodule BACnet.Protocol.Services.Ack.ReadPropertyMultipleAck do
                   :read_property_multiple
                 )
 
+  @doc """
+  Converts a received `BACnet.Protocol.APDU.ComplexACK` APDU into a struct.
+  """
   @spec from_apdu(ComplexACK.t()) :: {:ok, t()} | {:error, term()}
   def from_apdu(%ComplexACK{service: @service_name} = ack) do
     case parse_results(ack.payload) do
@@ -47,6 +64,12 @@ defmodule BACnet.Protocol.Services.Ack.ReadPropertyMultipleAck do
     {:error, :invalid_service_ack}
   end
 
+  @doc """
+  Constructs a `BACnet.Protocol.APDU.ComplexACK` APDU from a
+  `BACnet.Protocol.Services.Ack.ReadPropertyMultipleAck` struct.
+
+  Used when a server responds to a Read Property Multiple request.
+  """
   @spec to_apdu(t(), 0..255) :: {:ok, ComplexACK.t()} | {:error, term()}
   def to_apdu(ack, invoke_id \\ 0)
 

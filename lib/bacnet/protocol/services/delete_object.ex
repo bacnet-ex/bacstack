@@ -19,9 +19,11 @@ defmodule BACnet.Protocol.Services.DeleteObject do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the Delete Object service.
 
+  Identifies the object to be removed from the device. The object and all its properties are deleted.
+  """
   @type t :: %__MODULE__{
           object_specifier: Protocol.ObjectIdentifier.t()
         }

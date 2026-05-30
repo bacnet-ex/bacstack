@@ -12,8 +12,6 @@ defmodule BACnet.Protocol.ObjectTypes.StructuredView do
   (ASHRAE 135 - Clause 12.29)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.DeviceObjectRef
 
@@ -21,7 +19,7 @@ defmodule BACnet.Protocol.ObjectTypes.StructuredView do
   use BACnet.Protocol.ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring a Structured View object.
   """
   @type object_opts :: common_object_opts()
 

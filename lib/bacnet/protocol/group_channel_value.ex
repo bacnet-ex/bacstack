@@ -1,12 +1,31 @@
 defmodule BACnet.Protocol.GroupChannelValue do
-  # TODO: Docs
+  @moduledoc """
+  A Group Channel Value is the payload element used by the Write Group service.
+  It allows a single confirmed or unconfirmed request to command many objects
+  at once by addressing them through a numeric "channel" rather than by object
+  identifier.
+
+  Each entry specifies a channel number (0-65535), an optional overriding
+  priority (used when writing to commandable properties), and the actual value
+  to be written. The value may be a normal primitive or a specially encoded
+  lightning command when the target objects are lighting output objects. The
+  receiving device is responsible for mapping the channel number to one or more
+  actual objects and performing the write on their behalf.
+
+  The Write Group service and this data type were introduced to support large
+  scale lighting control and similar "mass command" use cases where sending
+  thousands of individual Write Property requests would be impractical. A single
+  Write Group message can affect hundreds of objects with very low network
+  overhead.
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
 
   @typedoc """
-  Represents a BACnet Group Channel Value.
+  Represents a single channel/value pair used by the Write Group service.
   """
   @type t :: %__MODULE__{
           channel: ApplicationTags.unsigned16(),

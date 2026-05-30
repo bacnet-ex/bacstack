@@ -23,9 +23,9 @@ defmodule BACnet.Protocol.Services.LifeSafetyOperation do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
-
+  @typedoc """
+  Parameters for the Life Safety Operation service.
+  """
   @type t :: %__MODULE__{
           requesting_process_identifier: ApplicationTags.unsigned32(),
           requesting_source: String.t(),

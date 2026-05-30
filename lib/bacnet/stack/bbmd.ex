@@ -20,6 +20,26 @@ defmodule BACnet.Stack.BBMD do
   For each network (client/transport) one BBMD process is required,
   if Foreign Devices should be served (enables to discover local BACnet devices).
   **Only one BBMD is allowed on a BACnet network.**
+
+  ## BACnet Specification References
+
+  This module implements the BBMD behaviour described in Annex J.4 (Broadcast
+  Distribution) and J.5 (Foreign Device support), including the BDT maintenance
+  rules (J.4.3.2, J.4.4, J.4.5), the FDT timer and grace-period logic (J.5.2.3),
+  the handling of Write-BDT / Read-BDT / Register / Delete messages, and the
+  generation of Forwarded-NPDU messages. The one-BBMD-per-B/IP-network constraint
+  is stated in J.4.3. Proxy mode (see the `:proxy_mode` start option) is a
+  local deviation documented in the option description.
+
+  ## See Also
+
+  - `BACnet.Protocol`
+  - `BACnet.Protocol.BroadcastDistributionTableEntry`
+  - `BACnet.Protocol.BvlcFunction`
+  - `BACnet.Protocol.BvlcResult`
+  - `BACnet.Protocol.BvlcForwardedNPDU`
+  - `BACnet.Protocol.ForeignDeviceTableEntry`
+  - `BACnet.Stack.ForeignDevice`
   """
 
   alias BACnet.Protocol

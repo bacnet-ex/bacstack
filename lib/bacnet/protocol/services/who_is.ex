@@ -2,7 +2,9 @@ defmodule BACnet.Protocol.Services.WhoIs do
   @moduledoc """
   This module represents the BACnet Who-Is service.
 
-  The Who-Is service is used to discover the BACnet network and devices in it.
+  The Who-Is service is the primary discovery mechanism in BACnet. It allows a device
+  or operator workstation to locate other devices on the local network or across
+  a routed internetwork by asking devices to identify themselves.
 
   Service Description (ASHRAE 135):
   > The Who-Is service is used by a sending BACnet-user to determine the device object identifier, the network address, or both,
@@ -14,6 +16,10 @@ defmodule BACnet.Protocol.Services.WhoIs do
   > of a Who-Is service request. In particular, a device may wish to broadcast an I-Am service request when it powers up.
   > The network address is derived either from the MAC address associated with the I-Am service request, if the device issuing
   > the request is on the local network, or from the NPCI if the device is on a remote network.
+
+  A Who-Is can be broadcast with no parameters to discover every device, or it can be
+  restricted by device instance range to locate a specific device when only its
+  object identifier is known. Every responding device answers with an I-Am.
   """
 
   alias BACnet.Protocol
@@ -23,9 +29,9 @@ defmodule BACnet.Protocol.Services.WhoIs do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
-
+  @typedoc """
+  Parameters for the Who-Is service (optional device instance range filters).
+  """
   @type t :: %__MODULE__{
           device_id_low_limit: non_neg_integer() | nil,
           device_id_high_limit: non_neg_integer() | nil

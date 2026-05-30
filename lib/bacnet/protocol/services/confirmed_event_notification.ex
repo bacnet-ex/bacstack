@@ -22,10 +22,15 @@ defmodule BACnet.Protocol.Services.ConfirmedEventNotification do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
-  # ack-required, from_state, to_state: not present if notify_type == :ack_notification
+  @typedoc """
+  Parameters for the Confirmed Event Notification service.
 
+  Notifies recipients that an event (alarm, change-of-state, etc.) has occurred. Includes priority, type,
+  notify type, optional ack requirement, state transition info, and notification-specific parameters.
+
+  The fields `ack_required`, `froM_state` and `to_state` are nil,
+  if `notify_type` is `:ack_notification`.
+  """
   @type t :: %__MODULE__{
           process_identifier: Protocol.ApplicationTags.unsigned32(),
           initiating_device: Protocol.ObjectIdentifier.t(),

@@ -22,10 +22,11 @@ defmodule BACnet.Protocol.Services.ReinitializeDevice do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
-  # Password max length 20
+  @typedoc """
+  Parameters for the Reinitialize Device service.
 
+  The password can have a maximum length of 20 characters.
+  """
   @type t :: %__MODULE__{
           reinitialized_state: Constants.reinitialized_state(),
           password: String.t() | nil

@@ -1,9 +1,22 @@
 defmodule BACnet.Protocol.ReadAccessResult do
   @moduledoc """
-  Represents BACnet Read Access Result, used in BACnet `Read-Property-Multiple`.
+  A Read Access Result is the response data returned for one object when a
+  Read Property Multiple request is processed. It contains the Object
+  Identifier of the object that was read, followed by a list of individual
+  property results (which may contain either a successful value or an error
+  for that specific property).
+
+  Because Read Property Multiple can request many properties from many objects
+  in one call, the response must be able to report partial success: some
+  properties may be returned successfully while others may fail with individual
+  errors (for example, a property that does not exist or is currently
+  inaccessible). The Read Access Result structure makes this per-property
+  error reporting possible.
+
+  This type is only used in the response path of Read Property Multiple; the
+  request side uses Access Specification instead.
   """
 
-  # TODO: Docs
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -12,6 +25,12 @@ defmodule BACnet.Protocol.ReadAccessResult do
 
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
 
+  @typedoc """
+  The result of a Read Property Multiple request for one object.
+
+  Contains the object identifier and the list of per-property ReadResult entries (each either a
+  successful value or a BACnet error for that property).
+  """
   @type t :: %__MODULE__{
           object_identifier: ObjectIdentifier.t(),
           results: [ReadResult.t()]

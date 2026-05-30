@@ -1,10 +1,23 @@
 defmodule BACnet.Protocol.AccessSpecification do
   @moduledoc """
-  Represents BACnet Access Specification, used in BACnet `Read-Property-Multiple` and `Write-Property-Multiple`,
-  as Read Access Specification and Write Access Specification, respectively.
+  An Access Specification (also called Read Access Specification or Write Access
+  Specification depending on context) describes a set of properties belonging to
+  a single object that should be read or written together.
+
+  It consists of an Object Identifier plus a list of Property references. Each
+  property reference can name a specific property (with optional array index),
+  or use one of the special values `:all`, `:required`, or `:optional`
+  when reading. These special values instruct the server to return (or accept) all properties,
+  only the required properties for that object type, or only the optional ones.
+
+  Access Specifications are the fundamental building block of the Read Property
+  Multiple and Write Property Multiple services. They allow a client to request
+  or modify many properties across many objects in a single message while still
+  grouping the properties logically by their owning object. This dramatically
+  reduces the number of individual service requests needed for bulk
+  configuration or polling.
   """
 
-  # TODO: Docs
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.AccessSpecification.Property
@@ -13,6 +26,9 @@ defmodule BACnet.Protocol.AccessSpecification do
 
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
 
+  @typedoc """
+  Specifies an object and a list of properties (or special keywords) for Read/Write Property Multiple.
+  """
   @type t :: %__MODULE__{
           object_identifier: ObjectIdentifier.t(),
           properties: [Property.t() | :all | :required | :optional]

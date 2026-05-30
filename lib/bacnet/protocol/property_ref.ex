@@ -1,5 +1,10 @@
 defmodule BACnet.Protocol.PropertyRef do
-  # TODO: Docs
+  @moduledoc """
+  A Property Reference names only a property (and optionally an array index)
+  without identifying the object that contains it. It is used in contexts where
+  the object is already known from surrounding context.
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -8,6 +13,9 @@ defmodule BACnet.Protocol.PropertyRef do
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
   require Constants
 
+  @typedoc """
+  References a specific property (and optionally an array index) of an object.
+  """
   @type t :: %__MODULE__{
           property_identifier: Constants.property_identifier() | non_neg_integer(),
           property_array_index: non_neg_integer() | nil

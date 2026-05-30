@@ -335,6 +335,9 @@ if Code.ensure_loaded?(Circuits.UART) do
       @enforce_keys @fields
       defstruct @fields
 
+      @doc """
+      Creates a new struct with the arguments, default values and options applied.
+      """
       @spec new() :: t()
       def new() do
         %__MODULE__{

@@ -1,5 +1,41 @@
 defmodule BACnet.Protocol.CovSubscription do
-  # TODO: Docs
+  @moduledoc """
+  A COV Subscription records that a particular client (identified by its
+  Process Identifier and Recipient address) has asked to be notified whenever
+  a specific property (or the entire object) changes value beyond a configured
+  increment.
+
+  The structure stores the subscription parameters that the server must remember:
+  the recipient address (which may be a local process or a remote device), the
+  monitored property reference, the COV increment, the issue confirmed flag,
+  and the lifetime of the subscription.
+
+  When the monitored value changes sufficiently, the server walks its subscription
+  table and sends ConfirmedCOVNotification or UnconfirmedCOVNotification messages
+  to every active subscriber. Proper management of these records (including
+  automatic removal when the lifetime expires) is one of the more complex pieces
+  of state that a BACnet server must maintain.
+
+  ### Examples (Doc Test)
+
+  ```elixir
+  iex> sub = %CovSubscription{
+  ...>   recipient: %Recipient{type: :device, device: %ObjectIdentifier{type: :device, instance: 100}, address: nil},
+  ...>   recipient_process: 1,
+  ...>   monitored_object_property: %ObjectPropertyRef{
+  ...>     object_identifier: %ObjectIdentifier{type: :analog_input, instance: 1},
+  ...>     property_identifier: :present_value,
+  ...>     property_array_index: nil
+  ...>   },
+  ...>   issue_confirmed_notifications: true,
+  ...>   time_remaining: 3600,
+  ...>   cov_increment: 0.5
+  ...> }
+  iex> sub.time_remaining
+  3600
+  ```
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -8,6 +44,9 @@ defmodule BACnet.Protocol.CovSubscription do
 
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
 
+  @typedoc """
+  Represents a Change of Value (COV) subscription.
+  """
   @type t :: %__MODULE__{
           recipient: Recipient.t(),
           recipient_process: non_neg_integer(),

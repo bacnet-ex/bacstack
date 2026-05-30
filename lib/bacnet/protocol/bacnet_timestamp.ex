@@ -1,11 +1,98 @@
 defmodule BACnet.Protocol.BACnetTimestamp do
-  # TODO: Docs
+  @moduledoc """
+  A BACnet Timestamp is a CHOICE type that can represent three different notions
+  of "when something happened". The most common form is a full BACnet Date and
+  Time. For trend logs that produce very high-frequency samples, a simple
+  sequence number is often used instead because it consumes far less space and
+  avoids the cost of maintaining a real-time clock with sub-second precision.
+  The third form (Time only) is used when only the time of day is significant.
+
+  Timestamps appear in Event Timestamps, in Trend Log records, in the Time Of
+  Device Restart property, in logging notifications, and in many of the
+  "last changed" properties throughout the object model. Because the three
+  alternative encodings have very different sizes and precision characteristics,
+  the choice of which form to use is often an important implementation decision
+  that affects both memory usage and the ability of receiving systems to
+  correlate events across devices.
+
+  The type is defined so that a recipient can always determine which of the
+  three alternatives is present without any additional context, which makes
+  it safe to forward or store timestamps in generic log buffers and history
+  archives.
+
+  ### BACnet Specification References
+
+  - **ASN.1** (Clause 21):
+    ```
+    BACnetTimeStamp ::= CHOICE {
+        time            [0] Time,
+        sequence-number [1] Unsigned (0..65535),
+        dateTime        [2] BACnetDateTime
+    }
+    ```
+  - **Encoding** (20.2.18): When context-tagged the choice is indicated by the
+    context tag number (0 = time-only, 1 = sequence number, 2 = date+time).
+    The contained value uses its normal application or constructed encoding.
+  - **Usage drivers**: Trend Log (high-frequency samples favour sequence numbers),
+    Event Timestamps property (all three forms allowed), `time_of_device_restart`.
+
+  ### Examples
+
+  #### Sequence number timestamp (common in Trend Logs)
+
+  ```elixir
+  iex> ts = %BACnetTimestamp{type: :sequence_number, sequence_number: 42837, time: nil, datetime: nil}
+  iex> ts.sequence_number
+  42837
+  ```
+
+  #### Full DateTime timestamp
+
+  ```elixir
+  iex> ts = %BACnetTimestamp{
+  ...>   type: :datetime,
+  ...>   sequence_number: nil,
+  ...>   time: nil,
+  ...>   datetime: %BACnetDateTime{
+  ...>     date: %BACnetDate{year: 2025, month: 4, day: 1, weekday: 2},
+  ...>     time: %BACnetTime{hour: 9, minute: 15, second: 0, hundredth: 0}
+  ...>   }
+  ...> }
+  iex> ts.type
+  :datetime
+  ```
+
+  #### Time-only timestamp
+
+  ```elixir
+  iex> ts = %BACnetTimestamp{type: :time, time: %BACnetTime{hour: 17, minute: 0, second: 0, hundredth: 0}, sequence_number: nil, datetime: nil}
+  iex> ts.type
+  :time
+  ```
+
+  ### See Also
+  - `BACnet.Protocol.BACnetDate`
+  - `BACnet.Protocol.BACnetDateTime`
+  - `BACnet.Protocol.BACnetTime`
+  - `BACnet.Protocol.EventTimestamps`
+  - `BACnet.Protocol.LogRecord`
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.BACnetTime
 
+  @typedoc """
+  A CHOICE timestamp (see ASN.1 `BACnetTimeStamp` production in Clause 21).
+
+  - `type: :time`            → context tag 0, `time` field present
+  - `type: :sequence_number` → context tag 1, `sequence_number` (0..65535)
+  - `type: :datetime`        → context tag 2, `datetime` field present
+
+  The discriminant `type` tells the encoder which context tag to emit.
+  """
   @type t :: %__MODULE__{
           type: :time | :sequence_number | :datetime,
           time: BACnetTime.t() | nil,

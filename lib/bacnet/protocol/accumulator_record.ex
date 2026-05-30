@@ -1,5 +1,14 @@
 defmodule BACnet.Protocol.AccumulatorRecord do
-  # TODO: Docs
+  @moduledoc """
+  An Accumulator Record captures a single sample from an Accumulator object
+  at a particular point in time.
+
+  Each record contains a timestamp (which may be a BACnet DateTime, a sequence
+  number, or an unspecified time), the accumulated present value at that moment,
+  and an indication of whether the accumulation was the result of a normal
+  rollover, a manual preset, or an error condition.
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -8,6 +17,9 @@ defmodule BACnet.Protocol.AccumulatorRecord do
 
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
 
+  @typedoc """
+  Represents a single historical record captured by an Accumulator object.
+  """
   @type t :: %__MODULE__{
           timestamp: BACnetDateTime.t(),
           present_value: non_neg_integer(),

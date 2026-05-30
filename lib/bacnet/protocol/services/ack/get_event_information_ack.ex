@@ -1,5 +1,19 @@
 defmodule BACnet.Protocol.Services.Ack.GetEventInformationAck do
-  # TODO: Docs
+  @moduledoc """
+  The Get Event Information Acknowledgment is the response to a Get Event
+  Information service request. It provides a detailed snapshot of every object
+  in the device that is configured for event reporting.
+
+  Each entry includes the object identifier, current event state, acknowledged
+  transitions, timestamps of recent state changes, notification class, and
+  priority information. This is the richest and most commonly used service for
+  modern alarm management workstations to maintain an accurate, up-to-date
+  view of all active and recently cleared events.
+
+  The acknowledgment also contains a `more_events` flag that indicates whether
+  the device has additional event-generating objects beyond what was returned
+  in this response (useful for paging through very large systems).
+  """
 
   alias BACnet.Protocol.APDU.ComplexACK
   alias BACnet.Protocol.Constants
@@ -8,6 +22,10 @@ defmodule BACnet.Protocol.Services.Ack.GetEventInformationAck do
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
   require Constants
 
+  @typedoc """
+  Response for Get Event Information. Returns a page of event information records plus a flag
+  indicating if more events remain on the device (for pagination of large systems).
+  """
   @type t :: %__MODULE__{
           events: [EventInformation.t()],
           more_events: boolean()
@@ -22,6 +40,9 @@ defmodule BACnet.Protocol.Services.Ack.GetEventInformationAck do
                   :get_event_information
                 )
 
+  @doc """
+  Converts a received `BACnet.Protocol.APDU.ComplexACK` APDU into a struct.
+  """
   @spec from_apdu(ComplexACK.t()) :: {:ok, t()} | {:error, term()}
   def from_apdu(%ComplexACK{service: @service_name} = ack) do
     with {:ok, {:constructed, {0, events_raw, _len}}, rest} <-
@@ -46,6 +67,13 @@ defmodule BACnet.Protocol.Services.Ack.GetEventInformationAck do
     {:error, :invalid_service_ack}
   end
 
+  @doc """
+  Constructs a `BACnet.Protocol.APDU.ComplexACK` APDU from a
+  `BACnet.Protocol.Services.Ack.GetEventInformationAck` struct.
+
+  The `more_events` flag in the struct controls the "more events" bit in the
+  response.
+  """
   @spec to_apdu(t(), 0..255) :: {:ok, ComplexACK.t()} | {:error, term()}
   def to_apdu(ack, invoke_id \\ 0)
 

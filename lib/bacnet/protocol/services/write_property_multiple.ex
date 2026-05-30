@@ -21,9 +21,12 @@ defmodule BACnet.Protocol.Services.WritePropertyMultiple do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the Write Property Multiple service.
 
+  Contains a list of Access Specifications, each describing an object and one or more properties with
+  their new values and (for commandable properties) the priority to use for the write.
+  """
   @type t :: %__MODULE__{
           list: [Protocol.AccessSpecification.t()]
         }

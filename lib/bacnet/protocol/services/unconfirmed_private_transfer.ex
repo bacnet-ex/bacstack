@@ -22,9 +22,12 @@ defmodule BACnet.Protocol.Services.UnconfirmedPrivateTransfer do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the Unconfirmed Private Transfer service.
 
+  Vendor-specific service invocation (vendor_id + service_number) with optional encoded parameters.
+  The receiving device interprets and executes the proprietary service locally.
+  """
   @type t :: %__MODULE__{
           vendor_id: Protocol.ApplicationTags.unsigned16(),
           service_number: non_neg_integer(),

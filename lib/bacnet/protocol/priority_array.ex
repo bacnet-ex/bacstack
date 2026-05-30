@@ -5,6 +5,14 @@ defmodule BACnet.Protocol.PriorityArray do
   each which can take a particular value (each priority must have the same type) or NULL (`nil`).
   The highest priority (lowest array index) with a non-NULL value is the active command.
 
+  ### BACnet Specification References
+  - **ASN.1** (Clause 21): `BACnetPriorityArray ::= SEQUENCE SIZE (16) OF BACnetPriorityValue`
+    (accessed as a `BACnetARRAY`).
+  - **Commandable properties** (Clause 19.2): Every object type that has commandable
+    properties (Present_Value on Output and Value objects, etc.) shall have a
+    corresponding `priority_array` property of this type.
+  - The 16 priority levels are fixed and global across the BACnet internetwork.
+
   ### Command Prioritization
 
   In building control systems, an object may be manipulated by a number of entities.
@@ -54,6 +62,40 @@ defmodule BACnet.Protocol.PriorityArray do
   Relinquishing a command places a NULL value in the PriorityArray corresponding to the appropriate priority.
   This prioritization approach shall be applied to local actions that change the value
   of commandable properties as well as to write operations via BACnet services.
+
+  ### Examples
+
+  ```elixir
+  iex> pa = %PriorityArray{priority_1: 99.0, priority_8: 21.5}
+  iex> PriorityArray.get_value(pa)
+  {1, 99.0}
+  iex> pa = %{pa | priority_1: nil}
+  iex> PriorityArray.get_value(pa)
+  {8, 21.5}
+  ```
+
+  #### Edge cases
+
+  Empty array (all priorities relinquished):
+
+  ```elixir
+  iex> empty = %PriorityArray{}
+  iex> PriorityArray.get_value(empty)
+  nil
+  ```
+
+  From list with leading nils (lower priorities win only if higher are nil):
+
+  ```elixir
+  iex> pa = PriorityArray.from_list([nil, nil, 55.0])
+  iex> PriorityArray.get_value(pa)
+  {3, 55.0}
+  ```
+
+  ### See Also
+  - `BACnet.Protocol.BACnetArray`
+  - `BACnet.Protocol.ActionCommand`
+  - `BACnet.Protocol.SetpointReference`
   """
 
   alias BACnet.BeamTypes

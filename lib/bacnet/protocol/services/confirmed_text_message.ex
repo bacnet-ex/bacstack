@@ -22,9 +22,12 @@ defmodule BACnet.Protocol.Services.ConfirmedTextMessage do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the Confirmed Text Message service.
 
+  Carries a text message from a source device, with optional class (numeric or string) and priority
+  (normal or urgent). The receiving device interprets the class and message contents locally.
+  """
   @type t :: %__MODULE__{
           source_device: Protocol.ObjectIdentifier.t(),
           class: non_neg_integer() | String.t() | nil,

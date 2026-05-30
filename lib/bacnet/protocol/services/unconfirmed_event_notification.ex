@@ -22,10 +22,16 @@ defmodule BACnet.Protocol.Services.UnconfirmedEventNotification do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
-  # ack-required, from_state, to_state: not present if notify_type == :ack_notification
+  @typedoc """
+  Parameters for the Unconfirmed Event Notification service.
 
+  Carries event or alarm notification details without requiring a confirmation from the receiver.
+  Used when the sender does not need to know that the notification was received (see also ConfirmedEventNotification
+  and AcknowledgeAlarm for the acknowledged path).
+
+  The fields `ack_required`, `froM_state` and `to_state` are nil,
+  if `notify_type` is `:ack_notification`.
+  """
   @type t :: %__MODULE__{
           process_identifier: Protocol.ApplicationTags.unsigned32(),
           initiating_device: Protocol.ObjectIdentifier.t(),

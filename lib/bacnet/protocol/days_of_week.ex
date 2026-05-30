@@ -1,5 +1,55 @@
 defmodule BACnet.Protocol.DaysOfWeek do
-  # TODO: Docs
+  @moduledoc """
+  DaysOfWeek is a 7-bit bit string (application tag 8) where each bit represents
+  one day of the week. It is one of the most frequently used building blocks for
+  recurring schedules and exception handling in BACnet.
+
+  Bit layout (MSB first, per 20.2.10 encoding rules):
+
+  | Bit | Day       | Field in struct    |
+  |-----|-----------|--------------------|
+  | 0   | Monday    | `monday`           |
+  | 1   | Tuesday   | `tuesday`          |
+  | 2   | Wednesday | `wednesday`        |
+  | 3   | Thursday  | `thursday`         |
+  | 4   | Friday    | `friday`           |
+  | 5   | Saturday  | `saturday`         |
+  | 6   | Sunday    | `sunday`           |
+
+  A bit set to `true` means the day is included in the set.
+
+  ### BACnet Specification References
+  - **ASN.1** (Clause 21): `BACnetDaysOfWeek ::= BIT STRING { monday (0), tuesday (1), wednesday (2), thursday (3), friday (4), saturday (5), sunday (6) }`
+  - **Primary uses**:
+    - `weekly_schedule` in Schedule objects (one `DailySchedule` per day of week)
+    - `exception_schedule` (combined with `WeekNDay` or `DateRange`)
+    - `valid_days` in `BACnet.Protocol.Destination` (who receives notifications on which days)
+    - Many calendar and special-event constructs
+
+  ### Examples (Doc Test)
+
+  ```elixir
+  iex> weekdays = %DaysOfWeek{
+  ...>   monday: true,
+  ...>   tuesday: true,
+  ...>   wednesday: true,
+  ...>   thursday: true,
+  ...>   friday: true,
+  ...>   saturday: false,
+  ...>   sunday: false
+  ...> }
+  iex> weekdays.friday
+  true
+  ```
+
+  ### See Also
+  - `BACnet.Protocol.CalendarEntry`
+  - `BACnet.Protocol.DailySchedule`
+  - `BACnet.Protocol.DateRange`
+  - `BACnet.Protocol.Destination`
+  - `BACnet.Protocol.WeekNDay`
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags

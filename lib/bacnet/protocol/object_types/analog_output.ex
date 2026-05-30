@@ -8,8 +8,6 @@ defmodule BACnet.Protocol.ObjectTypes.AnalogOutput do
   (ASHRAE 135 - Clause 12.3)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.ObjectsUtility
   alias BACnet.Protocol.PriorityArray
@@ -18,7 +16,7 @@ defmodule BACnet.Protocol.ObjectTypes.AnalogOutput do
   use BACnet.Protocol.ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring an Analog Output object.
   """
   @type object_opts ::
           {:intrinsic_reporting, boolean()} | common_object_opts()

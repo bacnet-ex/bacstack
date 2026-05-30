@@ -1,10 +1,72 @@
 defmodule BACnet.Protocol.BACnetTime do
   @moduledoc """
-  A BACnet Time is used to represent timepoints of the day, but also can represent
-  unspecific timepoints, such as a single component being unspecified
-  (i.e. can match anything in that component).
+  A BACnet Time is a structured value (application tag 11) that can represent either
+  a specific time of day or a *time pattern* with one or more components marked as
+  `:unspecified`. It is the natural companion to `BACnet.Protocol.BACnetDate` and
+  appears in the same contexts: schedules, calendars, trend logs, event notifications,
+  and TimeSynchronization services.
 
-  This module provides some helpers to convert `Time` into a `BACnetTime` and back.
+  Each component (hour, minute, second, hundredth) may be a concrete integer or
+  the atom `:unspecified` (encoded as 0xFF). A completely unspecified time is
+  treated as "don't care".
+
+  ### BACnet Specification References
+
+  - **Encoding**: ASHRAE 135-2012 Clause 20.2.13. Four contents octets: hour
+    (0-23), minute, second, hundredths. 0xFF in any position means unspecified.
+  - **Restrictions** (20.2.13): Neither an unspecified time nor a time pattern
+    shall be used when conveying an actual time (e.g. the Device object's
+    `Local_Time` property or a TimeSynchronization-Request).
+  - **ASN.1** (Clause 21): `Time ::= [APPLICATION 11] OCTET STRING (SIZE(4))`.
+  - **Primary usage**: `weekly_schedule` / `exception_schedule` entries (via
+    `TimeValue`), ReadRange time ranges, Event Timestamps, and many "last changed"
+    time properties.
+
+  The helpers in this module correctly round-trip with Elixir `Time` while
+  treating `:unspecified` components by substituting values from a reference time.
+
+  ### Examples
+
+  #### Specific time
+
+  ```elixir
+  iex> time = %BACnetTime{hour: 8, minute: 30, second: 0, hundredth: 0}
+  iex> BACnetTime.specific?(time)
+  true
+  iex> BACnetTime.to_time!(time)
+  ~T[08:30:00]
+  ```
+
+  #### Partial wildcard (e.g. "every day at 9:15")
+
+  ```elixir
+  iex> daily = %BACnetTime{hour: 9, minute: 15, second: :unspecified, hundredth: :unspecified}
+  iex> BACnetTime.specific?(daily)
+  false
+  ```
+
+  #### Edge cases
+
+  All components unspecified resolves using the reference time:
+
+  ```elixir
+  iex> any_time = %BACnetTime{hour: :unspecified, minute: :unspecified, second: :unspecified, hundredth: :unspecified}
+  iex> BACnetTime.specific?(any_time)
+  false
+  iex> BACnetTime.to_time!(any_time, ~T[14:30:00])
+  ~T[14:30:00]
+  ```
+
+  > #### Warning {: .warning}
+  >
+  > Per the specification, unspecified times or time patterns **shall not** be used
+  > for actual time values such as the Device object's `Local_Time`.
+
+  ### See Also
+  - `BACnet.Protocol.BACnetDate`
+  - `BACnet.Protocol.BACnetDateTime`
+  - `BACnet.Protocol.BACnetTimestamp`
+  - `BACnet.Protocol.TimeValue`
   """
 
   # TODO: Throw argument error in encode if not valid
@@ -12,9 +74,16 @@ defmodule BACnet.Protocol.BACnetTime do
   alias BACnet.Protocol.ApplicationTags
 
   @typedoc """
-  Represents a BACnet Time, which can have unspecified values (= any).
+  Represents a BACnet Time (application tag 11).
 
-  One hundredth corresponds to 0.01 of a second.
+  - `hour`      - 0-23 or `:unspecified`
+  - `minute`    - 0-59 or `:unspecified`
+  - `second`    - 0-59 or `:unspecified`
+  - `hundredth` - 0-99 (hundredths of a second) or `:unspecified`
+
+  Any component may be `:unspecified`, turning the value into a time pattern.
+  `specific?/1` returns false for any such pattern. See `to_time/2` for how
+  patterns are resolved against a reference time.
   """
   @type t :: %__MODULE__{
           hour: 0..23 | :unspecified,

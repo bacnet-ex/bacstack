@@ -11,6 +11,14 @@ defmodule BACnet.Protocol do
   forwarded NPDU are handled by this module directly.
   Currently only BVLL type 0x81 (BACnet/IPv4) is implemented.
 
+  The five simple BVLC functions that only carry an NPDU (or nothing) are
+  represented in this module as atoms inside the `t:bvlc/0` union:
+  `:original_unicast`, `:original_broadcast`, `:distribute_broadcast_to_network`.
+  All seven management functions (Register-Foreign-Device, the BDT/FDT read/write
+  operations, Delete-FDT-Entry, etc.) are represented by the richer structs in
+  `BACnet.Protocol.BvlcFunction`, `BACnet.Protocol.BvlcResult` and
+  `BACnet.Protocol.BvlcForwardedNPDU`.
+
   For Network Protocol Control Information (NPCI),
   it will handle all decoding associated with it and handle field handling.
 
@@ -19,14 +27,18 @@ defmodule BACnet.Protocol do
 
   For Application Data Unit (APDU), see the `BACnet.Protocol.APDU` module.
 
-  See also the following modules:
+  ## See Also
+
   - `BACnet.Protocol.APDU`
-  - `BACnet.Protocol.BvlcFunction`
+  - `BACnet.Protocol.BroadcastDistributionTableEntry`
+  - `BACnet.Protocol.BvlcFunction` - the seven management BVLC payloads
+  - `BACnet.Protocol.BvlcForwardedNPDU` - Forwarded-NPDU carrier (function 0x04)
+  - `BACnet.Protocol.BvlcResult` - BVLC-Result (function 0x00)
+  - `BACnet.Protocol.ForeignDeviceTableEntry`
   - `BACnet.Protocol.NPCI`
   - `BACnet.Protocol.NetworkLayerProtocolMessage`
   """
 
-  # TODO: Docs
   # TODO: Add encode functions
 
   alias BACnet.Protocol.APDU
@@ -54,10 +66,21 @@ defmodule BACnet.Protocol do
           | APDU.Reject.t()
 
   @typedoc """
-  BACnet Virtual Link Control (BVLC), used in BACnet/IP.
+  BACnet Virtual Link Control (BVLC), used in BACnet/IP (Annex J).
 
-  Transports that do not use BVLC shall use `:original_unicast` or
-  `:original_broadcast`, depending on whether it's a broadcast or not.
+  This is the union of everything that can appear after a BVLL header (Type 0x81)
+  on the wire. The five simple carriers are represented as atoms so that higher
+  layers (especially `BACnet.Stack.Transport.IPv4Transport`) do not have to
+  allocate structs for the common case of ordinary unicast/broadcast traffic.
+
+  | Variant                              | Produced by BVLC Function   | Description                                                 |
+  |--------------------------------------|-----------------------------|-------------------------------------------------------------|
+  | `BvlcForwardedNPDU.t()`              | 0x04                        | Broadcast or foreign-device traffic relayed by a BBMD       |
+  | `BvlcFunction.t()`                   | 0x01, 0x02, 0x03, 0x05-0x08 | The seven management operations (BDT/FDT, Register, Delete) |
+  | `BvlcResult.t()`                     | 0x00                        | Success/NAK reply for a management request                  |
+  | `:original_unicast`                  | 0x0A                        | Normal directed NPDU (most common)                          |
+  | `:original_broadcast`                | 0x0B                        | Local broadcast on a B/IP subnet                            |
+  | `:distribute_broadcast_to_network`   | 0x09                        | Foreign device asking its BBMD to broadcast on its behalf   |
   """
   @type bvlc ::
           BvlcForwardedNPDU.t()
@@ -70,7 +93,18 @@ defmodule BACnet.Protocol do
   @npci_version NPCI.get_version()
 
   @doc """
-  Decodes the BVLL header of a BACnet/IP packet.
+  Decodes the BVLL header of a BACnet/IP packet (Annex J.2).
+
+  The first two arguments are the BVLL Type (normally 0x81) and the BVLC
+  Function code. The third argument is the remaining bytes after the 4-octet
+  BVLL header. On success the function returns the number of bytes consumed
+  by the BVLC payload (so the caller knows where the NPDU begins), the
+  decoded `t:bvlc/0` value, and any trailing bytes that belong to the NPDU.
+
+  Management functions (0x01-0x03, 0x05-0x08) are delegated to
+  `BACnet.Protocol.BvlcFunction.decode/2`. The five simple NPDU carriers and
+  the BVLC-Result (0x00) and Forwarded-NPDU (0x04) cases are handled directly
+  and return the corresponding atom or struct.
   """
   @spec decode_bvll(non_neg_integer(), non_neg_integer(), binary()) ::
           {:ok, {bvlc_size :: non_neg_integer(), bvlc :: bvlc(), rest :: binary()}}

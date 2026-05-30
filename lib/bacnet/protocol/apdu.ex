@@ -7,7 +7,8 @@ defmodule BACnet.Protocol.APDU do
   The module `BACnet.Stack.SegmentsStore` fulfills this purpose and
   thus all `incomplete` tuples received from `decode/1` should be passed
   to an instance of that module (preferably under a supervisor).
-  Only `ComplexACK` and `ConfirmedServiceRequest` APDUs can be segmented,
+  Only `BACnet.Protocol.APDU.ComplexACK` and
+  `BACnet.Protocol.APDU.ConfirmedServiceRequest` APDUs can be segmented,
   as specified by the BACnet protocol specification.
   See also the `BACnet.Stack.SegmentsStore` module documentation.
 
@@ -21,8 +22,6 @@ defmodule BACnet.Protocol.APDU do
   - `BACnet.Protocol.APDU.SimpleACK`
   - `BACnet.Protocol.APDU.UnconfirmedServiceRequest`
   """
-
-  # TODO: Docs
 
   alias BACnet.Protocol
   alias BACnet.Protocol.ApplicationTags

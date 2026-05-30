@@ -1,7 +1,17 @@
 defmodule BACnet.Protocol.NotificationParameters do
   @moduledoc """
-  BACnet has various different types of notification parameters.
-  Each of them is represented by a different module.
+  BACnet notification parameters define the additional data that is included
+  in ConfirmedEventNotification and UnconfirmedEventNotification messages.
+
+  Different event algorithms produce different sets of notification parameters
+  (e.g. the new value that triggered the alarm, the setpoint that was crossed,
+  timestamps, etc.). These structures are carried inside the `Event Message
+  Parameters` of the notification so that receiving devices and operator
+  workstations have rich context without needing to read additional properties.
+
+  This module provides the encoding/decoding layer for all supported
+  notification parameter variants. The inner modules contain the concrete
+  fields for each algorithm's notification data.
 
   The event algorithm `AccessEvent` is not supported.
 
@@ -9,6 +19,26 @@ defmodule BACnet.Protocol.NotificationParameters do
   details about each event's algorithms.
   Consult the module `BACnet.Protocol.EventParameters` for
   details about each event's parameters.
+
+  ### Examples
+
+  Different notification parameter types (CHOICE arms):
+
+  ```elixir
+  # Change of Value
+  iex> %NotificationParameters.ChangeOfValue{
+  ...>   new_value: {:real, 42.5},
+  ...>   status_flags: %StatusFlags{}
+  ...> }
+
+  # Out of Range (common for analog alarms)
+  iex> %NotificationParameters.OutOfRange{
+  ...>   exceeding_value: 105.0,
+  ...>   status_flags: %StatusFlags{fault: false},
+  ...>   deadband: 2.0,
+  ...>   exceeded_limit: 100.0
+  ...> }
+  ```
   """
 
   # credo:disable-for-this-file Credo.Check.Design.AliasUsage
@@ -22,7 +52,6 @@ defmodule BACnet.Protocol.NotificationParameters do
 
   import Utility, only: [pattern_extract_tags: 4]
 
-  # TODO: Docs
   # TODO: Throw argument error in encode if not valid
 
   @typedoc """
@@ -68,6 +97,7 @@ defmodule BACnet.Protocol.NotificationParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 0
   end
 
@@ -92,6 +122,7 @@ defmodule BACnet.Protocol.NotificationParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 1
   end
 
@@ -123,6 +154,7 @@ defmodule BACnet.Protocol.NotificationParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 2
   end
 
@@ -148,6 +180,7 @@ defmodule BACnet.Protocol.NotificationParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 3
   end
 
@@ -174,6 +207,7 @@ defmodule BACnet.Protocol.NotificationParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 4
   end
 
@@ -202,6 +236,7 @@ defmodule BACnet.Protocol.NotificationParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 5
   end
 
@@ -223,6 +258,7 @@ defmodule BACnet.Protocol.NotificationParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 6
   end
 
@@ -251,6 +287,7 @@ defmodule BACnet.Protocol.NotificationParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 8
   end
 
@@ -281,6 +318,7 @@ defmodule BACnet.Protocol.NotificationParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 9
   end
 
@@ -306,6 +344,7 @@ defmodule BACnet.Protocol.NotificationParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 10
   end
 
@@ -331,6 +370,7 @@ defmodule BACnet.Protocol.NotificationParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 11
   end
 
@@ -361,6 +401,7 @@ defmodule BACnet.Protocol.NotificationParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 14
   end
 
@@ -389,6 +430,7 @@ defmodule BACnet.Protocol.NotificationParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 15
   end
 
@@ -417,6 +459,7 @@ defmodule BACnet.Protocol.NotificationParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 16
   end
 
@@ -443,6 +486,7 @@ defmodule BACnet.Protocol.NotificationParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 17
   end
 
@@ -467,6 +511,7 @@ defmodule BACnet.Protocol.NotificationParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 18
   end
 
@@ -492,10 +537,14 @@ defmodule BACnet.Protocol.NotificationParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 19
   end
 
-  # TODO: Docs
+  @doc """
+  Parses a constructed application tag (from an event notification) into the
+  corresponding notification parameter.
+  """
   @spec parse(ApplicationTags.encoding()) :: {:ok, notification_parameter()} | {:error, term()}
   def parse(notification_values_tag)
 
@@ -1093,7 +1142,9 @@ defmodule BACnet.Protocol.NotificationParameters do
     {:error, :invalid_tag}
   end
 
-  # TODO: Docs
+  @doc """
+  Encodes a notification parameter variant into BACnet application tag encoding.
+  """
   @spec encode(notification_parameter(), Keyword.t()) ::
           {:ok, ApplicationTags.encoding()} | {:error, term()}
   def encode(notification_params, opts \\ [])

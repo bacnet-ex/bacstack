@@ -2,7 +2,10 @@ defmodule BACnet.Protocol.Services.IAm do
   @moduledoc """
   This module represents the BACnet I-Am service.
 
-  The I-Am service is used as a response to the Who-Is service. It may also be used to announce itself (the device).
+  The I-Am service is the standard way a BACnet device announces its presence on the network.
+  It is most commonly issued in response to a Who-Is request, but devices are also encouraged
+  to broadcast an I-Am upon startup or after a significant configuration change so that other
+  devices and operators can discover them without explicit polling.
 
   Service Description (ASHRAE 135):
   > The I-Am service is used to respond to Who-Is service requests. However, the IAm service request may be issued at any time.
@@ -10,6 +13,10 @@ defmodule BACnet.Protocol.Services.IAm do
   > In particular, a device may wish to broadcast an I-Am service request when it powers up. The network address is derived either
   > from the MAC address associated with the I-Am service request, if the device issuing the request is on the local network, or
   > from the NPCI if the device is on a remote network.
+
+  The I-Am carries the device's object identifier, the maximum APDU size it supports,
+  its segmentation capability, and its vendor identifier. This information allows clients
+  to decide how to communicate with the device efficiently.
   """
 
   alias BACnet.Protocol
@@ -19,9 +26,12 @@ defmodule BACnet.Protocol.Services.IAm do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the I-Am service (unconfirmed).
 
+  Broadcast by a device to announce its presence, identity, maximum APDU length, segmentation support,
+  and vendor ID so that other devices can discover and communicate with it.
+  """
   @type t :: %__MODULE__{
           device: Protocol.ObjectIdentifier.t(),
           max_apdu: pos_integer(),

@@ -1,4 +1,12 @@
 defmodule BACnet.Protocol.Services.Behaviour do
+  @moduledoc """
+  Behaviour for BACnet confirmed and unconfirmed services.
+
+  All service modules implement this behaviour so that the stack can uniformly
+  obtain the service name, determine confirmed vs unconfirmed, and convert the
+  service parameters to/from APDU structures.
+  """
+
   alias BACnet.Protocol.APDU
 
   @doc """

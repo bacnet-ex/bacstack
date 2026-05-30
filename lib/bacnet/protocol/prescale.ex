@@ -1,11 +1,38 @@
 defmodule BACnet.Protocol.Prescale do
-  # TODO: Docs
+  @moduledoc """
+  A Prescale is a simple multiplier / modulo-divide pair used by Accumulator objects
+  to scale the raw pulse count coming from a physical meter into the engineering units
+  that the present value property should report.
+
+  The multiplier is applied first, then the result is divided by the modulo_divide
+  value (the remainder is discarded). This two-stage scaling allows devices to
+  represent both fractional pulses (for example, a meter that produces one pulse
+  per 0.1 kWh) and to handle situations where the display on the physical meter
+  rolls over at a different point than the internal counter.
+
+  The structure exists because many real-world utility meters do not produce
+  pulses that directly correspond to the desired engineering units. By exposing
+  the scaling factors as readable and writable properties, BACnet makes it
+  possible to commission or reconfigure pulse scaling without changing firmware.
+
+  ### Examples (Doc Test)
+
+  ```elixir
+  iex> scale = %Prescale{multiplier: 10, modulo_divide: 1000}
+  iex> scale.multiplier
+  10
+  ```
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
 
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
 
+  @typedoc """
+  Represents the prescaling factors used by Accumulator objects.
+  """
   @type t :: %__MODULE__{
           multiplier: non_neg_integer(),
           modulo_divide: non_neg_integer()

@@ -1,11 +1,31 @@
 defmodule BACnet.Protocol.EnrollmentSummary do
-  # TODO: Docs
+  @moduledoc """
+  An Enrollment Summary entry is produced by the Get Enrollment Summary service.
+  It lists the objects inside a device that have been configured to generate event
+  notifications (intrinsic or algorithmic) to a particular notification class or
+  recipient, filtered by the parameters supplied in the request.
+
+  Each entry carries the object identifier, the event type that the object is
+  configured to generate, the current event state, the priority that will be used
+  in notifications, and optionally the notification class. This information is
+  primarily useful for management stations that need to discover which objects
+  will send alarms to a given operator or system, or to audit the event
+  subscription configuration of a large site.
+
+  The service supports several different "acknowledgment filter" modes so that a
+  client can ask for only unacknowledged alarms, only acknowledged alarms, or all
+  enrollments regardless of acknowledgment state.
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.ObjectIdentifier
 
+  @typedoc """
+  Represents a single entry returned by the Get Enrollment Summary service.
+  """
   @type t :: %__MODULE__{
           object_identifier: ObjectIdentifier.t(),
           event_type: Constants.event_type(),

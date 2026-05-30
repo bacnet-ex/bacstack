@@ -1,19 +1,27 @@
 defmodule BACnet.Protocol.Services.Error.DeleteObjectError do
-  # TODO: Docs
+  @moduledoc """
+  The Delete Object Error is returned when a Delete Object service request
+  fails.
+
+  It carries the standard error class and error code explaining why the object
+  could not be deleted (for example, the object may be referenced by other
+  objects, or the client may lack sufficient privilege).
+  """
 
   alias BACnet.Protocol.APDU.Error
   alias BACnet.Protocol.Constants
 
   require Constants
 
-  # first_failed_element_number = 0 => request invalid not due to "Initial Value" parameters
+  @typedoc """
+  Error response for a failed Delete Object service.
+  """
   @type t :: %__MODULE__{
           error_class: Constants.error_class() | non_neg_integer(),
-          error_code: Constants.error_code() | non_neg_integer(),
-          first_failed_element_number: non_neg_integer()
+          error_code: Constants.error_code() | non_neg_integer()
         }
 
-  @fields [:error_class, :error_code, :first_failed_element_number]
+  @fields [:error_class, :error_code]
   @enforce_keys @fields
   defstruct @fields
 
@@ -22,14 +30,16 @@ defmodule BACnet.Protocol.Services.Error.DeleteObjectError do
                   :delete_object
                 )
 
+  @doc """
+  Converts a received Error APDU into a DeleteObjectError struct.
+  """
   @spec from_apdu(Error.t()) :: {:ok, t()} | {:error, term()}
   def from_apdu(error)
 
-  def from_apdu(%Error{service: @service_name, payload: [unsigned_integer: element]} = error) do
+  def from_apdu(%Error{service: @service_name} = error) do
     err = %__MODULE__{
       error_class: error.class,
-      error_code: error.code,
-      first_failed_element_number: element
+      error_code: error.code
     }
 
     {:ok, err}
@@ -39,6 +49,9 @@ defmodule BACnet.Protocol.Services.Error.DeleteObjectError do
     {:error, :invalid_service_error}
   end
 
+  @doc """
+  Constructs an Error APDU from a DeleteObjectError struct.
+  """
   @spec to_apdu(t(), 0..255) :: {:ok, Error.t()} | {:error, term()}
   def to_apdu(error, invoke_id \\ 0)
 
@@ -48,7 +61,7 @@ defmodule BACnet.Protocol.Services.Error.DeleteObjectError do
       service: @service_name,
       class: error.error_class,
       code: error.error_code,
-      payload: [unsigned_element: error.first_failed_element_number]
+      payload: []
     }
 
     {:ok, new_error}

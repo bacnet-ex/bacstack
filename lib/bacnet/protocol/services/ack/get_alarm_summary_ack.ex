@@ -1,5 +1,19 @@
 defmodule BACnet.Protocol.Services.Ack.GetAlarmSummaryAck do
-  # TODO: Docs
+  @moduledoc """
+  The Get Alarm Summary Acknowledgment is the response to a Get Alarm Summary
+  service request. It returns a list of Alarm Summary records, one for each
+  object in the device that is currently in an alarm or fault state and that
+  the requesting client is authorized to observe.
+
+  Each entry in the list contains the object identifier, its current event
+  state, and the acknowledged transitions bit string. This service is primarily
+  intended for operator workstations that need to build or refresh a list of
+  active alarms without having to poll every object individually.
+
+  Although newer installations often prefer the more capable Get Event
+  Information service, Get Alarm Summary remains widely supported for
+  compatibility with older clients and devices.
+  """
 
   alias BACnet.Protocol.AlarmSummary
   alias BACnet.Protocol.APDU.ComplexACK
@@ -7,6 +21,9 @@ defmodule BACnet.Protocol.Services.Ack.GetAlarmSummaryAck do
 
   require Constants
 
+  @typedoc """
+  Response for Get Alarm Summary containing the list of active alarm summaries from the device.
+  """
   @type t :: %__MODULE__{
           summaries: [AlarmSummary.t()]
         }
@@ -20,6 +37,9 @@ defmodule BACnet.Protocol.Services.Ack.GetAlarmSummaryAck do
                   :get_alarm_summary
                 )
 
+  @doc """
+  Converts a received `BACnet.Protocol.APDU.ComplexACK` APDU into a struct.
+  """
   @spec from_apdu(ComplexACK.t()) :: {:ok, t()} | {:error, term()}
   def from_apdu(%ComplexACK{service: @service_name} = ack) do
     case parse_summaries(ack.payload) do
@@ -42,6 +62,12 @@ defmodule BACnet.Protocol.Services.Ack.GetAlarmSummaryAck do
     {:error, :invalid_service_ack}
   end
 
+  @doc """
+  Constructs a `BACnet.Protocol.APDU.ComplexACK` APDU from a
+  `BACnet.Protocol.Services.Ack.GetAlarmSummaryAck` struct.
+
+  Used by a server when responding to a Get Alarm Summary request.
+  """
   @spec to_apdu(t(), 0..255) :: {:ok, ComplexACK.t()} | {:error, term()}
   def to_apdu(ack, invoke_id \\ 0)
 

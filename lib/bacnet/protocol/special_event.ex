@@ -1,5 +1,74 @@
 defmodule BACnet.Protocol.SpecialEvent do
-  # TODO: Docs
+  @moduledoc """
+  A Special Event defines an exception that overrides the normal weekly
+  schedule on selected days. It is the mechanism Schedule objects use for
+  holidays, maintenance windows, after-hours operation, etc.
+
+  It contains:
+  - `period`: a `BACnet.Protocol.CalendarEntry` (date / date range / week-n-day) **or** a
+    `BACnet.Protocol.ObjectIdentifier` referencing a Calendar object whose `date_list` supplies
+    the days.
+  - `list`: the replacement `BACnet.Protocol.DailySchedule` (list of `BACnet.Protocol.TimeValue`) to use on
+    those days.
+  - `priority`: 1-16 (lowest number wins on overlap).
+
+  ### BACnet Specification References
+  - **ASN.1** (Clause 21):
+    ```
+    BACnetSpecialEvent ::= SEQUENCE {
+        period CHOICE { calendarEntry [0] BACnetCalendarEntry,
+                        calendarReference [1] BACnetObjectIdentifier },
+        listOfTimeValues [2] SEQUENCE OF BACnetTimeValue,
+        eventPriority [3] Unsigned (1..16)
+    }
+    ```
+  - **Schedule object** (12.24): `exception_schedule` is a list of these.
+    The priority field resolves conflicts when multiple special events match
+    the same day (lower number = higher precedence).
+
+  ### Examples
+
+  #### Special event using a CalendarEntry
+
+  ```elixir
+  iex> event = %SpecialEvent{
+  ...>   period: %CalendarEntry{
+  ...>     type: :date,
+  ...>     date: %BACnetDate{year: 2025, month: 12, day: 25, weekday: 4},
+  ...>     date_range: nil,
+  ...>     week_n_day: nil
+  ...>   },
+  ...>   list: [
+  ...>     %TimeValue{time: %BACnetTime{hour: 0, minute: 0, second: 0, hundredth: 0}, value: {:null, nil}},
+  ...>     %TimeValue{time: %BACnetTime{hour: 8, minute: 0, second: 0, hundredth: 0}, value: {:real, 22.0}}
+  ...>   ],
+  ...>   priority: 5
+  ...> }
+  iex> event.priority
+  5
+  ```
+
+  #### Special event referencing another Calendar object
+
+  ```elixir
+  iex> event = %SpecialEvent{
+  ...>   period: %ObjectIdentifier{type: :calendar, instance: 1},
+  ...>   list: [],   # replacement DailySchedule as list of TimeValue
+  ...>   priority: 3
+  ...> }
+  iex> event.priority
+  3
+  ```
+
+  ### See Also
+  - `BACnet.Protocol.CalendarEntry`
+  - `BACnet.Protocol.DailySchedule`
+  - `BACnet.Protocol.DateRange`
+  - `BACnet.Protocol.DaysOfWeek`
+  - `BACnet.Protocol.TimeValue`
+  - `BACnet.Protocol.WeekNDay`
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -12,7 +81,8 @@ defmodule BACnet.Protocol.SpecialEvent do
   require Constants
 
   @typedoc """
-  Represents a BACnet Special Event.
+  Exception schedule entry: period (`BACnet.Protocol.CalendarEntry` or Calendar object ref) +
+  replacement `BACnet.Protocol.DailySchedule` + priority 1..16.
   """
   @type t :: %__MODULE__{
           period: CalendarEntry.t() | ObjectIdentifier.t(),

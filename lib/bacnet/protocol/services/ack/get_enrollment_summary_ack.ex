@@ -1,5 +1,15 @@
 defmodule BACnet.Protocol.Services.Ack.GetEnrollmentSummaryAck do
-  # TODO: Docs
+  @moduledoc """
+  The Get Enrollment Summary Acknowledgment returns the list of objects that
+  have been configured to generate event notifications to a particular
+  recipient or notification class.
+
+  Each entry is an Enrollment Summary record containing the object identifier,
+  the type of event it generates, its current state, the priority it will use,
+  and the notification class. This service is useful for auditing and managing
+  which objects are currently "subscribed" to send alarms to a given system or
+  operator.
+  """
 
   alias BACnet.Protocol.APDU.ComplexACK
   alias BACnet.Protocol.Constants
@@ -7,6 +17,10 @@ defmodule BACnet.Protocol.Services.Ack.GetEnrollmentSummaryAck do
 
   require Constants
 
+  @typedoc """
+  Response for Get Enrollment Summary. Contains the filtered list of enrollment summaries
+  describing which objects are subscribed to generate event notifications for particular recipients.
+  """
   @type t :: %__MODULE__{
           summaries: [EnrollmentSummary.t()]
         }
@@ -20,6 +34,9 @@ defmodule BACnet.Protocol.Services.Ack.GetEnrollmentSummaryAck do
                   :get_enrollment_summary
                 )
 
+  @doc """
+  Converts a received `BACnet.Protocol.APDU.ComplexACK` APDU into a struct.
+  """
   @spec from_apdu(ComplexACK.t()) :: {:ok, t()} | {:error, term()}
   def from_apdu(%ComplexACK{service: @service_name} = ack) do
     case parse_summaries(ack.payload) do
@@ -42,6 +59,10 @@ defmodule BACnet.Protocol.Services.Ack.GetEnrollmentSummaryAck do
     {:error, :invalid_service_ack}
   end
 
+  @doc """
+  Constructs a `BACnet.Protocol.APDU.ComplexACK` APDU from a
+  `BACnet.Protocol.Services.Ack.GetEnrollmentSummaryAck` struct.
+  """
   @spec to_apdu(t(), 0..255) :: {:ok, ComplexACK.t()} | {:error, term()}
   def to_apdu(ack, invoke_id \\ 0)
 

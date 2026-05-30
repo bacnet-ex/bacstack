@@ -19,9 +19,12 @@ defmodule BACnet.Protocol.Services.RemoveListElement do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the Remove List Element service.
 
+  Identifies the target list property and supplies the elements (encodings) to remove from it.
+  The device removes matching elements from the list.
+  """
   @type t :: %__MODULE__{
           object_identifier: Protocol.ObjectIdentifier.t(),
           property_identifier: Constants.property_identifier() | non_neg_integer(),

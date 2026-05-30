@@ -73,6 +73,7 @@ defmodule BACnet.Protocol.Constants.ObjectsSupported do
   )
 
   @doc false
+  @spec get_constants() :: list()
   def get_constants() do
     @constants
   end

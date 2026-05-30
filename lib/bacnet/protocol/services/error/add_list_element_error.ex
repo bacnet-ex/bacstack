@@ -1,12 +1,28 @@
 defmodule BACnet.Protocol.Services.Error.AddListElementError do
-  # TODO: Docs
+  @moduledoc """
+  The Add List Element Error is returned when an Add List Element service
+  request fails.
+
+  In addition to the standard error information, it indicates which element in
+  the list of values being added caused the failure (via
+  `first_failed_element_number`). This helps clients diagnose problems when
+  attempting to append multiple values to a list property in a single request.
+  """
 
   alias BACnet.Protocol.APDU.Error
   alias BACnet.Protocol.Constants
 
   require Constants
 
-  # first_failed_element_number = 0 => request invalid not due to "List of Elements" parameters
+  @typedoc """
+  Error response for a failed Add List Element service.
+
+  In addition to the standard BACnet error class/code, includes the 1-based index of the first element
+  in the request list that caused the failure.
+
+  If `first_failed_element_number` is 0, then the request is not invalid
+  due to the "List of Elements" parameters.
+  """
   @type t :: %__MODULE__{
           error_class: Constants.error_class() | non_neg_integer(),
           error_code: Constants.error_code() | non_neg_integer(),
@@ -22,6 +38,9 @@ defmodule BACnet.Protocol.Services.Error.AddListElementError do
                   :add_list_element
                 )
 
+  @doc """
+  Converts a received Error APDU into an AddListElementError struct.
+  """
   @spec from_apdu(Error.t()) :: {:ok, t()} | {:error, term()}
   def from_apdu(error)
 
@@ -39,6 +58,9 @@ defmodule BACnet.Protocol.Services.Error.AddListElementError do
     {:error, :invalid_service_error}
   end
 
+  @doc """
+  Constructs an Error APDU from an AddListElementError struct.
+  """
   @spec to_apdu(t(), 0..255) :: {:ok, Error.t()} | {:error, term()}
   def to_apdu(error, invoke_id \\ 0)
 

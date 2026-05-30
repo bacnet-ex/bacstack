@@ -1,5 +1,33 @@
 defmodule BACnet.Protocol.SetpointReference do
-  # TODO: Docs
+  @moduledoc """
+  A Setpoint Reference is a nullable pointer to another property that should be
+  treated as the setpoint for a control loop object (Loop, Analog Output, etc.).
+
+  When the reference is present, the control algorithm is expected to treat the
+  value of the referenced property as its current setpoint rather than using a
+  locally configured setpoint. This indirection is extremely useful in cascaded
+  control strategies, in demand-limiting applications, and anywhere the desired
+  setpoint is computed or selected by some other object in the system.
+
+  The reference uses the common Object Property Reference type so that it can
+  point at properties in the same device or, when the full Device + Object form
+  is used, at properties in other devices.
+
+  ### Examples (Doc Test)
+
+  ```elixir
+  iex> ref = %SetpointReference{
+  ...>   ref: %ObjectPropertyRef{
+  ...>     object_identifier: %ObjectIdentifier{type: :analog_value, instance: 5},
+  ...>     property_identifier: :present_value,
+  ...>     property_array_index: nil
+  ...>   }
+  ...> }
+  iex> ref.ref.property_identifier
+  :present_value
+  ```
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -7,6 +35,9 @@ defmodule BACnet.Protocol.SetpointReference do
 
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
 
+  @typedoc """
+  Optionally references another property to be used as the setpoint for a control loop.
+  """
   @type t :: %__MODULE__{
           ref: ObjectPropertyRef.t() | nil
         }

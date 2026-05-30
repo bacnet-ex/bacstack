@@ -8,8 +8,6 @@ defmodule BACnet.Protocol.ObjectTypes.AnalogInput do
   (ASHRAE 135 - Clause 12.2)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.ObjectsUtility
 
@@ -17,7 +15,10 @@ defmodule BACnet.Protocol.ObjectTypes.AnalogInput do
   use BACnet.Protocol.ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring an Analog Input object.
+
+  In addition to the common object options, supports enabling intrinsic
+  reporting via `{:intrinsic_reporting, boolean()}`.
   """
   @type object_opts ::
           {:intrinsic_reporting, boolean()} | common_object_opts()

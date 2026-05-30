@@ -1,10 +1,28 @@
 defmodule BACnet.Protocol.EventTimestamps do
-  # TODO: Docs
+  @moduledoc """
+  Event Timestamps is a composite structure that holds three BACnet Timestamp values
+  recording the most recent transitions of an event-generating object into the
+  off-normal, fault, and normal states. It is carried inside Event Information
+  entries and inside certain event notification parameters.
+
+  The presence of these timestamps allows clients to determine exactly when an
+  alarm condition appeared, when it became a fault, and when it returned to normal.
+  This information is extremely valuable for post-mortem analysis, for computing
+  the duration of an alarm, and for correlating events across multiple devices
+  on a site. If a particular transition has never occurred, the corresponding
+  timestamp field is usually encoded as a "time of day" with all fields set to
+  255 (unspecified).
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.BACnetTimestamp
 
+  @typedoc """
+  Represents the timestamps of the last transitions to the offnormal, fault,
+  and normal event states.
+  """
   @type t :: %__MODULE__{
           to_offnormal: BACnetTimestamp.t(),
           to_fault: BACnetTimestamp.t(),

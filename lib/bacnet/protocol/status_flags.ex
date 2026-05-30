@@ -1,20 +1,69 @@
 defmodule BACnet.Protocol.StatusFlags do
-  # TODO: Docs
+  @moduledoc """
+  BACnet Status Flags is a four-bit bit string (application tag 8) that provides a
+  compact summary of an object's health and operating mode. It is the `status_flags`
+  property on virtually every standard object type and appears in almost every
+  event-related structure.
+
+  Bit ordering (MSB first, per Clause 20.2.10):
+
+  | Bit | Name            | Meaning when TRUE                                       |
+  |-----|-----------------|:--------------------------------------------------------|
+  | 0   | IN_ALARM        | `event_state` != NORMAL                                 |
+  | 1   | FAULT           | `reliability` indicates a fault                         |
+  | 2   | OVERRIDDEN      | Local override (operator interface, physical switch, …) |
+  | 3   | OUT_OF_SERVICE  | `out_of_service` property is TRUE                       |
+
+  The meanings are deliberately consistent across object types so that generic
+  workstations can interpret the flags without knowing the concrete object type.
+
+  ### BACnet Specification References
+
+  - **Encoding** (20.2.10): Primitive bit string. First contents octet = number of
+    unused bits (0 for a 4-bit value). Bits are placed with the first defined
+    Boolean in bit 7 of the first subsequent octet.
+  - **ASN.1** (Clause 21): `BACnetStatusFlags ::= BIT STRING { in-alarm (0), fault (1), overridden (2), out-of-service (3) }`
+  - **Mandatory property**: Every object type defined in Clause 12 that has an
+    `event_state` or `reliability` property also has a `status_flags` property
+    whose value is a `BACnetStatusFlags`.
+  - **Event usage**: Carried inside `BACnetNotificationParameters` (Change-of-State,
+    Change-of-Reliability, …) and in GetAlarmSummary / GetEventInformation ACKs.
+
+  This module stores the four Booleans in a struct for ergonomic access while the
+  wire form is produced by the `to_bitstring/1` helper used during encoding.
+
+  ### Examples (Doc Test)
+
+  #### Creating flags
+
+  ```elixir
+  iex> flags = %StatusFlags{in_alarm: false, fault: false, overridden: true, out_of_service: false}
+  iex> flags.overridden
+  true
+  ```
+
+  #### Round-tripping through encoding
+
+  ```elixir
+  iex> flags = %StatusFlags{in_alarm: true, fault: false, overridden: false, out_of_service: false}
+  iex> {:ok, [encoded]} = StatusFlags.encode(flags)
+  iex> StatusFlags.from_bitstring(elem(encoded, 1))
+  %StatusFlags{in_alarm: true, fault: false, overridden: false, out_of_service: false}
+  ```
+
+  ### See Also
+  - `BACnet.Protocol.Constants` (for related `reliability` and `event_state` values)
+  - `BACnet.Protocol.EventTransitionBits`
+  - `BACnet.Protocol.NotificationParameters`
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
 
   @typedoc """
-  Represents the BACnet Status Flags.
-
-  The `IN_ALARM` flag is set, if the Event State is not normal.
-
-  The `FAULT` flag is set, if the reliability has detected a fault.
-
-  The `OVERRIDDEN` flag is set, if the output has been overridden by some sort
-  of BACnet device local mechanism.
-
-  The `OUT_OF_SERVICE` flag is set, if the Out Of Service property is set.
+  Represents the four Boolean flags of a BACnet Status Flags bit string
+  (see table in the module documentation for bit positions and semantics).
   """
   @type t :: %__MODULE__{
           in_alarm: boolean(),

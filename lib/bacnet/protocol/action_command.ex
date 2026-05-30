@@ -1,5 +1,17 @@
 defmodule BACnet.Protocol.ActionCommand do
-  # TODO: Docs
+  @moduledoc """
+  An Action Command is one step inside an Action List that belongs to a Command
+  object. When the Command object is activated (by writing to its present value),
+  the device executes the sequence of Action Commands in order.
+
+  Each command can write a new value to any property of any object in the same
+  device (or, via the Write Property service, to objects in other devices). The
+  command may also specify a delay after the write occurs, a priority to use
+  for commandable properties, and a "post-write" action that determines what
+  the Command object should do after the write fails (quit or continue to
+  the next action).
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -9,6 +21,12 @@ defmodule BACnet.Protocol.ActionCommand do
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
   require Constants
 
+  @typedoc """
+  Represents a single action command within an Action List of a Command object.
+
+  It describes a property write operation, including optional priority,
+  post-delay, and quit-on-failure behavior.
+  """
   @type t :: %__MODULE__{
           device_identifier: ObjectIdentifier.t() | nil,
           object_identifier: ObjectIdentifier.t(),

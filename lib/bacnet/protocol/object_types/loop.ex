@@ -11,8 +11,6 @@ defmodule BACnet.Protocol.ObjectTypes.Loop do
   (ASHRAE 135 - Clause 12.17)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.ObjectPropertyRef
   alias BACnet.Protocol.ObjectsMacro
@@ -22,7 +20,7 @@ defmodule BACnet.Protocol.ObjectTypes.Loop do
   use ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring a Loop object.
   """
   @type object_opts :: common_object_opts()
 

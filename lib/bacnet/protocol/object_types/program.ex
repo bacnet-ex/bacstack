@@ -26,15 +26,13 @@ defmodule BACnet.Protocol.ObjectTypes.Program do
   (ASHRAE 135 - Clause 12.22)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.Constants
 
   require Constants
   use BACnet.Protocol.ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring a Program object.
   """
   @type object_opts :: common_object_opts()
 

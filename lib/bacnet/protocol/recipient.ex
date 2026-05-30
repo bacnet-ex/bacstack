@@ -1,11 +1,42 @@
 defmodule BACnet.Protocol.Recipient do
-  # TODO: Docs
+  @moduledoc """
+  A Recipient identifies the target of an event notification or a COV notification.
+  It is a CHOICE between either a specific device (identified by its Device
+  object identifier) or a network address (which may be a unicast address, a
+  broadcast address, or a remote network broadcast).
+
+  The distinction is important for event distribution. When a Notification Class
+  object is configured with a device identifier as the recipient, it will
+  automatically resolve the current network address of that device before sending
+  the notification. When an address is configured directly, the notification is
+  sent to that exact address without any resolution step. This gives system
+  designers flexibility between robust "follow the device" addressing and
+  lightweight "send to this fixed location" addressing.
+
+  ### BACnet Specification References
+  - **ASN.1** (Clause 21): `BACnetRecipient ::= CHOICE { device [0] BACnetObjectIdentifier, address [1] BACnetAddress }`
+  - Combined with `BACnet.Protocol.Destination` (valid days, time window, transitions, etc.)
+    inside Notification Class `recipient_list`.
+
+  ### Examples (Doc Test)
+
+  ```elixir
+  iex> recipient = %Recipient{type: :device, device: %ObjectIdentifier{type: :device, instance: 123}, address: nil}
+  iex> recipient.type
+  :device
+  ```
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.RecipientAddress
 
+  @typedoc """
+  Represents a BACnet notification recipient, which can be either a specific
+  device (identified by its Device object identifier) or a raw network address.
+  """
   @type t :: %__MODULE__{
           type: :address | :device,
           address: RecipientAddress.t() | nil,

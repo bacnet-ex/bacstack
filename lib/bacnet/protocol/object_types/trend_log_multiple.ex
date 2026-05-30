@@ -51,8 +51,6 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
   (ASHRAE 135 - Clause 12.30)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.BACnetArray
   alias BACnet.Protocol.BACnetDateTime
@@ -66,7 +64,7 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
   use ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring a Trend Log Multiple object.
   """
   @type object_opts ::
           {:intrinsic_reporting, boolean()}

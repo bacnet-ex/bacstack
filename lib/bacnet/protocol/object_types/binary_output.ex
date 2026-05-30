@@ -20,8 +20,6 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryOutput do
   (ASHRAE 135 - Clause 12.7)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.Constants
@@ -32,7 +30,7 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryOutput do
   use ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring a Binary Output object.
   """
   @type object_opts ::
           {:auto_write_feedback, boolean()}

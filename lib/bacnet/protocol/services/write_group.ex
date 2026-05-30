@@ -30,9 +30,12 @@ defmodule BACnet.Protocol.Services.WriteGroup do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the Write Group service (unconfirmed).
 
+  Efficiently distributes values to many devices/objects that belong to a numbered control group via their Channel objects.
+  Includes group number, write priority, the list of channel+value pairs, and optional inhibit delay flag.
+  """
   @type t :: %__MODULE__{
           group_number: ApplicationTags.unsigned32(),
           write_priority: 1..16,

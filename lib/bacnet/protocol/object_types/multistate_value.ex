@@ -16,8 +16,6 @@ defmodule BACnet.Protocol.ObjectTypes.MultistateValue do
   (ASHRAE 135 - Clause 12.20)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.BACnetArray
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.PriorityArray
@@ -26,7 +24,7 @@ defmodule BACnet.Protocol.ObjectTypes.MultistateValue do
   use BACnet.Protocol.ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring a Multistate Value object.
   """
   @type object_opts ::
           {:intrinsic_reporting, boolean()} | common_object_opts()

@@ -6,11 +6,13 @@ defmodule BACnet.Protocol.ObjectsUtility.Internal do
   alias BACnet.Protocol.BACnetTime
   alias BACnet.Protocol.DailySchedule
 
+  @doc false
   @spec init_fun_schedule_weekly_schedule() :: BACnetArray.t(DailySchedule.t())
   def init_fun_schedule_weekly_schedule() do
     BACnetArray.new(7, %DailySchedule{schedule: []})
   end
 
+  @doc false
   @spec init_fun_local_date() :: BACnetDate.t()
   def init_fun_local_date() do
     BACnetDate.from_date(
@@ -23,6 +25,7 @@ defmodule BACnet.Protocol.ObjectsUtility.Internal do
     )
   end
 
+  @doc false
   @spec init_fun_local_time() :: BACnetTime.t()
   def init_fun_local_time() do
     BACnetTime.from_time(

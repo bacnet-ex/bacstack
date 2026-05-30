@@ -11,8 +11,6 @@ defmodule BACnet.Protocol.ObjectTypes.IntegerValue do
   (ASHRAE 135 - Clause 12.43)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.PriorityArray
 
@@ -20,7 +18,7 @@ defmodule BACnet.Protocol.ObjectTypes.IntegerValue do
   use BACnet.Protocol.ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring an Integer Value object.
   """
   @type object_opts ::
           {:intrinsic_reporting, boolean()} | common_object_opts()

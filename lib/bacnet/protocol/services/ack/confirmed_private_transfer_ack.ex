@@ -1,5 +1,14 @@
 defmodule BACnet.Protocol.Services.Ack.ConfirmedPrivateTransferAck do
-  # TODO: Docs
+  @moduledoc """
+  The Confirmed Private Transfer Acknowledgment is the response to a successful
+  Confirmed Private Transfer service request.
+
+  It returns a vendor identifier, a vendor-defined service number, and an
+  optional list of result parameters that the vendor has defined for their
+  proprietary service. This allows vendors to implement rich, bidirectional
+  private services while still using the standard BACnet confirmed service
+  infrastructure.
+  """
 
   alias BACnet.Protocol.APDU.ComplexACK
   alias BACnet.Protocol.ApplicationTags
@@ -8,6 +17,12 @@ defmodule BACnet.Protocol.Services.Ack.ConfirmedPrivateTransferAck do
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
   require Constants
 
+  @typedoc """
+  Response payload for a successful Confirmed Private Transfer.
+
+  Returns the vendor_id/service_number echoed back plus any result data (encoded application tags)
+  produced by the vendor-specific service on the remote device.
+  """
   @type t :: %__MODULE__{
           vendor_id: ApplicationTags.unsigned16(),
           service_number: non_neg_integer(),
@@ -23,6 +38,9 @@ defmodule BACnet.Protocol.Services.Ack.ConfirmedPrivateTransferAck do
                   :confirmed_private_transfer
                 )
 
+  @doc """
+  Converts a received `BACnet.Protocol.APDU.ComplexACK` APDU into a struct.
+  """
   @spec from_apdu(ComplexACK.t()) :: {:ok, t()} | {:error, term()}
   def from_apdu(%ComplexACK{service: @service_name} = ack) do
     with {:ok, vendor_id, rest} <-
@@ -67,6 +85,10 @@ defmodule BACnet.Protocol.Services.Ack.ConfirmedPrivateTransferAck do
     {:error, :invalid_service_ack}
   end
 
+  @doc """
+  Constructs a `BACnet.Protocol.APDU.ComplexACK` APDU from a
+  `BACnet.Protocol.Services.Ack.ConfirmedPrivateTransferAck` struct.
+  """
   @spec to_apdu(t(), 0..255) :: {:ok, ComplexACK.t()} | {:error, term()}
   def to_apdu(ack, invoke_id \\ 0)
 

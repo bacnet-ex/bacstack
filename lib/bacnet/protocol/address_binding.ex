@@ -1,11 +1,46 @@
 defmodule BACnet.Protocol.AddressBinding do
-  # TODO: Docs
+  @moduledoc """
+  An Address Binding is the mapping between a device's Object Identifier (the
+  Device object instance) and the network address at which that device can be
+  reached. It is the fundamental data structure used by the BACnet address
+  resolution mechanisms.
+
+  Every BACnet device maintains a Device Address Binding table. Static bindings
+  can be configured locally or via the Write Property service. Dynamic bindings
+  are learned automatically when a device receives an I-Am message (in response
+  to Who-Is) or when it receives traffic from a previously unknown device.
+  Foreign devices registered through a BBMD also appear in address binding
+  tables.
+
+  The structure is used in the Device object's Device_Address_Binding property,
+  in the recipient fields of event and COV subscriptions, in the destination
+  lists of the Write Group service, and in many network-layer and application-
+  layer routing decisions. Correct maintenance of address bindings is essential
+  for reliable communication across BACnet/IP, BACnet/Ethernet, and MS/TP
+  networks that are joined by routers.
+
+  ### Examples (Doc Test)
+
+  ```elixir
+  iex> binding = %AddressBinding{
+  ...>   device_identifier: %ObjectIdentifier{type: :device, instance: 123},
+  ...>   network: 0,
+  ...>   address: <<192, 168, 1, 100, 0xBA, 0xC0>>
+  ...> }
+  iex> binding.device_identifier.instance
+  123
+  ```
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.NetworkLayerProtocolMessage
   alias BACnet.Protocol.ObjectIdentifier
 
+  @typedoc """
+  Associates a BACnet device object identifier with its network address.
+  """
   @type t :: %__MODULE__{
           device_identifier: ObjectIdentifier.t(),
           network: NetworkLayerProtocolMessage.dnet(),

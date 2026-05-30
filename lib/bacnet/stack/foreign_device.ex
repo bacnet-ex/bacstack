@@ -18,6 +18,23 @@ defmodule BACnet.Stack.ForeignDevice do
 
   For each BBMD (client/transport) one Foreign Device process is required.
   This allows to register in many BBMDs as Foreign Device.
+
+  ## BACnet Specification References
+
+  The registration, renewal and table-read behaviour follows Annex J.5.2.
+  The TTL value supplied in the Register-Foreign-Device message (J.2.6) plus
+  the 30-second grace period (J.5.2.3) determines how long the remote BBMD
+  will keep the registration. Distribute-Broadcast-To-Network (J.2.10) is the
+  mechanism used by `distribute/2`.
+
+  ## See Also
+
+  - `BACnet.Protocol`
+  - `BACnet.Protocol.BroadcastDistributionTableEntry`
+  - `BACnet.Protocol.BvlcFunction`
+  - `BACnet.Protocol.BvlcResult`
+  - `BACnet.Protocol.ForeignDeviceTableEntry`
+  - `BACnet.Stack.BBMD`
   """
 
   alias BACnet.Protocol.APDU.UnconfirmedServiceRequest
@@ -138,7 +155,7 @@ defmodule BACnet.Stack.ForeignDevice do
     - `bbmd: {:inet.ip4_address(), 1..65_535}` - Required. The BBMD address to register itself as Foreign Device with.
     - `client: client()` - Required. The client & transport information.
     - `reply_rfd: boolean()` - Optional. Enables replying to `Register-Foreign-Device` packets from other BACnet clients.
-      Defaults to `true`. If multiple `ForeignDevice` processes are running on the same client/transport,
+      Defaults to `true`. If multiple `BACnet.Stack.ForeignDevice` processes are running on the same client/transport,
       all except for one MUST have this option disabled.
     - `ttl: pos_integer()` - Optional. The time in seconds until the Foreign Device Registration expires. Defaults to `60`.
   """

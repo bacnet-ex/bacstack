@@ -1,5 +1,13 @@
 defmodule BACnet.Protocol.Services.Error.WritePropertyMultipleError do
-  # TODO: Docs
+  @moduledoc """
+  The Write Property Multiple Error is returned when a Write Property Multiple
+  service request fails.
+
+  It identifies the first object and property that could not be written
+  (via an Object Property Reference) along with the reason for the failure.
+  This allows the client to know exactly where in a large bulk write operation
+  the failure occurred without having to guess.
+  """
 
   alias BACnet.Protocol.APDU.Error
   alias BACnet.Protocol.Constants
@@ -7,6 +15,12 @@ defmodule BACnet.Protocol.Services.Error.WritePropertyMultipleError do
 
   require Constants
 
+  @typedoc """
+  Error response for a failed Write Property Multiple service.
+
+  Identifies the exact object/property reference (first failure) and the error class/code so the client
+  can pinpoint which write in a bulk operation failed.
+  """
   @type t :: %__MODULE__{
           error_class: Constants.error_class() | non_neg_integer(),
           error_code: Constants.error_code() | non_neg_integer(),
@@ -22,6 +36,9 @@ defmodule BACnet.Protocol.Services.Error.WritePropertyMultipleError do
                   :write_property_multiple
                 )
 
+  @doc """
+  Converts a received Error APDU into a WritePropertyMultipleError struct.
+  """
   @spec from_apdu(Error.t()) :: {:ok, t()} | {:error, term()}
   def from_apdu(error)
 
@@ -44,6 +61,9 @@ defmodule BACnet.Protocol.Services.Error.WritePropertyMultipleError do
     {:error, :invalid_service_error}
   end
 
+  @doc """
+  Constructs an Error APDU from a WritePropertyMultipleError struct.
+  """
   @spec to_apdu(t(), 0..255) :: {:ok, Error.t()} | {:error, term()}
   def to_apdu(error, invoke_id \\ 0)
 

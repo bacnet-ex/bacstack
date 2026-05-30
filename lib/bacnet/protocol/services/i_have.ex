@@ -2,7 +2,10 @@ defmodule BACnet.Protocol.Services.IHave do
   @moduledoc """
   This module represents the BACnet I-Have service.
 
-  The I-Have service is used as a response to the Who-Has service.
+  The I-Have service allows a device to advertise that it contains a particular object,
+  identified either by its Object_Identifier or by its Object_Name. It is the
+  counterpart to the Who-Has service and is most often sent in response to a
+  Who-Has broadcast.
 
   Service Description (ASHRAE 135):
   > The IHave service is used to respond to Who-Has service requests or to advertise the existence of an object with a given
@@ -16,9 +19,9 @@ defmodule BACnet.Protocol.Services.IHave do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
-
+  @typedoc """
+  Parameters for the I-Have service (device + object identifier + object name).
+  """
   @type t :: %__MODULE__{
           device: Protocol.ObjectIdentifier.t(),
           object: Protocol.ObjectIdentifier.t(),

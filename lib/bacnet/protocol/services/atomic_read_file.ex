@@ -16,10 +16,11 @@ defmodule BACnet.Protocol.Services.AtomicReadFile do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
-  # stream_access = false: Record-based access
+  @typedoc """
+  Parameters for the Atomic Read File service (stream or record access).
 
+  If `stream_access` is false, then access is record-based.
+  """
   @type t :: %__MODULE__{
           object_identifier: Protocol.ObjectIdentifier.t(),
           stream_access: boolean(),

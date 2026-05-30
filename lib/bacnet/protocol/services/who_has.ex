@@ -2,8 +2,11 @@ defmodule BACnet.Protocol.Services.WhoHas do
   @moduledoc """
   This module represents the BACnet Who-Has service.
 
-  The Who-Has service is used to find a specific object (by identifier or name),
-  either by querying all or a subset of BACnet devices.
+  The Who-Has service allows a client to locate a specific object across the
+  BACnet internetwork when it knows either the object's Object_Identifier or
+  its Object_Name. Devices that contain a matching object respond with an
+  I-Have message containing their own device identifier and the object's
+  identifier and name.
 
   Service Description (ASHRAE 135):
   > The Who-Has service is used by a sending BACnet-user to identify the device object identifiers and network addresses of
@@ -17,9 +20,9 @@ defmodule BACnet.Protocol.Services.WhoHas do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
-
+  @typedoc """
+  Parameters for the Who-Has service (optional device range + object identifier or name).
+  """
   @type t :: %__MODULE__{
           device_id_low_limit: non_neg_integer() | nil,
           device_id_high_limit: non_neg_integer() | nil,

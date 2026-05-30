@@ -17,15 +17,13 @@ defmodule BACnet.Protocol.ObjectTypes.MultistateInput do
   (ASHRAE 135 - Clause 12.18)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.BACnetArray
   alias BACnet.Protocol.Constants
   require Constants
   use BACnet.Protocol.ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring a Multistate Input object.
   """
   @type object_opts ::
           {:intrinsic_reporting, boolean()} | common_object_opts()

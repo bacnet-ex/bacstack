@@ -22,9 +22,12 @@ defmodule BACnet.Protocol.Services.CreateObject do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the Create Object service.
 
+  Specifies either an object type (for the device to assign an instance) or a specific object identifier,
+  plus a list of initial PropertyValue settings to apply to the newly created object.
+  """
   @type t :: %__MODULE__{
           object_specifier: Protocol.ObjectIdentifier.t() | Constants.object_type(),
           initial_values: [Protocol.PropertyValue.t()]

@@ -19,9 +19,12 @@ defmodule BACnet.Protocol.Services.GetAlarmSummary do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the Get Alarm Summary service.
 
+  This service has no parameters (empty struct). The response returns a list of
+  all active alarms the device is aware of.
+  """
   @type t :: %__MODULE__{}
 
   @fields []

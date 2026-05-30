@@ -22,9 +22,12 @@ defmodule BACnet.Protocol.Services.UnconfirmedTextMessage do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the Unconfirmed Text Message service.
 
+  Same structure as ConfirmedTextMessage but delivered without acknowledgment. Suitable for
+  informational or logging messages where delivery confirmation is not required.
+  """
   @type t :: %__MODULE__{
           source_device: Protocol.ObjectIdentifier.t(),
           class: non_neg_integer() | String.t() | nil,

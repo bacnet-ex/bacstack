@@ -26,8 +26,6 @@ defmodule BACnet.Protocol.ObjectTypes.Schedule do
   (ASHRAE 135 - Clause 12.24)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.BACnetArray
@@ -43,7 +41,7 @@ defmodule BACnet.Protocol.ObjectTypes.Schedule do
   use BACnet.Protocol.ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring a Schedule object.
   """
   @type object_opts ::
           {:base_type, ApplicationTags.primitive_type()}

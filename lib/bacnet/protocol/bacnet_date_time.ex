@@ -1,10 +1,70 @@
 defmodule BACnet.Protocol.BACnetDateTime do
   @moduledoc """
-  A BACnet DateTime is used to represent date with timepoints.
-  It wraps both `BACnetDate` and `BACnetTime`.
+  A BACnet DateTime is a simple SEQUENCE that combines a `BACnet.Protocol.BACnetDate` and a
+  `BACnet.Protocol.BACnetTime`. It is the most common concrete timestamp form used throughout
+  the protocol (application tag 12 when appearing as a primitive).
 
-  This module provides some helpers to convert `DateTime` and `NaiveDateTime`
-  into a `BACnetDateTime` and back.
+  Because the two components are independent, a `BACnet.Protocol.BACnetDateTime` can itself act
+  as a pattern: any special value present in the embedded `BACnet.Protocol.BACnetDate` or
+  `BACnet.Protocol.BACnetTime` makes the whole value a pattern rather than a specific instant.
+
+  ### BACnet Specification References
+
+  - **ASN.1 production** (Clause 21):
+    ```
+    BACnetDateTime ::= SEQUENCE {
+        date Date,   -- see Clause 20.2.12 for restrictions
+        time Time    -- see Clause 20.2.13 for restrictions
+    }
+    ```
+  - **Encoding**: The encoding is simply the concatenation of the encodings of
+    the two components (Clause 20.2.18 CHOICE / SEQUENCE rules apply when the
+    value is context-tagged, e.g. inside `BACnet.Protocol.BACnetTimestamp`).
+  - **Usage contexts**: `time_of_device_restart`, many "last changed" properties,
+    Event Timestamps (the most common `BACnet.Protocol.BACnetTimestamp` alternative), schedule
+    exception periods, and COV / event notification timestamps.
+
+  The conversion helpers delegate to the respective `BACnet.Protocol.BACnetDate` /
+  `BACnet.Protocol.BACnetTime` functions and therefore inherit all pattern-resolution behaviour.
+
+  ### Examples
+
+  #### Converting to/from Elixir DateTime
+
+  ```elixir
+  iex> dt = %BACnetDateTime{date: %BACnetDate{year: 2025, month: 3, day: 15, weekday: 6}, time: %BACnetTime{hour: 14, minute: 30, second: 0, hundredth: 0}}
+  iex> {:ok, _elixir_dt} = BACnetDateTime.to_datetime(dt)
+  iex> BACnetDateTime.from_datetime(~U[2025-03-15 14:30:00Z])
+  %BACnetDateTime{date: %BACnetDate{year: 2025, month: 3, day: 15, weekday: 6}, time: %BACnetTime{hour: 14, minute: 30, second: 0, hundredth: 0}}
+  ```
+
+  #### Pattern DateTime
+
+  ```elixir
+  iex> pattern = %BACnetDateTime{date: %BACnetDate{year: :unspecified, month: 12, day: 25, weekday: :unspecified}, time: %BACnetTime{hour: 0, minute: 0, second: 0, hundredth: 0}}
+  iex> BACnetDateTime.specific?(pattern)
+  false
+  ```
+
+  #### Edge cases
+
+  A DateTime is only specific if *both* the date and time parts are specific:
+
+  ```elixir
+  iex> mixed = %BACnetDateTime{
+  ...>   date: %BACnetDate{year: 2025, month: 4, day: 1, weekday: 2},
+  ...>   time: %BACnetTime{hour: :unspecified, minute: 0, second: 0, hundredth: 0}
+  ...> }
+  iex> BACnetDateTime.specific?(mixed)
+  false
+  ```
+
+  Conversion delegates to the individual date/time helpers (including their reference date fallback behavior).
+
+  ### See Also
+  - `BACnet.Protocol.BACnetDate`
+  - `BACnet.Protocol.BACnetTime`
+  - `BACnet.Protocol.BACnetTimestamp`
   """
 
   # TODO: Throw argument error in encode if not valid
@@ -14,7 +74,11 @@ defmodule BACnet.Protocol.BACnetDateTime do
   alias BACnet.Protocol.BACnetTime
 
   @typedoc """
-  Represents a BACnet DateTime. It wraps both BACnet Date and Time.
+  Represents a BACnet DateTime (a SEQUENCE of Date + Time).
+
+  The contained `date` and `time` may themselves contain special values
+  (`:unspecified`, `:even`, etc.). In that case `specific?/1` returns false
+  and the value is treated as a pattern rather than a concrete instant.
   """
   @type t :: %__MODULE__{
           date: BACnetDate.t(),

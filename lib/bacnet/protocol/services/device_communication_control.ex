@@ -22,11 +22,15 @@ defmodule BACnet.Protocol.Services.DeviceCommunicationControl do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
-  # time_duration = nil: Indefinite duration
-  # Password max length 20
+  @typedoc """
+  Parameters for the Device Communication Control service.
 
+  Requests a device to enable, disable, or disable for a time its network communication (except for
+  the controlling device). An optional password may be required by the target device.
+
+  If `time_duration` is nil, then the duration is indefinite.
+  The password can have a maximum length of 20 characters.
+  """
   @type t :: %__MODULE__{
           state: Constants.enable_disable(),
           time_duration: ApplicationTags.unsigned16() | nil,

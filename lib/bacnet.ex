@@ -7,6 +7,4 @@ defmodule BACnet do
              |> String.trim()
 
   @external_resource "README.md"
-
-  # TODO: Docs
 end

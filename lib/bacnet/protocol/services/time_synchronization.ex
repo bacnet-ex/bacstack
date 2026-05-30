@@ -16,9 +16,12 @@ defmodule BACnet.Protocol.Services.TimeSynchronization do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the Time Synchronization service (unconfirmed).
 
+  Distributes the current local date and time to one or more devices so they can synchronize their
+  internal clocks. See also UTCTimeSynchronization for UTC-based sync.
+  """
   @type t :: %__MODULE__{
           date: Protocol.BACnetDate.t(),
           time: Protocol.BACnetTime.t()

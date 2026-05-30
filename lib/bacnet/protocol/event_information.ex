@@ -1,5 +1,18 @@
 defmodule BACnet.Protocol.EventInformation do
-  # TODO: Docs
+  @moduledoc """
+  Event Information is the rich data structure returned by the Get Event Information
+  service (ASHRAE 135 Clause 13.12). It is the modern replacement for the older
+  Get Alarm Summary service and is the recommended way for a client to obtain a
+  complete picture of every object in a device that is capable of generating events.
+
+  Each entry contains the object identifier, its current event state, the acknowledged
+  transition bits, the timestamps of the three state transitions, the notify type,
+  the event enable bits, and the three priority values that will be used for
+  notifications at each transition. This level of detail allows a sophisticated
+  operator workstation to present accurate alarm lists, compute alarm durations,
+  and correctly route or escalate notifications.
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -10,6 +23,9 @@ defmodule BACnet.Protocol.EventInformation do
 
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
 
+  @typedoc """
+  Represents a single entry in the response of a Get Event Information service.
+  """
   @type t :: %__MODULE__{
           object_identifier: ObjectIdentifier.t(),
           event_state: Constants.event_state(),

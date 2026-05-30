@@ -16,9 +16,11 @@ defmodule BACnet.Protocol.Services.UtcTimeSynchronization do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the UTC Time Synchronization service (unconfirmed).
 
+  Broadcasts the current UTC date and time so devices can synchronize clocks across time zones.
+  """
   @type t :: %__MODULE__{
           date: Protocol.BACnetDate.t(),
           time: Protocol.BACnetTime.t()

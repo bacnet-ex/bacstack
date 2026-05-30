@@ -1,5 +1,58 @@
 defmodule BACnet.Protocol.LogRecord do
-  # TODO: Docs
+  @moduledoc """
+  A Log Record is the basic unit stored inside the buffer of a Trend Log or
+  Event Log object. Every time a trend log collects a sample, or an event log
+  records an event notification, a Log Record is appended to the circular buffer.
+
+  Each record carries a timestamp (which may be a full BACnet DateTime or a
+  sequence number), a status field of the object, and then one of several possible
+  value choices: a normal data value, a time change indication, a BACnet
+  Error, or a special "log status" record.
+
+  ### Examples (Doc Test)
+
+  Basic real value record:
+
+  ```elixir
+  iex> record = %LogRecord{
+  ...>   timestamp: %BACnet.Protocol.BACnetTimestamp{type: :datetime, time: nil, sequence_number: nil, datetime: %BACnet.Protocol.BACnetDateTime{date: %BACnet.Protocol.BACnetDate{year: 2025, month: 1, day: 1, weekday: 3}, time: %BACnet.Protocol.BACnetTime{hour: 12, minute: 0, second: 0, hundredth: 0}}},
+  ...>   status_flags: %BACnet.Protocol.StatusFlags{in_alarm: false, fault: false, overridden: false, out_of_service: false},
+  ...>   log_datum: {:real, 23.4}
+  ...> }
+  iex> record.log_datum
+  {:real, 23.4}
+  ```
+
+  #### Different log_datum CHOICE arms
+
+  ```elixir
+  # Log status record (buffer purged, etc.)
+  iex> status_rec = %LogRecord{
+  ...>   timestamp: %BACnet.Protocol.BACnetTimestamp{type: :sequence_number, sequence_number: 42, time: nil, datetime: nil},
+  ...>   status_flags: nil,
+  ...>   log_datum: %LogStatus{log_disabled: false, buffer_purged: true, log_interrupted: false}
+  ...> }
+  iex> status_rec.log_datum.log_disabled
+  false
+
+  # Error record
+  iex> %LogRecord{
+  ...>   timestamp: %BACnet.Protocol.BACnetTimestamp{type: :datetime, time: nil, sequence_number: nil, datetime: %BACnet.Protocol.BACnetDateTime{date: %BACnet.Protocol.BACnetDate{year: 2025, month: 1, day: 1, weekday: 3}, time: %BACnet.Protocol.BACnetTime{hour: 0, minute: 0, second: 0, hundredth: 0}}},
+  ...>   status_flags: nil,
+  ...>   log_datum: %BACnet.Protocol.BACnetError{class: :services, code: :timeout}
+  ...> }
+
+  # Time change indication
+  iex> %LogRecord{
+  ...>   timestamp: %BACnet.Protocol.BACnetTimestamp{type: :sequence_number, sequence_number: 100, time: nil, datetime: nil},
+  ...>   status_flags: nil,
+  ...>   log_datum: {:time_change, 3600.0}
+  ...> }
+  ```
+
+  Note: Different arms are encoded with different context tags (0 for LogStatus, 8 for Error, 9 for time change, etc.). The higher-level `encode/2` handles the tagging.
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -11,6 +64,9 @@ defmodule BACnet.Protocol.LogRecord do
 
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
 
+  @typedoc """
+  A single record in a Trend Log or Event Log.
+  """
   @type t :: %__MODULE__{
           timestamp: BACnetDateTime.t(),
           log_datum:

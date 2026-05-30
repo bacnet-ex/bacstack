@@ -1,15 +1,17 @@
 defmodule BACnet.Protocol.NPCI do
   @moduledoc """
-  Network Protocol Control Information (NPCI) are used to determine
-  priority, whether reply is expected, for who by who this frame is
-  and what kind of BACnet Data Unit this is.
+  Network Protocol Control Information (NPCI) is the header that precedes every
+  BACnet Network Protocol Data Unit (NPDU). It carries the information that
+  BACnet routers and receiving devices need to correctly forward or deliver the
+  message.
 
-  BACnet Data Units can be divided into Application and Network Service.
-  Where Application frames are called APDU and Network Service frames are
-  called NSDU. Network Service frames are mostly used by and for BACnet routers.
+  The NPCI indicates the version of the protocol, the ultimate source and
+  destination networks (when the message crosses routers), whether a reply is
+  expected, the priority of the message, and whether the data that follows is
+  an Application Protocol Data Unit (APDU) or a Network Service Data Unit
+  (NSDU). Network-layer messages (NSDUs) are used for router-to-router
+  communication, router configuration, and certain network management functions.
   """
-
-  # TODO: Docs
 
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.NpciTarget

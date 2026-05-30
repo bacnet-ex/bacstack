@@ -19,9 +19,12 @@ defmodule BACnet.Protocol.Services.ReadPropertyMultiple do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the Read Property Multiple service.
 
+  Contains a list of Access Specifications describing one or more objects and the properties (or property ranges)
+  to be read atomically in a single request. The response is a Read Property Multiple ACK.
+  """
   @type t :: %__MODULE__{
           list: [Protocol.AccessSpecification.t()]
         }

@@ -1,12 +1,52 @@
 defmodule BACnet.Protocol.DateRange do
-  # TODO: Docs
+  @moduledoc """
+  A Date Range defines an inclusive period bounded by a start `BACnet.Protocol.BACnetDate` and
+  an end `BACnet.Protocol.BACnetDate`. It is one of the three CHOICE alternatives inside
+  `BACnet.Protocol.CalendarEntry` (alongside a specific `BACnet.Protocol.BACnetDate` and
+  a `BACnet.Protocol.WeekNDay` pattern).
+
+  Date ranges are the natural way to express holiday blocks, maintenance windows,
+  or temporary schedule overrides that span multiple consecutive days.
+
+  ### BACnet Specification References
+  - **ASN.1** (Clause 21): `BACnetDateRange ::= SEQUENCE { startDate Date, endDate Date }`
+  - **Usage** (Clause 12):
+    - `date_list` property of Calendar objects (as `BACnet.Protocol.CalendarEntry` CHOICE)
+    - `exception_schedule` of Schedule objects (as `BACnet.Protocol.SpecialEvent.period`)
+    - `ReadRange` "by time" requests (start/stop as date+time)
+  - Both endpoints are inclusive.
+
+  This module also provides a small helper to convert a fully-specified range
+  into an Elixir `Date.Range` for easier processing.
+
+  ### Examples
+
+  ```elixir
+  iex> range = %DateRange{
+  ...>   start_date: %BACnetDate{year: 2025, month: 6, day: 1, weekday: 7},
+  ...>   end_date: %BACnetDate{year: 2025, month: 6, day: 30, weekday: 1}
+  ...> }
+  iex> {:ok, elixir_range} = DateRange.get_date_range(range)
+  iex> elixir_range.first
+  ~D[2025-06-01]
+  ```
+
+  ### See Also
+  - `BACnet.Protocol.CalendarEntry`
+  - `BACnet.Protocol.DaysOfWeek`
+  - `BACnet.Protocol.ReadRange`
+  - `BACnet.Protocol.SpecialEvent`
+  - `BACnet.Protocol.WeekNDay`
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.BACnetDate
 
   @typedoc """
-  Represents a BACnet Date Range.
+  Inclusive start/end date pair used inside `BACnet.Protocol.CalendarEntry` and `BACnet.Protocol.SpecialEvent`
+  (and for ReadRange by time). Dates may contain wildcards.
   """
   @type t :: %__MODULE__{
           start_date: BACnetDate.t(),

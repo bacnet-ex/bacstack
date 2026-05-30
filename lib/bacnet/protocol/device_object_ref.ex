@@ -1,5 +1,34 @@
 defmodule BACnet.Protocol.DeviceObjectRef do
-  # TODO: Docs
+  @moduledoc """
+  A DeviceObjectRef points to an object, optionally qualified by the
+  device that contains it. It is one of the most common reference types in the
+  entire BACnet object model.
+
+  - When `device_identifier` is present → absolute reference (works across the
+    BACnet internetwork).
+  - When `device_identifier` is `nil` → the reference is local to the device
+    holding the referring object.
+
+  This distinction matters for Schedule, Trend Log, Event Enrollment, Structured
+  View, and many other objects that can reference data in remote devices.
+
+  ### BACnet Specification References
+  - **ASN.1** (Clause 21): `BACnetDeviceObjectReference ::= SEQUENCE { deviceIdentifier [0] BACnetObjectIdentifier OPTIONAL, objectIdentifier [1] BACnetObjectIdentifier }`
+  - Used inside `BACnet.Protocol.ObjectPropertyRef`, `BACnet.Protocol.RecipientAddress`, many event
+    and fault parameters, Structured View, etc.
+
+  ### Examples (Doc Test)
+
+  ```elixir
+  iex> ref = %DeviceObjectRef{
+  ...>   device_identifier: nil,
+  ...>   object_identifier: %ObjectIdentifier{type: :analog_input, instance: 1}
+  ...> }
+  iex> ref.object_identifier.instance
+  1
+  ```
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -7,6 +36,9 @@ defmodule BACnet.Protocol.DeviceObjectRef do
 
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
 
+  @typedoc """
+  References an object, optionally qualified by the device it resides in.
+  """
   @type t :: %__MODULE__{
           device_identifier: ObjectIdentifier.t() | nil,
           object_identifier: ObjectIdentifier.t()

@@ -1,12 +1,28 @@
 defmodule BACnet.Protocol.Services.Error.CreateObjectError do
-  # TODO: Docs
+  @moduledoc """
+  The Create Object Error is returned when a Create Object service request
+  fails.
+
+  In addition to the standard error class and error code, it contains the
+  `first_failed_element_number` which indicates which element in the "List of
+  Initial Values" (if any) caused the failure. A value of 0 means the failure
+  was not related to a specific initial value parameter.
+
+  This extra information helps clients understand exactly why object creation
+  failed when they attempted to set initial property values during creation.
+  """
 
   alias BACnet.Protocol.APDU.Error
   alias BACnet.Protocol.Constants
 
   require Constants
 
-  # first_failed_element_number = 0 => request invalid not due to "Initial Value" parameters
+  @typedoc """
+  Error details returned when a Create Object request fails, including the first failing element if applicable.
+
+  If `first_failed_element_number` is 0, then the request is not invalid
+  due to the "Initial Value" parameters.
+  """
   @type t :: %__MODULE__{
           error_class: Constants.error_class() | non_neg_integer(),
           error_code: Constants.error_code() | non_neg_integer(),
@@ -22,6 +38,9 @@ defmodule BACnet.Protocol.Services.Error.CreateObjectError do
                   :create_object
                 )
 
+  @doc """
+  Converts a received Error APDU into a CreateObjectError struct.
+  """
   @spec from_apdu(Error.t()) :: {:ok, t()} | {:error, term()}
   def from_apdu(error)
 
@@ -39,6 +58,11 @@ defmodule BACnet.Protocol.Services.Error.CreateObjectError do
     {:error, :invalid_service_error}
   end
 
+  @doc """
+  Constructs an Error APDU from a CreateObjectError struct.
+
+  Used by a server when it must reject a Create Object request.
+  """
   @spec to_apdu(t(), 0..255) :: {:ok, Error.t()} | {:error, term()}
   def to_apdu(error, invoke_id \\ 0)
 

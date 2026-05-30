@@ -1,18 +1,25 @@
 defmodule BACnet.Protocol.ApplicationTags.Encoding do
   @moduledoc """
-  This module should help dealing with application tags encodings in user code, as
-  application tags encoding can be more easily dealt with as the values can be accessed directly.
+  Helper types and functions for working with the decoded form of application
+  tags (`{:null, nil}`, `{:unsigned_integer, 42}`, `{:constructed, {tag, value, len}}`, etc.).
+
+  Most users interact with these structures indirectly through the service ACKs
+  and property-value machinery. This module exists so that code that *does* need
+  to pattern-match on raw encodings has a convenient place for types and small
+  utilities.
   """
 
   alias BACnet.Protocol.ApplicationTags
 
   defmodule Error do
     @moduledoc """
-    `ApplicationTags.Encoding` errors.
+    Exception raised for low-level application tag encoding/decoding failures.
+    Usually wrapped by higher-level error types.
     """
 
     defexception [:error, :input, :message]
 
+    @spec message(%__MODULE__{}) :: String.t()
     def message(%__MODULE__{} = exception) do
       "#{exception.message}, error: #{exception.error}, got: #{inspect(exception.input)}"
     end

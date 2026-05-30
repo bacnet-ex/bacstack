@@ -33,8 +33,6 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
   - All properties related to (UTC) Time Synchronization
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.AddressBinding
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.BACnetArray
@@ -54,7 +52,7 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
   use ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring a Device object.
   """
   @type object_opts ::
           {:supports_backup_restore, boolean()}

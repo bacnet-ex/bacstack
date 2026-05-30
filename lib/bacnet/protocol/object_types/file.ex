@@ -7,8 +7,6 @@ defmodule BACnet.Protocol.ObjectTypes.File do
   (ASHRAE 135 - Clause 12.13)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.ObjectsMacro
@@ -17,7 +15,7 @@ defmodule BACnet.Protocol.ObjectTypes.File do
   use ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring a File object.
   """
   @type object_opts :: common_object_opts()
 

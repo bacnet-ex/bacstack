@@ -46,8 +46,6 @@ defmodule BACnet.Protocol.ObjectTypes.NotificationClass do
   (ASHRAE 135 - Clause 12.21)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.Destination
   alias BACnet.Protocol.EventTransitionBits
@@ -58,7 +56,7 @@ defmodule BACnet.Protocol.ObjectTypes.NotificationClass do
   use ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring a Notification Class object.
   """
   @type object_opts :: common_object_opts()
 

@@ -1,5 +1,18 @@
 defmodule BACnet.Protocol.ReadAccessResult.ReadResult do
-  # TODO: Docs
+  @moduledoc """
+  Represents the result of reading one specific property as part of a Read
+  Property Multiple response.
+
+  The structure can hold either a successful property value (which may be a
+  single encoding or a list of encodings when the property is an array) or a
+  BACnetError if that particular property could not be read. The
+  property_identifier and optional array index identify exactly which property
+  the result corresponds to.
+
+  This per-property success-or-error granularity is what allows Read Property
+  Multiple to return useful information even when some of the requested
+  properties are invalid or temporarily unavailable.
+  """
 
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.ApplicationTags.Encoding
@@ -9,6 +22,9 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResult do
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
   require Constants
 
+  @typedoc """
+  The result of reading one property as part of a Read Property Multiple response (value or error).
+  """
   @type t :: %__MODULE__{
           property_identifier: Constants.property_identifier() | non_neg_integer(),
           property_array_index: non_neg_integer() | nil,

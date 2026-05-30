@@ -24,8 +24,6 @@ defmodule BACnet.Protocol.ObjectTypes.Accumulator do
   (ASHRAE 135 - Clause 12.1)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.AccumulatorRecord
   alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.Constants
@@ -37,7 +35,7 @@ defmodule BACnet.Protocol.ObjectTypes.Accumulator do
   use ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring an Accumulator object.
   """
   @type object_opts :: common_object_opts()
 

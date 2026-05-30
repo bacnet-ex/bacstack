@@ -1,5 +1,13 @@
 defmodule BACnet.Protocol.Services.Ack.AtomicWriteFileAck do
-  # TODO: Docs
+  @moduledoc """
+  The Atomic Write File Acknowledgment is the response to a successful Atomic
+  Write File service request.
+
+  It returns the file position (in octets for stream access, or record count
+  for record access) at which the next write should begin if the client wishes
+  to continue writing the file in subsequent requests. This allows clients to
+  reliably resume or append to files even after partial writes.
+  """
 
   alias BACnet.Protocol.APDU.ComplexACK
   alias BACnet.Protocol.ApplicationTags
@@ -7,6 +15,9 @@ defmodule BACnet.Protocol.Services.Ack.AtomicWriteFileAck do
 
   require Constants
 
+  @typedoc """
+  The response to an Atomic Write File request, indicating the new file position.
+  """
   @type t :: %__MODULE__{
           stream_access: boolean(),
           start_position: integer()
@@ -21,6 +32,9 @@ defmodule BACnet.Protocol.Services.Ack.AtomicWriteFileAck do
                   :atomic_write_file
                 )
 
+  @doc """
+  Converts a received `BACnet.Protocol.APDU.ComplexACK` APDU into a struct.
+  """
   @spec from_apdu(ComplexACK.t()) :: {:ok, t()} | {:error, term()}
   def from_apdu(
         %ComplexACK{
@@ -46,6 +60,10 @@ defmodule BACnet.Protocol.Services.Ack.AtomicWriteFileAck do
     {:error, :invalid_service_ack}
   end
 
+  @doc """
+  Constructs a `BACnet.Protocol.APDU.ComplexACK` APDU from a
+  `BACnet.Protocol.Services.Ack.AtomicWriteFileAck` struct.
+  """
   @spec to_apdu(t(), 0..255) :: {:ok, ComplexACK.t()} | {:error, term()}
   def to_apdu(ack, invoke_id \\ 0)
 

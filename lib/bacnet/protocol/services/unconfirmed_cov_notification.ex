@@ -19,9 +19,12 @@ defmodule BACnet.Protocol.Services.UnconfirmedCovNotification do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the Unconfirmed COV Notification service.
 
+  Identical in structure to ConfirmedCOVNotification but sent without requiring acknowledgment. Used for
+  broadcast or high-frequency COV updates where reliability is handled at the application level.
+  """
   @type t :: %__MODULE__{
           process_identifier: Protocol.ApplicationTags.unsigned32(),
           initiating_device: Protocol.ObjectIdentifier.t(),

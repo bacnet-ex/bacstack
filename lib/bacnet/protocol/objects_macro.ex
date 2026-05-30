@@ -195,7 +195,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
           | (properties_so_far :: map(), metadata :: map() -> boolean())
 
   @doc """
-  Get a default BACnet DateTime with every field `:unspecified`.
+  Get a default BACnet DateTime with every field set to `:unspecified`.
   """
   @spec get_default_bacnet_datetime() :: BACnetDateTime.t()
   def get_default_bacnet_datetime() do
@@ -216,7 +216,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
   end
 
   @doc """
-  Get a default BACnet Timestamp with a `DateTime` and every field `:unspecified`.
+  Get a default BACnet Timestamp with a `DateTime` and every field set to `:unspecified`.
   """
   @spec get_default_bacnet_timestamp() :: BACnetTimestamp.t()
   def get_default_bacnet_timestamp() do
@@ -290,6 +290,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
   @doc """
   Inserts an `import` for the `bac_object/2` macro.
   """
+  @spec __using__(Keyword.t()) :: Macro.t()
   defmacro __using__(_opts) do
     quote do
       import unquote(__MODULE__), only: [bac_object: 2]
@@ -552,6 +553,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
       end)
   ```
   """
+  @spec bac_object(atom(), Macro.t()) :: Macro.t() | no_return()
   defmacro bac_object(object_type, definition)
 
   defmacro bac_object(object_type, do: ast) do
@@ -879,6 +881,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
 
       defguardp is_remote(object) when object._metadata.remote_object != nil
 
+      @spec get_full_property_type_map() :: map()
       defmacrop get_full_property_type_map() do
         full = unquote(Macro.escape(properties_type_map))
 
@@ -1373,6 +1376,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
         end
       end
 
+      @spec add_defaults(map(), map()) :: map()
       defp add_defaults(properties, metadata) do
         props = Map.merge(unquote(Macro.escape(Map.new(default_properties))), properties)
 
@@ -1914,6 +1918,8 @@ defmodule BACnet.Protocol.ObjectsMacro do
         {:error, {:protected_property, :present_value}}
       end
 
+      @spec prevent_commandable_objects_write_pv(map(), Constants.property_identifier()) ::
+              :ok | property_update_error()
       defp prevent_commandable_objects_write_pv(_object, _property), do: :ok
 
       @spec check_property_value(t(), Constants.property_identifier(), term(), boolean()) ::
@@ -1982,6 +1988,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
         end
       end
 
+      @spec apply_validator_fun(function(), term(), map(), term()) :: boolean() | term()
       defp apply_validator_fun(val_fun, value, object, type)
 
       defp apply_validator_fun(val_fun, value, object, _type) do
@@ -2017,6 +2024,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
         :ok
       end
 
+      @spec check_printable_object_name(String.t()) :: :ok | property_update_error()
       defp check_printable_object_name(name) do
         if byte_size(name) > 0 and String.valid?(name) and String.printable?(name) do
           :ok
@@ -2031,6 +2039,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
                                    nil
                                  end)
 
+      @spec create_metadata_from_opts(Keyword.t()) :: map()
       defp create_metadata_from_opts(opts) do
         metadata = %{
           properties_list: [],
@@ -2076,6 +2085,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
         @name String.replace("#{@for}", "Elixir.", "")
 
         # This code has been taken from the Inspect.Map module and slightly adjusted
+        @spec inspect(struct(), Inspect.Opts.t()) :: Inspect.Algebra.t()
         def inspect(object, opts) do
           # If properties list is empty, this may be inside a pattern match
           # Since this is not the case usual for proper creation, expose all keys
@@ -2109,10 +2119,14 @@ defmodule BACnet.Protocol.ObjectsMacro do
           map_container_doc(list, @name, opts, fun)
         end
 
+        @spec to_assoc({term(), term()}, Inspect.Opts.t(), Inspect.Algebra.t()) ::
+                Inspect.Algebra.t()
         defp to_assoc({key, value}, opts, sep) do
           concat(concat(to_doc(key, opts), sep), to_doc(value, opts))
         end
 
+        @spec map_container_doc(list(), String.t(), Inspect.Opts.t(), function()) ::
+                Inspect.Algebra.t()
         defp map_container_doc(list, name, opts, fun) do
           open = color("#" <> name <> "<", :map, opts)
           sep = color(",", :map, opts)
@@ -2123,12 +2137,14 @@ defmodule BACnet.Protocol.ObjectsMacro do
     end
   end
 
+  @spec get_services_data(Macro.t(), Macro.Env.t()) :: map()
   defp get_services_data({:services, _meta, [services]}, _env) do
     %{
       intrinsic: !!Keyword.get(services, :intrinsic, false)
     }
   end
 
+  @spec get_field_data(Macro.t(), Macro.Env.t()) :: map()
   defp get_field_data({:field, _meta, [name, typespec]}, env) do
     get_field_data({:field, [], [name, typespec, []]}, env)
   end
@@ -2501,6 +2517,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
     """
   end
 
+  @spec bool_to_string(boolean()) :: String.t()
   defp bool_to_string(true), do: "X"
   defp bool_to_string(false), do: ""
 end

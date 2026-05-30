@@ -1,13 +1,96 @@
 defmodule BACnet.Protocol.BACnetDate do
   @moduledoc """
-  A BACnet Date is used to represent dates, but also can represent unspecific dates,
-  such as a single component being unspecified (i.e. can match anything in that component),
-  or can be something like targeting even or odd numbers.
+  A BACnet Date is a structured value that can represent either a specific calendar
+  date or a *date pattern* containing wildcards and special values. It is one of the
+  fundamental data types in BACnet (application tag 10) and is used pervasively for
+  schedules, calendars, trend-log time ranges, and event timestamps.
 
-  This can be used, for example, for Calendar functionality
-  (such as defining holidays occurring on the same day of year).
+  Each of the four components (year, month, day, weekday) may be a concrete value or
+  one of the special atoms `:unspecified`, `:even`, or `:odd` (plus `:last` for day).
+  When any component is a special value the date acts as a pattern that can match
+  many actual dates. A completely unspecified date (all fields `:unspecified`) is
+  interpreted as "don't care / match anything".
 
-  This module provides some helpers to convert `Date` into a `BACnetDate` and back.
+  ### BACnet Specification References
+
+  - **Encoding**: ASHRAE 135-2012 Clause 20.2.12. Four contents octets:
+    year-1900, month (January=1), day-of-month, weekday (Monday=1). Any octet may be
+    0xFF to indicate "unspecified".
+  - **Special pattern values** (Clause 20.2.12): month 13=odd months, 14=even months;
+    day 32=last day of month, 33=odd days, 34=even days. These **shall not** be used
+    when conveying an actual date (e.g. the Device object's `Local_Date` or a
+    TimeSynchronization-Request).
+  - **ASN.1 production** (Clause 21): `Date ::= [APPLICATION 10] OCTET STRING (SIZE(4))`
+    (with comments describing the special values above).
+  - **Primary usage contexts**: `date_list` property of Calendar objects (12.9),
+    `exception_schedule` of Schedule objects (12.24), `start_time`/`stop_time` in
+    ReadRange requests, Event Timestamps, and many "last changed" properties.
+
+  This module supplies ergonomic conversion helpers to and from Elixir `Date` while
+  correctly handling the pattern semantics via a reference date.
+
+  ### Examples
+
+  #### Specific date
+
+  ```elixir
+  iex> date = %BACnetDate{year: 2024, month: 12, day: 25, weekday: 3}
+  iex> BACnetDate.specific?(date)
+  true
+  iex> BACnetDate.to_date!(date)
+  ~D[2024-12-25]
+  ```
+
+  #### Wildcard / pattern date (e.g. "every Christmas")
+
+  ```elixir
+  iex> christmas = %BACnetDate{year: :unspecified, month: 12, day: 25, weekday: :unspecified}
+  iex> BACnetDate.specific?(christmas)
+  false
+  iex> BACnetDate.to_date!(christmas, ~D[2025-06-01])
+  ~D[2025-12-25]
+  ```
+
+  #### Even/odd patterns
+
+  ```elixir
+  iex> even_months = %BACnetDate{year: 2025, month: :even, day: 1, weekday: :unspecified}
+  iex> BACnetDate.to_date!(even_months, ~D[2025-03-15])
+  ~D[2025-02-01]
+  ```
+
+  #### Edge cases
+
+  Day overflow falls back to the end of the month:
+
+  ```elixir
+  iex> feb30 = %BACnetDate{year: 2025, month: 2, day: 30, weekday: :unspecified}
+  iex> BACnetDate.to_date!(feb30, ~D[2025-01-01])
+  ~D[2025-02-28]
+  ```
+
+  `day: :last` counts as specific (as long as the other components are concrete values):
+
+  ```elixir
+  iex> last_day = %BACnetDate{year: 2025, month: 2, day: :last, weekday: 5}
+  iex> BACnetDate.specific?(last_day)
+  true
+  iex> BACnetDate.to_date!(last_day, ~D[2025-01-01])
+  ~D[2025-02-28]
+  ```
+
+  > #### Warning {: .warning}
+  >
+  > Per the BACnet specification, pattern dates (any special values) **shall not**
+  > be used when conveying actual dates, such as the Device object's `Local_Date`
+  > or in TimeSynchronization requests.
+
+  ### See Also
+  - `BACnet.Protocol.BACnetDateTime`
+  - `BACnet.Protocol.BACnetTime`
+  - `BACnet.Protocol.BACnetTimestamp`
+  - `BACnet.Protocol.DateRange`
+  - `BACnet.Protocol.WeekNDay`
   """
 
   # TODO: Throw argument error in encode if not valid
@@ -15,9 +98,17 @@ defmodule BACnet.Protocol.BACnetDate do
   alias BACnet.Protocol.ApplicationTags
 
   @typedoc """
-  Represents a BACnet Date, which can have unspecified (= any) or even/odd values.
+  Represents a BACnet Date (application tag 10).
 
-  Weekday specifies the day of the week, starting with monday to sunday (1-7).
+  - `year`    - 1900-2154 or `:unspecified` (0xFF in encoding)
+  - `month`   - 1-12, `:even`, `:odd`, or `:unspecified`
+  - `day`     - 1-31, `:even`, `:odd`, `:last`, or `:unspecified`
+  - `weekday` - 1 (Monday) … 7 (Sunday) or `:unspecified`
+
+  The special atoms create *date patterns*. A pattern matches any concrete date
+  whose corresponding component satisfies the rule (e.g. `month: :odd` matches
+  January, March, …). See `specific?/1` and the conversion functions for how
+  patterns are resolved against a reference date.
   """
   @type t :: %__MODULE__{
           year: 1900..2154 | :unspecified,
@@ -88,7 +179,7 @@ defmodule BACnet.Protocol.BACnetDate do
 
   @doc """
   Checks whether the given BACnet Date is a specific date value
-  (every component is a numeric value, `:last` in the day component counts as specific).
+  (every component is a numeric value; `day: :last` counts as specific).
   """
   @spec specific?(t()) :: boolean()
   def specific?(%__MODULE__{} = time) do

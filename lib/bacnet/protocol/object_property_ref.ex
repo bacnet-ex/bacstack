@@ -1,5 +1,30 @@
 defmodule BACnet.Protocol.ObjectPropertyRef do
-  # TODO: Docs
+  @moduledoc """
+  An Object Property Reference is the most common way to name a specific property
+  of a specific object in BACnet. It consists of an Object Identifier, a Property
+  Identifier (which may be a standard named property or a vendor-specific numeric
+  identifier), and an optional array index when the property is an array.
+
+  This type is used everywhere a service or object needs to refer to a property
+  that may live in another object or even another device: in Read Property and
+  Write Property requests, inside the monitored values of COV subscriptions,
+  in the log device object property list of Trend Log Multiple objects, in
+  event parameters that reference other properties for comparison, and in many
+  more places.
+
+  ### Examples (Doc Test)
+
+  ```elixir
+  iex> ref = %ObjectPropertyRef{
+  ...>   object_identifier: %ObjectIdentifier{type: :analog_input, instance: 1},
+  ...>   property_identifier: :present_value,
+  ...>   property_array_index: nil
+  ...> }
+  iex> ref.property_identifier
+  :present_value
+  ```
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -9,6 +34,9 @@ defmodule BACnet.Protocol.ObjectPropertyRef do
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
   require Constants
 
+  @typedoc """
+  References a specific property, optionally an array element, of an object.
+  """
   @type t :: %__MODULE__{
           object_identifier: ObjectIdentifier.t(),
           property_identifier: Constants.property_identifier() | non_neg_integer(),

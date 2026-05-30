@@ -1,9 +1,34 @@
 defmodule BACnet.Protocol.LimitEnable do
   @moduledoc """
-  BACnet Limit Enable conveys several flags that describe the enabled limit detection algorithms.
+  BACnet Limit Enable is a two-bit bit string that controls which of the intrinsic
+  or algorithmic limit-detection mechanisms are active for an object (primarily
+  Analog Input/Value, Large Analog Value, etc.).
 
-  * The LOW_LIMIT_ENABLE flag indicates whether the low limit detection algorithm is enabled.
-  * The HIGH_LIMIT_ENABLE flag indicates whether the high limit detection algorithm is enabled.
+  | Bit | Name               | When TRUE the corresponding limit algorithm runs        |
+  |-----|--------------------|:--------------------------------------------------------|
+  | 0   | LOW_LIMIT_ENABLE   | Low-limit (low-limit + deadband) detection is enabled   |
+  | 1   | HIGH_LIMIT_ENABLE  | High-limit (high-limit + deadband) detection is enabled |
+
+  The flags appear as the `limit_enable` property and directly affect whether
+  `OUT_OF_RANGE` or `OUT_OF_RANGE` / `DOUBLE_OUT_OF_RANGE` events can be generated.
+
+  ### BACnet Specification References
+
+  - **ASN.1** (Clause 21): `BACnetLimitEnable ::= BIT STRING { low-limit-enable (0), high-limit-enable (1) }`
+  - **Object types**: Used by Analog Input (12.2), Analog Value (12.4), Large Analog
+    Value (12.39), and several other numeric objects that support intrinsic alarming.
+
+  ### Examples (Doc Test)
+
+  ```elixir
+  iex> enable = %LimitEnable{low_limit_enable: true, high_limit_enable: true}
+  iex> enable.low_limit_enable
+  true
+  ```
+
+  ### See Also
+  - `BACnet.Protocol.Constants`
+  - `BACnet.Protocol.EventParameters`
   """
 
   alias BACnet.Protocol.ApplicationTags
@@ -11,7 +36,7 @@ defmodule BACnet.Protocol.LimitEnable do
   # TODO: Throw argument error in encode if not valid
 
   @typedoc """
-  Represents BACnet limit enable flags.
+  Two Boolean flags controlling low- and high-limit detection (see module docs).
   """
   @type t :: %__MODULE__{
           low_limit_enable: boolean(),

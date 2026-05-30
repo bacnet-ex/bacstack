@@ -1,5 +1,23 @@
 defmodule BACnet.Protocol.LogMultipleRecord do
-  # TODO: Docs
+  @moduledoc """
+  A Log Multiple Record is the data element used by Trend Log Multiple objects.
+  Unlike a normal Trend Log (which records a single point over time), a Trend
+  Log Multiple records several properties from one or more objects at the same
+  instant, producing a "row" of related samples.
+
+  Each record contains a timestamp and a Log Status or a list of
+  individual log data values. The values are kept in the same order as the
+  Log Device Object Property list that the Trend Log Multiple object was
+  configured with. This structure allows clients to retrieve synchronized,
+  multi-variable snapshots that are extremely useful for control loop tuning,
+  energy analysis, and any application where the relationship between several
+  measurements at the exact same moment matters.
+
+  The encoding is more complex than a single Log Record because it must carry
+  a variable-length array of values while still remaining compact enough for
+  devices with limited memory.
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -18,6 +36,12 @@ defmodule BACnet.Protocol.LogMultipleRecord do
           | BACnetError.t()
           | nil
 
+  @typedoc """
+  A single record in a Trend Log Multiple object log buffer.
+
+  Contains a timestamp and the associated log data which may be a list of encoded values,
+  a LogStatus, or a time-change indicator.
+  """
   @type t :: %__MODULE__{
           timestamp: BACnetDateTime.t(),
           log_data: [log_data()] | LogStatus.t() | {:time_change, float()}

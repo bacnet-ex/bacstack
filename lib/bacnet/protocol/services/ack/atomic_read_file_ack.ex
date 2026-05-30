@@ -1,12 +1,28 @@
 defmodule BACnet.Protocol.Services.Ack.AtomicReadFileAck do
-  # TODO: Docs
+  @moduledoc """
+  The Atomic Read File Acknowledgment is the response to a successful Atomic
+  Read File service request.
+
+  It can return either stream-based data (a contiguous block of octets from a
+  file starting at a given position) or record-based data (a sequence of
+  individual records). The `stream_access` flag and the presence of
+  `record_count` distinguish between the two access methods.
+
+  The acknowledgment also indicates whether the end of the file has been
+  reached (`eof`). This service is the basic building block for reading files
+  stored in BACnet File objects.
+  """
 
   alias BACnet.Protocol.APDU.ComplexACK
   alias BACnet.Protocol.Constants
 
   require Constants
 
-  # stream_access = false => record access = record_count non-nil
+  @typedoc """
+  The response to an Atomic Read File request, containing the read data and end-of-file flag.
+
+  If `stream_access` is nil, then record access is used and `record_count` is not nil.
+  """
   @type t :: %__MODULE__{
           stream_access: boolean(),
           start_position: integer(),
@@ -24,6 +40,9 @@ defmodule BACnet.Protocol.Services.Ack.AtomicReadFileAck do
                   :atomic_read_file
                 )
 
+  @doc """
+  Converts a received `BACnet.Protocol.APDU.ComplexACK` APDU into a struct.
+  """
   @spec from_apdu(ComplexACK.t()) :: {:ok, t()} | {:error, term()}
   def from_apdu(
         %ComplexACK{
@@ -86,6 +105,12 @@ defmodule BACnet.Protocol.Services.Ack.AtomicReadFileAck do
     {:error, :invalid_service_ack}
   end
 
+  @doc """
+  Constructs a `BACnet.Protocol.APDU.ComplexACK` APDU from a
+  `BACnet.Protocol.Services.Ack.AtomicReadFileAck` struct.
+
+  Used by a server when responding to an Atomic Read File request.
+  """
   @spec to_apdu(t(), 0..255) :: {:ok, ComplexACK.t()} | {:error, term()}
   def to_apdu(ack, invoke_id \\ 0)
 

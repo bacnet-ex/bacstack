@@ -1,5 +1,13 @@
 defmodule BACnet.Protocol.Services.Error.ConfirmedPrivateTransferError do
-  # TODO: Docs
+  @moduledoc """
+  The Confirmed Private Transfer Error is returned when a Confirmed Private
+  Transfer service request fails.
+
+  In addition to the standard error class and code, it may carry a vendor-
+  specific error code and parameters that the vendor has defined for their
+  proprietary service. This allows vendors to return rich diagnostic
+  information for private transfer operations.
+  """
 
   alias BACnet.Protocol
   alias BACnet.Protocol.APDU.Error
@@ -9,6 +17,12 @@ defmodule BACnet.Protocol.Services.Error.ConfirmedPrivateTransferError do
   import Protocol.Utility, only: [pattern_extract_tags: 4]
   require Constants
 
+  @typedoc """
+  Error response for a failed Confirmed Private Transfer.
+
+  Besides the standard error, includes the vendor_id, service_number, and any vendor-defined
+  parameters returned by the proprietary service implementation on the remote device.
+  """
   @type t :: %__MODULE__{
           error_class: Constants.error_class(),
           error_code: Constants.error_code() | non_neg_integer(),
@@ -33,6 +47,9 @@ defmodule BACnet.Protocol.Services.Error.ConfirmedPrivateTransferError do
                   :confirmed_private_transfer
                 )
 
+  @doc """
+  Converts a received Error APDU into a ConfirmedPrivateTransferError struct.
+  """
   @spec from_apdu(Error.t()) :: {:ok, t()} | {:error, term()}
   def from_apdu(error)
 
@@ -73,6 +90,9 @@ defmodule BACnet.Protocol.Services.Error.ConfirmedPrivateTransferError do
     {:error, :invalid_service_error}
   end
 
+  @doc """
+  Constructs an Error APDU from a ConfirmedPrivateTransferError struct.
+  """
   @spec to_apdu(t(), 0..255) :: {:ok, Error.t()} | {:error, term()}
   def to_apdu(error, invoke_id \\ 0)
 

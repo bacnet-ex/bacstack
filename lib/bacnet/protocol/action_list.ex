@@ -1,10 +1,33 @@
 defmodule BACnet.Protocol.ActionList do
-  # TODO: Docs
+  @moduledoc """
+  An Action List is an ordered collection of Action Command structures. It is
+  the executable content of a Command object. Each element of the list (accessed
+  by array index) represents one complete sequence that the Command object can
+  perform when it is triggered at that index.
+
+  The Command object type was designed to let a single object act as a
+  programmable "macro" or "batch" controller. By writing different values to
+  the Present_Value property (or by using Write Property to individual array
+  elements of the Action property), a client can select which pre-defined
+  sequence of operations should be executed. This is heavily used in
+  life-safety, chiller plant optimization, lighting scenes, and any situation
+  where a coordinated set of actions must be performed atomically from the
+  viewpoint of the operator.
+
+  Because the list can contain dozens of individual Action Commands and each
+  command can target a different object and property, the encoding of an
+  Action List is one of the more complex constructed data types in the
+  protocol.
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ActionCommand
   alias BACnet.Protocol.ApplicationTags
 
+  @typedoc """
+  Represents an ordered list of actions to be executed by a Command object.
+  """
   @type t :: %__MODULE__{
           actions: [ActionCommand.t()]
         }

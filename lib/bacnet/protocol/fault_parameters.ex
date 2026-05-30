@@ -1,15 +1,37 @@
 defmodule BACnet.Protocol.FaultParameters do
   @moduledoc """
-  BACnet has various different types of fault parameters.
-  Each of them is represented by a different module.
+  BACnet fault parameters configure the conditions under which an object
+  should report a FAULT event state (as opposed to NORMAL or OFFNORMAL).
 
-  Consult the module `BACnet.Protocol.FaultAlgorithms` for
-  details about each fault's algorithm.
+  Fault algorithms are separate from event algorithms. While event algorithms
+  detect alarm conditions, fault algorithms detect problems with the reliability
+  of the input data or the object itself (e.g. sensor failure, out-of-range
+  values that indicate hardware problems, etc.).
+
+  This module provides encoding and parsing for all supported fault parameter
+  types. The individual modules under this namespace contain the fields for
+  each specific fault detection algorithm.
+
+  ### Examples
+
+  ```elixir
+  # Fault out of range (common)
+  iex> %FaultParameters.OutOfRange{
+  ...>   min_normal_value: 0.0,
+  ...>   max_normal_value: 100.0
+  ...> }
+
+  # Fault extended (vendor specific)
+  iex> %FaultParameters.Extended{
+  ...>   vendor_id: 42,
+  ...>   extended_fault_type: 1,
+  ...>   parameters: []
+  ...> }
+  ```
   """
 
   # credo:disable-for-this-file Credo.Check.Design.AliasUsage
 
-  # TODO: Docs
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -45,6 +67,7 @@ defmodule BACnet.Protocol.FaultParameters do
     defstruct []
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 0
   end
 
@@ -69,6 +92,7 @@ defmodule BACnet.Protocol.FaultParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 1
   end
 
@@ -99,6 +123,7 @@ defmodule BACnet.Protocol.FaultParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 2
   end
 
@@ -130,6 +155,7 @@ defmodule BACnet.Protocol.FaultParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 3
   end
 
@@ -156,6 +182,7 @@ defmodule BACnet.Protocol.FaultParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 4
   end
 
@@ -179,10 +206,16 @@ defmodule BACnet.Protocol.FaultParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 5
   end
 
-  # TODO: Docs
+  @doc """
+  Encodes a fault parameter variant into BACnet application tag encoding.
+
+  Used when configuring objects that support fault detection or when building
+  event enrollment records that include fault parameters.
+  """
   @spec encode(fault_parameter(), Keyword.t()) ::
           {:ok, ApplicationTags.encoding()} | {:error, term()}
   def encode(fault_params, opts \\ [])
@@ -289,7 +322,10 @@ defmodule BACnet.Protocol.FaultParameters do
     end
   end
 
-  # TODO: Docs
+  @doc """
+  Parses a constructed application tag into the corresponding fault parameter
+  struct. The inverse of `encode/2`.
+  """
   @spec parse(binary()) :: {:ok, fault_parameter()} | {:error, term()}
   def parse(fault_values_tag)
 

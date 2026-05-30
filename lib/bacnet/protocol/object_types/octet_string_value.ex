@@ -10,8 +10,6 @@ defmodule BACnet.Protocol.ObjectTypes.OctetStringValue do
   (ASHRAE 135 - Clause 12.41)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.PriorityArray
 
@@ -19,7 +17,7 @@ defmodule BACnet.Protocol.ObjectTypes.OctetStringValue do
   use BACnet.Protocol.ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring an OctetString Value object.
   """
   @type object_opts :: common_object_opts()
 

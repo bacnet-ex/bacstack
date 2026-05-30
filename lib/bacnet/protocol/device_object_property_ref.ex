@@ -1,5 +1,33 @@
 defmodule BACnet.Protocol.DeviceObjectPropertyRef do
-  # TODO: Docs
+  @moduledoc """
+  A Device Object Property Reference is the most complete form of property
+  reference in BACnet. It identifies a specific property (with optional array
+  index) inside a specific object, optionally qualified by the device that
+  contains that object.
+
+  This type is used whenever a reference must be unambiguous across the entire
+  BACnet internetwork. It appears in many event and fault parameters that monitor
+  remote properties, inside the log device object property list of Trend Log (Multiple)
+  objects, and in the various "reference" properties used by Schedule, Command,
+  and other coordinating objects.
+
+  When `device_identifier` is nil, the reference is understood to be
+  local to the device that contains the referring object.
+
+  ### Examples (Doc Test)
+
+  ```elixir
+  iex> ref = %DeviceObjectPropertyRef{
+  ...>   device_identifier: %ObjectIdentifier{type: :device, instance: 42},
+  ...>   object_identifier: %ObjectIdentifier{type: :analog_input, instance: 1},
+  ...>   property_identifier: :present_value,
+  ...>   property_array_index: nil
+  ...> }
+  iex> ref.property_identifier
+  :present_value
+  ```
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -9,6 +37,10 @@ defmodule BACnet.Protocol.DeviceObjectPropertyRef do
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
   require Constants
 
+  @typedoc """
+  References a specific property of an object, optionally qualified by the
+  device containing that object.
+  """
   @type t :: %__MODULE__{
           object_identifier: ObjectIdentifier.t(),
           property_identifier: Constants.property_identifier() | non_neg_integer(),

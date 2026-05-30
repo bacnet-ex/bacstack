@@ -1,5 +1,40 @@
 defmodule BACnet.Protocol.PropertyValue do
-  # TODO: Docs
+  @moduledoc """
+  Property Value packages a property reference (identifier + optional array
+  index) together with the value to be written (or that was read). It is the
+  basic payload element inside `WritePropertyMultiple`, `ReadPropertyMultiple`
+  results, and several action / event parameter structures.
+
+  The optional `priority` field is only meaningful when the target property is
+  commandable. If omitted on a write, the device uses the default priority
+  defined for that object type (usually 8 for many objects).
+
+  ### BACnet Specification References
+  - Used heavily in `WritePropertyMultiple-Request` (15.10) and the corresponding
+    ACK / error structures.
+  - Also appears inside `BACnet.Protocol.ActionCommand`, `BACnet.Protocol.NotificationParameters`, `BACnet.Protocol.EventParameters`, etc.
+  - The `property_value` field is typed as `ABSTRACT-SYNTAX.&Type` in the ASN.1,
+    which in this library is represented as `ApplicationTags.Encoding.t()`.
+
+  ### Examples (Doc Test)
+
+  ```elixir
+  iex> pv = %PropertyValue{
+  ...>   property_identifier: :present_value,
+  ...>   property_array_index: nil,
+  ...>   property_value: {:real, 42.5},
+  ...>   priority: 8
+  ...> }
+  iex> pv.priority
+  8
+  ```
+
+  ### See Also
+  - `BACnet.Protocol.ActionCommand`
+  - `BACnet.Protocol.ApplicationTags.Encoding`
+  - `BACnet.Protocol.WritePropertyMultiple`
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -8,6 +43,10 @@ defmodule BACnet.Protocol.PropertyValue do
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
   require Constants
 
+  @typedoc """
+  (property id + optional array index + value + optional priority) tuple used
+  in WritePropertyMultiple and several action/event structures.
+  """
   @type t :: %__MODULE__{
           property_identifier: Constants.property_identifier() | non_neg_integer(),
           property_array_index: non_neg_integer() | nil,
@@ -27,7 +66,7 @@ defmodule BACnet.Protocol.PropertyValue do
   @doc """
   Encodes a BACnet property value into application tags encoding.
   """
-  @spec encode(t()) :: {:ok, ApplicationTags.encoding_list()} | {:error, term()}
+  @spec encode(t(), Keyword.t()) :: {:ok, ApplicationTags.encoding_list()} | {:error, term()}
   def encode(%__MODULE__{} = property, opts \\ []) do
     with {:ok, propident, _header} <-
            ApplicationTags.encode_value(

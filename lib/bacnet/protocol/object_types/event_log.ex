@@ -42,8 +42,6 @@ defmodule BACnet.Protocol.ObjectTypes.EventLog do
   (ASHRAE 135 - Clause 12.27)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.Constants
@@ -53,7 +51,7 @@ defmodule BACnet.Protocol.ObjectTypes.EventLog do
   use BACnet.Protocol.ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring an Event Log object.
   """
   @type object_opts ::
           {:intrinsic_reporting, boolean()}

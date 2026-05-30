@@ -18,11 +18,15 @@ defmodule BACnet.Protocol.Services.ReadRange do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
-  # property_identifier MUST NOT be one of ALL, REQUIRED or OPTIONAL
-  # Count of range MAY NOT be zero
+  @typedoc """
+  Range selector for the Read Range service.
 
+  One of three forms used to identify a contiguous window of results when reading array-like or sequenced
+  properties (e.g. Trend Log records): by position (array index + count), by sequence number, or by time.
+
+  The `property_identifier` must not be a special value, such as `:all`, `:required` or `:optional`.
+  Count of range must not be zero.
+  """
   @type range ::
           {:by_position,
            {reference_index :: non_neg_integer(), count :: ApplicationTags.signed16()}}
@@ -32,6 +36,12 @@ defmodule BACnet.Protocol.Services.ReadRange do
           | {:by_time,
              {reference_time :: Protocol.BACnetDateTime.t(), count :: ApplicationTags.signed16()}}
 
+  @typedoc """
+  Parameters for the Read Range service.
+
+  Identifies the object property to read along with an optional range selector that limits the returned
+  results to a window (used for properties that are lists or logs with many entries).
+  """
   @type t :: %__MODULE__{
           object_identifier: Protocol.ObjectIdentifier.t(),
           property_identifier: Constants.property_identifier() | non_neg_integer(),

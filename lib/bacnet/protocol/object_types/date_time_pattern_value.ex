@@ -16,8 +16,6 @@ defmodule BACnet.Protocol.ObjectTypes.DateTimePatternValue do
   (ASHRAE 135 - Clause 12.46)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.PriorityArray
@@ -26,7 +24,7 @@ defmodule BACnet.Protocol.ObjectTypes.DateTimePatternValue do
   use BACnet.Protocol.ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring a DateTime Pattern Value object.
   """
   @type object_opts :: common_object_opts()
 

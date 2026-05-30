@@ -1,21 +1,76 @@
 defmodule BACnet.Protocol.WeekNDay do
-  # TODO: Docs
+  @moduledoc """
+  A WeekNDay (Week And Day) is a compact 3-component pattern used inside
+  `BACnet.Protocol.CalendarEntry` and `BACnet.Protocol.SpecialEvent` to describe
+  recurring days without listing every date.
+  Classic examples: "the third Tuesday of every month", "every even week on Friday",
+  or "the last Sunday in odd months".
+
+  It is one of BACnet's most powerful yet bandwidth-efficient calendar primitives.
+
+  ### BACnet Specification References
+  - **ASN.1** (Clause 21):
+    ```
+    BACnetWeekNDay ::= SEQUENCE {
+        month       (1..12 | 13 | 14 | 255),  -- 13=odd, 14=even, 255=unspecified
+        weekOfMonth (1..6 | 255),             -- 6 = last 7 days, 255=unspecified
+        dayOfWeek   (1..7 | 255)
+    }
+    ```
+  - **Primary usage** (Clause 12.9 Calendar, 12.24 Schedule):
+    - Inside `BACnet.Protocol.CalendarEntry` (as one of the three CHOICE alternatives)
+    - Inside `BACnet.Protocol.SpecialEvent.period` for exception schedules
+    - Combined with `BACnet.Protocol.DaysOfWeek` in destinations and notification rules
+
+  The week-of-month numbering (1 = days 1-7, 6 = last 7 days of month) is defined
+  in the production comments and is independent of the actual calendar month length.
+
+  ### Examples
+
+  #### "Third Tuesday of every month"
+
+  ```elixir
+  iex> pattern = %WeekNDay{month: :unspecified, week_of_month: 3, weekday: 2}
+  iex> pattern.week_of_month
+  3
+  ```
+
+  #### "Last Sunday in December"
+
+  ```elixir
+  iex> last_sunday_dec = %WeekNDay{month: 12, week_of_month: 6, weekday: 7}
+  iex> last_sunday_dec.week_of_month
+  6
+  ```
+
+  #### Edge cases
+
+  Week 6 always means the *last* 7 days of the month, regardless of length:
+
+  ```elixir
+  iex> feb_last = %WeekNDay{month: 2, week_of_month: 6, weekday: 1}  # last Monday in Feb
+  iex> feb_last.week_of_month
+  6
+  ```
+
+  When used inside a CalendarEntry or SpecialEvent, it can match the last few days even in short months (Feb 23-28 can be "week 6").
+
+  ### See Also
+  - `BACnet.Protocol.CalendarEntry`
+  - `BACnet.Protocol.DailySchedule`
+  - `BACnet.Protocol.DateRange`
+  - `BACnet.Protocol.DaysOfWeek`
+  - `BACnet.Protocol.SpecialEvent`
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
 
   @typedoc """
-  Represents a BACnet Week And Day, which can have unspecified (= any) or even/odd values.
-
-  Week of month specifies which week of the month:
-  - `1` - Days numbered 1-7
-  - `2` - Days numbered 8-14
-  - `3` - Days numbered 15-21
-  - `4` - Days numbered 22-28
-  - `5` - Days numbered 29-31
-  - `6` - Last 7 days of this month
-
-  Weekday specifies the day of the week, starting with monday to sunday (1-7).
+  Compact recurring-day pattern (see `BACnet.Protocol.WeekNDay` module docs for full semantics
+  and ASN.1 production). Month and week support the same even/odd/unspecified
+  wildcards as `BACnet.Protocol.BACnetDate`.
   """
   @type t :: %__MODULE__{
           month: 1..12 | :even | :odd | :unspecified,

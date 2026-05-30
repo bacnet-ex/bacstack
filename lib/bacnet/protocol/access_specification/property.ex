@@ -1,5 +1,17 @@
 defmodule BACnet.Protocol.AccessSpecification.Property do
-  # TODO: Docs
+  @moduledoc """
+  Represents one property entry inside an Access Specification.
+
+  When used for reading (Read Property Multiple), the `property_value` field is
+  nil and the structure simply names which property (and optional array index)
+  should be returned. When used for writing (Write Property Multiple), the
+  `property_value` field carries the new value to be written.
+
+  The Property submodule is deliberately kept small and reusable so that the
+  same type can serve both the read and write paths of the multiple-property
+  services without duplication.
+  """
+
   # if property_value = nil, then read access specification
 
   alias BACnet.Protocol.ApplicationTags
@@ -9,6 +21,9 @@ defmodule BACnet.Protocol.AccessSpecification.Property do
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
   require Constants
 
+  @typedoc """
+  A single property reference (with optional value for writes) inside an Access Specification.
+  """
   @type t :: %__MODULE__{
           property_identifier: Constants.property_identifier() | non_neg_integer(),
           property_array_index: non_neg_integer() | nil,

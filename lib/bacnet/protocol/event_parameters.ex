@@ -1,17 +1,52 @@
 defmodule BACnet.Protocol.EventParameters do
   @moduledoc """
-  BACnet has various different types of event parameters.
-  Each of them is represented by a different module.
+  BACnet event parameters describe the specific configuration and thresholds
+  used by each event algorithm (see `BACnet.Protocol.EventAlgorithms`).
 
-  The event algorithm `AccessEvent` is not supported.
+  Every object that supports intrinsic or algorithmic event reporting uses one
+  of these parameter structures inside its `event_parameters` property. The
+  choice of parameter type determines what conditions will cause the object to
+  transition between NORMAL, OFFNORMAL, FAULT, and other event states, and what
+  additional data is included in the resulting event notifications.
 
-  Consult the module `BACnet.Protocol.EventAlgorithms` for
-  details about each event's algorithm.
+  This module provides the top-level encoding and parsing functions for all
+  supported event parameter variants. The individual parameter modules
+  (ChangeOfBitstring, OutOfRange, BufferReady, etc.) contain the actual fields
+  and logic for each algorithm.
+
+  Note: The `AccessEvent` algorithm and its parameters are not supported.
+
+  ### Examples
+
+  Common event parameter configurations (these are CHOICE variants):
+
+  ```elixir
+  # OutOfRange (very common for analog alarming)
+  iex> %EventParameters.OutOfRange{
+  ...>   time_delay: 30,
+  ...>   low_limit: 10.0,
+  ...>   high_limit: 90.0,
+  ...>   deadband: 2.0
+  ...> }
+
+  # ChangeOfState
+  iex> %EventParameters.ChangeOfState{
+  ...>   time_delay: 0,
+  ...>   alarm_values: [true]
+  ...> }
+
+  # BufferReady (for trend logs)
+  iex> %EventParameters.BufferReady{
+  ...>   notification_threshold: 100,
+  ...>   previous_notification_count: 0
+  ...> }
+  ```
+
+  These are placed inside the object's `event_parameters` property. Different objects support different subsets of these parameter types.
   """
 
   # credo:disable-for-file Credo.Check.Design.AliasUsage
 
-  # TODO: Docs
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -63,6 +98,7 @@ defmodule BACnet.Protocol.EventParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 0
   end
 
@@ -90,6 +126,7 @@ defmodule BACnet.Protocol.EventParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 1
   end
 
@@ -123,6 +160,7 @@ defmodule BACnet.Protocol.EventParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 2
   end
 
@@ -148,6 +186,7 @@ defmodule BACnet.Protocol.EventParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 3
   end
 
@@ -176,6 +215,7 @@ defmodule BACnet.Protocol.EventParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 4
   end
 
@@ -205,6 +245,7 @@ defmodule BACnet.Protocol.EventParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 5
   end
 
@@ -236,6 +277,7 @@ defmodule BACnet.Protocol.EventParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 8
   end
 
@@ -266,6 +308,7 @@ defmodule BACnet.Protocol.EventParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 9
   end
 
@@ -290,6 +333,7 @@ defmodule BACnet.Protocol.EventParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 10
   end
 
@@ -316,6 +360,7 @@ defmodule BACnet.Protocol.EventParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 11
   end
 
@@ -347,6 +392,7 @@ defmodule BACnet.Protocol.EventParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 14
   end
 
@@ -376,6 +422,7 @@ defmodule BACnet.Protocol.EventParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 15
   end
 
@@ -405,6 +452,7 @@ defmodule BACnet.Protocol.EventParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 16
   end
 
@@ -431,6 +479,7 @@ defmodule BACnet.Protocol.EventParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 17
   end
 
@@ -456,6 +505,7 @@ defmodule BACnet.Protocol.EventParameters do
     end
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 18
   end
 
@@ -478,10 +528,13 @@ defmodule BACnet.Protocol.EventParameters do
     defstruct []
 
     @doc false
+    @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 20
   end
 
-  # TODO: Docs
+  @doc """
+  Encodes an EventParameters struct (any of the algorithm variants) into the application-tag encoding.
+  """
   @spec encode(event_parameter(), Keyword.t()) ::
           {:ok, ApplicationTags.encoding()} | {:error, term()}
   def encode(event_params, opts \\ [])
@@ -892,7 +945,10 @@ defmodule BACnet.Protocol.EventParameters do
     {:ok, {:constructed, {20, {:null, nil}, 0}}}
   end
 
-  # TODO: Docs
+  @doc """
+  Parses the encoded event values from a notification or Event Enrollment object
+  back into the corresponding EventParameters variant struct.
+  """
   @spec parse(binary()) :: {:ok, event_parameter()} | {:error, term()}
   def parse(event_values_tag)
 

@@ -1,9 +1,33 @@
 defmodule BACnet.Protocol.LogStatus do
-  # TODO: Docs
+  @moduledoc """
+  Log Status is a compact three-bit bit string that reports the operational state
+  of a Trend Log or Event Log object. The three bits respectively indicate whether
+  logging has been disabled by the Log_Enable property, whether the internal buffer
+  has been purged since the last notification, and whether logging was interrupted
+  (for example because of a power failure or a configuration change).
+
+  These status bits are returned as part of the Log Status property and are also
+  included in the log record that is sent when a client reads the log or when the
+  log autonomously sends a notification. They allow a receiving system to know
+  whether the data it is seeing is complete or whether there are gaps that must
+  be taken into account when performing analysis or generating reports.
+
+  ### Examples (Doc Test)
+
+  ```elixir
+  iex> status = %LogStatus{log_disabled: false, buffer_purged: true, log_interrupted: false}
+  iex> status.buffer_purged
+  true
+  ```
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
 
+  @typedoc """
+  Represents the status of a log (Trend Log or Event Log).
+  """
   @type t :: %__MODULE__{
           log_disabled: boolean(),
           buffer_purged: boolean(),

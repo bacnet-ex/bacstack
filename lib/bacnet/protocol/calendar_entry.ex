@@ -1,5 +1,65 @@
 defmodule BACnet.Protocol.CalendarEntry do
-  # TODO: Docs
+  @moduledoc """
+  A Calendar Entry is the CHOICE type used by both Calendar objects and Schedule
+  objects to describe "special" days (holidays, maintenance periods, after-hours
+  operation, etc.).
+
+  The three alternatives (defined in Clause 21) are:
+  - `:date`       - a single specific (or partially unspecified) `BACnet.Protocol.BACnetDate`
+  - `:date_range` - an inclusive `BACnet.Protocol.DateRange`
+  - `:week_n_day` - a recurring `BACnet.Protocol.WeekNDay` pattern
+
+  This single type is deliberately reused in multiple places so that matching
+  logic ("does today match any exception?") can be written once.
+
+  ### BACnet Specification References
+  - **ASN.1** (Clause 21):
+    ```
+    BACnetCalendarEntry ::= CHOICE {
+        date       Date,
+        dateRange  BACnetDateRange,
+        weekNDay   BACnetWeekNDay
+    }
+    ```
+  - **Calendar object** (12.9): `date_list` property is `BACnetARRAY` of `BACnet.Protocol.CalendarEntry`.
+  - **Schedule object** (12.24): `exception_schedule` contains `BACnet.Protocol.SpecialEvent`
+    whose `period` can be a `BACnet.Protocol.CalendarEntry` or an object identifier referencing
+    a Calendar object.
+
+  ### Examples
+
+  #### Specific date entry
+
+  ```elixir
+  iex> entry = %CalendarEntry{type: :date, date: %BACnetDate{year: 2025, month: 12, day: 25, weekday: 4}, date_range: nil, week_n_day: nil}
+  iex> entry.type
+  :date
+  ```
+
+  #### Date range entry
+
+  ```elixir
+  iex> entry = %CalendarEntry{type: :date_range, date_range: %DateRange{start_date: %BACnetDate{year: 2025, month: 7, day: 1, weekday: 2}, end_date: %BACnetDate{year: 2025, month: 7, day: 31, weekday: 4}}, date: nil, week_n_day: nil}
+  iex> entry.type
+  :date_range
+  ```
+
+  #### Recurring WeekNDay entry
+
+  ```elixir
+  iex> entry = %CalendarEntry{type: :week_n_day, week_n_day: %WeekNDay{month: :unspecified, week_of_month: 3, weekday: 2}, date: nil, date_range: nil}
+  iex> entry.type
+  :week_n_day
+  ```
+
+  ### See Also
+  - `BACnet.Protocol.DailySchedule`
+  - `BACnet.Protocol.DateRange`
+  - `BACnet.Protocol.DaysOfWeek`
+  - `BACnet.Protocol.SpecialEvent`
+  - `BACnet.Protocol.WeekNDay`
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -7,6 +67,11 @@ defmodule BACnet.Protocol.CalendarEntry do
   alias BACnet.Protocol.DateRange
   alias BACnet.Protocol.WeekNDay
 
+  @typedoc """
+  CHOICE of a single date, date range, or `BACnet.Protocol.WeekNDay` pattern
+  (see `BACnet.Protocol.CalendarEntry` module docs + ASN.1 in Clause 21).
+  Used in Calendar `date_list` and Schedule exception schedules.
+  """
   @type t :: %__MODULE__{
           type: :date | :date_range | :week_n_day,
           date: BACnetDate.t() | nil,

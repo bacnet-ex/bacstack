@@ -11,8 +11,6 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryValue do
   (ASHRAE 135 - Clause 12.8)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.Constants
@@ -23,7 +21,7 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryValue do
   use ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring a Binary Value object.
   """
   @type object_opts ::
           {:intrinsic_reporting, boolean()} | common_object_opts()

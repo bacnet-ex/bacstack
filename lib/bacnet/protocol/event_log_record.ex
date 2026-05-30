@@ -1,5 +1,18 @@
 defmodule BACnet.Protocol.EventLogRecord do
-  # TODO: Docs
+  @moduledoc """
+  An Event Log Record is the structure stored by an Event Log object every time
+  it receives (or generates) an event notification. It captures the timestamp,
+  the full Confirmed Event Notification that was processed, the log status or
+  any time change, at the moment the record was created.
+
+  Event logs are the BACnet equivalent of an alarm and event journal. They
+  provide a time-stamped history of every significant event that occurred
+  in the system, which is invaluable for post-incident analysis,
+  regulatory compliance, and troubleshooting. Because the original notification
+  is stored verbatim (including all parameters and source information), a
+  later review can see exactly what the alarming object reported.
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.APDU.ConfirmedServiceRequest
@@ -13,6 +26,9 @@ defmodule BACnet.Protocol.EventLogRecord do
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
   require Constants
 
+  @typedoc """
+  Represents a single record stored in an Event Log object.
+  """
   @type t :: %__MODULE__{
           timestamp: BACnetDateTime.t(),
           log_datum:

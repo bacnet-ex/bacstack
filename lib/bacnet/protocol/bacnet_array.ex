@@ -1,17 +1,73 @@
 defmodule BACnet.Protocol.BACnetArray do
   @moduledoc """
-  A BACnet Array is a structured datatype in ordered sequences.
-  A BACnet Array consists of data elements each having the same datatype.
+  A BACnet Array (`BACnetARRAY` in the standard) is an ordered, indexed collection
+  of elements of the same datatype. It is one of the most important structured
+  datatypes in BACnet and appears as the type of many standard object properties.
 
-  The components of a BACnet Array may be individually accessed for read and write,
-  using an array index. An array index of zero specifies the size
-  of the array. The index zero can not be directly written to using `set_item/3`,
-  use `truncate/1` instead.
+  Key BACnet characteristics (per ASHRAE 135):
+  - Elements are numbered starting at **1** (not 0).
+  - **Index 0 is special**: reading index 0 returns the current size of the array
+    (as an Unsigned). Index 0 is **never** writable via the normal array access rules.
+  - Arrays may be **fixed-size** (e.g. `Priority_Array` is always exactly 16 entries)
+    or **variable-size** (most log buffers, lists of recipients, etc.).
+  - Fixed-size arrays are declared with a maximum size; attempts to grow them beyond
+    that size are errors. Variable-size arrays can grow and shrink (subject to
+    device limits).
 
-  When a BACnet Array has a fixed size, the array can not be resized
-  and any attempts will fail to do so. The BACnet array of fixed size
-  will contain elements with the default value, which will be returned
-  upon call to `to_list/1` or inside `reduce_while/3`.
+  In the protocol, a BACnetARRAY is usually realized as a `SEQUENCE OF` with an
+  accompanying `Unsigned` size pseudo-element at index 0. This design allows a
+  client to discover the length of a potentially large collection without reading
+  every element.
+
+  ### Common Usage Examples
+  - `priority_array` (fixed 16) on commandable objects (Analog Output, Binary Output, etc.)
+  - `date_list` on Calendar objects (variable)
+  - `log_buffer` on Trend Log objects (variable, often very large)
+  - `recipient_list`, `notification_class`, many event and schedule properties
+  - `object_list` on the Device object (variable)
+
+  ### Implementation in this Library
+  This module wraps Erlang's `:array` module to provide a faithful BACnet array
+  abstraction with the following guarantees:
+
+  - 1-based public indexing (index 0 returns the size, as specified by ASHRAE 135).
+  - `fixed_size` field controls whether the array may grow or shrink.
+  - `truncate/1` (not `set_item(0, ...)`) is the supported way to clear a variable array.
+  - Default values are used for "unwritten" slots in fixed-size arrays and for holes
+    in sparse variable arrays.
+
+  ### Examples
+
+  ```elixir
+  iex> arr = BACnetArray.from_list(["first", "second", "third"], false)
+  iex> BACnetArray.get_item(arr, 0)
+  {:ok, 3}
+  ```
+
+  #### Edge cases
+
+  Holes in variable arrays return the default value (or `:error` for `:undefined`):
+
+  ```elixir
+  iex> sparse = BACnetArray.from_list(["a", :undefined, "c"], false)
+  iex> BACnetArray.get_item(sparse, 2)
+  :error
+  ```
+
+  Fixed-size array cannot grow:
+
+  ```elixir
+  iex> fixed = BACnetArray.new(2, nil)
+  iex> {:error, :array_full} = BACnetArray.set_item(fixed, nil, "too much")
+  ```
+
+  Index 0 always reports current size (even for fixed arrays):
+
+  ```elixir
+  iex> fixed = BACnetArray.new(5, :empty)
+  iex> BACnetArray.get_item(fixed, 0)
+  {:ok, 5}
+  ```
   """
 
   alias BACnet.BeamTypes
@@ -35,10 +91,12 @@ defmodule BACnet.Protocol.BACnetArray do
   @typedoc """
   Representative type for the BACnet array.
 
-  The items get typed as `subtype`. `fixed_size` is either
-  a number in the range of `non_neg_integer` or `nil`.
-
-  A fixed size array can not change its size.
+  - `fixed_size`: `nil` for variable-length arrays, or a positive integer for
+    fixed-size arrays (e.g. 16 for `Priority_Array`).
+  - `size`: current number of elements (for fixed-size arrays this is always
+    equal to `fixed_size`).
+  - Indexing is 1-based for real elements; index 0 is the special "array length"
+    pseudo-element defined by BACnet.
   """
   @type t(subtype, fixed_size) :: %__MODULE__{
           fixed_size: fixed_size,

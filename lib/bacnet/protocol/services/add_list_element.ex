@@ -18,9 +18,12 @@ defmodule BACnet.Protocol.Services.AddListElement do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the Add List Element service.
 
+  Specifies the target object and list property (with optional array index) along with one or more elements
+  (as application tag encodings) to append to the list.
+  """
   @type t :: %__MODULE__{
           object_identifier: Protocol.ObjectIdentifier.t(),
           property_identifier: Constants.property_identifier() | non_neg_integer(),

@@ -21,8 +21,6 @@ defmodule BACnet.Protocol.ObjectTypes.EventEnrollment do
   (ASHRAE 135 - Clause 12.12)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.DeviceObjectPropertyRef
   alias BACnet.Protocol.EventMessageTexts
@@ -38,7 +36,7 @@ defmodule BACnet.Protocol.ObjectTypes.EventEnrollment do
   use ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring an Event Enrollment object.
   """
   @type object_opts :: common_object_opts()
 

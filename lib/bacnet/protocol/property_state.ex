@@ -1,5 +1,56 @@
 defmodule BACnet.Protocol.PropertyState do
-  # TODO: Docs
+  @moduledoc """
+  Property State is a large CHOICE used to carry the value of almost any
+  property in event and fault algorithms (Change-of-State, Command-Failure,
+  various fault detectors, etc.).
+
+  It exists because the event algorithms need a single, self-describing type
+  that can hold any of the datatypes that standard properties can have.
+
+  ### BACnet Specification References
+  - **ASN.1** (Clause 21): `BACnetPropertyStates ::= CHOICE { ... }` (very large
+    production with ~20+ arms).
+  - Used inside `BACnetEventParameter` (Change of State, etc.) and several
+    `BACnetFaultParameter` productions.
+  - The outer tag makes the choice unambiguous even when the inner value is
+    context-tagged or a primitive that would otherwise be ambiguous.
+
+  ### Examples (Doc Test)
+
+  Basic construction for common arms:
+
+  ```elixir
+  iex> state = %PropertyState{type: :boolean_value, value: true}
+  iex> state.type
+  :boolean_value
+  iex> state = %PropertyState{type: :event_type, value: :change_of_value}
+  iex> state.value
+  :change_of_value
+  ```
+
+  #### CHOICE Gotchas
+
+  - You must use the exact atom from `Constants.property_state/0` as the `type`.
+  - The `value` must match what that arm expects (the module validates this in `valid?/1`).
+  - Many arms accept either atoms (from Constants) or raw integers for vendor extensions.
+
+  ```elixir
+  iex> state = %PropertyState{type: :reliability, value: :no_sensor}
+  iex> PropertyState.valid?(state)
+  true
+  iex> vendor = %PropertyState{type: :unsigned_value, value: 999}
+  iex> PropertyState.valid?(vendor)
+  true
+  ```
+
+  When used inside event/fault parameters, this is usually wrapped in a tagged/constructed form by the higher-level encoder.
+
+  ### See Also
+  - `BACnet.Protocol.Constants` (for `property_state`)
+  - `BACnet.Protocol.EventParameters`
+  - `BACnet.Protocol.FaultParameters`
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags

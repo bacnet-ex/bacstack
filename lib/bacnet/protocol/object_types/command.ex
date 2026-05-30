@@ -68,8 +68,6 @@ defmodule BACnet.Protocol.ObjectTypes.Command do
   (ASHRAE 135 - Clause 12.10)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.ActionList
   alias BACnet.Protocol.BACnetArray
   alias BACnet.Protocol.Constants
@@ -79,7 +77,7 @@ defmodule BACnet.Protocol.ObjectTypes.Command do
   use ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring a Command object.
   """
   @type object_opts :: common_object_opts()
 

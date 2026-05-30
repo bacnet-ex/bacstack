@@ -21,8 +21,6 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryInput do
   (ASHRAE 135 - Clause 12.6)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.Constants
@@ -32,7 +30,7 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryInput do
   use ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring a Binary Input object.
   """
   @type object_opts ::
           {:intrinsic_reporting, boolean()}

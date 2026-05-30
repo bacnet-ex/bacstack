@@ -21,10 +21,14 @@ defmodule BACnet.Protocol.Services.GetEnrollmentSummary do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
-  # All fields except acknowledgment_filter are optional
+  @typedoc """
+  Parameters (filters) for the Get Enrollment Summary service.
 
+  Allows a client to retrieve a filtered list of event enrollments from a device. Filters include
+  acknowledgment state, recipient, event state, event type, priority range, and notification class.
+
+  All fields except `acknowledgment_filter` are optional.
+  """
   @type t :: %__MODULE__{
           acknowledgment_filter: :all | :acked | :not_acked,
           enrollment_filter:

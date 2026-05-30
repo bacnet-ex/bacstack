@@ -22,9 +22,12 @@ defmodule BACnet.Protocol.Services.WriteProperty do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the Write Property service.
 
+  Identifies the target object property (with optional array index and priority) and the new value
+  (as one or more application tag encodings) to write.
+  """
   @type t :: %__MODULE__{
           object_identifier: Protocol.ObjectIdentifier.t(),
           property_identifier: Constants.property_identifier() | non_neg_integer(),

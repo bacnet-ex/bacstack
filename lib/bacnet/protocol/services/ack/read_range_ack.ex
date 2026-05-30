@@ -1,5 +1,14 @@
 defmodule BACnet.Protocol.Services.Ack.ReadRangeAck do
-  # TODO: Docs
+  @moduledoc """
+  The Read Range Acknowledgment is the response to a successful Read Range
+  service request against a Trend Log, Event Log, or other log object.
+
+  It returns a sequence of Log Records (or Event Log Records) along with
+  metadata such as the first sequence number returned, whether more items
+  exist beyond the response, and optional timestamps. This service is the
+  primary way clients retrieve historical trend or event data from BACnet
+  devices.
+  """
 
   alias BACnet.Protocol.APDU.ComplexACK
   alias BACnet.Protocol.ApplicationTags
@@ -9,6 +18,12 @@ defmodule BACnet.Protocol.Services.Ack.ReadRangeAck do
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
   require Constants
 
+  @typedoc """
+  Response payload for a successful Read Range.
+
+  Returns the object/property read, result flags (first/last/more items), the number of items returned,
+  the item data encodings, and for sequenced logs the first sequence number of the window.
+  """
   @type t :: %__MODULE__{
           object_identifier: BACnet.Protocol.ObjectIdentifier.t(),
           property_identifier: Constants.property_identifier() | non_neg_integer(),
@@ -36,6 +51,9 @@ defmodule BACnet.Protocol.Services.Ack.ReadRangeAck do
                   :read_range
                 )
 
+  @doc """
+  Converts a received `BACnet.Protocol.APDU.ComplexACK` APDU into a struct.
+  """
   @spec from_apdu(ComplexACK.t()) :: {:ok, t()} | {:error, term()}
   def from_apdu(%ComplexACK{service: @service_name} = ack) do
     with {:ok, obj, rest} <-
@@ -87,6 +105,10 @@ defmodule BACnet.Protocol.Services.Ack.ReadRangeAck do
     {:error, :invalid_service_ack}
   end
 
+  @doc """
+  Constructs a `BACnet.Protocol.APDU.ComplexACK` APDU from a
+  `BACnet.Protocol.Services.Ack.ReadRangeAck` struct.
+  """
   @spec to_apdu(t(), 0..255) :: {:ok, ComplexACK.t()} | {:error, term()}
   def to_apdu(ack, invoke_id \\ 0)
 

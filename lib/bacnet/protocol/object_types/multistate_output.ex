@@ -15,8 +15,6 @@ defmodule BACnet.Protocol.ObjectTypes.MultistateOutput do
   (ASHRAE 135 - Clause 12.19)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.BACnetArray
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.PriorityArray
@@ -25,7 +23,7 @@ defmodule BACnet.Protocol.ObjectTypes.MultistateOutput do
   use BACnet.Protocol.ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring a Multistate Output object.
   """
   @type object_opts ::
           {:auto_write_feedback, boolean()}

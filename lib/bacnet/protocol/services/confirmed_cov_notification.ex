@@ -18,9 +18,12 @@ defmodule BACnet.Protocol.Services.ConfirmedCovNotification do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the Confirmed COV Notification service.
 
+  Notifies a subscriber of property value changes on a monitored object. Includes the remaining subscription
+  lifetime and the list of changed PropertyValues. Requires acknowledgment from the receiver.
+  """
   @type t :: %__MODULE__{
           process_identifier: Protocol.ApplicationTags.unsigned32(),
           initiating_device: Protocol.ObjectIdentifier.t(),

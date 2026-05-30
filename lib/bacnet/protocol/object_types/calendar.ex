@@ -7,8 +7,6 @@ defmodule BACnet.Protocol.ObjectTypes.Calendar do
   (ASHRAE 135 - Clause 12.9)
   """
 
-  # TODO: Docs
-
   alias BACnet.Protocol.CalendarEntry
   alias BACnet.Protocol.Constants
 
@@ -16,7 +14,7 @@ defmodule BACnet.Protocol.ObjectTypes.Calendar do
   use BACnet.Protocol.ObjectsMacro
 
   @typedoc """
-  Available object options.
+  Options accepted when creating or configuring a Calendar object.
   """
   @type object_opts :: common_object_opts()
 

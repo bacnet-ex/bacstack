@@ -1,6 +1,8 @@
 defmodule BACnet.Protocol.ApplicationTags do
   @moduledoc """
-  This module provides application tags encoding and decoding as per ASHRAE 135 chapter 20.2, including constructed tags.
+  This module provides application tags encoding and decoding as per ASHRAE 135-2012
+  Clause 20.2 (and the formal ASN.1 definitions in Clause 21), including support for
+  constructed data and context-specific tags.
 
   32bit floats (IEEE 754 single precision floating point numbers) will be truncated to the first non-repeating digit
   when decoding those. Due to (single) precision issues, some floats will be rounded to the nearest single precision
@@ -46,7 +48,18 @@ defmodule BACnet.Protocol.ApplicationTags do
     - if the data is constructed, the Length/Value/Type bits are set to `0b110` to declare an opening tag, the tags follow in complete application tags encoding,
       and the closing tag is encoded with the same tag number and class as the opening tag and the Length/Value/Type bits are set to `0b111` to declare a closing tag
 
-  Constructed data contains zero or more tagged elements. Each tagged element may be a constructed element iself, this does not result in ambiguous encoding.
+  Constructed data contains zero or more tagged elements. Each tagged element may be a constructed element itself; this does not result in ambiguous encoding because opening/closing tags are always paired.
+
+  ### Important Tagging Rules (Clause 20.2 + 21)
+  - The BACnet ASN.1 module begins with `DEFINITIONS IMPLICIT TAGS ::= BEGIN`.
+    This means most productions use implicit tagging by default (the tag is
+    "absorbed" into the contents).
+  - Context-specific tags are used extensively inside SEQUENCEs and CHOICEs
+    (e.g. the `[0]`, `[1]`, ... tags you see in service definitions). These
+    require the surrounding context (the ASN.1 production) to know what datatype
+    they carry.
+  - Application tags (0-12) are self-describing and can be decoded without
+    additional context (this is what the table below shows).
 
   The following table shows application tags:
 
@@ -134,6 +147,10 @@ defmodule BACnet.Protocol.ApplicationTags do
         null: nil
     ], 0}}
   ```
+
+  ### See Also
+  - `BACnet.Protocol.ApplicationTags.Encoding`
+  - `BACnet.Protocol.Constants` (for the `application_tag` enumeration)
   """
 
   alias BACnet.Protocol

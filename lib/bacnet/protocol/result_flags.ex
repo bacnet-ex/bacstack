@@ -1,12 +1,37 @@
 defmodule BACnet.Protocol.ResultFlags do
   @moduledoc """
-  BACnet Result Flags conveys several flags that describe characteristics of the response data.
+  BACnet Result Flags is a three-bit bit string returned by range-reading services
+  (ReadRange, GetEventInformation, etc.) to describe the window of data that was
+  actually returned.
 
-  * The FIRST_ITEM flag indicates whether this response includes the first list or array element
-    (in the case of positional indexing), or the oldest timestamped item (in the case of time indexing).
-  * The LAST_ITEM flag indicates whether this response includes the last list or array element
-    (in the case of positional indexing), or the newest timestamped item (in the case of time indexing).
-  * The MORE_ITEMS flag indicates whether more items matched the request but were not transmittable within the PDU.
+  Bit meanings (MSB first):
+
+  | Bit | Name       | Meaning when TRUE                                                |
+  |-----|------------|:-----------------------------------------------------------------|
+  | 0   | FIRST_ITEM | Response contains the first (oldest) item of the requested range |
+  | 1   | LAST_ITEM  | Response contains the last (newest) item of the requested range  |
+  | 2   | MORE_ITEMS | More items matched but could not fit in this PDU / segment       |
+
+  The flags allow a client to know whether it has the beginning, the end, or is
+  looking at a slice in the middle of a potentially large collection (trend-log
+  buffer, alarm summary, event log, etc.).
+
+  ### BACnet Specification References
+
+  - **ASN.1** (Clause 21): `BACnetResultFlags ::= BIT STRING { first-item (0), last-item (1), more-items (2) }`
+  - **Primary services**: ReadRange-ACK (15.8), GetEventInformation-ACK (13.11),
+    and several alarm/event summary acknowledgments.
+
+  ### Examples (Doc Test)
+
+  ```elixir
+  iex> flags = %ResultFlags{first_item: true, last_item: false, more_items: true}
+  iex> flags.more_items
+  true
+  ```
+
+  ### See Also
+  - `BACnet.Protocol.ReadRange`
   """
 
   alias BACnet.Protocol.ApplicationTags
@@ -14,7 +39,7 @@ defmodule BACnet.Protocol.ResultFlags do
   # TODO: Throw argument error in encode if not valid
 
   @typedoc """
-  Represents BACnet result flags.
+  Three Boolean flags describing a partial result set (see module docs for bit positions).
   """
   @type t :: %__MODULE__{
           first_item: boolean(),

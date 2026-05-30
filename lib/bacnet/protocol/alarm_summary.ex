@@ -1,5 +1,24 @@
 defmodule BACnet.Protocol.AlarmSummary do
-  # TODO: Docs
+  @moduledoc """
+  An Alarm Summary entry is the data structure returned by the Get Alarm Summary
+  confirmed service. It gives a client a compact, point-in-time list of every object
+  inside a device that is currently in an alarm or fault condition and that the client
+  is permitted to observe.
+
+  Each summary contains three pieces of information: the Object Identifier of the
+  alarming object, its current Event State (which may be FAULT or one of the alarm
+  states such as HIGH_LIMIT or LIFE_SAFETY_ALARM), and the Acknowledged Transitions
+  bit string. The acknowledged transitions bits are crucial for operator interfaces
+  because they indicate which state changes still require human acknowledgment before
+  the alarm can be considered fully cleared from the operator's perspective.
+
+  Although Get Alarm Summary is one of the older summary services in BACnet, it is
+  still widely supported for backward compatibility. Newer implementations are
+  encouraged to use the more capable Get Event Information service, which returns
+  timestamps, notification class, and other context. The Alarm Summary structure
+  itself remains useful whenever a very small encoding is required.
+  """
+
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
@@ -7,6 +26,9 @@ defmodule BACnet.Protocol.AlarmSummary do
   alias BACnet.Protocol.EventTransitionBits
   alias BACnet.Protocol.ObjectIdentifier
 
+  @typedoc """
+  Represents a single entry in the response of a Get Alarm Summary service.
+  """
   @type t :: %__MODULE__{
           object_identifier: ObjectIdentifier.t(),
           alarm_state: Constants.event_state(),

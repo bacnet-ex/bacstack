@@ -1,5 +1,17 @@
 defmodule BACnet.Protocol.Services.Ack.ReadPropertyAck do
-  # TODO: Docs
+  @moduledoc """
+  The Read Property Acknowledgment is the successful response returned when a
+  client issues a Read Property service request.
+
+  It carries the object identifier of the object that was read, the specific
+  property identifier (which may be a standard named property or a vendor
+  extension), an optional array index when the property is an array element,
+  and the actual value of the property encoded using BACnet application tags.
+
+  This acknowledgment is one of the most frequently exchanged messages in a
+  typical BACnet system. Because Read Property is a confirmed service, the
+  server must return either this acknowledgment or an Error APDU.
+  """
 
   alias BACnet.Protocol.APDU.ComplexACK
   alias BACnet.Protocol.ApplicationTags
@@ -8,6 +20,9 @@ defmodule BACnet.Protocol.Services.Ack.ReadPropertyAck do
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
   require Constants
 
+  @typedoc """
+  The successful response to a Read Property request, containing the property value.
+  """
   @type t :: %__MODULE__{
           object_identifier: BACnet.Protocol.ObjectIdentifier.t(),
           property_identifier: Constants.property_identifier() | non_neg_integer(),
@@ -29,6 +44,9 @@ defmodule BACnet.Protocol.Services.Ack.ReadPropertyAck do
                   :read_property
                 )
 
+  @doc """
+  Converts a received `BACnet.Protocol.APDU.ComplexACK` APDU into a struct.
+  """
   @spec from_apdu(ComplexACK.t()) :: {:ok, t()} | {:error, term()}
   def from_apdu(%ComplexACK{service: @service_name} = ack) do
     with {:ok, obj, rest} <-
@@ -66,6 +84,13 @@ defmodule BACnet.Protocol.Services.Ack.ReadPropertyAck do
     {:error, :invalid_service_ack}
   end
 
+  @doc """
+  Constructs a `BACnet.Protocol.APDU.ComplexACK` APDU from a
+  `BACnet.Protocol.Services.Ack.ReadPropertyAck` struct.
+
+  This is used by a server when responding to a Read Property service request.
+  The `invoke_id` must match the invoke ID from the original request.
+  """
   @spec to_apdu(t(), 0..255) :: {:ok, ComplexACK.t()} | {:error, term()}
   def to_apdu(ack, invoke_id \\ 0)
 

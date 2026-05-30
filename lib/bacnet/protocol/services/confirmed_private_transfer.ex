@@ -22,9 +22,12 @@ defmodule BACnet.Protocol.Services.ConfirmedPrivateTransfer do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the Confirmed Private Transfer service.
 
+  Vendor-specific request (vendor_id + service_number) with optional parameters. The remote device
+  executes the proprietary service and returns results or error via the corresponding ACK or Error.
+  """
   @type t :: %__MODULE__{
           vendor_id: pos_integer(),
           service_number: non_neg_integer(),

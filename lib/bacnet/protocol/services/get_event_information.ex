@@ -22,9 +22,9 @@ defmodule BACnet.Protocol.Services.GetEventInformation do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
-
+  @typedoc """
+  Parameters for the Get Event Information service (last received object for pagination).
+  """
   @type t :: %__MODULE__{
           last_received_object_identifier: Protocol.ObjectIdentifier.t() | nil
         }

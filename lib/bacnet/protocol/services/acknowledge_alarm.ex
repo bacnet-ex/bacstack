@@ -21,9 +21,13 @@ defmodule BACnet.Protocol.Services.AcknowledgeAlarm do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the Acknowledge Alarm service.
 
+  Identifies the specific event notification being acknowledged, including the process identifier, the event object,
+  the acknowledged transition state, the original event timestamp, the source of the acknowledgment, and the time
+  the acknowledgment was generated.
+  """
   @type t :: %__MODULE__{
           process_identifier: ApplicationTags.unsigned32(),
           event_object: Protocol.ObjectIdentifier.t(),

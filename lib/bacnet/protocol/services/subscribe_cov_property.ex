@@ -29,10 +29,15 @@ defmodule BACnet.Protocol.Services.SubscribeCovProperty do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
-  # if issue_confirmed_notifications and lifetime = nil: cancellation of a COV subscription
+  @typedoc """
+  Parameters for the Subscribe COV Property service.
 
+  Subscribes (or unsubscribes when lifetime and issue_confirmed_notifications are nil) for Change-Of-Value
+  notifications on one specific property of an object, with optional COV increment for analog values and lifetime.
+
+  If `issue_confirmed_notifications` and `lifetime` are nil,
+  then this is a cancellation of a COV subscription.
+  """
   @type t :: %__MODULE__{
           process_identifier: ApplicationTags.unsigned32(),
           monitored_object: Protocol.ObjectIdentifier.t(),

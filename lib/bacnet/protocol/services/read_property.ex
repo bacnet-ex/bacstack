@@ -20,9 +20,12 @@ defmodule BACnet.Protocol.Services.ReadProperty do
 
   @behaviour Protocol.Services.Behaviour
 
-  # TODO: Docs
-  # TODO: Add Service Procedure to docs
+  @typedoc """
+  Parameters for the Read Property service.
 
+  Identifies the object and specific property (with optional array index) whose value should be returned
+  in the Read Property ACK response.
+  """
   @type t :: %__MODULE__{
           object_identifier: Protocol.ObjectIdentifier.t(),
           property_identifier: Constants.property_identifier() | non_neg_integer(),

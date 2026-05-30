@@ -1,7 +1,20 @@
 defprotocol BACnet.Protocol.Services.Protocol do
-  alias BACnet.Protocol.APDU
+  @moduledoc """
+  This protocol defines the common interface that all BACnet service modules
+  (both confirmed and unconfirmed) must implement.
 
-  # TODO: Docs
+  It allows the rest of the stack to treat services uniformly when encoding
+  them into APDUs, determining whether they require a reply, and extracting
+  their service choice name.
+
+  Every concrete service module (for example `BACnet.Protocol.Services.ReadProperty`,
+  `BACnet.Protocol.Services.IAm`, etc.) implements this protocol via a `defimpl`
+  block at the bottom of the file. The protocol is what enables the generic
+  `BACnet.Protocol.Services.Protocol.to_apdu/2` calls used throughout the
+  client and stack layers.
+  """
+
+  alias BACnet.Protocol.APDU
 
   @doc """
   Get the service name atom.
