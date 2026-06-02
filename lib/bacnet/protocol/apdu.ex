@@ -1,18 +1,90 @@
 defmodule BACnet.Protocol.APDU do
   @moduledoc """
   This module provides decoding of Application Data Units (APDU).
-  Encoding of APDUs are directly handled in the APDU modules.
 
-  APDUs can be segmented and thus will require processing and merging the segments.
-  The module `BACnet.Stack.SegmentsStore` fulfills this purpose and
-  thus all `incomplete` tuples received from `decode/1` should be passed
-  to an instance of that module (preferably under a supervisor).
-  Only `BACnet.Protocol.APDU.ComplexACK` and
-  `BACnet.Protocol.APDU.ConfirmedServiceRequest` APDUs can be segmented,
-  as specified by the BACnet protocol specification.
-  See also the `BACnet.Stack.SegmentsStore` module documentation.
+  APDUs form the application layer of the BACnet protocol. Every BACnet message
+  exchanged between devices ultimately carries an APDU (after the NPCI and optional
+  BVLL headers). See Clause 5.1 and 5.3 for the application layer model and
+  transmission of APDUs.
 
-  See also:
+  The canonical definitions of all APDU types are given in Clause 21 as an ASN.1
+  module (`BACnetModule`). The fixed-part encoding rules (APCI) are in Clause 20.1.
+
+  Encoding of APDUs is handled directly by the individual APDU submodules via their
+  `encode/1` function (or through the `BACnet.Stack.EncoderProtocol`).
+
+  ## APDU Types
+
+  The BACnet standard defines eight APDU types, identified by the high nibble of the
+  first byte (PDU Type):
+
+  | Type                          | PDU | Sent By     | Requires Reply | Segmentation | Description                                                                                                             |
+  |-------------------------------|-----|-------------|----------------|--------------|:------------------------------------------------------------------------------------------------------------------------|
+  | `ConfirmedServiceRequest`     | 0   | Client      | Yes            | Yes          | Confirmed service invocation (Read/Write, etc.). See `BACnet-Confirmed-Request-PDU` in Clause 21                        |
+  | `UnconfirmedServiceRequest`   | 1   | Either      | No             | No           | Unconfirmed services (Who-Is, I-Am, COV notifications, ...). See `BACnet-Unconfirmed-Request-PDU` in Clause 21          |
+  | `SimpleACK`                   | 2   | Server      | No             | No           | Positive reply for services that return no data. See `BACnet-SimpleACK-PDU` in Clause 21                                |
+  | `ComplexACK`                  | 3   | Server      | No             | Yes          | Positive reply containing data (property values, etc.). See `BACnet-ComplexACK-PDU` in Clause 21                        |
+  | `SegmentACK`                  | 4   | Either      | No             | No           | Acknowledges received segments and/or requests more. See `BACnet-SegmentACK-PDU` in Clause 21                           |
+  | `Error`                       | 5   | Server      | No             | No           | Service failed; contains error class + code (+ optional payload). See `BACnet-Error-PDU` in Clause 21                   |
+  | `Reject`                      | 6   | Server      | No             | No           | Request rejected due to protocol/syntax error (before execution). See `BACnet-Reject-PDU` in Clause 21 and Clause 18.8  |
+  | `Abort`                       | 7   | Either      | No             | No           | Transaction aborted (timeout, resources, security, etc.). See `BACnet-Abort-PDU` in Clause 21 and Clause 18.10          |
+
+  ## Segmentation
+
+  Only `ConfirmedServiceRequest` and `ComplexACK` APDUs support segmentation.
+  When the "segmented" flag is set, `decode/1` (and the specific `decode_*` functions)
+  return an `{:incomplete, BACnet.Protocol.IncompleteAPDU.t()}` tuple.
+
+  These incomplete APDUs **must** be passed to a `BACnet.Stack.SegmentsStore`
+  instance (usually started under a supervisor), so that segments can be reassembled.
+  Once reassembly is complete, the `SegmentsStore` returns the full APDU for decoding.
+
+  The companion `BACnet.Stack.Segmentator` is used when *sending* segmented APDU.
+
+  See the `BACnet.Stack.SegmentsStore` and `BACnet.Stack.Segmentator` documentation
+  for details and configuration (timeouts, window sizes, etc.).
+
+  ## Working with APDUs
+
+  Most applications should use the higher-level service modules
+  (`BACnet.Protocol.Services.*`) together with `BACnet.Stack.Client` / `BACnet.Stack.ClientHelper`.
+  Direct APDU manipulation is useful for:
+  - Implementing new services
+  - Low-level debugging / protocol analysis tools
+  - Building test harnesses or fuzzers
+
+  ### Decoding raw data
+
+      iex> raw = <<0x20, 0x46, 0x0F>>  # Simple-ACK, invoke_id=70, service=15 (write_property)
+      iex> APDU.decode(raw)
+      {:ok, %APDU.SimpleACK{invoke_id: 70, service: :write_property}}
+
+  ### Encoding an APDU directly
+
+      iex> apdu = %APDU.Abort{
+      ...>   sent_by_server: false,
+      ...>   invoke_id: 42,
+      ...>   reason: :other
+      ...> }
+      iex> APDU.Abort.encode(apdu)
+      {:ok, <<0x70, 0x2A, 0x00>>}
+
+  ### Converting a request APDU into a high-level service struct
+
+      iex> {:ok, req} = APDU.decode(<<0x02, 0x03, 0x23, 0x0F, 0x0C, 0x00, 0x80, 0x00, 0x00, 0x19, 0x55, 0x3E, 0x44, 0x42, 0xC8, 0x00, 0x00, 0x3F, 0x49, 0x0A>>)
+      iex> %APDU.ConfirmedServiceRequest{service: :write_property} = req
+      iex> APDU.ConfirmedServiceRequest.to_service(req)
+      {:ok, %BACnet.Protocol.Services.WriteProperty{
+        object_identifier: %BACnet.Protocol.ObjectIdentifier{type: :analog_value, instance: 0},
+        priority: 10,
+        property_array_index: nil,
+        property_identifier: :present_value,
+        property_value: %BACnet.Protocol.ApplicationTags.Encoding{type: :real, value: 100.0, encoding: :primitive, extras: []}
+      }}
+
+  ## See Also
+
+  - `BACnet.Protocol` - top-level PDU decoding (BVLL / NPCI)
   - `BACnet.Protocol.APDU.Abort`
   - `BACnet.Protocol.APDU.ComplexACK`
   - `BACnet.Protocol.APDU.ConfirmedServiceRequest`
@@ -21,6 +93,9 @@ defmodule BACnet.Protocol.APDU do
   - `BACnet.Protocol.APDU.SegmentACK`
   - `BACnet.Protocol.APDU.SimpleACK`
   - `BACnet.Protocol.APDU.UnconfirmedServiceRequest`
+  - `BACnet.Protocol.IncompleteAPDU`
+  - `BACnet.Stack.Segmentator`
+  - `BACnet.Stack.SegmentsStore`
   """
 
   alias BACnet.Protocol
@@ -31,14 +106,42 @@ defmodule BACnet.Protocol.APDU do
   require Constants
 
   @doc """
-  Decodes the APDU. The binary data must contain only APDU data.
-  The data must contain the APDU header (such as the PDU type byte).
+  Decodes a complete APDU from raw binary data.
 
-  If the APDU is segmented, this function will return an incomplete tuple,
-  which must be handled by the `BACnet.Stack.SegmentsStore` module.
+  The binary must start with a valid APDU header (PDU type in the high nibble of
+  the first byte). Only the APDU portion should be passed (i.e. after any BVLL
+  and NPCI headers have been stripped).
 
-  See the `BACnet.Stack.SegmentsStore` module documentation for
-  more information about incoming segmentation (`:segmented_receive`).
+  On success a typed APDU struct is returned. When the APDU is the first (or a
+  subsequent) segment of a segmented message, `{:incomplete, IncompleteAPDU.t()}`
+  is returned instead. Pass that value to a `BACnet.Stack.SegmentsStore` so the
+  full message can be reassembled.
+
+  ### Examples
+
+      iex> APDU.decode(<<0x20, 0x46, 0x0F>>)
+      {:ok, %APDU.SimpleACK{invoke_id: 70, service: :write_property}}
+
+      iex> APDU.decode(<<0x10, 0x00, 0xC4, 0x02, 0x00, 0x00, 0x03, 0x22, 0x05, 0xC4, 0x23, 0x00, 0x21, 0x01>>)
+      {:ok, %APDU.UnconfirmedServiceRequest{service: :i_am, parameters: [{:object_identifier, %BACnet.Protocol.ObjectIdentifier{type: :device, instance: 3}}, {:unsigned_integer, 1476}, {:unsigned_integer, 8449}]}}
+
+      iex> APDU.decode(<<0x10, 0x08>>)
+      {:ok, %APDU.UnconfirmedServiceRequest{service: :who_is, parameters: []}}
+
+      iex> APDU.decode(<<0x60, 0x2A, 0x01>>)
+      {:ok, %APDU.Reject{invoke_id: 42, reason: :buffer_overflow}}
+
+      iex> APDU.decode(<<0xFF>>)
+      {:error, :invalid_apdu_type}
+
+  Segmented messages return an incomplete tuple that must be handled by `SegmentsStore`:
+
+      iex> {:incomplete, inc} = APDU.decode(<<10, 117, 1, 0, 8, 12, 145, 0, 117, 11, 0, 104, 101, 108, 108, 111>>)
+      iex> inc.invoke_id
+      1
+
+  See `BACnet.Stack.SegmentsStore` for handling of segmented traffic and the
+  individual `decode_*` functions for type-specific decoding.
   """
   @spec decode(binary()) ::
           {:ok, Protocol.apdu()}
@@ -414,9 +517,25 @@ defmodule BACnet.Protocol.APDU do
   end
 
   @doc """
-  Extracts the invoke ID from the given raw APDU.
+  Extracts the invoke ID from a raw APDU binary without full decoding.
 
-  This is useful for replying to APDUs, which can not be properly fully decoded.
+  This is particularly useful when you need to send an Abort or Reject reply
+  for a message that is too malformed to be decoded by the normal `decode/1`
+  functions, or when performing very early filtering / logging.
+
+  Only APDU types that carry an invoke ID are supported.
+
+  ### Example
+
+      iex> raw = <<0x02, 0x03, 0x23, 0x0F, 0x0C, 0x00, 0x80, 0x00, 0x00, 0x19, 0x55>>
+      iex> APDU.get_invoke_id_from_raw_apdu(raw)
+      {:ok, 35}
+
+      iex> APDU.get_invoke_id_from_raw_apdu(<<0x71, 0x07, 0x04>>)
+      {:ok, 7}
+
+  Returns `{:error, :invalid_apdu}` for unconfirmed requests or completely
+  truncated headers.
   """
   @spec get_invoke_id_from_raw_apdu(binary) :: {:ok, invoke_id :: byte()} | {:error, term()}
   def get_invoke_id_from_raw_apdu(apdu)

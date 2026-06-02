@@ -4,13 +4,13 @@ defmodule BACnet.Protocol.Services.AtomicWriteFile do
 
   The Atomic Write File service is used to atomically write to a file on a device.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The AtomicWriteFile Service is used by a client BACnet-user to perform an open-write-close operation of an OCTET
   > STRING into a specified position or a list of OCTET STRINGs into a specified group of records in a file. The file may be
   > accessed as records or as a stream of octets.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > The responding BACnet-user shall first verify the validity of the 'File Identifier' parameter and return a 'Result(-)' response
   > with the appropriate error class and code if the File object is unknown, if there is currently another AtomicReadFile or
@@ -23,12 +23,12 @@ defmodule BACnet.Protocol.Services.AtomicWriteFile do
   > returned. If the write succeeds in its entirety, then a 'Result(+)' response shall be returned. The 'File Start Position' or 'File
   > Start Record' shall indicate the actual position or record at which data were written.
 
-  #### Result(+) Response (ASHRAE 135)
+  ### Result(+) Response (ASHRAE 135)
 
   On success, the responding BACnet-user returns a 'Result(+)' primitive containing the actual 'File Start Position' or 'File Start Record'
   at which the data was written. This may differ from the requested position if the special value -1 (append) was used or if the file was extended.
 
-  #### Result(-) Errors (ASHRAE 135)
+  ### Result(-) Errors (ASHRAE 135)
 
   The 'Result(-)' parameter shall indicate that the service request has failed in its entirety. The reason for the failure shall be
   specified by the 'Error Type' parameter.

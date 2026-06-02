@@ -1,13 +1,48 @@
 defmodule BACnet.Protocol.APDU.SegmentACK do
   @moduledoc """
-  Segment ACK APDUs are used to acknowledge the receipt of one or more frames
-  containing portions of a segmented message. It may also request the
-  next segment or segments of the segmented message.
+  Segment ACK APDUs are used during segmented data transfer.
 
-  This module has functions for encoding Segment ACK APDUs.
-  Decoding is handled by `BACnet.Protocol.APDU`.
+  ### APDU Description (ASHRAE 135)
+
+  > The BACnet-SegmentACK-PDU is used to acknowledge the receipt of one or more
+  > frames containing portions of a segmented message. It may also be used to request
+  > the next segment or segments of the segmented message. (Clause 21)
+
+  They serve two purposes:
+
+  1. Positive acknowledgment of one or more received segments (the receiver
+     tells the sender "I got segments up to `sequence_number` and my current
+     window is `actual_window_size`").
+  2. Negative acknowledgment (`negative_ack: true`) to request retransmission
+     of a specific segment.
+
+  The modules `BACnet.Stack.SegmentsStore` (receiver)
+  and `BACnet.Stack.Segmentator` (sender) automatically send or expect to receive those.
+  Application code normally never constructs them manually.
 
   This module implements the `BACnet.Stack.EncoderProtocol`.
+
+  Decoding is performed by `BACnet.Protocol.APDU.decode/1` (and
+  `BACnet.Protocol.APDU.decode_segment_ack/1`).
+
+  ### Examples
+
+      # Positive ACK after receiving segment #3 with a window of 16
+      iex> sack = %SegmentACK{
+      ...>   negative_ack: false,
+      ...>   sent_by_server: true,
+      ...>   invoke_id: 12,
+      ...>   sequence_number: 3,
+      ...>   actual_window_size: 16
+      ...> }
+      iex> SegmentACK.encode(sack)
+      {:ok, <<65, 12, 3, 16>>}
+
+  Decoding:
+
+      iex> raw = <<0x41, 0x0C, 0x03, 0x10>>
+      iex> BACnet.Protocol.APDU.decode(raw)
+      {:ok, %SegmentACK{actual_window_size: 16, invoke_id: 12, negative_ack: false, sent_by_server: true, sequence_number: 3}}
   """
 
   @typedoc """

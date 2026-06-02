@@ -9,8 +9,6 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BasicTest do
   @moduletag :bacnet_object
 
   for {obj_type, module} <- ObjectsUtility.get_object_type_mappings() do
-    doctest module
-
     test_list = generate_object_tests(obj_type, module)
     mod_name = Module.concat([__MODULE__, String.to_atom(Macro.camelize("#{obj_type}")), :Basic])
 
@@ -21,6 +19,8 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BasicTest do
       @moduletag String.to_atom("bacnet_object")
       @moduletag String.to_atom("bacnet_object_basic")
       @moduletag String.to_atom("bacnet_object_#{obj_type}")
+
+      doctest module
 
       for {description, code_call, pattern_match, appendum_code} <- test_list do
         test "basic object test #{obj_type} #{description}" do

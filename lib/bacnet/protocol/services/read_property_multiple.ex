@@ -4,7 +4,7 @@ defmodule BACnet.Protocol.Services.ReadPropertyMultiple do
 
   The Read Property Multiple service is used to read multiple properties of one or multiple objects.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The ReadPropertyMultiple service is used by a client BACnet-user to request the values of one or more specified properties
   > of one or more BACnet Objects. This service allows read access to any property of any object, whether a BACnet-defined
@@ -12,7 +12,7 @@ defmodule BACnet.Protocol.Services.ReadPropertyMultiple do
   > properties of any number of objects. A 'Read Access Specification' with the property identifier ALL can be used to learn the
   > implemented properties of an object along with their values.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > After verifying the validity of the request, the responding BACnet-user shall attempt to access the specified properties of the
   > specified objects and shall construct a 'List of Read Access Results' in the order specified in the request. If the 'List of
@@ -30,7 +30,7 @@ defmodule BACnet.Protocol.Services.ReadPropertyMultiple do
   > treat the Object Identifier as if it correctly matched the local Device object. This allows the device instance of a device that
   > does not generate I-Am messages to be determined.
 
-  #### Result(+) Response (ASHRAE 135)
+  ### Result(+) Response (ASHRAE 135)
 
   On success, the responding BACnet-user returns a 'Result(+)' primitive containing a 'List of Read Access Results'.
   Each entry corresponds to one 'Read Access Specification' from the request and contains:
@@ -40,7 +40,7 @@ defmodule BACnet.Protocol.Services.ReadPropertyMultiple do
 
   The order of results matches the order of the original request. Partial success is allowed - some properties may succeed while others return errors.
 
-  #### Result(-) Errors (ASHRAE 135)
+  ### Result(-) Errors (ASHRAE 135)
 
   The 'Result(-)' parameter shall indicate that the service request has failed in its entirety. The reason for the failure shall be
   specified by the 'Error Type' parameter.

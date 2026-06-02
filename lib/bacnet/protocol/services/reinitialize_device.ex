@@ -5,7 +5,7 @@ defmodule BACnet.Protocol.Services.ReinitializeDevice do
   The Device Communication Control service is used to instruct a device to reboot or reset to a predefined state,
   or to control backup or restore services.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The ReinitializeDevice service is used by a client BACnet-user to instruct a remote device to reboot itself (cold start), reset
   > itself to some predefined initial state (warm start), or to control the backup or restore procedure. Resetting or rebooting a
@@ -13,7 +13,7 @@ defmodule BACnet.Protocol.Services.ReinitializeDevice do
   > procedure is usually initiated on behalf of the user by the device controlling the backup or restore. Due to the sensitive
   > nature of this service, a password may be required by the responding BACnet-user prior to executing the service.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > After verifying the validity of the request, including the 'Reinitialized State of Device' and 'Password' parameters, the
   > responding BACnet-user shall pre-empt all other outstanding requests and respond with a 'Result(+)' primitive. If the
@@ -28,7 +28,7 @@ defmodule BACnet.Protocol.Services.ReinitializeDevice do
   > If the password is invalid or is absent when one is required, an Error-PDU with 'error class' of SECURITY and 'error code'
   > of PASSWORD_FAILURE shall be issued.
 
-  #### Result(-) Errors (ASHRAE 135)
+  ### Result(-) Errors (ASHRAE 135)
 
   The 'Result(-)' parameter shall indicate that the service request has failed. The reason for the failure shall be specified by the
   'Error Type' parameter.

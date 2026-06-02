@@ -1443,27 +1443,6 @@ defmodule BACnet.Protocol.ObjectsUtility do
     end
   end
 
-  # Handle these properties in a special way, so it works
-  # This is because the property_value response contains multiple entries (a list),
-  # so each item gets splitted into an Encoding struct, so we need to revert this here
-  #
-  # The process that handles these Read-Property(-Multiple)-Ack responses has no knowledge
-  # about the context, so we could also add logic to the Ack modules to handle some
-  # properties in a special way
-  # (i.e. chunk in three items instead - however the Encoding struct can't handle lists)
-  @manual_property_struct_decoding_list [
-    :active_cov_subscriptions,
-    :device_address_binding,
-    :exception_schedule,
-    :list_of_group_members,
-    :list_of_object_property_references,
-    :log_buffer,
-    :manual_slave_address_binding,
-    :recipient_list,
-    :slave_address_binding,
-    :time_synchronization_recipients
-  ]
-
   @spec cast_value_to_type(
           BeamTypes.typechecker_types(),
           Constants.property_identifier(),
@@ -1473,8 +1452,22 @@ defmodule BACnet.Protocol.ObjectsUtility do
           {:ok, term()} | {:error, term()}
   defp cast_value_to_type(type, property, value, opts)
 
-  defp cast_value_to_type(type, property, [%Encoding{} | _tl] = value, opts)
-       when property in @manual_property_struct_decoding_list do
+  # Handle these properties in a special way, so it works
+  # This is because the property_value response contains multiple entries (a list),
+  # so each item gets splitted into an Encoding struct, so we need to revert this here
+  #
+  # The process that handles these Read-Property(-Multiple)-Ack responses has no knowledge
+  # about the context, so we could also add logic to the Ack modules to handle some
+  # properties in a special way
+  # (i.e. chunk in three items instead - however the Encoding struct can't handle lists)
+  #
+  # All list types (that wrap a struct) need this special handling
+  defp cast_value_to_type(
+         {:list, {:struct, _mod}} = type,
+         property,
+         [%Encoding{} | _tl] = value,
+         opts
+       ) do
     cast_value_to_type_manual(type, property, value, opts)
   end
 

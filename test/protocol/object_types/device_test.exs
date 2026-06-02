@@ -21,7 +21,9 @@ defmodule BACnet.Test.Protocol.ObjectTypes.DeviceTest do
 
     assert {:ok, %Device{} = dev} =
              Device.create(1, "Dev", %{
-               local_date: BACnetDate.from_date(Date.add(Date.utc_today(), -1))
+               local_date: BACnetDate.from_date(Date.add(Date.utc_today(), -1)),
+               segmentation_supported: :no_segmentation,
+               vendor_identifier: 999
              })
 
     assert {:ok, %Device{} = dev2} = fun.(dev)
@@ -39,7 +41,9 @@ defmodule BACnet.Test.Protocol.ObjectTypes.DeviceTest do
 
     assert {:ok, %Device{} = dev} =
              Device.create(1, "Dev", %{
-               local_time: BACnetTime.from_time(Time.add(Time.utc_now(), -1))
+               local_time: BACnetTime.from_time(Time.add(Time.utc_now(), -1)),
+               segmentation_supported: :no_segmentation,
+               vendor_identifier: 999
              })
 
     assert {:ok, %Device{} = dev2} = fun.(dev)

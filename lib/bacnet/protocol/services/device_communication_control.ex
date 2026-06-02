@@ -4,7 +4,7 @@ defmodule BACnet.Protocol.Services.DeviceCommunicationControl do
 
   The Device Communication Control service is used to control the communication of a device.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The DeviceCommunicationControl service is used by a client BACnet-user to instruct a remote device to stop initiating and
   > optionally stop responding to all APDUs (except DeviceCommunicationControl or, if supported, ReinitializeDevice) on the
@@ -13,7 +13,7 @@ defmodule BACnet.Protocol.Services.DeviceCommunicationControl do
   > duration may be set to "indefinite," meaning communication must be re-enabled by a DeviceCommunicationControl or, if
   > supported, ReinitializeDevice service, not by time.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > After verifying the validity of the request, including the 'Time Duration' and 'Password' parameters, the responding
   > BACnet-user shall respond with a 'Result(+)' service primitive. If the request is valid and the 'Enable/Disable' parameter is
@@ -29,7 +29,7 @@ defmodule BACnet.Protocol.Services.DeviceCommunicationControl do
   > password is required, the APDU shall be ignored and an Error-PDU with 'error class' = SECURITY and 'error code' =
   > PASSWORD_FAILURE shall be issued.
 
-  #### Result(-) Errors (ASHRAE 135)
+  ### Result(-) Errors (ASHRAE 135)
 
   The 'Result(-)' parameter shall indicate that the service request has failed. The reason for failure shall be specified by the
   'Error Type' parameter.

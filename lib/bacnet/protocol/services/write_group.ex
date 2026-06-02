@@ -4,7 +4,7 @@ defmodule BACnet.Protocol.Services.WriteGroup do
 
   The Write Group service is used to write efficiently values to a large number of devices and objects.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The purpose of WriteGroup is to facilitate the efficient distribution of values to a large number of devices and objects.
   > WriteGroup provides compact representations for data values that allow rapid transfer of many values. See Clause 12-53 and
@@ -20,7 +20,7 @@ defmodule BACnet.Protocol.Services.WriteGroup do
   > BACnet network address. Since global broadcasts are generally discouraged, the use of multiple directed broadcasts is
   > preferred.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > Since this is an unconfirmed service, no response primitives are expected. The sending BACnet-user shall transmit the
   > WriteGroup unconfirmed request using a unicast, multicast or broadcast address. A broadcast may be sent locally, to a

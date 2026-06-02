@@ -4,12 +4,12 @@ defmodule BACnet.Protocol.Services.ReadProperty do
 
   The Read Property service is used to read a property of an object.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The ReadProperty service is used by a client BACnet-user to request the value of one property of one BACnet Object. This
   > service allows read access to any property of any object, whether a BACnet-defined object or not.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > After verifying the validity of the request, the responding BACnet-user shall attempt to access the specified property of the
   > specified object. If the access is successful, a 'Result(+)' primitive, which returns the accessed value, shall be generated. If the
@@ -19,13 +19,13 @@ defmodule BACnet.Protocol.Services.ReadProperty do
   > matched the local Device object. This allows the device instance of a device that does not generate I-Am messages to be
   > determined.
 
-  #### Result(+) Response (ASHRAE 135)
+  ### Result(+) Response (ASHRAE 135)
 
   On success, the responding BACnet-user returns a 'Result(+)' primitive containing the value of the requested property.
   If the property is an array and no array index was specified, the entire array is returned.
   If an array index was specified, only that element is returned.
 
-  #### Result(-) Errors (ASHRAE 135)
+  ### Result(-) Errors (ASHRAE 135)
 
   The 'Result(-)' parameter shall indicate that the service request has failed in its entirety. The reason for the failure shall be
   specified by the 'Error Type' parameter.

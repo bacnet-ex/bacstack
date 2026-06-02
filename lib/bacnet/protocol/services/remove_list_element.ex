@@ -4,13 +4,13 @@ defmodule BACnet.Protocol.Services.RemoveListElement do
 
   The Remove List Element service is used to remove elements from a list property.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The RemoveListElement service is used by a client BACnet-user to remove one or more elements from the property of an
   > object that is a list. If an element is itself a list, the entire element shall be removed. This service does not operate on nested
   > lists.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > After verifying the validity of the request, the responding BACnet-user shall attempt to modify the object identified in the
   > 'Object Identifier' parameter. If the identified object exists and it has the property specified in the 'Property Identifier'
@@ -19,7 +19,7 @@ defmodule BACnet.Protocol.Services.RemoveListElement do
   > property description specifies otherwise. If one or more of the elements does not exist or cannot be removed because of
   > insufficient authority, none of the elements shall be removed and a 'Result(-)' response primitive shall be issued.
 
-  #### Result(-) Errors (ASHRAE 135)
+  ### Result(-) Errors (ASHRAE 135)
 
   The 'Result(-)' parameter shall indicate that the service request failed. The reason for failure is specified by the 'Error Type'
   parameter. None of the elements of the specified object shall be removed.

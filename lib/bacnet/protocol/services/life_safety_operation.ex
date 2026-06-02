@@ -5,7 +5,7 @@ defmodule BACnet.Protocol.Services.LifeSafetyOperation do
   The Life Safety Operation service is used to provide a mechanism for human operators to silence audible or visual appliances,
   reset notification appliances, or unsilence previously silenced appliances.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The LifeSafetyOperation service is intended for use in fire, life safety and security systems to provide a mechanism for
   > conveying specific instructions from a human operator to accomplish any of the following objectives:
@@ -14,7 +14,7 @@ defmodule BACnet.Protocol.Services.LifeSafetyOperation do
   >   (c) unsilence previously silenced audible or visual notification appliances.
   > Ensuring that the LifeSafetyOperation request actually comes from a person with appropriate authority is a local matter.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > The responding BACnet-user shall first verify the validity of the 'Object Identifier' parameter and return a 'Result(-)' response
   > with the appropriate error class and code if the 'Request' is invalid or if the 'Object Identifier' parameter is present and
@@ -24,7 +24,7 @@ defmodule BACnet.Protocol.Services.LifeSafetyOperation do
   > BACnet-user shall attempt to silence or reset the object specified in the 'Object Identifier' parameter based on the 'Request'
   > parameter. In either case, the responding BACnet-user shall issue a Result(+) primitive.
 
-  #### Result(-) Errors (ASHRAE 135)
+  ### Result(-) Errors (ASHRAE 135)
 
   The 'Result(-)' parameter shall indicate that the service request has failed. The reason for the failure shall be specified by the
   'Error Type' parameter.

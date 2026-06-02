@@ -1,15 +1,75 @@
 defmodule BACnet.Protocol.APDU.ConfirmedServiceRequest do
   @moduledoc """
-  Confirmed Service Request APDUs are used to convey
-  the information contained in confirmed service request primitives.
+  Confirmed Service Request APDUs carry service invocations that require a reply.
 
-  Confirmed Service Requests require the BACnet server
-  to reply with an appropriate response (such as ACK or error).
+  They are the most frequently used APDU type for client/server interactions
+  (ReadProperty, WriteProperty, SubscribeCOV, ReinitializeDevice, etc.).
 
-  This module has functions for encoding Confirmed Service Request APDUs.
-  Decoding is handled by `BACnet.Protocol.APDU`.
+  ### APDU Description (ASHRAE 135)
+
+  > The BACnet-Confirmed-Request-PDU is used to convey the information contained in a
+  > confirmed service request primitive. A confirmed service request always requires a reply
+  > from the remote peer (a SimpleACK, ComplexACK, Error, Reject, or Abort PDU). (Clause 21)
+
+  A Confirmed Service Request always contains:
+
+  - A 1-byte invoke ID used to correlate the future reply (ACK, ComplexACK, Error, ...).
+  - Segmentation control flags and negotiation parameters (`max_apdu`, `max_segments`).
+  - The concrete service choice (see `t:BACnet.Protocol.Constants.confirmed_service_choice/0`).
+  - Service-specific parameters encoded as Application Tags.
+
+  ### Segmentation
+
+  Confirmed requests may be segmented when the payload is larger than the negotiated
+  APDU size. Set `sequence_number` and `proposed_window_size` (both non-nil).
+  In normal use the `BACnet.Stack.Segmentator` takes care of this.
+
+  ### Reply Expectation
+
+  Every ConfirmedServiceRequest **must** be answered by the remote peer (within the
+  APDU timeout) with one of: SimpleACK, ComplexACK, Error, Reject or Abort. Failure
+  to reply results in a TSM (Transaction State Machine) timeout on the client side.
 
   This module implements the `BACnet.Stack.EncoderProtocol`.
+
+  Decoding is performed by `BACnet.Protocol.APDU.decode/1` (and
+  `BACnet.Protocol.APDU.decode_confirmed_request/1`).
+
+  ### Examples
+
+  Creating and encoding a Confirmed Service Request (see `BACnet.Protocol.APDU` for
+  a more complete walkthrough):
+
+      iex> req = %ConfirmedServiceRequest{
+      ...>   segmented_response_accepted: true, max_apdu: 1476, max_segments: :unspecified,
+      ...>   invoke_id: 35, sequence_number: nil, proposed_window_size: nil,
+      ...>   service: :read_property, parameters: [tagged: {0, <<0,0,0,1>>,4}, tagged: {1, "P", 1}]
+      ...> }
+      iex> ConfirmedServiceRequest.encode(req)
+      {:ok, <<2, 5, 35, 12, 12, 0, 0, 0, 1, 25, 80>>}
+
+  Decoding a raw Confirmed Request and converting it to a high-level service:
+
+      iex> raw = <<2, 3, 35, 15, 12, 0, 128, 0, 0, 25, 85, 62, 68, 66, 200, 0, 0, 63, 73, 10>>
+      iex> {:ok, apdu} = BACnet.Protocol.APDU.decode(raw)
+      {:ok, %ConfirmedServiceRequest{
+        invoke_id: 35,
+        max_apdu: 480,
+        max_segments: :unspecified,
+        parameters: [{:tagged, {0, <<0, 128, 0, 0>>, 4}}, {:tagged, {1, "U", 1}}, {:constructed, {3, {:real, 100.0}, 0}}, {:tagged, {4, "\\n", 1}}],
+        proposed_window_size: nil,
+        segmented_response_accepted: true,
+        sequence_number: nil,
+        service: :write_property
+      }}
+      iex> ConfirmedServiceRequest.to_service(apdu)
+      {:ok, %BACnet.Protocol.Services.WriteProperty{
+        object_identifier: %BACnet.Protocol.ObjectIdentifier{type: :analog_value, instance: 0},
+        priority: 10,
+        property_array_index: nil,
+        property_identifier: :present_value,
+        property_value: %BACnet.Protocol.ApplicationTags.Encoding{type: :real, value: 100.0, encoding: :primitive, extras: []}
+      }}
   """
 
   alias BACnet.Protocol.ApplicationTags

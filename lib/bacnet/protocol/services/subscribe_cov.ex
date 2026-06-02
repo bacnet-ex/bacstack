@@ -5,7 +5,7 @@ defmodule BACnet.Protocol.Services.SubscribeCov do
   The Subscribe COV service is used to subscribe to changes of an object. The standardized objects that may optionally
   provide COV support and the change of value algorithms they shall employ are summarized in ASHRAE 135 Table 13-1.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The SubscribeCOV service is used by a COV-client to subscribe for the receipt of notifications of changes that may occur to
   > the properties of a particular object. Certain BACnet standard objects may optionally support COV reporting. If a standard
@@ -20,7 +20,7 @@ defmodule BACnet.Protocol.Services.SubscribeCov do
   > UnconfirmedCOVNotification services are used by the COV-server device to convey change notifications. The choice of
   > confirmed or unconfirmed service is made at the time the subscription is established.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > If neither 'Lifetime' nor 'Issue Confirmed Notifications' are present, then the request shall be considered to be a cancellation.
   > Any COV context that already exists for the same BACnet address contained in the PDU that carries the SubscribeCOV
@@ -44,12 +44,12 @@ defmodule BACnet.Protocol.Services.SubscribeCov do
   > successful completion of a subscription or re-subscription request, as specified by the 'Issue Confirmed Notifications'
   > parameter.
 
-  #### Result(+) Response (ASHRAE 135)
+  ### Result(+) Response (ASHRAE 135)
 
   On success, a 'Result(+)' primitive is returned. Additionally, if this is a new subscription or re-subscription,
   a ConfirmedCOVNotification or UnconfirmedCOVNotification (as requested) is issued as soon as possible containing the current values.
 
-  #### Result(-) Errors (ASHRAE 135)
+  ### Result(-) Errors (ASHRAE 135)
 
   The 'Result(-)' parameter shall indicate that the service request has failed. The reason for failure shall be specified by the
   'Error Type' parameter.

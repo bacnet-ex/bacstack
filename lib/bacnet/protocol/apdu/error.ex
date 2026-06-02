@@ -1,14 +1,42 @@
 defmodule BACnet.Protocol.APDU.Error do
   @moduledoc """
-  Error APDUs are used to the information contained in a
-  service response primitive that indicates the reason why
-  a previous confirmed service request failed,
-  either in its entirety or only partially.
+  Error APDUs report that a confirmed service request could not be completed.
 
-  This module has functions for encoding Error APDUs.
-  Decoding is handled by `BACnet.Protocol.APDU`.
+  ### APDU Description (ASHRAE 135)
+
+  > The BACnet-Error-PDU is used to convey the information contained in a service
+  > response primitive that indicates the reason why a previous confirmed service request
+  > failed, either in its entirety or only partially. (Clause 21)
+
+  They are the normal way a server signals a semantic failure (as opposed to
+  a protocol problem, which would use Reject or Abort).
+
+  The `class` / `code` pair gives a standardized reason
+  (see `t:BACnet.Protocol.Constants.error_class/0` and `t:BACnet.Protocol.Constants.error_code/0`,
+  and Clause 18). Many services also return additional error information in the `payload`
+  field.
 
   This module implements the `BACnet.Stack.EncoderProtocol`.
+
+  Decoding is performed by `BACnet.Protocol.APDU.decode/1` (and `BACnet.Protocol.APDU.decode_error/1`).
+
+  ### Examples
+
+      iex> err = %Error{
+      ...>   invoke_id: 5,
+      ...>   service: :write_property,
+      ...>   class: :property,
+      ...>   code: :write_access_denied,
+      ...>   payload: []
+      ...> }
+      iex> Error.encode(err)
+      {:ok, <<80, 5, 15, 145, 2, 145, 40>>}
+
+  Decoding an Error APDU:
+
+      iex> raw = <<0x50, 0x05, 0x0F, 0x91, 0x02, 0x91, 0x28>>
+      iex> BACnet.Protocol.APDU.decode(raw)
+      {:ok, %Error{invoke_id: 5, service: :write_property, class: :property, code: :write_access_denied, payload: []}}
   """
 
   alias BACnet.Protocol.Constants

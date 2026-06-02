@@ -81,7 +81,7 @@ defmodule BACnet.Protocol.ObjectTypes.Accumulator do
 
     field(:value_set, non_neg_integer())
 
-    field(:logging_record, AccumulatorRecord.t(), readonly: true)
+    field(:logging_record, [AccumulatorRecord.t()], readonly: true)
     field(:logging_object, ObjectIdentifier.t())
 
     field(:profile_name, String.t())

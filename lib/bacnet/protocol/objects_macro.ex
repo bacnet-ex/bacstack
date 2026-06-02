@@ -1515,9 +1515,18 @@ defmodule BACnet.Protocol.ObjectsMacro do
                  rev_status = Map.get(unquote(Macro.escape(properties_revision_map)), req_prop)
 
                  cond do
-                   Map.has_key?(properties, req_prop) -> {:cont, :ok}
-                   is_integer(rev_status) and metadata.revision < rev_status -> {:cont, :ok}
-                   true -> {:halt, {:error, {:missing_required_property, req_prop}}}
+                   # We need to make sure the properties is also present in properties list,
+                   # because this function gets once run on a plain map but also on the struct,
+                   # so when it is run on the struct, they key is present (but nil) but not
+                   # in the properties list, so we can enforce it that way easily
+                   Map.has_key?(properties, req_prop) and req_prop in metadata.properties_list ->
+                     {:cont, :ok}
+
+                   is_integer(rev_status) and metadata.revision < rev_status ->
+                     {:cont, :ok}
+
+                   true ->
+                     {:halt, {:error, {:missing_required_property, req_prop}}}
                  end
                end),
              # Second, look through annotations and support `required_when: ...` annotations

@@ -1,14 +1,57 @@
 defmodule BACnet.Protocol.APDU.ComplexACK do
   @moduledoc """
-  Complex ACK APDUs are used to convey the information contained
-  in a positive service response primitive that contains information
-  in addition to the fact that the service request
-  was successfully carried out.
+  Complex ACK APDUs return successful results that contain data.
 
-  This module has functions for encoding Complex ACK APDUs.
-  Decoding is handled by `BACnet.Protocol.APDU`.
+  ### APDU Description (ASHRAE 135)
+
+  > The BACnet-ComplexACK-PDU is used to convey the information contained in a
+  > positive service response primitive that contains information in addition to the
+  > fact that the service request was successfully carried out. (Clause 21)
+
+  They are the counterpart to `BACnet.Protocol.APDU.ConfirmedServiceRequest`
+  for services whose positive response carries more than a simple acknowledgment:
+  - `ReadProperty` → list of property values
+  - `ReadPropertyMultiple` → multiple read-access results
+  - `AtomicReadFile` / `AtomicWriteFile` → file data / confirmation
+  - `GetEventInformation`, `GetAlarmSummary`, `ReadRange`, etc.
+
+  The `payload` field contains the raw Application Tag encoding of the
+  service-specific response data. Use the corresponding `...Ack` modules under
+  `BACnet.Protocol.Services.Ack.*` (or the service module's `from_apdu/1`) to
+  interpret the payload in a structured way.
+
+  ### Segmentation
+
+  Like Confirmed Service Requests, Complex ACKs may be segmented. The
+  `sequence_number` and `proposed_window_size` fields are only meaningful for
+  segmented messages.
 
   This module implements the `BACnet.Stack.EncoderProtocol`.
+
+  Decoding is performed by `BACnet.Protocol.APDU.decode/1` (and
+  `BACnet.Protocol.APDU.decode_complex_ack/1`).
+
+  ### Examples
+
+      iex> ack = %ComplexACK{
+      ...>   invoke_id: 12,
+      ...>   service: :read_property,
+      ...>   sequence_number: nil,
+      ...>   proposed_window_size: nil,
+      ...>   payload: [
+      ...>     tagged: {0, <<0, 0x80, 0, 0>>, 4},            # object-identifier (Analog Value, instance 0)
+      ...>     tagged: {1, <<0x55>>, 1},                     # property-identifier (present_value)
+      ...>     constructed: {3, [{:real, 23.5}], 0}          # property-value
+      ...>   ]
+      ...> }
+      iex> ComplexACK.encode(ack)
+      {:ok, <<0x30, 0x0C, 0x0C, 0x0C, 0x00, 0x80, 0x00, 0x00, 0x19, 0x55, 0x3E, 0x44, 0x41, 0xBC, 0x00, 0x00, 0x3F>>}
+
+  Decoding a ComplexACK:
+
+      iex> raw = <<0x30, 0x0C, 0x0C, 0x3E, 0x44, 0x41, 0xA0, 0x00, 0x00, 0x3F>>
+      iex> BACnet.Protocol.APDU.decode(raw)
+      {:ok, %ComplexACK{invoke_id: 12, payload: [{:constructed, {3, {:real, 20.0}, 0}}], proposed_window_size: nil, sequence_number: nil, service: :read_property}}
   """
 
   alias BACnet.Protocol.ApplicationTags

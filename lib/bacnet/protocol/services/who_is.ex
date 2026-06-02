@@ -6,7 +6,7 @@ defmodule BACnet.Protocol.Services.WhoIs do
   or operator workstation to locate other devices on the local network or across
   a routed internetwork by asking devices to identify themselves.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The Who-Is service is used by a sending BACnet-user to determine the device object identifier, the network address, or both,
   > of other BACnet devices that share the same internetwork. The Who-Is service is an unconfirmed service.
@@ -22,7 +22,7 @@ defmodule BACnet.Protocol.Services.WhoIs do
   restricted by device instance range to locate a specific device when only its
   object identifier is known. Every responding device answers with an I-Am.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > The sending BACnet-user shall transmit the Who-Is unconfirmed request, normally using a broadcast address. If the 'Device
   > Instance Range Low Limit' and 'Device Instance Range High Limit' parameters are omitted, then all receiving BACnet-users

@@ -909,6 +909,15 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
     refute Map.has_key?(obj._unknown_properties, :present)
   end
 
+  test "verify create/3 of defined bacnet object fails with missing required property" do
+    assert {:error, {:missing_required_property, :present_value}} =
+             BACnet.Test.Support.Protocol.ObjectsMacroTestSupport.BacObjectMinimalDocsStub3.create(
+               1,
+               "TEST",
+               %{}
+             )
+  end
+
   # Minimal stub module with annotations for tests below
   {:module, mod_name_annotations_stub, _bytecode, _more} =
     defmodule BacObjectAnnotationsStub do

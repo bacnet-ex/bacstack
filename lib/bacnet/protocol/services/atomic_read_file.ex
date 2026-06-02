@@ -4,12 +4,12 @@ defmodule BACnet.Protocol.Services.AtomicReadFile do
 
   The Atomic Read File service is used to atomically read from a file on a device.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The AtomicReadFile Service is used by a client BACnet-user to perform an open-read-close operation on the contents of the
   > specified file. The file may be accessed as records or as a stream of octets.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > The responding BACnet-user shall first verify the validity of the 'File Identifier' parameter and return a 'Result(-)' response
   > with the appropriate error class and code if the File object is unknown, if there is currently another AtomicReadFile or
@@ -21,7 +21,7 @@ defmodule BACnet.Protocol.Services.AtomicReadFile do
   > indicate the actual number read. If the returned response contains the last octet or record of the file, then the 'End Of File'
   > parameter shall be TRUE, otherwise FALSE.
 
-  #### Result(+) Response (ASHRAE 135)
+  ### Result(+) Response (ASHRAE 135)
 
   On success, the responding BACnet-user returns a 'Result(+)' primitive containing:
 
@@ -30,7 +30,7 @@ defmodule BACnet.Protocol.Services.AtomicReadFile do
 
   The amount of data returned may be less than requested if the end of file is reached.
 
-  #### Result(-) Errors (ASHRAE 135)
+  ### Result(-) Errors (ASHRAE 135)
 
   The 'Result(-)' parameter shall indicate that the service request has failed in its entirety. The reason for the failure shall be
   specified by the 'Error Type' parameter.

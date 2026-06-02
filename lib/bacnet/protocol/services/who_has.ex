@@ -8,12 +8,12 @@ defmodule BACnet.Protocol.Services.WhoHas do
   I-Have message containing their own device identifier and the object's
   identifier and name.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The Who-Has service is used by a sending BACnet-user to identify the device object identifiers and network addresses of
   > other BACnet devices whose local databases contain an object with a given Object_Name or a given Object_Identifier.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > The sending BACnet-user shall transmit the Who-Has unconfirmed request, normally using a broadcast address. If the
   > 'Device Instance Range Low Limit' and 'Device Instance Range High Limit' parameters are present, then only those receiving

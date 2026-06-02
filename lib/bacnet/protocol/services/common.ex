@@ -653,7 +653,7 @@ defmodule BACnet.Protocol.Services.Common do
     end
   end
 
-  #### Helpers ####
+  ### Helpers ###
 
   @spec enum_to_priority(0 | 1) :: :normal | :urgent
   defp enum_to_priority(0), do: :normal

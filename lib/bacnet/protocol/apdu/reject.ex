@@ -1,15 +1,39 @@
 defmodule BACnet.Protocol.APDU.Reject do
   @moduledoc """
-  Reject APDUs are used to reject a received confirmed service request
-  based on syntactical flaws or other protocol errors that prevent
-  the PDU from being interpreted or the requested service from being provided.
-  Only confirmed request PDUs may be rejected (see ASHRAE 135 Clause 18.8).
-  A Reject APDU shall be sent only before the execution of the service.
+  Reject APDUs are sent when a confirmed service request cannot even be
+  *interpreted* because of a protocol or syntactical error.
 
-  This module has functions for encoding Reject APDUs.
-  Decoding is handled by `BACnet.Protocol.APDU`.
+  ### APDU Description (ASHRAE 135)
+
+  > The BACnet-Reject-PDU is used to reject a received confirmed service request
+  > based on syntactical flaws or other protocol errors that prevent the PDU from being interpreted
+  > or the requested service from being provided. Only confirmed request PDUs may be rejected.
+  > A Reject APDU shall be sent only before the execution of the service. (Clause 18.8)
+
+  Per ASHRAE 135, a Reject must only be generated **before** the service is
+  executed. If the service started running and then failed, an Error APDU
+  (or possibly Abort) is the correct reply.
+
+  Common reject reasons (see `t:BACnet.Protocol.Constants.reject_reason/0` and Clause 18.8 "Reject Reason"):
+
+  - `:other`, `:buffer_overflow`
+  - `:inconsistent_parameters`, `:invalid_tag`, `:missing_required_parameter`
+  - `:invalid_apdu_in_this_state`
 
   This module implements the `BACnet.Stack.EncoderProtocol`.
+
+  Decoding is performed by `BACnet.Protocol.APDU.decode/1` (and `BACnet.Protocol.APDU.decode_reject/1`).
+
+  ### Examples
+
+      iex> reject = %Reject{invoke_id: 9, reason: :buffer_overflow}
+      iex> Reject.encode(reject)
+      {:ok, <<96, 9, 1>>}
+
+  Decoding:
+
+      iex> raw = <<0x60, 0x09, 0x01>>
+      iex> {:ok, %Reject{invoke_id: 9, reason: :buffer_overflow}} = BACnet.Protocol.APDU.decode(raw)
   """
 
   @typedoc """

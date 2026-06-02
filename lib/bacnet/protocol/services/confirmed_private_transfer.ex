@@ -4,7 +4,7 @@ defmodule BACnet.Protocol.Services.ConfirmedPrivateTransfer do
 
   The Confirmed Private Transfer service is used to invoke proprietary or non-standard services in a BACnet device.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The ConfirmedPrivateTransfer is used by a client BACnet-user to invoke proprietary or non-standard services in a remote
   > device. The specific proprietary services that may be provided by a given device are not defined by this standard. The
@@ -15,18 +15,18 @@ defmodule BACnet.Protocol.Services.ConfirmedPrivateTransfer do
   > purpose of the information conveyed by the remainder of the APDU or the service to be performed by the remote device
   > based on parameters in the remainder of the APDU.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > After verifying the validity of the request, the responding BACnet-user shall attempt to perform the specified proprietary
   > service request. If successful, a 'Result(+)' response primitive shall be issued. If the request fails, a 'Result(-)' response
   > primitive shall be issued.
 
-  #### Result(+) Response (ASHRAE 135)
+  ### Result(+) Response (ASHRAE 135)
 
   On success, the responding BACnet-user returns a 'Result(+)' primitive. It may optionally include 'Result Parameters'
   (a list of values) whose meaning is defined by the vendor for the specific proprietary service.
 
-  #### Result(-) Errors (ASHRAE 135)
+  ### Result(-) Errors (ASHRAE 135)
 
   The 'Result(-)' parameter shall indicate that the service request has failed. The reason for failure shall be specified by the
   'Error Type' parameter.

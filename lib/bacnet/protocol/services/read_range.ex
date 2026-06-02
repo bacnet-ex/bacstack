@@ -4,12 +4,12 @@ defmodule BACnet.Protocol.Services.ReadRange do
 
   The Read Range service is used to read range of a property of an object.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The ReadRange service is used by a client BACnet-user to read a specific range of data items representing a subset of data
   > available within a specified object property. The service may be used with any list or array of lists property.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > The responding BACnet-user shall first verify the validity of the 'Object Identifier', 'Property Identifier' and 'Property Array
   > Index' parameters and return a 'Result(-)' response with the appropriate error class and code if the object or property is
@@ -42,7 +42,7 @@ defmodule BACnet.Protocol.Services.ReadRange do
   > If there are no items in the list that match the 'Range' parameter criteria, then a Result(+) shall be returned with an 'Item
   > Count' of 0 and no 'First Sequence Number' parameter.
 
-  #### Result(+) Response (ASHRAE 135)
+  ### Result(+) Response (ASHRAE 135)
 
   On success, the responding BACnet-user returns a 'Result(+)' primitive containing:
 
@@ -53,7 +53,7 @@ defmodule BACnet.Protocol.Services.ReadRange do
 
   If no items matched the request criteria, a 'Result(+)' is still returned with 'Item Count' = 0 and no 'First Sequence Number'.
 
-  #### Result(-) Errors (ASHRAE 135)
+  ### Result(-) Errors (ASHRAE 135)
 
   The 'Result(-)' parameter shall indicate that the service request has failed. The reason for the failure shall be specified by the
   'Error Type' parameter.

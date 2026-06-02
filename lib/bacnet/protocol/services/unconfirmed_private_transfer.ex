@@ -4,7 +4,7 @@ defmodule BACnet.Protocol.Services.UnconfirmedPrivateTransfer do
 
   The Unconfirmed Private Transfer service is used to invoke proprietary or non-standard services in a BACnet device.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The UnconfirmedPrivateTransfer is used by a client BACnet-user to invoke proprietary or non-standard services in a
   > remote device. The specific proprietary services that may be provided by a given device are not defined by this standard.
@@ -15,7 +15,7 @@ defmodule BACnet.Protocol.Services.UnconfirmedPrivateTransfer do
   > intended purpose of the information conveyed by the remainder of the APDU or the service to be performed by the remote
   > device based on parameters in the remainder of the APDU.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > Since this is an unconfirmed service, no response primitives are expected. Actions taken in response to this service request
   > are a local matter.

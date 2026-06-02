@@ -1,13 +1,41 @@
 defmodule BACnet.Protocol.APDU.SimpleACK do
   @moduledoc """
-  Simple ACK APDUs are used to convey the information contained
-  in a positive service response primitive that contains no other
-  information except that the service request was successfully carried out.
+  Simple ACK APDUs are the minimal successful reply to a confirmed service.
 
-  This module has functions for encoding Simple ACK APDUs.
-  Decoding is handled by `BACnet.Protocol.APDU`.
+  ### APDU Description (ASHRAE 135)
+
+  > The BACnet-SimpleACK-PDU is used to convey the information contained in a
+  > positive service response primitive that contains no other information except that
+  > the service request was successfully carried out. (Clause 21)
+
+  They are sent when the requested operation completed successfully and the
+  service definition does not require any data to be returned to the client.
+  Typical examples:
+  - `WriteProperty`
+  - `SubscribeCOV`
+  - `AcknowledgeAlarm`
+  - `DeviceCommunicationControl`
+  - `ReinitializeDevice`
+
+  A SimpleACK only carries the original invoke ID and the service choice.
+  It has no payload.
 
   This module implements the `BACnet.Stack.EncoderProtocol`.
+
+  Decoding is performed by `BACnet.Protocol.APDU.decode/1` (and
+  `BACnet.Protocol.APDU.decode_simple_ack/1`).
+
+  ### Examples
+
+      iex> ack = %SimpleACK{invoke_id: 70, service: :write_property}
+      iex> SimpleACK.encode(ack)
+      {:ok, <<32, 70, 15>>}
+
+  Decoding a SimpleACK from the wire:
+
+      iex> raw = <<0x20, 0x46, 0x0F>>
+      iex> BACnet.Protocol.APDU.decode(raw)
+      {:ok, %SimpleACK{invoke_id: 70, service: :write_property}}
   """
 
   alias BACnet.Protocol.Constants

@@ -5,14 +5,14 @@ defmodule BACnet.Protocol.Services.GetAlarmSummary do
   The Get Alarm Summary service is used to get a list of active alarms from a device.
   Active alarm refers to all abnormal events.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The GetAlarmSummary service is used by a client BACnet-user to obtain a summary of "active alarms." The term "active
   > alarm" refers to BACnet standard objects that have an Event_State property whose value is not equal to NORMAL and a
   > Notify_Type property whose value is ALARM. The GetEnrollmentSummary service provides a more sophisticated approach
   > with various kinds of filters.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > After verifying the validity of the request, the responding BACnet-user shall search all event-initiating objects that have an
   > Event_State property not equal to NORMAL and a Notify_Type property whose value is ALARM. Any object that has an
@@ -20,13 +20,13 @@ defmodule BACnet.Protocol.Services.GetAlarmSummary do
   > summaries for objects found in this search shall be constructed. If no objects are found that meet these criteria, then a list of
   > length zero shall be returned.
 
-  #### Result(+) Response (ASHRAE 135)
+  ### Result(+) Response (ASHRAE 135)
 
   On success, the responding BACnet-user returns a 'Result(+)' primitive containing a list of alarm summaries.
   Each summary includes the object identifier, the current alarm state, and the acknowledged transitions for that object.
   If no alarms are active, an empty list is returned.
 
-  #### Result(-) Errors (ASHRAE 135)
+  ### Result(-) Errors (ASHRAE 135)
 
   The 'Result(-)' parameter shall indicate that the service request has failed. The reason for failure shall be specified by the
   'Error Type' parameter.

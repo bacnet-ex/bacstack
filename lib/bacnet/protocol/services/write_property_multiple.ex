@@ -5,7 +5,7 @@ defmodule BACnet.Protocol.Services.WritePropertyMultiple do
   The Write Property Multiple service is used to write to one or more properties of one or more objects,
   if commandable, with priority.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The WritePropertyMultiple service is used by a client BACnet-user to modify the value of one or more specified properties
   > of a BACnet object. This service potentially allows write access to any property of any object, whether a BACnet-defined
@@ -17,7 +17,7 @@ defmodule BACnet.Protocol.Services.WritePropertyMultiple do
   > WRITE_ACCESS_DENIED. Note that these restricted properties may be accessible through the use of Virtual Terminal
   > services or other means at the discretion of the implementor.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > For each 'Write Access Specification' contained in the 'List of Write Access Specifications', the value of each specified
   > property shall be replaced by the property value provided in the 'Write Access Specification' and a 'Result(+)' primitive shall
@@ -30,7 +30,7 @@ defmodule BACnet.Protocol.Services.WritePropertyMultiple do
   > indicating that the service request was rejected in its entirety. If any of the write operations contained in the 'List of Write Access Specifications'
   > have been successfully executed, a Result(-) response indicating the reason for the failure shall be issued as described above.
 
-  #### Result(-) Errors (ASHRAE 135)
+  ### Result(-) Errors (ASHRAE 135)
 
   The 'Result(-)' parameter shall indicate that at least one of the specified properties could not be modified as requested. The
   reason for the failure shall be conveyed by the 'Error Type' parameter along with the 'Object Identifier', 'Property Identifier',

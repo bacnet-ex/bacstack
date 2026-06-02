@@ -7,13 +7,13 @@ defmodule BACnet.Protocol.Services.IHave do
   counterpart to the Who-Has service and is most often sent in response to a
   Who-Has broadcast.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The IHave service is used to respond to Who-Has service requests or to advertise the existence of an object with a given
   > Object_Name or Object_Identifier. The I-Have service request may be issued at any time and does not need to be preceded
   > by the receipt of a Who-Has service request.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > The sending BACnet-user shall broadcast the I-Have unconfirmed request. Such broadcasts may be on the local network
   > only, a remote network only, or globally on all networks at the discretion of the application. If the I-Have is being transmitted

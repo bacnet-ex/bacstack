@@ -1,17 +1,46 @@
 defmodule BACnet.Protocol.APDU.UnconfirmedServiceRequest do
   @moduledoc """
-  Unconfirmed Service Request APDUs are used to convey the information
-  contained in unconfirmed service request primitives.
+  Unconfirmed Service Request APDUs carry one-way service invocations.
 
-  Unconfirmed Service Requests are as their name implies unconfirmed,
-  that means a response is not required. Some services will trigger
-  a response from BACnet servers that match with the service request.
-  For example, this may be a `I Am` being transmitted due to a `Who Is` received.
+  ### APDU Description (ASHRAE 135)
 
-  This module has functions for encoding Unconfirmed Service Request APDUs.
-  Decoding is handled by `BACnet.Protocol.APDU`.
+  > The BACnet-Unconfirmed-Request-PDU is used to convey the information contained in an
+  > unconfirmed service request primitive. An unconfirmed service request does not require
+  > a reply from the remote peer. (Clause 21)
+
+  No reply is expected by the protocol (fire-and-forget). Typical uses include:
+  - Device discovery: `Who-Is` → devices answer with `I-Am`
+  - Name-based discovery: `Who-Has` → devices answer with `I-Have`
+  - Change-of-Value (COV) notifications (unconfirmed variant)
+  - Time synchronization broadcasts
+  - Write-Group (efficient group writes)
+  - Text messages, private transfers, etc.
+
+  Because they do not carry an invoke ID, unconfirmed requests cannot be
+  rejected or aborted at the APDU layer in the same way confirmed requests can.
 
   This module implements the `BACnet.Stack.EncoderProtocol`.
+
+  Decoding is performed by `BACnet.Protocol.APDU.decode/1` (and
+  `BACnet.Protocol.APDU.decode_unconfirmed_request/1`).
+
+  ### Examples
+
+      iex> who_is = %UnconfirmedServiceRequest{service: :who_is, parameters: []}
+      iex> UnconfirmedServiceRequest.encode(who_is)
+      {:ok, <<16, 8>>}
+
+      iex> iam = %UnconfirmedServiceRequest{service: :i_am, parameters: []}
+      iex> UnconfirmedServiceRequest.encode(iam)
+      {:ok, <<16, 0>>}
+
+  Decoding an unconfirmed APDU and turning it into a service:
+
+      iex> raw = <<16, 8>>
+      iex> {:ok, apdu} = BACnet.Protocol.APDU.decode(raw)
+      {:ok, %BACnet.Protocol.APDU.UnconfirmedServiceRequest{service: :who_is, parameters: []}}
+      iex> UnconfirmedServiceRequest.to_service(apdu)
+      {:ok, %BACnet.Protocol.Services.WhoIs{device_id_low_limit: nil, device_id_high_limit: nil}}
   """
 
   alias BACnet.Protocol.ApplicationTags

@@ -4,12 +4,12 @@ defmodule BACnet.Protocol.Services.AddListElement do
 
   The Add List Element service is used to add elements to a list property.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The AddListElement service is used by a client BACnet-user to add one or more list elements
   > to an object property that is a list.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > After verifying the validity of the request, the responding BACnet-user shall attempt to modify the object identified in the
   > 'Object Identifier' parameter. If the identified object exists and has the property specified in the 'Property Identifier'
@@ -26,7 +26,7 @@ defmodule BACnet.Protocol.Services.AddListElement do
   > The effect of this service shall be to add to, or update in, the list all of the specified elements, or to neither add nor update any
   > elements at all.
 
-  #### Result(-) Errors (ASHRAE 135)
+  ### Result(-) Errors (ASHRAE 135)
 
   The 'Result(-)' parameter shall indicate that the service request failed and none of the specified elements were added to the
   list. The reason for failure is specified by the 'Error Type' parameter.

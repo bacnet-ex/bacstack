@@ -4,7 +4,7 @@ defmodule BACnet.Protocol.Services.WriteProperty do
 
   The Write Property service is used to write to a property of an object, if commandable, with priority.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The WriteProperty service is used by a client BACnet-user to modify the value of a single specified property of a BACnet
   > object. This service potentially allows write access to any property of any object, whether a BACnet-defined object or not.
@@ -13,14 +13,14 @@ defmodule BACnet.Protocol.Services.WriteProperty do
   > WRITE_ACCESS_DENIED. Note that these restricted properties may be accessible through the use of Virtual Terminal
   > services or other means at the discretion of the implementor.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > After verifying the validity of the request, the responding BACnet-user shall attempt to modify the specified property of the
   > specified object using the value provided in the 'Property Value' parameter. If the modification attempt is successful, a
   > 'Result(+)' primitive shall be issued. If the modification attempt fails, a 'Result(-)' primitive shall be issued indicating the
   > reason for the failure. Interpretation of the conditional Priority parameter shall be as defined in Clause 19.
 
-  #### Result(-) Errors (ASHRAE 135)
+  ### Result(-) Errors (ASHRAE 135)
 
   The 'Result(-)' parameter shall indicate that the service request has failed in its entirety. The reason for the failure shall be
   specified by the 'Error Type' parameter.

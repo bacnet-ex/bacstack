@@ -5,7 +5,7 @@ defmodule BACnet.Protocol.Services.ConfirmedEventNotification do
   The Confirmed Event Notification service is used to notify a subscriber of an event that has occurred and requires an
   acknowledge by the subscriber of reception of this event notification.
 
-  #### Service Description (ASHRAE 135)
+  ### Service Description (ASHRAE 135)
 
   > The ConfirmedEventNotification service is used by a notification-server to notify a remote device that an event has occurred
   > and that the notification-server needs a confirmation that the notification has been received. This confirmation means only
@@ -15,7 +15,7 @@ defmodule BACnet.Protocol.Services.ConfirmedEventNotification do
   > service shall be used to notify each intended recipient. If a confirmation that a notification was received is not needed, then
   > the UnconfirmedEventNotification may be used.
 
-  #### Service Procedure (ASHRAE 135)
+  ### Service Procedure (ASHRAE 135)
 
   > After verifying the validity of the request, the responding BACnet-user shall take whatever local actions have been assigned
   > to the indicated event occurrence and issue a 'Result(+)' service primitive. If the service request cannot be executed, a
@@ -23,7 +23,7 @@ defmodule BACnet.Protocol.Services.ConfirmedEventNotification do
   > Result(-), upon receiving a ConfirmedEventNotification service request containing a 'Message Text' parameter in an
   > unsupported character set.
 
-  #### Result(-) Errors (ASHRAE 135)
+  ### Result(-) Errors (ASHRAE 135)
 
   The 'Result(-)' parameter shall indicate that the service request has failed. The reason for failure shall be specified by the
   'Error Type' parameter.
