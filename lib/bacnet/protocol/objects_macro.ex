@@ -447,11 +447,15 @@ defmodule BACnet.Protocol.ObjectsMacro do
   - time_delay
   - time_delay_normal
 
-  For commandable objects (objects with a priority array), the present value property is protected,
-  unless out of service is active. For the duration of out of service, updates to the present value
-  using `update_property/3` are allowed. Once out of service is disabled, the present value is once
-  again protected from updates, as the present value is updated through the relinquish_default and
-  priority_array properties.
+  For commandable objects (objects with a priority array), the present value property is protected.
+
+  When a property is updated using `update_property/3`, the status flag's `IN_ALARM`, `FAULT`
+  and `OUT_OF_SERVICE` are automatically updated:
+  - `IN_ALARM`: Updated based upon `event_state` property (if present)
+  - `FAULT`: Updated based upon `reliability` property (if present)
+  - `OUT_OF_SERVICE`: Updated based upon `out_of_service` property (if present)
+
+  The `OVERRIDDEN` member stays untouched and updating it is a local matter of the user.
 
   Implementors using this macro can "inhibit" an object and verify or mutate the object,
   but also return an error. For that a private function can be overridden. The function is called
@@ -1056,6 +1060,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
                   :ok
                 end),
              {:ok, obj} <- verify_properties(obj, new_metadata) do
+          obj = propagate_properties(obj)
           inhibit_object_check(obj)
         else
           {:ok, _val} = val ->
@@ -1113,48 +1118,13 @@ defmodule BACnet.Protocol.ObjectsMacro do
             |> Map.put(property, value)
             |> check_implicit_relationships(:add)
 
-          # If has priority_array and out_of_service is false,
-          # update the present_value with the correct value
-          # (priority_array may have been added (implicitely) and we need to sync the present_value)
-          unquote(
-            if :priority_array in struct_deffields do
-              quote do
-                new_object_result =
-                  case new_object_result do
-                    {:ok, new_object} ->
-                      new_object2 =
-                        if Map.get(new_object, :out_of_service) do
-                          new_object
-                        else
-                          case new_object do
-                            # The guard is needed so Dialyzer doesn't complain about unreachable patterns
-                            %{priority_array: %PriorityArray{} = pa, relinquish_default: default}
-                            when not is_nil(default) ->
-                              present_value =
-                                case PriorityArray.get_value(pa) do
-                                  {_prio, value} -> value
-                                  nil -> default
-                                end
-
-                              %{new_object | present_value: present_value}
-
-                            _term ->
-                              new_object
-                          end
-                        end
-
-                      {:ok, new_object2}
-
-                    other ->
-                      other
-                  end
-              end
-            end
-          )
-
           case new_object_result do
-            {:ok, obj} -> inhibit_object_check(obj)
-            other -> other
+            {:ok, obj} ->
+              obj = propagate_properties(obj)
+              inhibit_object_check(obj)
+
+            other ->
+              other
           end
         end
       end
@@ -1260,51 +1230,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
                 end),
              :ok <- check_property_value(object, property, value, true) do
           new_object = Map.put(object, property, value)
-
-          # If has priority_array and out_of_service is false,
-          # update the present_value with the correct value
-          # (priority_array may have been added (implicitely) and we need to sync the present_value)
-          unquote(
-            if :priority_array in struct_deffields do
-              quote do
-                new_object =
-                  if Map.get(new_object, :out_of_service) do
-                    new_object
-                  else
-                    case new_object do
-                      # The guard is needed so Dialyzer doesn't complain about unreachable patterns
-                      %{priority_array: %PriorityArray{} = pa, relinquish_default: default}
-                      when not is_nil(default) ->
-                        present_value =
-                          case PriorityArray.get_value(pa) do
-                            {_prio, value} -> value
-                            nil -> default
-                          end
-
-                        %{new_object | present_value: present_value}
-
-                      _term ->
-                        new_object
-                    end
-                  end
-              end
-            end
-          )
-
-          # Update the feedback_value property with the present value
-          unquote(
-            if :feedback_value in struct_fields do
-              quote do
-                new_object =
-                  if object._metadata.other[:auto_write_feedback] do
-                    %{new_object | feedback_value: new_object.present_value}
-                  else
-                    new_object
-                  end
-              end
-            end
-          )
-
+          new_object = propagate_properties(new_object)
           inhibit_object_check(new_object)
         end
       end
@@ -1687,6 +1613,114 @@ defmodule BACnet.Protocol.ObjectsMacro do
         )
       end
 
+      # When one property changes, this function will check whether some other
+      # property needs also to be updated ("propagate"),
+      # so this where all automatic updates based on properties on the same object
+      # happen silently without any user interaction
+      @spec propagate_properties(t()) :: t()
+      defp propagate_properties(new_object) do
+        # If has priority_array and out_of_service is false,
+        # update the present_value with the correct value
+        # (priority_array may have been added (implicitely) and we need to sync the present_value)
+        unquote(
+          if :priority_array in struct_deffields do
+            quote do
+              new_object =
+                case new_object do
+                  # The guard is needed so Dialyzer doesn't complain about unreachable patterns
+                  %{priority_array: %PriorityArray{} = pa, relinquish_default: default}
+                  when not is_nil(default) ->
+                    present_value =
+                      case PriorityArray.get_value(pa) do
+                        {_prio, value} -> value
+                        nil -> default
+                      end
+
+                    %{new_object | present_value: present_value}
+
+                  _term ->
+                    new_object
+                end
+            end
+          end
+        )
+
+        # Update the feedback_value property with the present value
+        unquote(
+          if :feedback_value in struct_fields do
+            quote do
+              new_object =
+                if new_object._metadata.other[:auto_write_feedback] do
+                  %{new_object | feedback_value: new_object.present_value}
+                else
+                  new_object
+                end
+            end
+          end
+        )
+
+        # Update status flags in_alarm
+        unquote(
+          if :event_state in struct_fields and :status_flags in struct_fields do
+            quote do
+              new_object =
+                if new_object.event_state != nil do
+                  %{
+                    new_object
+                    | status_flags: %{
+                        new_object.status_flags
+                        | in_alarm:
+                            new_object.event_state !=
+                              Constants.macro_assert_name(:event_state, :normal)
+                      }
+                  }
+                else
+                  new_object
+                end
+            end
+          end
+        )
+
+        # Update status flags fault
+        unquote(
+          if :reliability in struct_fields and :status_flags in struct_fields do
+            quote do
+              new_object =
+                if new_object.reliability != nil do
+                  %{
+                    new_object
+                    | status_flags: %{
+                        new_object.status_flags
+                        | fault:
+                            new_object.reliability !=
+                              Constants.macro_assert_name(:reliability, :no_fault_detected)
+                      }
+                  }
+                else
+                  new_object
+                end
+            end
+          end
+        )
+
+        # Update status flags out_of_service
+        unquote(
+          if :out_of_service in struct_fields and :status_flags in struct_fields do
+            quote do
+              new_object = %{
+                new_object
+                | status_flags: %{
+                    new_object.status_flags
+                    | out_of_service: new_object.out_of_service
+                  }
+              }
+            end
+          end
+        )
+
+        new_object
+      end
+
       # Stuff for objects with priority_array property (and present_value property)
       if unquote(pv_ex_type) != nil and :priority_array in unquote(struct_deffields) do
         alias BACnet.Protocol.PriorityArray
@@ -1732,21 +1766,14 @@ defmodule BACnet.Protocol.ObjectsMacro do
           case pv_check do
             :ok ->
               new_prio = Map.put(prio_array, PriorityArray.int_to_atom(priority), value)
-              new_object = %{object | priority_array: new_prio}
 
-              # If object is out of service, do not re-write present value
-              new_object =
-                if object.out_of_service do
-                  new_object
-                else
-                  present_value =
-                    case PriorityArray.get_value(new_prio) do
-                      {_prio, value} -> value
-                      nil -> new_object.relinquish_default
-                    end
-
-                  %{new_object | present_value: present_value}
+              present_value =
+                case PriorityArray.get_value(new_prio) do
+                  {_prio, value} -> value
+                  nil -> object.relinquish_default
                 end
+
+              new_object = %{object | priority_array: new_prio, present_value: present_value}
 
               # Update the feedback_value property with the present value
               unquote(
@@ -1921,7 +1948,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
       @spec prevent_commandable_objects_write_pv(map(), Constants.property_identifier()) ::
               :ok | property_update_error()
       defp prevent_commandable_objects_write_pv(
-             %{priority_array: %PriorityArray{} = _pa, out_of_service: false} = object,
+             %{priority_array: %PriorityArray{} = _pa} = object,
              :present_value
            ) do
         {:error, {:protected_property, :present_value}}

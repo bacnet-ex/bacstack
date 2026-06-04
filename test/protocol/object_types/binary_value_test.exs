@@ -10,6 +10,19 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryValueTest do
   # This test suite only extends the basic and utility test suite to
   # cover additional implemented functionality
 
+  test "create/4 priority array overrides given present value" do
+    assert {:ok, %BinaryValue{present_value: false}} =
+             BinaryValue.create(1, "TEST", %{present_value: true, relinquish_default: false})
+  end
+
+  test "add_property/3 priority array overrides given present value" do
+    {:ok, %BinaryValue{present_value: false} = obj} =
+      BinaryValue.create(1, "TEST", %{present_value: false})
+
+    assert {:ok, %BinaryValue{present_value: true}} =
+             BinaryValue.add_property(obj, :relinquish_default, true)
+  end
+
   test "verify get_output/1 for normal priority" do
     {:ok, %BinaryValue{present_value: false} = obj} =
       BinaryValue.create(1, "TEST", %{polarity: :normal})

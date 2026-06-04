@@ -10,6 +10,19 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AnalogValueTest do
   # This test suite only extends the basic and utility test suite to
   # cover additional implemented functionality
 
+  test "create/4 priority array overrides given present value" do
+    assert {:ok, %AnalogValue{present_value: 1.0}} =
+             AnalogValue.create(1, "TEST", %{present_value: 25.0, relinquish_default: 1.0})
+  end
+
+  test "add_property/3 priority array overrides given present value" do
+    {:ok, %AnalogValue{present_value: 25.0} = obj} =
+      AnalogValue.create(1, "TEST", %{present_value: 25.0})
+
+    assert {:ok, %AnalogValue{present_value: 1.0}} =
+             AnalogValue.add_property(obj, :relinquish_default, 1.0)
+  end
+
   for property <- [:present_value, :relinquish_default] do
     test "verify update_property/3 for #{property} ignores min/max if max not present" do
       {:ok, %AnalogValue{unquote(property) => +0.0} = obj} =

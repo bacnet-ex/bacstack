@@ -11,6 +11,7 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
   alias BACnet.Protocol.ObjectPropertyRef
   alias BACnet.Protocol.ObjectsMacro
   alias BACnet.Protocol.PriorityArray
+  alias BACnet.Protocol.StatusFlags
 
   require Constants
 
@@ -725,6 +726,7 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
         field(:description, String.t())
         field(:device_type, String.t())
         field(:out_of_service, boolean(), required: true)
+        field(:status_flags, StatusFlags.t(), required: true)
       end
     end
 
@@ -1262,14 +1264,14 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
              unquote(mod_name_pa_stub).update_property(test_obj, :present_value, true)
   end
 
-  test "verify update_property/3 writing to present_value works when out_of_service" do
+  test "verify update_property/3 writing to present_value dont work when out_of_service" do
     assert {:ok, %{present_value: false} = test_obj} =
              unquote(mod_name_pa_stub).create(1, "TEST", %{
                out_of_service: true,
                priority_array: %PriorityArray{}
              })
 
-    assert {:ok, %{present_value: true}} =
+    assert {:error, {:protected_property, :present_value}} =
              unquote(mod_name_pa_stub).update_property(test_obj, :present_value, true)
   end
 
@@ -1381,14 +1383,14 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
              })
 
     assert {:ok,
-            %{present_value: false, priority_array: %PriorityArray{priority_16: true}} = test_obj2} =
+            %{present_value: true, priority_array: %PriorityArray{priority_16: true}} = test_obj2} =
              unquote(mod_name_protected_stub).set_priority(test_obj2, 16, true)
 
     assert {:ok,
             %{
               present_value: false,
-              priority_array: %PriorityArray{priority_1: true, priority_16: true}
-            }} = unquote(mod_name_protected_stub).set_priority(test_obj2, 1, true)
+              priority_array: %PriorityArray{priority_1: false, priority_16: true}
+            }} = unquote(mod_name_protected_stub).set_priority(test_obj2, 1, false)
   end
 
   test "verify set_priority/3 works and updates feedback_value if requested" do
@@ -1411,7 +1413,7 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
              unquote(mod_name_protected_stub).set_priority(test_obj2, 16, true)
   end
 
-  test "verify set_priority/3 works and updates not feedback_value if requested but out_of_service" do
+  test "verify set_priority/3 works and updates feedback_value if requested and out_of_service" do
     assert {:ok, %{feedback_value: false, present_value: false} = test_obj3} =
              unquote(mod_name_protected_stub).create(
                1,
@@ -1420,7 +1422,7 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
                auto_write_feedback: true
              )
 
-    assert {:ok, %{feedback_value: false, present_value: false}} =
+    assert {:ok, %{feedback_value: true, present_value: true}} =
              unquote(mod_name_protected_stub).set_priority(test_obj3, 16, true)
   end
 
@@ -1447,11 +1449,81 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
                priority_array: %PriorityArray{}
              })
 
-    assert {:ok, %{present_value: false} = test_obj1} =
+    assert {:ok, %{present_value: true} = test_obj1} =
              unquote(mod_name_protected_stub).set_priority(test_obj1, 16, true)
 
     assert {:ok, %{present_value: true}} =
              unquote(mod_name_protected_stub).update_property(test_obj1, :out_of_service, false)
+  end
+
+  # Our stub for status_flags tests
+  {:module, mod_name_status_flags_stub, bytecode_status_flags_stub, _more} =
+    defmodule BacObjectStatusFlagsStub do
+      use ObjectsMacro
+
+      @type object_opts :: nil
+
+      bac_object :binary_input do
+        services(intrinsic: true)
+
+        # Keep present_value first for coverage for pv_type_raw Enum.find_value/3
+        field(:present_value, boolean(), required: true, default: false)
+        field(:description, String.t())
+        field(:device_type, String.t())
+        field(:out_of_service, boolean(), required: true)
+        field(:status_flags, StatusFlags.t(), required: true)
+        field(:event_state, Constants.event_state(), required: true, default: :normal)
+        field(:reliability, Constants.reliability(), required: true, default: :no_fault_detected)
+      end
+    end
+
+  test "verify update_property/3 with event_state updates status_flags" do
+    assert {:ok, %{status_flags: %StatusFlags{in_alarm: false}} = test_obj1} =
+             unquote(mod_name_status_flags_stub).create(1, "T", %{event_state: :normal})
+
+    assert {:ok, %{status_flags: %StatusFlags{in_alarm: true}} = test_obj2} =
+             unquote(mod_name_status_flags_stub).update_property(
+               test_obj1,
+               :event_state,
+               :offnormal
+             )
+
+    assert {:ok, %{status_flags: %StatusFlags{in_alarm: false}}} =
+             unquote(mod_name_status_flags_stub).update_property(test_obj2, :event_state, :normal)
+  end
+
+  test "verify update_property/3 with out_of_service updates status_flags" do
+    assert {:ok, %{status_flags: %StatusFlags{out_of_service: false}} = test_obj1} =
+             unquote(mod_name_status_flags_stub).create(1, "T", %{out_of_service: false})
+
+    assert {:ok, %{status_flags: %StatusFlags{out_of_service: true}} = test_obj2} =
+             unquote(mod_name_status_flags_stub).update_property(test_obj1, :out_of_service, true)
+
+    assert {:ok, %{status_flags: %StatusFlags{out_of_service: false}}} =
+             unquote(mod_name_status_flags_stub).update_property(
+               test_obj2,
+               :out_of_service,
+               false
+             )
+  end
+
+  test "verify update_property/3 with reliability updates status_flags" do
+    assert {:ok, %{status_flags: %StatusFlags{fault: false}} = test_obj1} =
+             unquote(mod_name_status_flags_stub).create(1, "T", %{reliability: :no_fault_detected})
+
+    assert {:ok, %{status_flags: %StatusFlags{fault: true}} = test_obj2} =
+             unquote(mod_name_status_flags_stub).update_property(
+               test_obj1,
+               :reliability,
+               :member_fault
+             )
+
+    assert {:ok, %{status_flags: %StatusFlags{fault: false}}} =
+             unquote(mod_name_status_flags_stub).update_property(
+               test_obj2,
+               :reliability,
+               :no_fault_detected
+             )
   end
 
   # Our stub with optionally required properties using required_when for the tests below

@@ -12,6 +12,11 @@ defmodule BACnet.Test.Protocol.ObjectTypes.MultistateOutputTest do
   # This test suite only extends the basic and utility test suite to
   # cover additional implemented functionality
 
+  test "create/4 priority array overrides given present value" do
+    assert {:ok, %MultistateOutput{present_value: 1}} =
+             MultistateOutput.create(1, "TEST", %{number_of_states: 4, present_value: 3})
+  end
+
   test "verify create/4 enforces number_of_states for relinquish_default" do
     assert {:ok, %{present_value: 1} = _obj} =
              MultistateOutput.create(1, "TEST", %{number_of_states: 4, relinquish_default: 1})
@@ -142,6 +147,22 @@ defmodule BACnet.Test.Protocol.ObjectTypes.MultistateOutputTest do
              MultistateOutput.update_property(obj, :priority_array, %PriorityArray{
                priority_16: 32_767
              })
+  end
+
+  test "verify get_property/2 with present_value respects command prioritization on out of service" do
+    {:ok, %MultistateOutput{present_value: 1} = obj} =
+      MultistateOutput.create(1, "TEST", %{number_of_states: 4, relinquish_default: 1})
+
+    assert {:ok, 1} = MultistateOutput.get_property(obj, :present_value)
+
+    {:ok, obj} = MultistateOutput.update_property(obj, :out_of_service, true)
+
+    assert {:ok, 1} = MultistateOutput.get_property(obj, :present_value)
+    assert {:ok, %{present_value: 3} = obj} = MultistateOutput.set_priority(obj, 16, 3)
+    assert {:ok, %{present_value: 2} = obj} = MultistateOutput.set_priority(obj, 1, 2)
+
+    assert {:ok, %{present_value: 2}} =
+             MultistateOutput.update_property(obj, :out_of_service, false)
   end
 
   test "verify set_priority/3 enforces number_of_states" do

@@ -122,12 +122,24 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryOutput do
 
   @doc """
   Get the logical state of the object from the present value property in respect to the polarity.
+
+  If the object is out of service, then the `decoupled_output_state` is returned.
+  The actual polarity is ignored for `decoupled_output_state`.
+  The specification specifies that when the object is out of service, then the physical output
+  is decoupled from the BACnet present value. The actual physical output state can then either
+  hold its last value, go to a safe state or behaves according to local logic (-> defined as local matter).
+  The default value is `false` - the safe state of physical outputs in typical environments.
   """
-  @spec get_output(t()) :: boolean()
-  def get_output(%__MODULE__{} = object) do
-    case object.polarity do
-      Constants.macro_assert_name(:polarity, :normal) -> object.present_value
-      Constants.macro_assert_name(:polarity, :reverse) -> !object.present_value
+  @spec get_output(t(), boolean()) :: boolean()
+  def get_output(%__MODULE__{} = object, decoupled_output_state \\ false)
+      when is_boolean(decoupled_output_state) do
+    if object.out_of_service do
+      decoupled_output_state
+    else
+      case object.polarity do
+        Constants.macro_assert_name(:polarity, :normal) -> object.present_value
+        Constants.macro_assert_name(:polarity, :reverse) -> !object.present_value
+      end
     end
   end
 end

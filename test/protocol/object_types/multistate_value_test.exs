@@ -122,6 +122,23 @@ defmodule BACnet.Test.Protocol.ObjectTypes.MultistateValueTest do
              })
   end
 
+  test "create/4 priority array overrides given present value" do
+    assert {:ok, %MultistateValue{present_value: 4}} =
+             MultistateValue.create(1, "TEST", %{
+               number_of_states: 4,
+               present_value: 3,
+               relinquish_default: 4
+             })
+  end
+
+  test "add_property/3 priority array overrides given present value" do
+    {:ok, %MultistateValue{present_value: 3} = obj} =
+      MultistateValue.create(1, "TEST", %{number_of_states: 4, present_value: 3})
+
+    assert {:ok, %MultistateValue{present_value: 2}} =
+             MultistateValue.add_property(obj, :relinquish_default, 2)
+  end
+
   test "verify update_property/3 enforces number_of_states for present_value" do
     {:ok, obj} = MultistateValue.create(1, "TEST", %{number_of_states: 4})
 

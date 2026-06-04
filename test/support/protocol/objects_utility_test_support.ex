@@ -27,6 +27,7 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
   alias BACnet.Protocol.ReadAccessResult.ReadResult
   alias BACnet.Protocol.Recipient
   alias BACnet.Protocol.SetpointReference
+  alias BACnet.Protocol.StatusFlags
   alias BACnet.Protocol.ObjectTypes.TrendLog
   alias BACnet.Protocol.ObjectTypes.TrendLogMultiple
 
@@ -117,7 +118,8 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
     |> generate_spec_for_struct_type({:struct, mod}, nil)
     |> elem(0)
     |> Map.from_struct()
-    |> Map.drop([:object_instance, :object_name])
+    # status_flags is automatically updated!
+    |> Map.drop([:object_instance, :object_name, :status_flags])
     # Post-processing
     |> then(fn
       # Segmentation requires some additional properties on the Device object (drop it here)
@@ -1426,6 +1428,36 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
        )
        when log > 0 do
     %{struct | logging_type: :polled}
+  end
+
+  defp amend_struct_spec_for_cause(
+         %{priority_array: %PriorityArray{} = pa, relinquish_default: rq} = struct,
+         _cause
+       ) do
+    case PriorityArray.get_value(pa) do
+      {_prio, val} -> %{struct | present_value: val}
+      nil -> %{struct | present_value: rq}
+    end
+  end
+
+  defp amend_struct_spec_for_cause(
+         %{
+           status_flags: %StatusFlags{} = flags,
+           event_state: state,
+           reliability: rel,
+           out_of_service: oos
+         } = struct,
+         _cause
+       ) do
+    %{
+      struct
+      | status_flags: %{
+          flags
+          | in_alarm: state != nil and state != :normal,
+            fault: rel != nil and rel != :no_fault_detected,
+            out_of_service: oos
+        }
+    }
   end
 
   defp amend_struct_spec_for_cause(struct, _cause) do
