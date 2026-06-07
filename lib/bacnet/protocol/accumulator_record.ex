@@ -3,8 +3,7 @@ defmodule BACnet.Protocol.AccumulatorRecord do
   An Accumulator Record captures a single sample from an Accumulator object
   at a particular point in time.
 
-  Each record contains a timestamp (which may be a BACnet DateTime, a sequence
-  number, or an unspecified time), the accumulated present value at that moment,
+  Each record contains a timestamp, the accumulated present value at that moment,
   and an indication of whether the accumulation was the result of a normal
   rollover, a manual preset, or an error condition.
   """
