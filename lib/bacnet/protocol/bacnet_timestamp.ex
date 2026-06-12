@@ -87,9 +87,9 @@ defmodule BACnet.Protocol.BACnetTimestamp do
   @typedoc """
   A CHOICE timestamp (see ASN.1 `BACnetTimeStamp` production in Clause 21).
 
-  - `type: :time`            → context tag 0, `time` field present
-  - `type: :sequence_number` → context tag 1, `sequence_number` (0..65535)
-  - `type: :datetime`        → context tag 2, `datetime` field present
+  - `type: :time`            -> context tag 0, `time` field present
+  - `type: :sequence_number` -> context tag 1, `sequence_number` (0..65535)
+  - `type: :datetime`        -> context tag 2, `datetime` field present
 
   The discriminant `type` tells the encoder which context tag to emit.
   """

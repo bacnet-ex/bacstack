@@ -1,26 +1,97 @@
 defmodule BACnet.Protocol.ObjectTypes.PulseConverter do
   @moduledoc """
-  The Pulse Converter object type defines a standardized object that represents
-  a process whereby ongoing measurements made of some quantity, such as
-  electric power or water or natural gas usage, and represented by pulses or counts,
-  might be monitored over some time interval for applications such as
-  peak load management, where it is necessary to make periodic measurements
-  but where a precise accounting of every input pulse or count is not required.
-  The Pulse Converter object might represent a physical input. As an alternative,
-  it might acquire the data from the Present_Value of an Accumulator object,
-  representing an input in the same device as the Pulse Converter object.
-  This linkage is illustrated by the dotted line in Figure 12-4. Every time the
-  Present_Value property of the Accumulator object is incremented, the Count property
-  of the Pulse Converter object is also incremented.
-  The Present_Value property of the Pulse Converter object can be adjusted at any time
-  by writing to the Adjust_Value property, which causes the Count property to be adjusted,
-  and the Present_Value recomputed from Count. In the illustration in Figure 12-4,
-  the Count property of the Pulse Converter was adjusted down to 0 when the Total_Count
-  of the Accumulator object had the value 0070.
+  The Pulse Converter object turns a raw pulse train (from a physical input)
+  into engineering-unit rate or total values over a configurable time window.
+  It is especially useful for demand metering (kW, gpm, etc.) where you
+  want a smoothed rate without having to count every pulse yourself.
 
-  Pulse Converter objects that support intrinsic reporting shall apply the OUT_OF_RANGE event algorithm.
+  The object references a pulse source via `input_reference` (i.e. pointing at
+  an a Binary Input that produces pulses) and maintains a `present_value`
+  (scaled engineering units), an `adjust_value` for manual correction,
+  a raw `count`, and timing properties (`update_time`, `count_change_time`).
+  The converter never generates pulses itself;
+  it only observes an external source.
 
-  (ASHRAE 135 - Clause 12.23)
+  ### Object Description (ASHRAE 135)
+
+  > The Pulse Converter object type defines a standardized object that represents
+  > a process whereby ongoing measurements made of some quantity, such as
+  > electric power or water or natural gas usage, and represented by pulses or counts,
+  > might be monitored over some time interval.
+  >
+  > Pulse Converter objects that support intrinsic reporting shall apply
+  > the OUT_OF_RANGE event algorithm.
+
+  ### Behaviour and Operation
+
+  Pulse Converter objects turn a raw pulse or count source into a rate or integrated
+  engineering value over a time window. The local application or a periodic task
+  must feed pulses into the object (via the referenced `input_reference` pointing at
+  Binary Input).
+
+  The object then computes `present_value` (scaled by `scale_factor` and adjusted
+  by `adjust_value`) and maintains timing properties. Clients read the derived
+  rate/total; they do not write pulses.
+
+  `out_of_service` can pause the conversion while a test value is forced into
+  `present_value`. The `reliability` property and corresponding `FAULT` state
+  are also to be decoupled.
+
+  ### Developer Implementation Notes (geared to device server / application authors)
+
+  The generated code handles storage + basic mechanics (validation, implicit_relationships,
+  readonly annotations as hints to your server, etc.). **You must drive "special" live
+  properties and side effects yourself**, analogous to maintaining `present_value` on
+  inputs via `update_property/3` (never direct mutation). Read notes below + generated
+  tables for details.
+
+  **Special / live properties and expected developer behaviour**
+
+  - `present_value`: The converted engineering value (rate or total)
+    = (count or input pulses) * scale_factor + adjust_value.
+    **Dev must**: Maintain `count` by observing the `input_reference` if present,
+    and update `present_value` after your conversion math. This is the live
+    derived input.
+
+  - `count`, `count_change_time`, `count_before_change`: Raw pulse count tracking
+    (similar to Accumulator's change tracking).
+    **Dev must**: When pulses arrive (from hardware or by reading the `input_reference`
+    object), update count, and on manual adjustment via `adjust_value`
+    or resets, populate the before/change times. These enable detecting adjustments.
+
+  - `input_reference` (ObjectPropertyRef): Points to source of pulses (typically a BinaryInput).
+    **Dev must**: If set, your periodic task or change listener must read the source
+    (local or remote ReadProperty) and use it to modify `count` and `present_value`.
+    If the object is remote, handle communication errors via `reliability`.
+
+  - `adjust_value`: Manual offset/correction.
+    **Dev must**: Allow writes; your conversion should include it.
+
+  - `scale_factor`: Conversion factor.
+    **Dev must**: Set at creation from meter characteristics; usually static.
+
+  - `cov_increment`, `cov_period`: For COV on the converted value.
+    **Dev must**: Normal PV updates will trigger COV logic using these.
+
+  - `out_of_service`, `status_flags`, `reliability`:
+    **Dev must**: While `out_of_service` is `true`, allow forcing `present_value` for test;
+    suspend normal `input_reference` polling and `count` updates.
+    Maintain reliability from source health, if `out_of_service` is `false`.
+    The `in_alarm`/`fault`/`out_of_service` bits of `status_flags` are auto-managed by
+    the object (`overridden` is local matter).
+
+  - `high_limit`, `low_limit`, `deadband`: For out of range on the converted value.
+    **Dev must**: After PV/count changes, re-eval the algorithm and drive notifications.
+
+  ### Examples
+
+  Creating a Pulse Converter:
+
+      iex> {:ok, pc} = BACnet.Protocol.ObjectTypes.PulseConverter.create(400, "UsageRate", %{}); pc.object_name
+      "UsageRate"
+
+  ### See Also
+  - `BACnet.Protocol.EventAlgorithms.OutOfRange`
   """
 
   alias BACnet.Protocol.BACnetDateTime

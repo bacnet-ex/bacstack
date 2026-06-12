@@ -1,14 +1,94 @@
 defmodule BACnet.Protocol.ObjectTypes.IntegerValue do
   @moduledoc """
-  The Integer Value object type defines a standardized object whose properties represent
-  the externally visible characteristics of a named data value in a BACnet device.
-  A BACnet device can use an Integer Value object to make any kind of signed integer data
-  value accessible to other BACnet devices.
-  The mechanisms by which the value is derived are not visible to the BACnet client.
+  The Integer Value object publishes a signed integer that lives inside the device.
+  It is the signed counterpart to Positive Integer Value and is typically used
+  for counters that may go negative, error codes, step numbers, or any other integer
+  quantity that clients need to read or write.
 
-  Integer Value objects that support intrinsic reporting shall apply the SIGNED_OUT_OF_RANGE event algorithm.
+  The value can be made fully commandable via a priority array so that multiple
+  writers can arbitrate. When `intrinsic_reporting: true` is passed to `create/4`,
+  the SIGNED_OUT_OF_RANGE algorithm is activated, allowing high/low limit alarming
+  on the integer value.
 
-  (ASHRAE 135 - Clause 12.43)
+  ### Object Description (ASHRAE 135)
+
+  > The Integer Value object type defines a standardized object whose properties represent
+  > the externally visible characteristics of a named data value in a BACnet device.
+  > A BACnet device can use an Integer Value object to make any kind of signed integer data
+  > value accessible to other BACnet devices.
+  >
+  > Integer Value objects that support intrinsic reporting shall apply the SIGNED_OUT_OF_RANGE event algorithm.
+
+  ### Behaviour and Operation
+
+  Integer Value objects expose a signed integer that lives in the device's memory.
+  The value can be written directly by the local application or by BACnet clients
+  unless a priority array is present (making the object commandable). In
+  the commandable case the library derives `present_value` from the priority array
+  and blocks direct writes to it.
+
+  Typical uses include counters that may go negative, step numbers, error codes,
+  or any other integer quantity. When intrinsic reporting is enabled the
+  SIGNED_OUT_OF_RANGE algorithm provides high/low alarming with deadband.
+
+  ### Developer Implementation Notes (geared to device server / application authors)
+
+  The generated code handles storage + basic mechanics (validation, implicit_relationships,
+  readonly annotations as hints to your server, etc.). **You must drive "special" live
+  properties and side effects yourself**, analogous to maintaining `present_value` on
+  inputs via `update_property/3` (never direct mutation). Read notes below + generated
+  tables for details.
+
+  **Special / live properties and expected developer behaviour**
+
+  - `present_value`: The current integer value.
+    **Dev must**: If no priority_array, local app or clients write it directly via
+    `update_property/3`. If commandable (PA + `relinquish_default` present), only command
+    via `set_priority/3` or updating the PA/relinquish.
+
+  - `priority_array`, `relinquish_default`: Optional for making it commandable
+    (unlike outputs, not required at creation).
+    **Dev must**: Add later via `add_property/3` if desired. Once added, protection and
+    derivation logic activates. Your commanding sources use the priority APIs.
+
+  - `status_flags`, `out_of_service`, `reliability` (implicit inhibit):
+    **Dev must**: Reliability usually reflects source health
+    (bad calc, missing input to formula, etc.). The `in_alarm`, `fault` and `out_of_service`
+    bits are automatically kept in sync by the object; `overridden` is a local matter.
+
+  - `min_present_value`, `max_present_value`, `resolution`, `units`: Config/limits.
+    **Dev must**: Set accurately for your use case.
+
+  - Intrinsic (`high/low_limit`, `deadband` + full event set when enabled): For
+    OUT_OF_RANGE.
+    **Dev must**: After PV (or reliability) change, your event engine must re-evaluate
+    SIGNED_OUT_OF_RANGE using these on the object, update `event_state` etc., and emit
+    notifications as needed.
+
+  ### Intrinsic Reporting
+
+  When `intrinsic_reporting: true` is passed to `create/4`, the SIGNED_OUT_OF_RANGE
+  event algorithm and related properties become active.
+
+  ### Commandability and Priority Arrays
+
+  Value objects can have a `priority_array` (making them commandable). When a priority array
+  is present, the present value is protected and is only changed through the priority mechanism.
+
+  ### Examples
+
+  Creating a minimal Integer Value:
+
+      iex> {:ok, iv} = BACnet.Protocol.ObjectTypes.IntegerValue.create(10, "Counter", %{}); iv.present_value
+      0
+
+  With intrinsic reporting enabled:
+
+      iex> {:ok, iv} = BACnet.Protocol.ObjectTypes.IntegerValue.create(11, "Setpt", %{present_value: 100}, intrinsic_reporting: true); iv.object_name
+      "Setpt"
+
+  ### See Also
+  - `BACnet.Protocol.EventAlgorithms.SignedOutOfRange`
   """
 
   alias BACnet.Protocol.Constants
@@ -19,6 +99,9 @@ defmodule BACnet.Protocol.ObjectTypes.IntegerValue do
 
   @typedoc """
   Options accepted when creating or configuring an Integer Value object.
+
+  In addition to the common options, Integer Value supports:
+  - `intrinsic_reporting` - Enables SIGNED_OUT_OF_RANGE intrinsic reporting.
   """
   @type object_opts ::
           {:intrinsic_reporting, boolean()} | common_object_opts()
@@ -30,11 +113,7 @@ defmodule BACnet.Protocol.ObjectTypes.IntegerValue do
   Properties which are for Intrinsic Reporting are nil, if disabled. If Intrinsic Reporting is enabled on the object,
   then the properties can not be nil.
 
-  For commandable objects (objects with a priority array), the present value property is protected,
-  unless out of service is active. For the duration of out of service, updates to the present value
-  using `update_property/3` are allowed. Once out of service is disabled, the present value is once
-  again protected from updates, as the present value is updated through the relinquish_default and
-  priority_array properties.
+  For commandable objects (objects with a priority array), the present value property is protected.
   """
   bac_object Constants.macro_assert_name(:object_type, :integer_value) do
     services(intrinsic: true)
@@ -44,7 +123,13 @@ defmodule BACnet.Protocol.ObjectTypes.IntegerValue do
     field(:event_state, Constants.event_state(), required: true)
     field(:status_flags, BACnet.Protocol.StatusFlags.t(), required: true, readonly: true)
     field(:out_of_service, boolean(), required: true)
-    field(:present_value, integer(), required: true, default: 0)
+
+    field(:present_value, integer(),
+      required: true,
+      default: 0,
+      annotation: {:readonly_when, {:out_of_service, false}}
+    )
+
     field(:priority_array, PriorityArray.t(integer()), readonly: true)
     field(:relinquish_default, integer(), default: 0)
 

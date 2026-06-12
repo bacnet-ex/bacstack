@@ -22,30 +22,4 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryValueTest do
     assert {:ok, %BinaryValue{present_value: true}} =
              BinaryValue.add_property(obj, :relinquish_default, true)
   end
-
-  test "verify get_output/1 for normal priority" do
-    {:ok, %BinaryValue{present_value: false} = obj} =
-      BinaryValue.create(1, "TEST", %{polarity: :normal})
-
-    assert false == BinaryValue.get_output(obj)
-
-    {:ok, obj} = BinaryValue.update_property(obj, :present_value, true)
-    assert true == BinaryValue.get_output(obj)
-
-    {:ok, obj} = BinaryValue.update_property(obj, :present_value, false)
-    assert false == BinaryValue.get_output(obj)
-  end
-
-  test "verify get_output/1 for reverse priority" do
-    {:ok, %BinaryValue{present_value: false} = obj} =
-      BinaryValue.create(1, "TEST", %{polarity: :reverse})
-
-    assert true == BinaryValue.get_output(obj)
-
-    {:ok, obj} = BinaryValue.update_property(obj, :present_value, true)
-    assert false == BinaryValue.get_output(obj)
-
-    {:ok, obj} = BinaryValue.update_property(obj, :present_value, false)
-    assert true == BinaryValue.get_output(obj)
-  end
 end

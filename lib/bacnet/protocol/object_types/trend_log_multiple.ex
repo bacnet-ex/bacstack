@@ -1,54 +1,125 @@
 defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
   @moduledoc """
-  A Trend Log Multiple object monitors one or more properties of one or more
-  referenced objects, either in the same device as the Trend Log Multiple object
-  or in an external device. When predefined conditions are met,
-  the object saves ("logs") the value of the properties and a timestamp into
-  an internal buffer for subsequent retrieval. The data may be logged periodically
-  or when "triggered" by a write to the Trigger property. Errors that prevent the
-  acquisition of the data, as well as changes in the status or operation of the
-  logging process itself, are also recorded. Each timestamped buffer entry is
-  called a "log record". The Log_DeviceObjectProperty array holds the list of
-  properties to be monitored and logged. If an element of the
-  Log_DeviceObjectProperty array has an object or device instance number equal to 4194303,
-  this indicates that the element is 'empty' or 'uninitialized'.
-  For empty or uninitialized elements, an indication that no property was specified
-  shall be written to the corresponding entry in each log record.
+  The Trend Log Multiple object extends Trend Log to record several properties at
+  once into each log entry. All monitored properties (listed in
+  `log_device_object_property`) are sampled on the same trigger
+  (periodic or explicit), producing a single record that contains the values
+  of every member at that instant. This makes it ideal for capturing correlated
+  data (e.g. supply/return temp + valve position + airflow at the same moment).
 
-  Each Trend Log Multiple object maintains an internal, optionally fixed-size,
-  buffer in its Log_Buffer property. This buffer fills or grows as log records are added.
-  If the buffer becomes full, the least recent log record is overwritten when a new log
-  record is added, or collection may be set to stop. Trend Log Multiple buffers are
-  transferred as a list of BACnetLogMultipleRecord using the ReadRange service.
-  The buffer may be cleared by writing a zero to the Record_Count property.
-  Each log record in the buffer has an implied SequenceNumber that is equal to
-  the value of the Total_Record_Count property immediately after the log record is added.
+  The object offers the same rich configuration as a regular Trend Log: clock-aligned
+  logging, time windows, buffer management, enable/disable, and optional
+  BUFFER_READY intrinsic reporting when `intrinsic_reporting: true`.
+  Buffer Retrieval is performed with the `BACnet.Protocol.Services.ReadRange` service.
 
-  Logging may be enabled and disabled through the Enable property and at dates and times
-  specified by the Start_Time and Stop_Time properties. The enabling and disabling of
-  record collection is recorded in the Log_Buffer.
-  Event reporting (notification) may be provided to facilitate automatic fetching of
-  log records by processes on other devices such as fileservers.
-  Mechanisms for both algorithmic and intrinsic reporting are provided.
-  Trend Log Multiple objects that support intrinsic reporting shall apply the BUFFER_READY event algorithm.
+  ### Object Description (ASHRAE 135)
 
-  In intrinsic reporting, when the number of records specified by the
-  Notification_Threshold property has been collected since the previous notification (or startup),
-  a new notification is sent to all subscribed devices. In response to a notification,
-  subscribers may fetch all of the new log records. If a subscriber needs to fetch all
-  of the new log records, it should use the 'By Sequence Number' form of the
-  ReadRange service request. A missed notification may be detected by a subscriber
-  if the 'Current Notification' parameter received in the previous BUFFER_READY notification
-  is different than the 'Previous Notification' parameter of the current BUFFER_READY
-  notification. If the ReadRange-ACK response to the ReadRange request issued under these conditions
-  has the FIRST_ITEM bit of the 'Result Flags' parameter set to TRUE, Trend Log Multiple log records
-  have probably been missed by this subscriber.
-  The acquisition of log records by remote devices has no effect upon the state of the
-  Trend Log Multiple object itself. This allows completely independent, but properly sequential,
-  access to its log records by all remote devices. Any remote device can independently
-  update its records at any time.
+  > A Trend Log Multiple object monitors one or more properties of one or more
+  > referenced objects, either in the same device as the Trend Log Multiple object
+  > or in an external device. When predefined conditions are met,
+  > the object saves ("logs") the value of the properties and a timestamp into
+  > an internal buffer for subsequent retrieval.
+  >
+  > Trend Log Multiple objects that support intrinsic reporting shall
+  > apply the BUFFER_READY event algorithm.
 
-  (ASHRAE 135 - Clause 12.30)
+  ### Behaviour and Operation
+
+  Trend Log Multiple objects are like Trend Log but log a multiple of properties on
+  each sample (all properties in `log_device_object_property` are captured).
+  This produces correlated snapshots useful for analyzing cause-effect relationships.
+
+  The local logging engine must sample all referenced properties (local or remote)
+  at the same trigger instant (periodic or explicit trigger) and store a single
+  `BACnet.Protocol.LogMultipleRecord` containing the values.
+
+  Retrieval, buffer management, clock alignment, start/stop windows, and
+  BUFFER_READY intrinsic reporting (when enabled) work the same as for a regular
+  Trend Log.
+
+  ### Developer Implementation Notes (geared to device server / application authors)
+
+  The generated code handles storage + basic mechanics (validation, implicit_relationships,
+  readonly annotations as hints to your server, etc.). **You must drive "special" live
+  properties and side effects yourself**, analogous to maintaining `present_value` on
+  inputs via `update_property/3` (never direct mutation). Read notes below + generated
+  tables for details.
+
+  **Special / live properties and expected developer behaviour**
+
+  (Very similar to TrendLog; see its notes for the full engine description.)
+
+  - `log_device_object_property` (now a BACnetArray of refs for multiple): The
+    properties being trended (can be on local or remote devices).
+    **Dev must**: Your logging task(s) must periodically (polled) or on change (COV)
+    read all the referenced properties (issuing ReadProperty or using COV subs for
+    remotes) and produce LogMultipleRecord entries containing the array of values.
+
+  - `log_buffer` ([LogMultipleRecord.t()]): The history.
+    **Dev must**: Own the sampler: on timer or notification, read current values (with
+    status), build record with timestamp + the array of values + status, append or
+    overwrite per stop_when_full using update_property on the buffer (or manage
+    internally and write whole). Enforce buffer_size.
+
+  - `record_count`, `total_record_count` (some readonly): Counters.
+    **Dev must**: Increment record_count on appends; total is cumulative (never
+    resets). Special update overrides allow reset of record_count to 0 under
+    conditions.
+
+  - `trigger`: For logging_type :triggered.
+    **Dev must**: Your code writes true to trigger a sample on demand.
+
+  - `logging_type`, `log_interval`, `cov_resubscription_interval`, `client_cov_increment`:
+    Control sampling mode.
+    **Dev must**: Your engine reacts to changes (the object has overrides that e.g.
+    flip logging_type on log_interval 0/non0 for compat). Re-schedule your task or
+    COV subs accordingly. property_writable? prevents some changes while enabled.
+
+  - `buffer_size`, `stop_when_full`, `enable`, `start_time`/`stop_time`, `align_intervals` etc:
+    Config.
+    **Dev must**: Your writer must respect enable/stop/start windows, and for
+    aligned use proper next sample time calculation. buffer_size writes only
+    allowed when !enable (enforced by override).
+
+  - `notification_threshold` + intrinsic event fields (when enabled): BUFFER_READY.
+    **Dev must**: On appends, manage records_since_notification, emit when crosses
+    threshold.
+
+  - `reliability` etc: Source or buffer full issues.
+    **Dev must**: Set when a referenced prop can't be read, or buffer issues.
+
+  Your logging engine is responsible for all sampling and buffer management; the
+  object is the config + storage + enforcement container. See TrendLog notes for
+  more on clock aligned, remote sources, performance, etc.
+
+  The `BACnet.Stack.TrendLogger` module does a lot of this work.
+
+  ### Intrinsic Reporting
+
+  When `intrinsic_reporting: true` is passed to `create/4`,
+  BUFFER_READY intrinsic reporting is enabled.
+
+  ### Examples
+
+  Creating a Trend Log Multiple:
+
+      iex> alias BACnet.Protocol.{DeviceObjectPropertyRef, ObjectIdentifier, BACnetArray}
+      iex> ref = %DeviceObjectPropertyRef{object_identifier: %ObjectIdentifier{type: :analog_input, instance: 1}, property_identifier: :present_value, property_array_index: nil, device_identifier: nil}
+      iex> {:ok, tlm} = BACnet.Protocol.ObjectTypes.TrendLogMultiple.create(1000, "MultiTrend", %{log_device_object_property: BACnetArray.from_list([ref]), buffer_size: 100, logging_type: :polled, log_interval: 60}); tlm.object_name
+      "MultiTrend"
+
+  With special options:
+
+      iex> alias BACnet.Protocol.{DeviceObjectPropertyRef, ObjectIdentifier, BACnetArray}
+      iex> ref = %DeviceObjectPropertyRef{object_identifier: %ObjectIdentifier{type: :analog_input, instance: 1}, property_identifier: :present_value, property_array_index: nil, device_identifier: nil}
+      iex> {:ok, tlm} = BACnet.Protocol.ObjectTypes.TrendLogMultiple.create(1001, "AlignedMulti", %{log_device_object_property: BACnetArray.from_list([ref]), buffer_size: 50, logging_type: :polled, log_interval: 300, align_intervals: false, interval_offset: 0}, intrinsic_reporting: true, clock_aligned_logging: true); tlm.object_name
+      "AlignedMulti"
+
+  ### See Also
+  - `BACnet.Protocol.LogMultipleRecord`
+  - `BACnet.Protocol.EventAlgorithms.BufferReady`
+  - `BACnet.Protocol.Services.ReadRange`
+  - `BACnet.Stack.TrendLogger`
   """
 
   alias BACnet.Protocol.ApplicationTags
@@ -65,11 +136,15 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
 
   @typedoc """
   Options accepted when creating or configuring a Trend Log Multiple object.
+
+  In addition to the common options, Trend Log Multiple supports:
+  - `clock_aligned_logging` - Enables clock-aligned logging intervals.
+  - `intrinsic_reporting` - Enables BUFFER_READY intrinsic reporting.
   """
   @type object_opts ::
-          {:intrinsic_reporting, boolean()}
+          {:clock_aligned_logging, boolean()}
+          | {:intrinsic_reporting, boolean()}
           | common_object_opts()
-          | {:clock_aligned_logging, boolean()}
 
   @typedoc """
   Represents a Trend Log Multiple object. All keys should be treated as read-only,
@@ -129,7 +204,8 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
       default: 0
     )
 
-    field(:logging_type, Constants.logging_type(), required: true)
+    # Logging Type MUST NOT be COV for Trend Log Multiple
+    field(:logging_type, Constants.logging_type(), required: true, validator: &(&1 != :cov))
 
     # The following two properties are required if clock-aligned logging is supported
     field(:align_intervals, boolean(),
@@ -228,20 +304,8 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
     super(object, property, value)
   end
 
-  # Override check_implicit_relationships/2 to be able to override behaviour for
-  # logging_type and log_interval (error if not plausible)
-  defp check_implicit_relationships(object, operation) do
-    with {:ok, object} <- super(object, operation) do
-      case object do
-        %{logging_type: :cov, log_interval: log} when log > 0 ->
-          {:error, {:invalid_property_value_for_logging_type, :log_interval}}
+  defp inhibit_object_check(%{logging_type: :polled, log_interval: 0}),
+    do: {:error, {:invalid_property_value_for_logging_type, :log_interval}}
 
-        %{logging_type: :polled, log_interval: 0} ->
-          {:error, {:invalid_property_value_for_logging_type, :log_interval}}
-
-        _else ->
-          {:ok, object}
-      end
-    end
-  end
+  defp inhibit_object_check(object), do: {:ok, object}
 end

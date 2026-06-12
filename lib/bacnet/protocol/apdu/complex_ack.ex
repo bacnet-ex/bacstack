@@ -10,9 +10,9 @@ defmodule BACnet.Protocol.APDU.ComplexACK do
 
   They are the counterpart to `BACnet.Protocol.APDU.ConfirmedServiceRequest`
   for services whose positive response carries more than a simple acknowledgment:
-  - `ReadProperty` → list of property values
-  - `ReadPropertyMultiple` → multiple read-access results
-  - `AtomicReadFile` / `AtomicWriteFile` → file data / confirmation
+  - `ReadProperty` -> list of property values
+  - `ReadPropertyMultiple` -> multiple read-access results
+  - `AtomicReadFile` / `AtomicWriteFile` -> file data / confirmation
   - `GetEventInformation`, `GetAlarmSummary`, `ReadRange`, etc.
 
   The `payload` field contains the raw Application Tag encoding of the

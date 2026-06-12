@@ -4,9 +4,9 @@ defmodule BACnet.Protocol.DeviceObjectRef do
   device that contains it. It is one of the most common reference types in the
   entire BACnet object model.
 
-  - When `device_identifier` is present → absolute reference (works across the
+  - When `device_identifier` is present -> absolute reference (works across the
     BACnet internetwork).
-  - When `device_identifier` is `nil` → the reference is local to the device
+  - When `device_identifier` is `nil` -> the reference is local to the device
     holding the referring object.
 
   This distinction matters for Schedule, Trend Log, Event Enrollment, Structured

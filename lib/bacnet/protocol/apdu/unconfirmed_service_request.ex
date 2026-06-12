@@ -9,8 +9,8 @@ defmodule BACnet.Protocol.APDU.UnconfirmedServiceRequest do
   > a reply from the remote peer. (Clause 21)
 
   No reply is expected by the protocol (fire-and-forget). Typical uses include:
-  - Device discovery: `Who-Is` → devices answer with `I-Am`
-  - Name-based discovery: `Who-Has` → devices answer with `I-Have`
+  - Device discovery: `Who-Is` -> devices answer with `I-Am`
+  - Name-based discovery: `Who-Has` -> devices answer with `I-Have`
   - Change-of-Value (COV) notifications (unconfirmed variant)
   - Time synchronization broadcasts
   - Write-Group (efficient group writes)

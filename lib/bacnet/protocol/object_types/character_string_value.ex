@@ -1,19 +1,88 @@
 defmodule BACnet.Protocol.ObjectTypes.CharacterStringValue do
   @moduledoc """
-  The CharacterString Value object type defines a standardized object whose properties
-  represent the externally visible characteristics of a named data value in a BACnet device.
-  A BACnet device can use a CharacterString Value object to make any kind of character
-  string data value accessible to other BACnet devices. The mechanisms by which the
-  value is derived are not visible to the BACnet client.
+  The Character String Value object stores an arbitrary-length UTF-8 (or BACnet
+  character set) string as a network-visible named value. Typical uses include
+  operator messages, equipment labels, alarm descriptions, configuration parameters
+  expressed as text, or any other human-readable information that needs to be
+  exchanged or modified over BACnet.
 
-  If a set of strings is known and fixed, then a Multi-state Value object is an alternative
-  that may provide some benefit to automated processes consuming the numeric Present_Value.
-  CharacterString Value objects that support intrinsic reporting shall apply the
-  CHANGE_OF_CHARACTERSTRING event algorithm.
+  The value can be made commandable via a priority array.
+  When `intrinsic_reporting: true` is supplied at creation,
+  the CHANGE_OF_CHARACTERSTRING event algorithm (plus optional FAULT_CHARACTERSTRING)
+  is enabled so that specific string contents or transitions can raise alarms.
 
-  For reliability-evaluation, the FAULT_CHARACTERSTRING fault algorithm can be applied.
+  ### Object Description (ASHRAE 135)
 
-  (ASHRAE 135 - Clause 12.37)
+  > The CharacterString Value object type defines a standardized object whose properties
+  > represent the externally visible characteristics of a named data value in a BACnet device.
+  >
+  > CharacterString Value objects that support intrinsic reporting shall apply the
+  > CHANGE_OF_CHARACTERSTRING event algorithm.
+
+  ### Behaviour and Operation
+
+  Character String Value objects store free-form text. The string is a normal
+  writable property unless the object has been made commandable via a priority array
+  (in which case `present_value` is derived from the priority mechanism and direct
+  writes are not permitted).
+
+  The local application or a configuration client typically writes labels, messages,
+  or configuration text into the object. When intrinsic reporting is enabled the
+  CHANGE_OF_CHARACTERSTRING algorithm can raise alarms when the string matches (or
+  stops matching) configured values.
+
+  ### Developer Implementation Notes (geared to device server / application authors)
+
+  The generated code handles storage + basic mechanics (validation, implicit_relationships,
+  readonly annotations as hints to your server, etc.). **You must drive "special" live
+  properties and side effects yourself**, analogous to maintaining `present_value` on
+  inputs via `update_property/3` (never direct mutation). Read notes below + generated
+  tables for details.
+
+  **Special / live properties and expected developer behaviour**
+
+  - `present_value`: The current string value.
+
+  - `priority_array`, `relinquish_default`: For commandable strings.
+    **Dev must**: Command via priority APIs.
+
+  - `status_flags`: The `in_alarm`/`fault`/`out_of_service` bits of `status_flags` are
+    automatically updated by the object; `overridden` is a local matter.
+
+  - `alarm_values` (list of strings for intrinsic): Values that are alarming.
+    **Dev must**: For CHANGE_OF_CHARACTER_STRING alarming.
+
+  - Intrinsic event + optional fault (character string fault).
+    **Dev must**: On PV change, re-eval ChangeOfCharacterString (and fault if
+    enabled) using params on object; update event state and notify.
+
+  Value objects like this are simple named variables for strings; your
+  application code reads and writes them as needed.
+
+  ### Intrinsic Reporting
+
+  When `intrinsic_reporting: true` is passed to `create/4`, the CHANGE_OF_CHARACTERSTRING
+  (and optionally FAULT_CHARACTERSTRING) algorithms become active.
+
+  ### Commandability and Priority Arrays
+
+  Value objects can have a `priority_array` (making them commandable).
+
+  ### Examples
+
+  Creating a Character String Value:
+
+      iex> {:ok, csv} = BACnet.Protocol.ObjectTypes.CharacterStringValue.create(40, "Message", %{present_value: "Hello"}); csv.object_name
+      "Message"
+
+  With intrinsic reporting:
+
+      iex> {:ok, csv} = BACnet.Protocol.ObjectTypes.CharacterStringValue.create(41, "StatusMsg", %{present_value: "OK"}, intrinsic_reporting: true); csv.object_name
+      "StatusMsg"
+
+  ### See Also
+  - `BACnet.Protocol.EventAlgorithms.ChangeOfCharacterString`
+  - `BACnet.Protocol.FaultAlgorithms.FaultCharacterString` (optional)
   """
 
   alias BACnet.Protocol.BACnetArray
@@ -25,6 +94,9 @@ defmodule BACnet.Protocol.ObjectTypes.CharacterStringValue do
 
   @typedoc """
   Options accepted when creating or configuring a CharacterString Value object.
+
+  In addition to the common options, CharacterString Value supports:
+  - `intrinsic_reporting` - Enables CHANGE_OF_CHARACTERSTRING (and FAULT_CHARACTERSTRING) intrinsic reporting.
   """
   @type object_opts ::
           {:intrinsic_reporting, boolean()} | common_object_opts()
@@ -36,11 +108,7 @@ defmodule BACnet.Protocol.ObjectTypes.CharacterStringValue do
   Properties which are for Intrinsic Reporting are nil, if disabled. If Intrinsic Reporting is enabled on the object,
   then the properties can not be nil.
 
-  For commandable objects (objects with a priority array), the present value property is protected,
-  unless out of service is active. For the duration of out of service, updates to the present value
-  using `update_property/3` are allowed. Once out of service is disabled, the present value is once
-  again protected from updates, as the present value is updated through the relinquish_default and
-  priority_array properties.
+  For commandable objects (objects with a priority array), the present value property is protected.
   """
   bac_object Constants.macro_assert_name(:object_type, :character_string_value) do
     services(intrinsic: true)

@@ -1,36 +1,219 @@
 defmodule BACnet.Protocol.ObjectTypes.Device do
   @moduledoc """
-  The Device object type defines a standardized object whose properties represent
-  the externally visible characteristics of a BACnet Device.
-  There shall be exactly one Device object in each BACnet Device.
-  A Device object is referenced by its Object_Identifier property,
-  which is not only unique to the BACnet Device that maintains this object
-  but is also unique throughout the BACnet internetwork.
+  The Device object is the single, mandatory root object that represents an entire
+  BACnet device on the network. Every BACnet device contains exactly one Device
+  object whose `object_identifier` is also used as the device's unique address within
+  the BACnet internetwork.
 
-  (ASHRAE 135 - Clause 12.11)
+  The object advertises protocol conformance (`protocol_services_supported`,
+  `protocol_object_types_supported`, `segmentation_support`, etc.), vendor and model
+  information, firmware version, and many operational parameters (`max_apdu_length`,
+  `apdu_timeout`, `database_revision`, `last_restart_reason`, backup/restore status,
+  active COV subscriptions, time synchronisation settings, object list, etc.).
+  Several properties need special server-side handling.
 
-  For the following properties the BACnet device server needs to
-  take special care of when other BACnet user read or write to them:
+  ### Object Description (ASHRAE 135)
+
+  > The Device object type defines a standardized object whose properties represent
+  > the externally visible characteristics of a BACnet Device. There shall be exactly
+  > one Device object in each BACnet Device. A Device object is referenced by its
+  > Object_Identifier property, which is not only unique to the BACnet Device that
+  > maintains this object but is also unique throughout the BACnet internetwork.
+
+  ### Behaviour and Operation
+
+  The Device object is the single source of truth for everything a remote BACnet
+  client needs to know about this device and is the only object that must exist in
+  every BACnet device. It is the target of Who-Is/I-Am, the source of the object
+  list(s), protocol capability flags, and many operational parameters.
+
+  Most properties are maintained by a combination of:
+  - static configuration (vendor name, model, protocol revision, etc.)
+  - dynamic state maintained by the stack (`database_revision`, `last_restart_reason`,
+    active COV subscriptions, etc.)
+  - time-keeping and OS services (local time, `utc_offset`, daylight savings status)
+  - the application / device server (`object_list`, `structured_object_list`, backup/restore
+    state, many configuration properties).
+
+  Several properties have side effects or must be kept in sync with lower layers
+  (APDU timeouts, MS/TP token parameters, time synchronisation settings, etc.).
+  Many of its properties are writable and changes must be acted upon by the device server.
+
+  ### Developer Implementation Notes (geared to device server / application authors)
+
+  The generated code handles storage + basic mechanics (validation, implicit_relationships,
+  readonly annotations as hints to your server, etc.). **You must drive "special" live
+  properties and side effects yourself** via `update_property/3` (never direct mutation).
+  Read notes below + generated tables for details.
+
+  **Special / live properties and expected developer behaviour**
+
+  The Device has many "global live" properties that must be kept in sync with the
+  running stack, OS, config, etc. (more than any other object).
+
+  - `local_time`, `local_date`:
+    **Dev must**: Ensure your read path call the annotation functions, which return
+    current wall time (respect utc_offset, DST).
+
+  - `utc_offset`, `daylight_savings_status`:
+    Writes to `utc_offset` / `daylight_savings_status` must be pushed
+    to OS or time sync layer.
+
+  - `database_revision`: Bumped on object db changes.
+    **Dev must**: Every time you add/remove object, change an object's name,
+    change an object's identifier, or a restore is performed, increment this.
+    The creation and deletion of temporary configuration files during a restore,
+    does not change this property.
+
+  - `active_cov_subscriptions`: Live subscription state.
+    **Dev must**: Your COV subscription manager (on SubscribeCOV success/expire,
+    resub etc.) must add/remove entries here via `update_property/3`.
+
+  - `apdu_timeout`, `number_of_apdu_retries`, MS/TP properties (`max_info_frames`, etc.),
+    time sync properties, backup/restore state machine properties, `object_list`, etc.:
+    Many are readonly or have side effects.
+    **Dev must**: On writes (where allowed), propagate to the APDU layer, MS/TP
+    driver, time sync engine, flash/backup routines.
+
+  - `last_restart_reason`, `time_of_device_restart`, `restart_notification_*`:
+    **Dev must**: Set by reinitialize/powerup code. Can emit notifications.
+
+  - Vendor/model, protocol version/revision, max APDU etc.: Mostly static, set at
+    startup from your build/config.
+
+  - `time_synchronization_interval` etc. + recipients: For periodic time sync.
+    **Dev must**: Your time sync task uses these.
+
+  See the "You are the 'god object'" section and specific bullets below (backup/restore,
+  object_list, special write propagation, COV subs, restart, on_read for time, etc).
+
+  The Device object is special: it is both a normal BACnet object *and* the
+  container for a huge amount of device-wide state and configuration that the
+  rest of the stack (APDU timers, BVLL, MS/TP token passing, time, backup/restore,
+  COV subscription database, etc.) needs.
+
+  **You are the "god object" for the device**: Almost every interesting piece of
+  global state eventually appears as a property on the Device object (or is
+  reachable from its `object_list` / `structured_object_list`). Your device server
+  must keep these properties in sync with the lower layers:
+
+  - `apdu_timeout`, `number_of_apdu_retries` - changes must be propagated to the
+    `BACnet.Stack.Client` and `BACnet.Stack.Segmentator` and partially to
+    `BACnet.Stack.SegmentsStore`.
+  - `max_info_frames`, `max_master` (for MS/TP) - changes must be propagated to the
+    `BACnet.Stack.Transport.MstpTransport`. Properties must not be present if no
+    MS/TP transport is used.
+  - `auto_slave_discovery`, `slave_proxy_enable`, `manual_slave_address_binding`,
+    `slave_address_binding` - used for a slave proxy (must be implemented by the user.
+  - All the time-related properties (`utc_offset`, `daylight_savings_status`) -
+    Writes to `utc_offset` or DST status usually have to be pushed into
+    the OS or into the time-sync state machine.
+  - `active_cov_subscriptions` - this is a live list that the COV manager
+    appends to / removes from when SubscribeCOV / SubscribeCOVProperty
+    operations succeed or subscriptions expire.
+  - `database_revision` - you must bump it every time the set of objects or
+    their configuration changes.
+  - Backup/restore properties (see Clause 19.1) - the whole state machine
+    (backup_state, backup_preparation_time, restore_preparation_time,
+    backup_and_restore_state, last_restore_time, …) must be driven by your
+    backup/restore service implementation.
+  - `object_list` and `structured_object_list` - Must be kept up to date with
+    all "live" objects in the device.
+
+  **Special write propagation**: When a client writes certain Device properties
+  your write handler must not only store the new value in the object but also
+  push the value into the running system.
+
+  **last_restart_reason, time_of_device_restart, restart_notification**: These
+  are written by the reinitialize / power-up code. A cold boot or a
+  ReinitializeDevice "warmstart" / "coldstart" must update them and emits an
+  unconfirmed COV notification on the Device object, if the property list
+  `restart_notification_recipients` is not empty. See Clause 19.3.
+
+  **COV subscriptions on the Device object itself**: Because so many global
+  things (database_revision, active_cov_subscriptions, time, etc.) live here,
+  clients often subscribe to COVs on the Device object to be told when
+  "something interesting about the whole device changed".
+
+  **Remote Device objects**: When you discover another device you can create a
+  "shadow" Device object (done by `BACnet.Stack.ClientHelper.read_object/4`)
+  that reflects what you last read from it.
+
+  **The `object_list` / `structured_object_list` are special**: When a new object
+  is created or deleted, you must make sure that any cached view is invalidated
+  and that `database_revision` is bumped.
+
+  **ReinitializeDevice service**: This service is the official way to ask a
+  device to reboot. Your handler for it will typically:
+  1. Validate the password, if one is configured on the Device object.
+  2. Set the appropriate `last_restart_reason`.
+  3. Persist any "about to restart" state.
+  4. Actually restart the Erlang VM / the device itself / etc.
+
+  The long list under "Special Considerations for Device Server Implementors"
+  in this moduledoc (and the corresponding tables in the generated part) is
+  deliberately there to remind you of all the places where a write to the
+  Device object has to do something outside the object store.
+
+  See also the various service modules (TimeSynchronization,
+  DeviceCommunicationControl, ReinitializeDevice, Backup/Restore support, …) -
+  they all ultimately read or write properties that live on the Device object.
+
+  ### Special Considerations for Device Server Implementors
+
+  Several Device properties require special handling by the BACnet device server
+  (or the application using this library) on write:
+
   - `active_cov_subscriptions`
   - `apdu_timeout` (propagation on write)
   - `auto_slave_discovery`
-  - `daylight_savings_status` (auto update on DST and propagation to UTC_Offset)
+  - `daylight_savings_status` (auto update on DST and propagation to `utc_offset`)
   - `device_address_binding`
   - `manual_slave_address_binding`
-  - `max_info_frames` (marked as "readonly" and "default" value should be `1`)
-    Propagation to the MS/TP Transport must be done by the BACnet device server
-    or user of the library, if not implemented in the device server.
-  - `max_master` (marked as "readonly" and "default" value should be `127`)
-    Propagation to the MS/TP Transport must be done by the BACnet device server
-    or user of the library, if not implemented in the device server.
+  - `max_info_frames` (marked readonly; recommended default `1` for MS/TP)
+  - `max_master` (marked readonly; recommended default `127` for MS/TP)
   - `number_of_apdu_retries` (propagation on write)
   - `object_list`
   - `slave_address_binding`
   - `slave_proxy_enable`
   - `structured_object_list`
-  - `utc_offset` (when handling UTC Time Synchronization)
-  - All properties related to Backup/Restore
-  - All properties related to (UTC) Time Synchronization
+  - `utc_offset` (when handling UTC time synchronisation)
+  - All Backup/Restore related properties (Clause 19.1)
+  - All (UTC) Time Synchronisation related properties
+
+  Propagation of certain values (e.g. MS/TP parameters to the transport layer)
+  is the responsibility of the device server or application code.
+
+  ### Examples
+
+  Creating a basic local Device object:
+
+      iex> {:ok, dev} = BACnet.Protocol.ObjectTypes.Device.create(123, "My BACnet Device", %{
+      ...>   vendor_name: "Example Inc.",
+      ...>   vendor_identifier: 999,
+      ...>   model_name: "Demo Controller",
+      ...>   segmentation_supported: :no_segmentation
+      ...> }); dev.object_name
+      "My BACnet Device"
+
+  Enabling restart support (the option makes additional properties required/available):
+
+      iex> {:ok, dev} = BACnet.Protocol.ObjectTypes.Device.create(1, "Dev1", %{
+      ...>   vendor_identifier: 999,
+      ...>   restart_notification_recipients: [],
+      ...>   segmentation_supported: :no_segmentation
+      ...> }, supports_restart: true)
+      iex> is_list(dev.restart_notification_recipients)
+      true
+
+  ### See Also
+  - `BACnet.Protocol.Services.ReinitializeDevice`
+  - `BACnet.Protocol.Services.TimeSynchronization`
+  - `BACnet.Protocol.Services.UtcTimeSynchronization`
+  - `BACnet.Stack.Client`
+  - `BACnet.Stack.Segmentator`
+  - `BACnet.Stack.SegmentsStore`
+  - `BACnet.Stack.Transport.MstpTransport`
   """
 
   alias BACnet.Protocol.AddressBinding
@@ -53,6 +236,10 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
 
   @typedoc """
   Options accepted when creating or configuring a Device object.
+
+  In addition to the common options, Device supports:
+  - `supports_backup_restore` - Enables the full set of backup/restore properties.
+  - `supports_restart` - Enables restart notification recipient properties.
   """
   @type object_opts ::
           {:supports_backup_restore, boolean()}
@@ -65,6 +252,10 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
 
   UTC Offset is positive for western hemisphere and negative for eastern hemisphere in minutes,
   i.e. UTC+2 is -120.
+
+  Many properties have implicit relationships (e.g. `last_restart_reason` implies
+  `time_of_device_restart`). Some properties that participate in such relationships
+  do not carry a default value and must be explicitly set when creating the object.
   """
   bac_object Constants.macro_assert_name(:object_type, :device) do
     services(intrinsic: false)

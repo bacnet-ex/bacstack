@@ -25,11 +25,11 @@ defmodule BACnet.Protocol.BroadcastDistributionTableEntry do
 
   The mask controls *how* the sending BBMD will reach the remote subnet:
 
-  - All-1s mask (`255.255.255.255`) → two-hop distribution: the message is sent
+  - All-1s mask (`255.255.255.255`) -> two-hop distribution: the message is sent
     as a unicast UDP datagram directly to the peer BBMD's B/IP address. The
     peer BBMD is then responsible for the final local broadcast on its subnet.
     This method always works (no special router configuration required).
-  - Subnet mask of the destination (e.g. `255.255.255.0` for a /24) → one-hop
+  - Subnet mask of the destination (e.g. `255.255.255.0` for a /24) -> one-hop
     distribution: the sending BBMD emits a directed broadcast (e.g.
     `192.168.1.255`) that the IP router is expected to forward. Many routers
     block directed broadcasts by default for security reasons.

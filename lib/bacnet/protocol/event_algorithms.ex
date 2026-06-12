@@ -41,4 +41,7 @@ defmodule BACnet.Protocol.EventAlgorithms do
           | __MODULE__.UnsignedOutOfRange.t()
           | __MODULE__.ChangeOfCharacterString.t()
           | __MODULE__.ChangeOfStatusFlags.t()
+          | __MODULE__.ComplexEventType.t()
+          | __MODULE__.Extended.t()
+          | __MODULE__.None.t()
 end

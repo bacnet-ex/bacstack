@@ -1,45 +1,90 @@
 defmodule BACnet.Protocol.ObjectTypes.EventLog do
   @moduledoc """
-  An Event Log object records event notifications with timestamps and other
-  pertinent data in an internal buffer for subsequent retrieval.
-  Each timestamped buffer entry is called an event log "record".
+  The Event Log object captures `BACnet.Protocol.Services.ConfirmedEventNotification`
+  and `BACnet.Protocol.Services.UnconfirmedEventNotification` into a timestamped buffer,
+  so that alarm and event history can be retrieved later with the
+  `BACnet.Protocol.Services.ReadRange` service. It is the BACnet-native replacement
+  for a local alarm printer or syslog for events.
 
-  Each Event Log object maintains an internal, optionally fixed-size buffer.
-  This buffer fills or grows as event log records are added.
-  If the buffer becomes full, the least recent records are overwritten when
-  new records are added, or collection may be set to stop.
-  Event log records are transferred as BACnetEventLogRecords using
-  the ReadRange service. The buffer may be cleared by writing a zero to
-  the Record_Count property. The determination of which notifications are
-  placed into the log is a local matter. Each record in the buffer has an
-  implied SequenceNumber that is equal to the value of the Total_Record_Count
-  property immediately after the record is added.
+  Records contain the full event information (source object, event type, message text,
+  priority, etc.). The log can be configured as a fixed-size circular buffer or a
+  growing one (until stopped or full). It supports a time window (`start_time` / `stop_time`),
+  enable/disable, and can itself generate a BUFFER_READY intrinsic event (when
+  `intrinsic_reporting: true`) when the log has new data worth harvesting.
 
-  Logging may be enabled and disabled through the Enable property and
-  at dates and times specified by the Start_Time and Stop_Time properties.
-  Event Log enabling and disabling is recorded in the event log buffer.
-  Event reporting (notification) may be provided to facilitate automatic
-  fetching of event log records by processes on other devices such as fileservers.
-  Support is provided for algorithmic reporting; optionally, intrinsic reporting may be provided.
-  Event Log objects that support intrinsic reporting shall apply the BUFFER_READY event algorithm.
+  ### Object Description (ASHRAE 135)
 
-  In intrinsic reporting, when the number of records specified by
-  the Notification_Threshold property has been collected since the previous
-  notification (or startup), a new notification is sent to all subscribed devices.
-  In response to a notification, subscribers may fetch all of the new records.
-  If a subscriber needs to fetch all of the new records, it should use
-  the 'By Sequence Number' form of the ReadRange service request.
-  A missed notification may be detected by a subscriber if the 'Current Notification'
-  parameter received in the previous BUFFER_READY notification is different than
-  the 'Previous Notification' parameter of the current BUFFER_READY notification.
-  If the ReadRange-ACK response to the ReadRange request issued under these conditions
-  has the FIRST_ITEM bit of the 'Result Flags' parameter set to TRUE, event log records
-  have probably been missed by this subscriber. The acquisition of log records by
-  remote devices has no effect upon the state of the Event Log object itself.
-  This allows completely independent, but properly sequential, access to its log records
-  by all remote devices. Any remote device can independently update its records at any time.
+  > An Event Log object records event notifications with timestamps and other
+  > pertinent data in an internal buffer for subsequent retrieval.
 
-  (ASHRAE 135 - Clause 12.27)
+  ### Behaviour and Operation
+
+  Event Log objects are buffers that receive copies of event notifications
+  (both confirmed and unconfirmed). The conditions by which events are forwarded
+  to a particular Event Log is not specified and is a local matter.
+  The local application is responsible for appending a record (containing
+  timestamp, source, event type, message text, etc.) to the log buffer whenever an
+  event notification is sent or received that matches the log's configuration.
+
+  Records are retrieved by clients using the `ReadRange` service. The log can be
+  circular or append-only until full/stopped. `start_time` / `stop_time` and the
+  enable flag control when logging is active. When intrinsic reporting is enabled
+  the log itself can emit a BUFFER_READY event to notify a workstation that new
+  records are available for collection.
+
+  ### Developer Implementation Notes (geared to device server / application authors)
+
+  The generated code handles storage + basic mechanics (validation, implicit_relationships,
+  readonly annotations as hints to your server, etc.). **You must drive "special" live
+  properties and side effects yourself**, via `update_property/3` (never direct mutation).
+  Read notes below + generated tables for details.
+
+  **Special / live properties and expected developer behaviour**
+
+  Similar to TrendLog but for event notifications (ConfirmedEventNotification etc).
+
+  - `log_buffer`: History of event notifications.
+    **Dev must**: Your event notification handler (when you emit or receive
+    notifications that should be logged) must construct EventLogRecord (with
+    timestamp, the notification params, status) and append via update on the
+    buffer (respect buffer_size, stop_when_full, enable, start/stop times).
+
+  - `record_count`, `total_record_count`:
+    **Dev must**: Manage counts on appends; for BUFFER_READY when intrinsic, track
+    records since last notify and emit when threshold crossed.
+
+  - `start_time`/`stop_time`, `enable`, `stop_when_full`, `buffer_size`:
+    Config for logging window.
+    **Dev must**: Your logger respects the times/enable when deciding to log a
+    notification. `buffer_size` writes restricted when enabled.
+
+  - `status_flags`, `reliability`.
+    **Dev must**: Update on problems logging or with event sources. Note `in_alarm`/
+    `fault`/`out_of_service` bits of `status_flags` are automatically managed by the
+    object.
+
+  The object is passive storage + config; you drive the logging of events into it.
+
+  ### Intrinsic Reporting
+
+  When `intrinsic_reporting: true` is passed to `create/4`, additional event
+  reporting properties become active for the log itself.
+
+  ### Examples
+
+  Creating an Event Log:
+
+      iex> {:ok, el} = BACnet.Protocol.ObjectTypes.EventLog.create(800, "EventHistory", %{buffer_size: 100}); el.object_name
+      "EventHistory"
+
+  With intrinsic reporting:
+
+      iex> {:ok, el} = BACnet.Protocol.ObjectTypes.EventLog.create(801, "Logged", %{buffer_size: 50}, intrinsic_reporting: true); el.object_name
+      "Logged"
+
+  ### See Also
+  - `BACnet.Protocol.EventAlgorithms.BufferReady`
+  - `BACnet.Stack.TrendLogger`
   """
 
   alias BACnet.Protocol.ApplicationTags
@@ -52,6 +97,9 @@ defmodule BACnet.Protocol.ObjectTypes.EventLog do
 
   @typedoc """
   Options accepted when creating or configuring an Event Log object.
+
+  In addition to the common options, Event Log supports:
+  - `intrinsic_reporting` - Enables intrinsic event reporting properties for the log.
   """
   @type object_opts ::
           {:intrinsic_reporting, boolean()}

@@ -11,7 +11,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AnalogOutputTest do
   # cover additional implemented functionality
 
   test "create/4 priority array overrides given present value" do
-    assert {:ok, %AnalogOutput{present_value: 0.0}} =
+    assert {:ok, %AnalogOutput{present_value: +0.0}} =
              AnalogOutput.create(1, "TEST", %{present_value: 25.0})
   end
 

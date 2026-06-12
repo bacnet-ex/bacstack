@@ -1,32 +1,147 @@
 defmodule BACnet.Protocol.ObjectTypes.Schedule do
   @moduledoc """
-  The Schedule object type defines a standardized object used to describe a periodic schedule
-  that may recur during a range of dates, with optional exceptions at arbitrary times on
-  arbitrary dates. The Schedule object also serves as a binding between these scheduled times
-  and the writing of specified "values" to specific properties of specific objects at those times.
+  The Schedule object is the heart of time-based automation in BACnet. It contains a
+  weekly schedule (seven day schedules, each a list of time/value pairs) plus a list
+  of exception schedules (holidays, special events) that can reference
+  `BACnet.Protocol.ObjectTypes.Calendar` objects or contain inline date patterns.
+  At the scheduled times the object automatically writes the configured values
+  into the target properties listed in `list_of_object_property_references`.
 
-  Schedules are divided into days, of which there are two types: normal days within a week and
-  exception days. Both types of days can specify scheduling events for either the full day or
-  portions of a day, and a priority mechanism defines which scheduled event is in control at any
-  given time. The current state of the Schedule object is represented by the value of its
-  Present_Value property, which is normally calculated using the time/value pairs from the
-  Weekly_Schedule and Exception_Schedule properties, with a default value for use when no schedules
-  are in effect. Details of this calculation are provided in the description of the Present_Value property.
+  The `present_value` of the schedule reflects the currently effective value (or
+  `schedule_default` outside any defined period).
+  Schedules are the standard way to implement occupancy-based setpoints,
+  lighting scenes, etc.
 
-  Versions of the Schedule object prior to Protocol_Revision 4 only support schedules that define
-  an entire day, from midnight to midnight. For compatibility with these versions, this whole day
-  behavior can be achieved by using a specific schedule format.
-  Weekly_Schedule and Exception_Schedule values that begin at 00:00, and do not use any NULL values,
-  will define schedules for the entire day. Property values in this format will produce the same
-  results in all versions of the Schedule object.
+  ### Object Description (ASHRAE 135)
 
-  Schedule objects may optionally support intrinsic reporting to facilitate the reporting of fault conditions.
-  Schedule objects that support intrinsic reporting shall apply the NONE event algorithm.
+  > The Schedule object type defines a standardized object used to describe a periodic schedule
+  > that may recur during a range of dates, with optional exceptions at arbitrary times on
+  > arbitrary dates. The Schedule object also serves as a binding between these scheduled times
+  > and the writing of specified "values" to specific properties of specific objects at those times.
+  >
+  > Schedule objects that support intrinsic reporting shall apply the NONE event algorithm.
 
-  (ASHRAE 135 - Clause 12.24)
+  ### Behaviour and Operation
+
+  Schedule objects are active time-based actuators. The device must run a scheduler
+  engine (typically a periodic task driven by the real-time clock) that:
+  1. Evaluates the `weekly_schedule` and any `exception_schedule` entries
+     (which may reference calendars).
+  2. Determines the currently effective value (or falls back to `schedule_default`).
+  3. Writes that value to every property listed in `list_of_object_property_references`,
+     using the priority slot given by `priority_for_writing`.
+
+  The readonly `present_value` of the Schedule itself reflects what it is currently
+  writing (or would write). The local application does not write to the targets
+  directly for scheduled control; the Schedule object performs the writes.
+
+  `out_of_service` can disable scheduled writes while still allowing the schedule
+  state to be inspected. When intrinsic reporting is enabled the Schedule can
+  participate in (minimal) event reporting for reliability issues.
+
+  ### Developer Implementation Notes (geared to device server / application authors)
+
+  The generated code handles storage + basic mechanics (validation, implicit_relationships,
+  readonly annotations as hints to your server, etc.). **You must drive "special" live
+  properties and side effects yourself**, analogous to maintaining `present_value` on
+  inputs via `update_property/3` (never direct mutation). Read notes below + generated
+  tables for details.
+
+  **Special / live properties and expected developer behaviour**
+
+  - `present_value`: The currently effective scheduled value for the referenced objects.
+    **Dev must**: Your scheduler task must evaluate the weekly/exception schedules
+    against current time (respect effective_period, special events, calendars),
+    determine the value (or schedule_default), write it to `present_value`,
+    *and* perform the actual writes to all entries in
+    `list_of_object_property_references` at the `priority_for_writing`.
+
+  - `weekly_schedule`, `exception_schedule`, `schedule_default`, `effective_period`,
+    `list_of_object_property_references`, `priority_for_writing`, etc.:
+    The schedule data and targets.
+    **Dev must**: Populate at creation/config time (at minimum weekly or
+    exception schedule present enforced).
+
+  - `status_flags`, `reliability`, `out_of_service`:
+    **Dev must**: `out_of_service` means "ignore schedule, do not write targets". Reliability for
+    problems like missing calendar ref. The `in_alarm`/`fault`/`out_of_service` bits
+    of `status_flags` are auto-managed by the object (`overridden` local).
+
+  Schedule is one of the few objects that is expected to have *side effects on
+  other objects* on a time base. The object itself is mostly passive data; the
+  "active" part lives in your scheduler engine.
+
+  **You own the scheduler engine**: You must periodically:
+  1. Read the current wall time (respect DST, the device's `utc_offset`, etc.).
+  2. Evaluate `effective_period`, then the `weekly_schedule[ weekday ]` plus any
+     matching `exception_schedule` entries (a `SpecialEvent` can be a calendar
+     reference or an inline date/time pattern + a list of `TimeValue`).
+  3. Compute the effective value (or `schedule_default`).
+  4. For every entry in `list_of_object_property_references`, perform a
+     WriteProperty (or internal `update_property/3`/`set_priority/3` if local)
+     to the target property at the priority given by `priority_for_writing`.
+  5. Update the Schedule's own `present_value`,
+     so that observers see what the schedule is currently "commanding".
+
+  Because the writes are performed at a specific priority, downstream objects
+  (setpoints, binary outputs, etc.) will see the schedule's command only when
+  no higher-priority source has a value in their priority array.
+
+  **Functional schedule**: At creation time either `weekly_schedule` or
+  `exception_schedule` (or both) must be supplied; otherwise you get an error.
+  This is a developer convenience, so you don't create a completely inert schedule.
+
+  **out_of_service for a scheduler**: When `true`, the engine should stop the
+  internal calculation and will stop performing the writes to the target properties
+  (they will keep whatever value they had at the moment it was disabled,
+  subject to their own priority arrays and relinquish defaults).
+  You can still change the schedule data (weekly list, targets, …)
+  while it is out of service.
+
+  **Changing targets or exceptions at runtime**:
+  Because `list_of_object_property_references`, `exception_schedule`,
+  `weekly_schedule`, etc. are normal writable properties,
+  a config tool or another schedule can rewrite them. Your engine simply sees the
+  new data on the next evaluation cycle. There is no "reload" signal; the object
+  is the source of truth.
+
+  **Intrinsic NONE + reliability**: The only intrinsic algorithm a Schedule uses is
+  NONE (see the See Also). It is intended for the Schedule object itself to be
+  able to report reliability problems (bad calendar reference, malformed
+  SpecialEvent, etc.) via the normal event machinery. Your engine should set
+  the Schedule's `:reliability` when it detects problems during evaluation.
+
+  **Remote targets**: A `DeviceObjectPropertyRef` in the list can point at another
+  device. Your engine must then issue a real WriteProperty service request
+  at the schedule's priority. Failures should probably be reflected
+  in the Schedule's reliability.
+
+  The object also has an `effective_period` (`DateRange`) that can be used to
+  make a whole schedule active only between two dates (e.g. "this schedule is
+  only valid during the 2025-2026 heating season").
+
+  ### Intrinsic Reporting
+
+  When `intrinsic_reporting: true` is passed to `create/4`, the Schedule participates
+  in intrinsic event reporting using the NONE algorithm
+  (primarily for reliability/fault conditions).
+
+  ### Examples
+
+  Creating a basic Schedule:
+
+      iex> {:ok, sch} = BACnet.Protocol.ObjectTypes.Schedule.create(600, "Lighting", %{}); sch.object_name
+      "Lighting"
+
+  ### See Also
+  - `BACnet.Protocol.DailySchedule`
+  - `BACnet.Protocol.DateRange`
+  - `BACnet.Protocol.EventAlgorithms.None`
+  - `BACnet.Protocol.ObjectTypes.Calendar`
+  - `BACnet.Protocol.SpecialEvent`
+  - `BACnet.Protocol.TimeValue`
   """
 
-  alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.BACnetArray
   alias BACnet.Protocol.BACnetDate
@@ -43,9 +158,7 @@ defmodule BACnet.Protocol.ObjectTypes.Schedule do
   @typedoc """
   Options accepted when creating or configuring a Schedule object.
   """
-  @type object_opts ::
-          {:base_type, ApplicationTags.primitive_type()}
-          | common_object_opts()
+  @type object_opts :: common_object_opts()
 
   @typedoc """
   Represents a Schedule object. All keys should be treated as read-only,

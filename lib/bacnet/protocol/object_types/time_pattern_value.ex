@@ -1,19 +1,65 @@
 defmodule BACnet.Protocol.ObjectTypes.TimePatternValue do
   @moduledoc """
-  The Time Pattern Value object type defines a standardized object whose properties
-  represent the externally visible characteristics of a named data value in a BACnet device.
-  A BACnet device can use a Time Pattern Value object to make any kind of time data value
-  accessible to other BACnet devices. The mechanisms by which the value is derived are not
-  visible to the BACnet client.
+  The Time Pattern Value object holds a recurring time-of-day pattern that may contain
+  "don't care" wildcards in any of the hour/minute/second/hundredths fields. It is the
+  time-only sibling of `BACnet.Protocol.ObjectTypes.DateTimePatternValue` Value and
+  is the pattern form of the simple `BACnet.Protocol.ObjectTypes.TimeValue` object.
 
-  Time Pattern objects can be used to represent multiple recurring times based on rules defined
-  by the pattern of individual fields of the time, some of which may be "don't care",
-  which matches any value in that field.
+  Typical uses are "every day at 06:00", "at :30 and :00 of every hour", or "any time
+  between 08:00 and 17:00" (expressed with appropriate don't-care combinations). The
+  object can be commandable via priority array, so the pattern itself can be overridden.
 
-  Examples of possibilities would be: "every minute of the 11 o'clock hour of the day",
-  or "the thirteenth minute of any hour".
+  ### Object Description (ASHRAE 135)
 
-  (ASHRAE 135 - Clause 12.47)
+  > The Time Pattern Value object type defines a standardized object whose properties
+  > represent the externally visible characteristics of a named data value in a BACnet device.
+  >
+  > Time Pattern objects can be used to represent multiple recurring times based on rules defined
+  > by the pattern of individual fields of the time.
+
+  ### Behaviour and Operation
+
+  Time Pattern Value objects hold a recurring time-of-day pattern (with "don't care"
+  wildcards).
+
+  The pattern is a normal data value, unless commandable via priority array. The
+  object performs no clock evaluation itself; consumers compare the current time
+  against the pattern. `out_of_service` allows a test pattern to be forced.
+
+  ### Developer Implementation Notes (geared to device server / application authors)
+
+  The generated code handles storage + basic mechanics (validation, implicit_relationships,
+  readonly annotations as hints to your server, etc.). **You must drive "special" live
+  properties and side effects yourself**, analogous to maintaining `present_value` on
+  inputs via `update_property/3` (never direct mutation). Read notes below + generated
+  tables for details.
+
+  **Special / live properties and expected developer behaviour**
+
+  - `present_value`: The recurring time pattern.
+    **Dev must**: Set by config/writers. Custom application logic evaluate the pattern
+    vs current time (wildcards).
+
+  - `priority_array`, `relinquish_default` (if commandable):
+    **Dev must**: Use priority APIs to command the pattern.
+
+  - `status_flags`, `out_of_service`:
+    **Dev must**: The `in_alarm`/`fault`/`out_of_service` bits of `status_flags` are
+    automatically updated by the object; `overridden` is a local matter.
+
+  ### Commandability and Priority Arrays
+
+  Value objects can have a priority array (making them commandable).
+
+  ### Examples
+
+  Creating a Time Pattern Value:
+
+      iex> {:ok, tpv} = BACnet.Protocol.ObjectTypes.TimePatternValue.create(110, "Daily", %{present_value: %BACnet.Protocol.BACnetTime{hour: :unspecified, minute: :unspecified, second: :unspecified, hundredth: :unspecified}}); tpv.object_name
+      "Daily"
+
+  ### See Also
+  - `BACnet.Protocol.ObjectTypes.TimeValue`
   """
 
   alias BACnet.Protocol.BACnetTime
@@ -35,11 +81,7 @@ defmodule BACnet.Protocol.ObjectTypes.TimePatternValue do
   Properties which are for Intrinsic Reporting are nil, if disabled. If Intrinsic Reporting is enabled on the object,
   then the properties can not be nil.
 
-  For commandable objects (objects with a priority array), the present value property is protected,
-  unless out of service is active. For the duration of out of service, updates to the present value
-  using `update_property/3` are allowed. Once out of service is disabled, the present value is once
-  again protected from updates, as the present value is updated through the relinquish_default and
-  priority_array properties.
+  For commandable objects (objects with a priority array), the present value property is protected.
   """
   bac_object Constants.macro_assert_name(:object_type, :time_pattern_value) do
     services(intrinsic: false)
@@ -48,7 +90,11 @@ defmodule BACnet.Protocol.ObjectTypes.TimePatternValue do
     field(:status_flags, BACnet.Protocol.StatusFlags.t(), required: true, readonly: true)
     field(:out_of_service, boolean())
 
-    field(:present_value, BACnetTime.t(), required: true)
+    field(:present_value, BACnetTime.t(),
+      required: true,
+      annotation: {:readonly_when, {:out_of_service, false}}
+    )
+
     field(:priority_array, PriorityArray.t(BACnetTime.t()), readonly: true)
     field(:relinquish_default, BACnetTime.t())
 

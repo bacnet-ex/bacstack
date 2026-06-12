@@ -16,4 +16,13 @@ defmodule BACnet.Protocol.EventAlgorithms.Extended do
 
   This module has NO implementation.
   """
+
+  @typedoc """
+  Representative type for the event algorithm.
+  """
+  @opaque t :: %__MODULE__{
+            data: term()
+          }
+
+  defstruct data: nil
 end

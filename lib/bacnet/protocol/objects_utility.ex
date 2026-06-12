@@ -1471,6 +1471,26 @@ defmodule BACnet.Protocol.ObjectsUtility do
     cast_value_to_type_manual(type, property, value, opts)
   end
 
+  # And variable array types (that wrap a struct)
+  defp cast_value_to_type(
+         {:array, {:struct, _mod}} = type,
+         property,
+         [%Encoding{} | _tl] = value,
+         opts
+       ) do
+    cast_value_to_type_manual(type, property, value, opts)
+  end
+
+  # And fixed array types (that wrap a struct)
+  defp cast_value_to_type(
+         {:array, {:struct, _mod}, _size} = type,
+         property,
+         [%Encoding{} | _tl] = value,
+         opts
+       ) do
+    cast_value_to_type_manual(type, property, value, opts)
+  end
+
   # The Group object's present value is a list of ReadAccessResult structs, so we need to handle this differently, too
   defp cast_value_to_type(
          type,

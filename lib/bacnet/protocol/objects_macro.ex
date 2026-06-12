@@ -841,9 +841,17 @@ defmodule BACnet.Protocol.ObjectsMacro do
     # credo:disable-for-lines:100 Credo.Check.Refactor.LongQuoteBlocks
     quote generated: true, location: :keep do
       @moduledoc (case @moduledoc do
-                    nil -> unquote(moduledoc)
-                    false -> false
-                    doc -> doc <> "\n\n" <> unquote(moduledoc)
+                    nil ->
+                      unquote(moduledoc)
+
+                    false ->
+                      false
+
+                    # Insert hr element just to get a bit more spacing - br is too large
+                    doc ->
+                      doc <>
+                        "\n<hr style=\"height: 10px;visibility: hidden;\" />\n" <>
+                        unquote(moduledoc)
                   end)
 
       @type t :: %__MODULE__{unquote_splicing(struct_typespecs)}
@@ -1060,8 +1068,14 @@ defmodule BACnet.Protocol.ObjectsMacro do
                   :ok
                 end),
              {:ok, obj} <- verify_properties(obj, new_metadata) do
-          obj = propagate_properties(obj)
-          inhibit_object_check(obj)
+          # Remote objects are not subject to properties propagation and inhibit checks
+          if is_remote(obj) do
+            {:ok, obj}
+          else
+            obj
+            |> propagate_properties()
+            |> inhibit_object_check()
+          end
         else
           {:ok, _val} = val ->
             raise "Invalid return value from add_defaults/2, we got an ok-tuple"

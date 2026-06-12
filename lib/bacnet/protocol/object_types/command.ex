@@ -1,71 +1,98 @@
 defmodule BACnet.Protocol.ObjectTypes.Command do
   @moduledoc """
-  The Command object type defines a standardized object whose properties represent
-  the externally visible characteristics of a multi-action command procedure.
-  A Command object is used to write a set of values to a group of object properties,
-  based on the "action code" that is written to the Present_Value of the Command object.
-  Whenever the Present_Value property of the Command object is written to,
-  it triggers the Command object to take a set of actions that change the values of
-  a set of other objects' properties.
+  The Command object provides a single-point "macro" mechanism: writing an integer
+  action code (`present_value`) causes the object to execute a predefined list of
+  write operations on other object properties, all as a single atomic action from
+  the network's point of view. This is the standard way to implement "go to occupied
+  mode", "night setback", "fire alarm response", or any other coordinated multi-point
+  state change.
 
-  The Command object would typically be used to represent a complex context involving
-  multiple variables. The Command object is particularly useful for representing contexts
-  that have multiple states. For example, a particular zone of a building might have
-  three states: UNOCCUPIED, WARMUP, and OCCUPIED. To establish the operating context
-  for each state, numerous objects' properties may need to be changed to a collection
-  of known values. For example, when unoccupied, the temperature setpoint might be 18°C
-  and the lights might be off. When occupied, the setpoint might be 22°C and the lights
-  turned on, etc.
+  Each action in `action` (a list of `BACnet.Protocol.ActionCommand`) specifies
+  a target object/property, a value to write (which may be a priority or relinquish),
+  and optional conditions.
+  The `action_text` array gives human-readable names for each action code.
 
-  The Command object defines the relationship between a given state and those values
-  that shall be written to a collection of different objects' properties to realize that state.
-  Normally, a Command object is passive. Its In_Process property is FALSE, indicating
-  that the Command object is waiting for its Present_Value property to be written with a value.
-  When Present_Value is written, the Command object shall begin a sequence of actions.
-  The In_Process property shall be set to TRUE, indicating that the Command object has begun
-  processing one of a set of action sequences that is selected based on the particular value
-  written to the Present_Value property. If an attempt is made to write to the Present_Value
-  property through WriteProperty services while In_Process is TRUE, then a Result(-) shall be
-  returned with 'error class' = OBJECT and 'error code' = BUSY, rejecting the write.
+  ### Object Description (ASHRAE 135)
 
-  The new value of the Present_Value property determines which sequence of actions the Command
-  object shall take. These actions are specified in an array of action lists indexed by this value.
-  The Action property contains these lists. A given list may be empty, in which case no action
-  takes place, except that In_Process is returned to FALSE and All_Writes_Successful is set to TRUE.
-  If the list is not empty, then for each action in the list the Command object shall write a
-  particular value to a particular property of a particular object in a particular BACnet Device.
-  Note, however, that the capability to write to remote devices is not required.
-  Note also that the Command object does not guarantee that every write will be successful,
-  and no attempt is made by the Command object to "roll back" successfully written properties
-  to their previous values in the event that one or more writes fail. If any of the writes fail,
-  then the All_Writes_Successful property is set to FALSE and the Write_Successful flag for that
-  BACnetActionCommand is set to FALSE. If the Quit_On_Failure flag is TRUE for the failed
-  BACnetActionCommand, then all subsequent BACnetActionCommands in the list shall have their
-  Write_Successful flag set to FALSE. If an individual write succeeds, then the Write_Successful flag
-  for that BACnetActionCommand shall be set to TRUE. If all the writes are successful,
-  then the All_Writes_Successful property is set to TRUE. Once all the writes have been processed
-  to completion by the Command object, the In_Process property is set back to FALSE and the
-  Command object becomes passive again, waiting for another command.
+  > The Command object type defines a standardized object whose properties represent
+  > the externally visible characteristics of a multi-action command procedure.
 
-  It is important to note that the particular value that is written to the Present_Value property
-  is not what triggers the action, but the act of writing itself. Thus if the Present_Value property
-  has the value 5 and it is again written with the value 5, then the 5th list of actions will be
-  performed again. Writing zero to the Present_Value causes no action to be taken and is the same as
-  invoking an empty list of actions. The Command object is a powerful concept with many beneficial applications.
-  However, there are unique aspects of the Command object that can cause confusing or destructive side effects
-  if the Command object is improperly configured. Since the Command object can manipulate other
-  objects' properties, it is possible that a Command object could be configured to command itself.
-  In such a case, the In_Process property acts as an interlock and protects the Command object
-  from selfoscillation.
-  However, it is also possible for a Command object to command another Command object that commands the first
-  Command object and so on. The possibility exists for Command objects that command GROUP objects.
-  In these cases of "circular referencing," it is possible for confusing side effects to occur.
-  When references occur to objects in other BACnet Devices, there is an increased possibility of time delays,
-  which could cause oscillatory behavior between Command objects that are improperly configured
-  in such a circular manner. Caution should be exercised when configuring Command objects
-  that reference objects outside the BACnet device that contains them.
+  ### Behaviour and Operation
 
-  (ASHRAE 135 - Clause 12.10)
+  Command objects are active "macro" executors. Writing an integer (1..N) to the
+  `present_value` (the action code) causes the object to iterate over the
+  corresponding entry in the `action` array (a list of `BACnet.Protocol.ActionList`)
+  and perform the specified writes to other objects' properties
+  (possibly on remote devices) as a single logical operation.
+
+  ### Developer Implementation Notes (geared to device server / application authors)
+
+  The generated code handles storage + basic mechanics (validation, implicit_relationships,
+  readonly annotations as hints to your server, etc.). **You must drive "special" live
+  properties and side effects yourself**, analogous to maintaining `present_value` on
+  inputs via `update_property/3` (never direct mutation). Read notes below + generated
+  tables for details.
+
+  **Special / live properties and expected developer behaviour**
+
+  - `present_value` (non_neg_integer): The action code (1-based index into action).
+    **Dev must**: This is the trigger, not a normal value.
+
+  - `action`, `action_text`: The "program" of the macro.
+
+  - `all_writes_successful`: Indicates last execution status?
+    **Dev must**: Set/clear based on your execution results.
+
+  The Command object is the standard way to expose a "canned sequence of writes"
+  as a single network-visible action. It is deliberately *not* a priority-array
+  commandable in the usual sense; the act of writing a new action code *is* the
+  trigger.
+
+  **Execution is your responsibility**: When a client (or your own internal code)
+  successfully does `update_property(cmd_obj, :present_value, action_code)` you
+  must:
+  1. Look up the corresponding ActionList in `action`.
+  2. For each ActionCommand in that list, perform the write it describes:
+     - target object + property (can be a remote DeviceObjectPropertyRef)
+     - value (an Encoding or primitive)
+     - optional priority (for commandable targets) or the special "relinquish"
+       sentinel
+  3. You may abort early on error if the `quit_on_failure` property is set on
+     an action command.
+
+  Because the writes can target remote devices you will be issuing real
+  WriteProperty / WritePropertyMultiple service requests (or using your
+  client's write helpers).
+
+  **action_text**: A parallel array of human strings so that an operator workstation
+  can present a nice menu: "1 - Go to Night Setback", "2 - Fire Mode", etc.
+  You populate it at creation time (or allow it to be written later).
+
+  **Atomicity considerations for developers**: The BACnet spec says the writes
+  appear atomic to the network. In practice you will do a series of individual
+  writes. If you want true rollback you need to remember the previous values of
+  the targets (which may require reading them first at the right priorities) and
+  be prepared to write the old values back on failure.
+
+  **Writing the action list from the wire**: Because `action` (a `BACnetArray` of
+  `ActionList`) and `action_text` are normal writable properties, a sufficiently
+  privileged client can completely reprogram what action N does.
+
+  Command objects are one of the few places where a single network write can
+  cause a cascade of other writes - design your execution engine with care
+  around priority, failure handling, and logging so that operators can debug
+  "why did the lights and the AHU both change at 17:00?".
+
+  ### Examples
+
+  Creating a Command object:
+
+      iex> {:ok, cmd} = BACnet.Protocol.ObjectTypes.Command.create(1300, "ZoneControl", %{}); cmd.object_name
+      "ZoneControl"
+
+  ### See Also
+  - `BACnet.Protocol.ActionCommand`
+  - `BACnet.Protocol.ActionList`
   """
 
   alias BACnet.Protocol.ActionList

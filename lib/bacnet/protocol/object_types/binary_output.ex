@@ -1,23 +1,174 @@
 defmodule BACnet.Protocol.ObjectTypes.BinaryOutput do
   @moduledoc """
-  The Binary Output object type defines a standardized object whose properties represent
-  the externally visible characteristics of a binary output.
-  A "binary output" is a physical device or hardware output that can be in only one of two distinct states.
-  In this description, those states are referred to as ACTIVE (`true`) and INACTIVE (`false`).
-  A typical use of a binary output is to switch a particular piece of mechanical equipment,
-  such as a fan or pump, on or off. The state ACTIVE corresponds to the situation when the
-  equipment is on or running, and INACTIVE corresponds to the situation when the equipment is off or idle.
+  The Binary Output object is used to command two-state actuators (relays,
+  contactors, motor starters, solenoid valves, fans, pumps, etc. -- which may be
+  hardware output signals or anything similar). Its `present_value`
+  (ACTIVE/INACTIVE) is fully commandable through a priority array; the resulting
+  command is translated to the output according to the `polarity` property
+  (normal or reverse).
 
-  In some applications, electronic circuits may reverse the relationship between the application-level
-  logical states, ACTIVE and INACTIVE, and the physical state of the underlying hardware.
-  For example, a normally open relay contact may result in an ACTIVE state (device energized) when the relay
-  is energized, while a normally closed relay contact may result in an ACTIVE state (device energized) when
-  the relay is not energized. The Binary Output object provides for this possibility by
-  including a Polarity property.
+  In addition to priority-based commandability and `relinquish_default`, the object
+  provides a `minimum_off_time` / `minimum_on_time` interlock mechanism and can
+  optionally perform an automatic feedback write to the `feedback_value` property.
+  When `intrinsic_reporting: true` is used at creation the COMMAND_FAILURE algorithm
+  plus associated event properties become active.
 
-  Binary Output objects that support intrinsic reporting shall apply the COMMAND_FAILURE event algorithm.
+  ### Object Description (ASHRAE 135)
 
-  (ASHRAE 135 - Clause 12.7)
+  > The Binary Output object type defines a standardized object whose properties represent
+  > the externally visible characteristics of a binary output.
+  > A "binary output" is a physical device or hardware output that can be in only one of two distinct states.
+  >
+  > Binary Output objects that support intrinsic reporting shall apply the COMMAND_FAILURE event algorithm.
+
+  ### Behaviour and Operation
+
+  Binary Output objects are commandable two-state output objects (relays, motor
+  starters, etc.). The effective `present_value` (the logical command the local
+  logic should act upon) is always derived from the `priority_array` +
+  `relinquish_default`. The library keeps `present_value` synchronised automatically.
+  Application code must react to changes in `present_value` (and `polarity`) and
+  apply it to the target (hardware or anything similar) accordingly. It must use `set_priority/3` (or write the
+  priority array / relinquish default) rather than writing `present_value` directly.
+
+  While `out_of_service` is true, the output is disconnected from the object
+  and a test command may be forced into `present_value`. Many binary outputs also
+  support an optional `feedback_value` (useful for verifying that the
+  commanded state was actually achieved).
+
+  Minimum on/off time interlocks (`min_on_time`, `min_off_time`) are maintained by
+  the application layer. When intrinsic reporting is enabled the COMMAND_FAILURE
+  algorithm can detect when the output fails to reach the commanded
+  state (using feedback).
+
+  ### Developer Implementation Notes (geared to device server / application authors)
+
+  The generated code handles storage + basic mechanics (validation, implicit_relationships,
+  readonly annotations as hints to your server, etc.). **You must drive "special" live
+  properties and side effects yourself**, analogous to maintaining `present_value` on
+  inputs via `update_property/3` (never direct mutation). Read notes below + generated
+  tables for details.
+
+  **Special / live properties and expected developer behaviour**
+
+  - `present_value`: The effective commanded state (after priority arbitration or relinquish).
+    **Dev must**: Use `set_priority/3` or update relinquish.
+    Your actuator driver typically calls the provided `get_output/2` helper
+    to read the effective value and drive hardware. On polarity change or relinquish,
+    re-apply to hardware.
+
+  - `priority_array`, `relinquish_default`: Command sources.
+    **Dev must**: Write via the high level APIs; the macro syncs PV from highest
+    priority or default.
+
+  - `status_flags`: The `in_alarm`/`fault`/`out_of_service` bits of `status_flags`
+    are auto-managed; `overridden` is local matter.
+    Maintain feedback if used (and set `overridden` if appropriate).
+
+  - `change_of_state_count`, `change_of_state_time`, `elapsed_active_time`,
+    `time_of_state_count_reset`, `time_of_active_time_reset`:
+    History counters for state transitions and active time.
+    **Dev must**: On every actual logical state flip (after polarity), bump count,
+      set time, accumulate elapsed if active.
+      On reset writes to the reset times, snapshot current and clear counters.
+      These are side-effect "live" history properties you maintain from state changes
+      (analog to `value_*` in Accumulator).
+
+  - `active_text` / `inactive_text`: Human strings.
+    **Dev must**: Set at init; changes are just data.
+
+  - `feedback_value` (if present/intrinsic): For command_failure alarming.
+    **Dev must**: If supporting, your hardware feedback must update this.
+
+  - Intrinsic event properties: For command failure or other.
+    **Dev must**: Drive event evaluation after PV or feedback changes.
+
+  **Commandability & protection**: Same rules as any commandable: only
+  `set_priority/3` or writes to the PA/relinquish fields change the effective
+  command. Direct PV writes are rejected by the library.
+
+  **out_of_service for outputs**: `true` means "the physical channel is isolated from
+  this object; the value you see/write is for simulation only". Your driver must
+  stop driving the real hardware (or put it in a safe state) while `true`.
+  The `present_value` is still subject to command priorization.
+  See also `get_output/2`.
+
+  **Polarity and the physical world**: The logical PV (what the priority array
+  and relinquish_default produce) is translated by the `polarity` property
+  before it becomes the "command the hardware should see". Your driver must
+  apply the polarity when it drives the relay / contactor / etc.
+  You can use `get_output/2` to get the effective state your driver should apply.
+
+  **Minimum on/off times**: The `min_on_time` and `min_off_time` fields (in
+  seconds) are stored on the object. It is your driver's job to remember when
+  the output last changed state and to refuse (or delay) a command that would
+  violate the interlock.
+  The object uses a process-less architecture, so it can not enforce them.
+  The driver should write to the priority 6 with the current command state
+  and automatically lift priority 6 once time has passed.
+
+  **Feedback and COMMAND_FAILURE**: This is the classic "commanded vs. actual"
+  pattern for binary outputs. If you set the `auto_write_feedback` opt
+  flag, the library will copy the effective (logical) PV into `feedback_value`
+  on every change. If the underlying hardware can report back the actual state,
+  you should instead update the property yourself.
+
+  **elapsed_active_time etc.**: Same maintenance responsibility as on the
+  corresponding Binary Input - every time the *physical* state changes you
+  update the counters and timestamps on the output object (or the driver can
+  maintain them and only write when they change).
+
+  **Intrinsic on a binary output**: COMMAND_FAILURE is the interesting one; it
+  uses the feedback mechanism described above. OUT_OF_RANGE doesn't make much
+  sense on a boolean; the enrollment would be on a different object that
+  watches the consequence of this output.
+
+  **Reliability for an output**: You (the driver) set it based on actuator health,
+  wiring, power, etc. A typical pattern is to have a background task that reads
+  the real feedback (if any) and, if it doesn't match the commanded value for
+  longer than a timeout, sets reliability to `:process_error` or similar (the
+  `fault` bit in `status_flags` will be automatically updated by the object).
+
+  **Remote objects**: If `_metadata.remote_object` is set (populated by
+  `BACnet.Protocol.ObjectsUtility` when reading from a remote device), all mutation
+  operations (`update_property`, `add_property`, `set_priority`, etc.) will be rejected
+  by the generated code. You can only read remote binary outputs.
+
+  **Important invariant**: after any call that returns `{:ok, new_obj}`, the
+  `new_obj.present_value` is the value your hardware *must* be driving if NOT
+  `out_of_service` (subject to polarity, scaling, min/max clamps you implement on top).
+  If you ever see a mismatch between the object and reality for longer than your tolerance,
+  raise the reliability / event.
+
+  The generated tables are the place to see which fields have
+  implicit relationships and which annotations affect encoding.
+
+  ### Intrinsic Reporting
+
+  When `intrinsic_reporting: true` is passed to `create/4`, the object uses the COMMAND_FAILURE
+  event algorithm and the related event reporting properties become active.
+
+  ### Commandability and Priority Arrays
+
+  As an output object this always has a `priority_array` together with `relinquish_default`.
+  The present value is protected from direct modification and is normally only changed
+  through the priority array.
+
+  ### Examples
+
+  Creating a Binary Output with descriptive state texts:
+
+      iex> {:ok, bo} = BACnet.Protocol.ObjectTypes.BinaryOutput.create(1, "Fan Cmd", %{active_text: "On", inactive_text: "Off"}); bo.active_text
+      "On"
+
+  Using the special options (auto feedback + intrinsic reporting):
+
+      iex> {:ok, bo} = BACnet.Protocol.ObjectTypes.BinaryOutput.create(2, "Pump", %{}, auto_write_feedback: true, intrinsic_reporting: true)
+      iex> {is_boolean(bo.feedback_value), bo.event_state}
+      {true, :normal}
+
+  ### See Also
+  - `BACnet.Protocol.EventAlgorithms.CommandFailure`
   """
 
   alias BACnet.Protocol.ApplicationTags
@@ -31,6 +182,11 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryOutput do
 
   @typedoc """
   Options accepted when creating or configuring a Binary Output object.
+
+  In addition to the common options, Binary Output supports:
+  - `auto_write_feedback` - When enabled, the `feedback_value` is automatically kept in sync
+    with `present_value` changes.
+  - `intrinsic_reporting` - Enables COMMAND_FAILURE intrinsic reporting properties.
   """
   @type object_opts ::
           {:auto_write_feedback, boolean()}
@@ -46,13 +202,10 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryOutput do
 
   The physical output decouples the present value and the polarity from the physical state.
   The present value reflects the logical state of the object.
-  To get the physical state, call `get_output/1` and the function gets the present value in respect to the polarity.
+  To get the physical state, call `get_output/2` and the function gets the present value in respect to the polarity
+  and respecting out of service state.
 
-  For commandable objects (objects with a priority array), the present value property is protected,
-  unless out of service is active. For the duration of out of service, updates to the present value
-  using `update_property/3` are allowed. Once out of service is disabled, the present value is once
-  again protected from updates, as the present value is updated through the relinquish_default and
-  priority_array properties.
+  For commandable objects (objects with a priority array), the present value property is protected.
   """
   bac_object Constants.macro_assert_name(:object_type, :binary_output) do
     services(intrinsic: true)
