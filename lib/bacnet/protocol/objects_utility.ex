@@ -24,6 +24,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
   alias BACnet.Protocol.Services.Ack.ReadPropertyAck
   alias BACnet.Protocol.Services.Ack.ReadPropertyMultipleAck
 
+  import BACnet.Internal, only: [unless_env: 2]
   require Constants
 
   @object_type_mappings_key {__MODULE__, :object_type_mappings}
@@ -211,9 +212,6 @@ defmodule BACnet.Protocol.ObjectsUtility do
            when is_map(object) and
                   is_integer(:erlang.map_get(:remote_object, :erlang.map_get(:_metadata, object))) and
                   :erlang.map_get(:remote_object, :erlang.map_get(:_metadata, object)) != nil
-
-  # defmacrop is_env(env, do: code), do: if(Mix.env() == env, do: code)
-  defmacrop unless_env(env, do: code), do: unless(Mix.env() == env, do: code)
 
   @doc """
   Get the object type to module mappings.
