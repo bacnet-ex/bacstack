@@ -90,14 +90,14 @@ defmodule BACnet.Internal do
   If the current Mix environment is equal to the
   `env` argument, then insert the `do:` block into the AST.
   """
-  @spec is_env(Mix.env(), do: Macro.t()) :: Macro.t()
+  @spec is_env(atom(), do: Macro.t()) :: Macro.t()
   defmacro is_env(env, do: code), do: if(Mix.env() == env, do: code)
 
   @doc """
   If the current Mix environment is not equal to the
   `env` argument, then insert the `do:` block into the AST.
   """
-  @spec unless_env(Mix.env(), do: Macro.t()) :: Macro.t()
+  @spec unless_env(atom(), do: Macro.t()) :: Macro.t()
   defmacro unless_env(env, do: code), do: if(Mix.env() != env, do: code)
 
   # Generate function clause with head pattern matching
