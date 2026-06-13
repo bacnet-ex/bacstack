@@ -205,7 +205,7 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
     )
 
     # Logging Type MUST NOT be COV for Trend Log Multiple
-    field(:logging_type, Constants.logging_type(), required: true, validator: &(&1 != :cov))
+    field(:logging_type, Constants.logging_type(), required: true, validator_fun: &(&1 != :cov))
 
     # The following two properties are required if clock-aligned logging is supported
     field(:align_intervals, boolean(),
@@ -261,7 +261,7 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
   end
 
   # Override update_property/3, to flip logging_type on log_interval write (pre rev. 14 compatibility)
-  # When writing log_interval to 0, change logging_type to cov
+  # When writing log_interval to 0, change logging_type to triggered
   # When writing log_interval to non-0, change logging_type to polled
   def update_property(%__MODULE__{} = object, :log_interval, value) do
     with {:ok, object} <- super(object, :log_interval, value),
@@ -270,7 +270,7 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
              object,
              :logging_type,
              if(value == 0,
-               do: Constants.macro_assert_name(:logging_type, :cov),
+               do: Constants.macro_assert_name(:logging_type, :triggered),
                else: Constants.macro_assert_name(:logging_type, :polled)
              )
            )
@@ -304,8 +304,12 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
     super(object, property, value)
   end
 
-  defp inhibit_object_check(%{logging_type: :polled, log_interval: 0}),
-    do: {:error, {:invalid_property_value_for_logging_type, :log_interval}}
+  # Patch invalid log_interval values for the logging_type
+  defp inhibit_object_check(%{logging_type: :polled, log_interval: 0} = object),
+    do: {:ok, %{object | log_interval: 1}}
+
+  defp inhibit_object_check(%{logging_type: :triggered, log_interval: log} = object) when log > 0,
+    do: {:ok, %{object | log_interval: 0}}
 
   defp inhibit_object_check(object), do: {:ok, object}
 end

@@ -138,7 +138,7 @@ defmodule BACnet.Protocol.ObjectTypes.Program do
 
     field(:instance_of, String.t())
     field(:status_flags, BACnet.Protocol.StatusFlags.t(), required: true, readonly: true)
-    field(:out_of_service, boolean(), required: true, protected: true)
+    field(:out_of_service, boolean(), required: true, readonly: true)
 
     field(:reliability, Constants.reliability(),
       implicit_relationship: :reliability_evaluation_inhibit
@@ -149,7 +149,7 @@ defmodule BACnet.Protocol.ObjectTypes.Program do
   end
 
   defp inhibit_object_check(obj) do
-    # out_of_service MUST be false if program state is idle
+    # out_of_service MUST be true if program state is idle
     {:ok, %{obj | out_of_service: obj.program_state == :idle}}
   end
 end

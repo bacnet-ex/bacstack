@@ -15,8 +15,8 @@ defmodule BACnet.Test.Protocol.ObjectTypes.TrendLogMultipleTest do
   # This test suite only extends the basic and utility test suite to
   # cover additional implemented functionality
 
-  test "verify create/4 fails with log_interval = 1 and cov" do
-    assert {:error, {:invalid_property_value_for_logging_type, :log_interval}} =
+  test "verify create/4 fails with cov" do
+    assert {:error, {:value_failed_property_validation, :logging_type}} =
              TrendLogMultiple.create(1, "TEST", %{
                buffer_size: 100,
                log_device_object_property:
@@ -26,8 +26,8 @@ defmodule BACnet.Test.Protocol.ObjectTypes.TrendLogMultipleTest do
              })
   end
 
-  test "verify create/4 fails with log_interval = 0 and polled" do
-    assert {:error, {:invalid_property_value_for_logging_type, :log_interval}} =
+  test "verify create/4 auto corrects with log_interval = 0 and polled" do
+    assert {:ok, %{log_interval: 1}} =
              TrendLogMultiple.create(1, "TEST", %{
                buffer_size: 100,
                log_device_object_property:
@@ -47,7 +47,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.TrendLogMultipleTest do
                logging_type: :triggered
              })
 
-    assert {:ok, %{log_interval: 1, logging_type: :triggered}} =
+    assert {:ok, %{log_interval: 0, logging_type: :triggered}} =
              TrendLogMultiple.create(1, "TEST", %{
                buffer_size: 100,
                log_device_object_property:
@@ -123,19 +123,6 @@ defmodule BACnet.Test.Protocol.ObjectTypes.TrendLogMultipleTest do
                },
                clock_aligned_logging: true
              )
-  end
-
-  test "verify property_writable?/2 for log_interval and cov is true" do
-    {:ok, obj} =
-      TrendLogMultiple.create(1, "TEST", %{
-        buffer_size: 100,
-        log_device_object_property:
-          BACnetArray.from_list([ObjectsMacro.get_default_dev_object_ref()]),
-        log_interval: 0,
-        logging_type: :cov
-      })
-
-    assert true == TrendLogMultiple.property_writable?(obj, :log_interval)
   end
 
   test "verify property_writable?/2 for log_interval and polled is true" do
@@ -248,7 +235,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.TrendLogMultipleTest do
              ])
   end
 
-  test "verify update_property/3 for log_interval = 0 sets logging_type = cov" do
+  test "verify update_property/3 for log_interval = 0 sets logging_type = triggered" do
     {:ok, obj} =
       TrendLogMultiple.create(1, "TEST", %{
         buffer_size: 100,
@@ -258,7 +245,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.TrendLogMultipleTest do
         logging_type: :triggered
       })
 
-    assert {:ok, %{log_interval: 0, logging_type: :cov}} =
+    assert {:ok, %{log_interval: 0, logging_type: :triggered}} =
              TrendLogMultiple.update_property(obj, :log_interval, 0)
   end
 

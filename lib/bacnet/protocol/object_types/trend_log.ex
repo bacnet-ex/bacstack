@@ -333,16 +333,15 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLog do
     super(object, property, value)
   end
 
-  defp inhibit_object_check(object) do
-    case object do
-      %{logging_type: :cov, log_interval: log} when log > 0 ->
-        {:ok, %{object | log_interval: 0}}
+  # Patch invalid log_interval values for the logging_type
+  defp inhibit_object_check(%{logging_type: :polled, log_interval: 0} = object),
+    do: {:ok, %{object | log_interval: 1}}
 
-      %{logging_type: :polled, log_interval: 0} ->
-        {:error, {:invalid_property_value_for_logging_type, :log_interval}}
+  defp inhibit_object_check(%{logging_type: :cov, log_interval: log} = object) when log > 0,
+    do: {:ok, %{object | log_interval: 0}}
 
-      _else ->
-        {:ok, object}
-    end
-  end
+  defp inhibit_object_check(%{logging_type: :triggered, log_interval: log} = object) when log > 0,
+    do: {:ok, %{object | log_interval: 0}}
+
+  defp inhibit_object_check(object), do: {:ok, object}
 end

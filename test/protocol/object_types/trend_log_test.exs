@@ -14,8 +14,8 @@ defmodule BACnet.Test.Protocol.ObjectTypes.TrendLogTest do
   # This test suite only extends the basic and utility test suite to
   # cover additional implemented functionality
 
-  test "verify create/4 fails with log_interval = 1 and cov" do
-    assert {:error, {:invalid_property_value_for_logging_type, :log_interval}} =
+  test "verify create/4 auto corrects with log_interval = 1 and cov" do
+    assert {:ok, %{log_interval: 0}} =
              TrendLog.create(1, "TEST", %{
                buffer_size: 100,
                log_device_object_property: ObjectsMacro.get_default_dev_object_ref(),
@@ -24,8 +24,8 @@ defmodule BACnet.Test.Protocol.ObjectTypes.TrendLogTest do
              })
   end
 
-  test "verify create/4 fails with log_interval = 0 and polled" do
-    assert {:error, {:invalid_property_value_for_logging_type, :log_interval}} =
+  test "verify create/4 auto corrects with log_interval = 0 and polled" do
+    assert {:ok, %{log_interval: 1}} =
              TrendLog.create(1, "TEST", %{
                buffer_size: 100,
                log_device_object_property: ObjectsMacro.get_default_dev_object_ref(),
@@ -43,7 +43,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.TrendLogTest do
                logging_type: :triggered
              })
 
-    assert {:ok, %{log_interval: 1, logging_type: :triggered}} =
+    assert {:ok, %{log_interval: 0, logging_type: :triggered}} =
              TrendLog.create(1, "TEST", %{
                buffer_size: 100,
                log_device_object_property: ObjectsMacro.get_default_dev_object_ref(),

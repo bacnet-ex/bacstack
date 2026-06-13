@@ -28,6 +28,7 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
   alias BACnet.Protocol.Recipient
   alias BACnet.Protocol.SetpointReference
   alias BACnet.Protocol.StatusFlags
+  alias BACnet.Protocol.ObjectTypes.Program
   alias BACnet.Protocol.ObjectTypes.TrendLog
   alias BACnet.Protocol.ObjectTypes.TrendLogMultiple
 
@@ -1419,7 +1420,7 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
          %TrendLogMultiple{logging_type: :polled, log_interval: 0} = struct,
          _cause
        ) do
-    %{struct | logging_type: :cov}
+    %{struct | logging_type: :triggered}
   end
 
   defp amend_struct_spec_for_cause(
@@ -1428,6 +1429,14 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
        )
        when log > 0 do
     %{struct | logging_type: :polled}
+  end
+
+  defp amend_struct_spec_for_cause(
+         %{logging_type: :triggered, log_interval: log} = struct,
+         _cause
+       )
+       when log > 0 do
+    %{struct | log_interval: 0}
   end
 
   defp amend_struct_spec_for_cause(
@@ -1458,6 +1467,11 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
             out_of_service: oos
         }
     }
+  end
+
+  # out_of_service of Program object is automatically updated depending on the program state
+  defp amend_struct_spec_for_cause(%Program{} = struct, _cause) do
+    %{struct | out_of_service: struct.program_state == :idle}
   end
 
   defp amend_struct_spec_for_cause(struct, _cause) do
