@@ -372,8 +372,8 @@ defmodule BACnet.Stack.TrendLogger do
   This function call will invoke async trend logger processing,
   the return value does not indicate completion of operation.
   """
-  @spec resubscribe_cov(server(), object() | :global) :: :ok
-  def resubscribe_cov(server, object) when object == :global or is_object(object) do
+  @spec resubscribe_cov(server(), TrendLog.t() | :global) :: :ok
+  def resubscribe_cov(server, object) when object == :global or is_object_trend(object) do
     GenServer.call(server, {:resubscribe_cov, object})
   end
 
@@ -502,6 +502,10 @@ defmodule BACnet.Stack.TrendLogger do
 
         ObjectsUtility.get_remote_device_id(object) == :error ->
           {{:error, :remote_object_with_no_id}, state}
+
+        # Invalid logging type for TL Multiple
+        match?(%TrendLogMultiple{logging_type: @const_log_type_cov}, object) ->
+          {{:error, :invalid_logging_type}, state}
 
         true ->
           new_log = %Log{
@@ -700,7 +704,8 @@ defmodule BACnet.Stack.TrendLogger do
     {:reply, :ok, state}
   end
 
-  def handle_call({:resubscribe_cov, object}, _dest, %State{} = state) when is_object(object) do
+  def handle_call({:resubscribe_cov, object}, _dest, %State{} = state)
+      when is_object_trend(object) do
     log_debug(fn ->
       "TrendLogger: Received resubscribe_cov request for #{make_log_id(object)}"
     end)
@@ -1038,7 +1043,8 @@ defmodule BACnet.Stack.TrendLogger do
       {:ok,
        %{
          enabled: true,
-         object: %{logging_type: @const_log_type_cov, cov_resubscription_interval: cov} = object
+         object:
+           %TrendLog{logging_type: @const_log_type_cov, cov_resubscription_interval: cov} = object
        }}
       when not is_nil(cov) and cov > 0 ->
         apply_cov_sub(
