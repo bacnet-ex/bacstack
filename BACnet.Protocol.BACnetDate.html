@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.3">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>BACnet.Protocol.BACnetDate — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-NHQLCD6Y.css" />
+
+    <script defer src="dist/sidebar_items-0B338154.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-Y2MUTVIN.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr />Protocol.<wbr />BACnetDate</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0)</small>
+
+    </h1>
+
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/bacnet_date.ex#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>A BACnet Date is a structured value that can represent either a specific calendar
+date or a <em>date pattern</em> containing wildcards and special values. It is one of the
+fundamental data types in BACnet (application tag 10) and is used pervasively for
+schedules, calendars, trend-log time ranges, and event timestamps.</p><p>Each of the four components (year, month, day, weekday) may be a concrete value or
+one of the special atoms <code class="inline">:unspecified</code>, <code class="inline">:even</code>, or <code class="inline">:odd</code> (plus <code class="inline">:last</code> for day).
+When any component is a special value the date acts as a pattern that can match
+many actual dates. A completely unspecified date (all fields <code class="inline">:unspecified</code>) is
+interpreted as &quot;don't care / match anything&quot;.</p><h3 id="module-bacnet-specification-references" class="section-heading"><a href="#module-bacnet-specification-references" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">BACnet Specification References</span></h3><ul><li><strong>Encoding</strong>: ASHRAE 135-2012 Clause 20.2.12. Four contents octets:
+year-1900, month (January=1), day-of-month, weekday (Monday=1). Any octet may be
+0xFF to indicate &quot;unspecified&quot;.</li><li><strong>Special pattern values</strong> (Clause 20.2.12): month 13=odd months, 14=even months;
+day 32=last day of month, 33=odd days, 34=even days. These <strong>shall not</strong> be used
+when conveying an actual date (e.g. the Device object's <code class="inline">Local_Date</code> or a
+TimeSynchronization-Request).</li><li><strong>ASN.1 production</strong> (Clause 21): <code class="inline">Date ::= [APPLICATION 10] OCTET STRING (SIZE(4))</code>
+(with comments describing the special values above).</li><li><strong>Primary usage contexts</strong>: <code class="inline">date_list</code> property of Calendar objects (12.9),
+<code class="inline">exception_schedule</code> of Schedule objects (12.24), <code class="inline">start_time</code>/<code class="inline">stop_time</code> in
+ReadRange requests, Event Timestamps, and many &quot;last changed&quot; properties.</li></ul><p>This module supplies ergonomic conversion helpers to and from Elixir <a href="https://hexdocs.pm/elixir/Date.html"><code class="inline">Date</code></a> while
+correctly handling the pattern semantics via a reference date.</p><h3 id="module-examples" class="section-heading"><a href="#module-examples" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Examples</span></h3><h4>Specific date</h4><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="n">date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="1493460335-1">%</span><span class="nc" data-group-id="1493460335-1">BACnetDate</span><span class="p" data-group-id="1493460335-1">{</span><span class="ss">year</span><span class="p">:</span><span class="w"> </span><span class="mi">2024</span><span class="p">,</span><span class="w"> </span><span class="ss">month</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w"> </span><span class="ss">day</span><span class="p">:</span><span class="w"> </span><span class="mi">25</span><span class="p">,</span><span class="w"> </span><span class="ss">weekday</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p" data-group-id="1493460335-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">BACnetDate</span><span class="o">.</span><span class="n">specific?</span><span class="p" data-group-id="1493460335-2">(</span><span class="n">date</span><span class="p" data-group-id="1493460335-2">)</span><span class="w">
+</span><span class="no">true</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">BACnetDate</span><span class="o">.</span><span class="n">to_date!</span><span class="p" data-group-id="1493460335-3">(</span><span class="n">date</span><span class="p" data-group-id="1493460335-3">)</span><span class="w">
+</span><span class="ld">~D[2024-12-25]</span></code></pre><h4>Wildcard / pattern date (e.g. &quot;every Christmas&quot;)</h4><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="n">christmas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="6600516565-1">%</span><span class="nc" data-group-id="6600516565-1">BACnetDate</span><span class="p" data-group-id="6600516565-1">{</span><span class="ss">year</span><span class="p">:</span><span class="w"> </span><span class="ss">:unspecified</span><span class="p">,</span><span class="w"> </span><span class="ss">month</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w"> </span><span class="ss">day</span><span class="p">:</span><span class="w"> </span><span class="mi">25</span><span class="p">,</span><span class="w"> </span><span class="ss">weekday</span><span class="p">:</span><span class="w"> </span><span class="ss">:unspecified</span><span class="p" data-group-id="6600516565-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">BACnetDate</span><span class="o">.</span><span class="n">specific?</span><span class="p" data-group-id="6600516565-2">(</span><span class="n">christmas</span><span class="p" data-group-id="6600516565-2">)</span><span class="w">
+</span><span class="no">false</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">BACnetDate</span><span class="o">.</span><span class="n">to_date!</span><span class="p" data-group-id="6600516565-3">(</span><span class="n">christmas</span><span class="p">,</span><span class="w"> </span><span class="ld">~D[2025-06-01]</span><span class="p" data-group-id="6600516565-3">)</span><span class="w">
+</span><span class="ld">~D[2025-12-25]</span></code></pre><h4>Even/odd patterns</h4><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="n">even_months</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="3043307987-1">%</span><span class="nc" data-group-id="3043307987-1">BACnetDate</span><span class="p" data-group-id="3043307987-1">{</span><span class="ss">year</span><span class="p">:</span><span class="w"> </span><span class="mi">2025</span><span class="p">,</span><span class="w"> </span><span class="ss">month</span><span class="p">:</span><span class="w"> </span><span class="ss">:even</span><span class="p">,</span><span class="w"> </span><span class="ss">day</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">weekday</span><span class="p">:</span><span class="w"> </span><span class="ss">:unspecified</span><span class="p" data-group-id="3043307987-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">BACnetDate</span><span class="o">.</span><span class="n">to_date!</span><span class="p" data-group-id="3043307987-2">(</span><span class="n">even_months</span><span class="p">,</span><span class="w"> </span><span class="ld">~D[2025-03-15]</span><span class="p" data-group-id="3043307987-2">)</span><span class="w">
+</span><span class="ld">~D[2025-02-01]</span></code></pre><h4>Edge cases</h4><p>Day overflow falls back to the end of the month:</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="n">feb30</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="8883947644-1">%</span><span class="nc" data-group-id="8883947644-1">BACnetDate</span><span class="p" data-group-id="8883947644-1">{</span><span class="ss">year</span><span class="p">:</span><span class="w"> </span><span class="mi">2025</span><span class="p">,</span><span class="w"> </span><span class="ss">month</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="ss">day</span><span class="p">:</span><span class="w"> </span><span class="mi">30</span><span class="p">,</span><span class="w"> </span><span class="ss">weekday</span><span class="p">:</span><span class="w"> </span><span class="ss">:unspecified</span><span class="p" data-group-id="8883947644-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">BACnetDate</span><span class="o">.</span><span class="n">to_date!</span><span class="p" data-group-id="8883947644-2">(</span><span class="n">feb30</span><span class="p">,</span><span class="w"> </span><span class="ld">~D[2025-01-01]</span><span class="p" data-group-id="8883947644-2">)</span><span class="w">
+</span><span class="ld">~D[2025-02-28]</span></code></pre><p><code class="inline">day: :last</code> counts as specific (as long as the other components are concrete values):</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="n">last_day</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="7194091728-1">%</span><span class="nc" data-group-id="7194091728-1">BACnetDate</span><span class="p" data-group-id="7194091728-1">{</span><span class="ss">year</span><span class="p">:</span><span class="w"> </span><span class="mi">2025</span><span class="p">,</span><span class="w"> </span><span class="ss">month</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="ss">day</span><span class="p">:</span><span class="w"> </span><span class="ss">:last</span><span class="p">,</span><span class="w"> </span><span class="ss">weekday</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p" data-group-id="7194091728-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">BACnetDate</span><span class="o">.</span><span class="n">specific?</span><span class="p" data-group-id="7194091728-2">(</span><span class="n">last_day</span><span class="p" data-group-id="7194091728-2">)</span><span class="w">
+</span><span class="no">true</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">BACnetDate</span><span class="o">.</span><span class="n">to_date!</span><span class="p" data-group-id="7194091728-3">(</span><span class="n">last_day</span><span class="p">,</span><span class="w"> </span><span class="ld">~D[2025-01-01]</span><span class="p" data-group-id="7194091728-3">)</span><span class="w">
+</span><span class="ld">~D[2025-02-28]</span></code></pre><section role="note" class="admonition warning"><h4 class="admonition-title warning">Warning</h4><p>Per the BACnet specification, pattern dates (any special values) <strong>shall not</strong>
+be used when conveying actual dates, such as the Device object's <code class="inline">Local_Date</code>
+or in TimeSynchronization requests.</p></section><h3 id="module-see-also" class="section-heading"><a href="#module-see-also" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">See Also</span></h3><ul><li><a href="BACnet.Protocol.BACnetDateTime.html"><code class="inline">BACnet.Protocol.BACnetDateTime</code></a></li><li><a href="BACnet.Protocol.BACnetTime.html"><code class="inline">BACnet.Protocol.BACnetTime</code></a></li><li><a href="BACnet.Protocol.BACnetTimestamp.html"><code class="inline">BACnet.Protocol.BACnetTimestamp</code></a></li><li><a href="BACnet.Protocol.DateRange.html"><code class="inline">BACnet.Protocol.DateRange</code></a></li><li><a href="BACnet.Protocol.WeekNDay.html"><code class="inline">BACnet.Protocol.WeekNDay</code></a></li></ul>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-types summary">
+  <h3>
+    <a href="#types">Types</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:t/0" data-no-tooltip="" translate="no">t()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents a BACnet Date (application tag 10).</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#compare/2" data-no-tooltip="" translate="no">compare(date1, date2)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Compares two BACnet Date.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#encode/2" data-no-tooltip="" translate="no">encode(date, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Encodes the given BACnet Date into an application tag.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#from_date/1" data-no-tooltip="" translate="no">from_date(date)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Converts a <a href="https://hexdocs.pm/elixir/Date.html"><code class="inline">Date</code></a> to a BACnet Date.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#parse/1" data-no-tooltip="" translate="no">parse(tags)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Parses a BACnet Date from BACnet application tags encoding.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#specific?/1" data-no-tooltip="" translate="no">specific?(time)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks whether the given BACnet Date is a specific date value
+(every component is a numeric value; <code class="inline">day: :last</code> counts as specific).</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#to_date/2" data-no-tooltip="" translate="no">to_date(date, ref_date \\ Date.utc_today())</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Converts the BACnet Date to a <a href="https://hexdocs.pm/elixir/Date.html"><code class="inline">Date</code></a>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#to_date!/2" data-no-tooltip="" translate="no">to_date!(date, ref_date \\ Date.utc_today())</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Bang-version of <a href="#to_date/1"><code class="inline">to_date/1</code></a>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#utc_today/0" data-no-tooltip="" translate="no">utc_today()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Creates a new BACnet Date with the current UTC date.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#valid?/1" data-no-tooltip="" translate="no">valid?(t)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Validates whether the given BACnet date is in form valid.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h2>
+
+    <div class="types-list">
+<section class="detail" id="t:t/0">
+
+  <div class="detail-header">
+    <a href="#t:t/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">t()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/bacnet_date.ex#L113" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> t() :: %BACnet.Protocol.BACnetDate{
+  day: 1..31 | :even | :odd | :last | :unspecified,
+  month: 1..12 | :even | :odd | :unspecified,
+  weekday: 1..7 | :unspecified,
+  year: 1900..2154 | :unspecified
+}</pre>
+
+      </div>
+
+<p>Represents a BACnet Date (application tag 10).</p><ul><li><code class="inline">year</code>    - 1900-2154 or <code class="inline">:unspecified</code> (0xFF in encoding)</li><li><code class="inline">month</code>   - 1-12, <code class="inline">:even</code>, <code class="inline">:odd</code>, or <code class="inline">:unspecified</code></li><li><code class="inline">day</code>     - 1-31, <code class="inline">:even</code>, <code class="inline">:odd</code>, <code class="inline">:last</code>, or <code class="inline">:unspecified</code></li><li><code class="inline">weekday</code> - 1 (Monday) … 7 (Sunday) or <code class="inline">:unspecified</code></li></ul><p>The special atoms create <em>date patterns</em>. A pattern matches any concrete date
+whose corresponding component satisfies the rule (e.g. <code class="inline">month: :odd</code> matches
+January, March, …). See <a href="#specific?/1"><code class="inline">specific?/1</code></a> and the conversion functions for how
+patterns are resolved against a reference date.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="compare/2">
+
+  <div class="detail-header">
+    <a href="#compare/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">compare(date1, date2)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/bacnet_date.ex#L140" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> compare(<a href="#t:t/0">t</a>(), <a href="#t:t/0">t</a>()) :: :gt | :eq | :lt</pre>
+
+      </div>
+
+<p>Compares two BACnet Date.</p><p>Returns <code class="inline">:gt</code> if first date is later than the second,
+and <code class="inline">:lt</code> for vice versa.
+If the two dates are equal, <code class="inline">:eq</code> is returned.</p><p>Note that this is achieved by converting to <a href="https://hexdocs.pm/elixir/Date.html"><code class="inline">Date</code></a> and then
+comparing them.</p>
+  </section>
+</section>
+<section class="detail" id="encode/2">
+
+    <span id="encode/1"></span>
+
+  <div class="detail-header">
+    <a href="#encode/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">encode(date, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/bacnet_date.ex#L148" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> encode(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()) ::
+  {:ok, <a href="BACnet.Protocol.ApplicationTags.html#t:encoding_list/0">BACnet.Protocol.ApplicationTags.encoding_list</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Encodes the given BACnet Date into an application tag.</p>
+  </section>
+</section>
+<section class="detail" id="from_date/1">
+
+  <div class="detail-header">
+    <a href="#from_date/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">from_date(date)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/bacnet_date.ex#L156" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> from_date(<a href="https://hexdocs.pm/elixir/Date.html#t:t/0">Date.t</a>()) :: <a href="#t:t/0">t</a>()</pre>
+
+      </div>
+
+<p>Converts a <a href="https://hexdocs.pm/elixir/Date.html"><code class="inline">Date</code></a> to a BACnet Date.</p>
+  </section>
+</section>
+<section class="detail" id="parse/1">
+
+  <div class="detail-header">
+    <a href="#parse/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">parse(tags)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/bacnet_date.ex#L170" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> parse(<a href="BACnet.Protocol.ApplicationTags.html#t:encoding_list/0">BACnet.Protocol.ApplicationTags.encoding_list</a>()) ::
+  {:ok, {<a href="#t:t/0">t</a>(), rest :: <a href="BACnet.Protocol.ApplicationTags.html#t:encoding_list/0">BACnet.Protocol.ApplicationTags.encoding_list</a>()}}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Parses a BACnet Date from BACnet application tags encoding.</p>
+  </section>
+</section>
+<section class="detail" id="specific?/1">
+
+  <div class="detail-header">
+    <a href="#specific?/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">specific?(time)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/bacnet_date.ex#L185" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> specific?(<a href="#t:t/0">t</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks whether the given BACnet Date is a specific date value
+(every component is a numeric value; <code class="inline">day: :last</code> counts as specific).</p>
+  </section>
+</section>
+<section class="detail" id="to_date/2">
+
+    <span id="to_date/1"></span>
+
+  <div class="detail-header">
+    <a href="#to_date/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">to_date(date, ref_date \\ Date.utc_today())</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/bacnet_date.ex#L206" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> to_date(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/Date.html#t:t/0">Date.t</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/Date.html#t:t/0">Date.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Converts the BACnet Date to a <a href="https://hexdocs.pm/elixir/Date.html"><code class="inline">Date</code></a>.</p><p>If any of the fields are unspecified, the reference date (current UTC value) is used.
+In case of even or odd, either the current or the previous value of the reference date is used.</p>
+  </section>
+</section>
+<section class="detail" id="to_date!/2">
+
+    <span id="to_date!/1"></span>
+
+  <div class="detail-header">
+    <a href="#to_date!/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">to_date!(date, ref_date \\ Date.utc_today())</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/bacnet_date.ex#L227" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> to_date!(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/Date.html#t:t/0">Date.t</a>()) :: <a href="https://hexdocs.pm/elixir/Date.html#t:t/0">Date.t</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">no_return</a>()</pre>
+
+      </div>
+
+<p>Bang-version of <a href="#to_date/1"><code class="inline">to_date/1</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="utc_today/0">
+
+  <div class="detail-header">
+    <a href="#utc_today/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">utc_today()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/bacnet_date.ex#L247" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> utc_today() :: <a href="#t:t/0">t</a>()</pre>
+
+      </div>
+
+<p>Creates a new BACnet Date with the current UTC date.</p>
+  </section>
+</section>
+<section class="detail" id="valid?/1">
+
+  <div class="detail-header">
+    <a href="#valid?/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">valid?(t)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/bacnet_date.ex#L258" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> valid?(<a href="#t:t/0">t</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Validates whether the given BACnet date is in form valid.</p><p>It only validates the struct is valid as per type specification,
+it does not validate that the day matches the weekday.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.3) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>
