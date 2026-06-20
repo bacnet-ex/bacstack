@@ -19,7 +19,7 @@ defmodule BACnet.Protocol.WeekNDay do
     ```
   - **Primary usage** (Clause 12.9 Calendar, 12.24 Schedule):
     - Inside `BACnet.Protocol.CalendarEntry` (as one of the three CHOICE alternatives)
-    - Inside `BACnet.Protocol.SpecialEvent.period` for exception schedules
+    - Inside `BACnet.Protocol.SpecialEvent` for exception schedules
     - Combined with `BACnet.Protocol.DaysOfWeek` in destinations and notification rules
 
   The week-of-month numbering (1 = days 1-7, 6 = last 7 days of month) is defined
