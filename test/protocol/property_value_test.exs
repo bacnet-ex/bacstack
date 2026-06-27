@@ -78,6 +78,59 @@ defmodule BACnet.Protocol.PropertyValueTest do
              )
   end
 
+  test "decoding property value with date time" do
+    assert {:ok,
+            {%BACnet.Protocol.PropertyValue{
+               priority: nil,
+               property_array_index: nil,
+               property_identifier: :time_of_active_time_reset,
+               property_value: [
+                 %BACnet.Protocol.ApplicationTags.Encoding{
+                   encoding: :primitive,
+                   extras: [],
+                   type: :date,
+                   value: %BACnet.Protocol.BACnetDate{
+                     year: :unspecified,
+                     month: :unspecified,
+                     day: :unspecified,
+                     weekday: :unspecified
+                   }
+                 },
+                 %BACnet.Protocol.ApplicationTags.Encoding{
+                   encoding: :primitive,
+                   extras: [],
+                   type: :time,
+                   value: %BACnet.Protocol.BACnetTime{
+                     hour: :unspecified,
+                     minute: :unspecified,
+                     second: :unspecified,
+                     hundredth: :unspecified
+                   }
+                 }
+               ]
+             },
+             []}} =
+             PropertyValue.parse(
+               tagged: {0, "r", 1},
+               constructed:
+                 {2,
+                  [
+                    date: %BACnet.Protocol.BACnetDate{
+                      year: :unspecified,
+                      month: :unspecified,
+                      day: :unspecified,
+                      weekday: :unspecified
+                    },
+                    time: %BACnet.Protocol.BACnetTime{
+                      hour: :unspecified,
+                      minute: :unspecified,
+                      second: :unspecified,
+                      hundredth: :unspecified
+                    }
+                  ], 0}
+             )
+  end
+
   test "decode property value with all" do
     assert {:ok,
             {%PropertyValue{

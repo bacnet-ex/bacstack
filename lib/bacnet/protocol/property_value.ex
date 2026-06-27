@@ -50,7 +50,7 @@ defmodule BACnet.Protocol.PropertyValue do
   @type t :: %__MODULE__{
           property_identifier: Constants.property_identifier() | non_neg_integer(),
           property_array_index: non_neg_integer() | nil,
-          property_value: ApplicationTags.Encoding.t(),
+          property_value: ApplicationTags.Encoding.t() | [ApplicationTags.Encoding.t()],
           priority: 1..16 | nil
         }
 
@@ -162,7 +162,11 @@ defmodule BACnet.Protocol.PropertyValue do
         property_identifier:
           Constants.by_value(:property_identifier, property_identifier, property_identifier),
         property_array_index: prop_array_index,
-        property_value: ApplicationTags.Encoding.create!(value),
+        property_value:
+          if(is_list(value),
+            do: Enum.map(value, &ApplicationTags.Encoding.create!/1),
+            else: ApplicationTags.Encoding.create!(value)
+          ),
         priority: priority
       }
 

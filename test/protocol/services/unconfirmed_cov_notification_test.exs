@@ -75,6 +75,96 @@ defmodule BACnet.Test.Protocol.Services.UnconfirmedCovNotificationTest do
              })
   end
 
+  test "decoding UnconfirmedCovNotification with date time" do
+    assert {:ok,
+            %UnconfirmedCovNotification{
+              process_identifier: 2_621_440,
+              initiating_device: %BACnet.Protocol.ObjectIdentifier{
+                type: :device,
+                instance: 114_701
+              },
+              monitored_object: %BACnet.Protocol.ObjectIdentifier{
+                type: :binary_value,
+                instance: 189
+              },
+              time_remaining: 3600,
+              property_values: [
+                %BACnet.Protocol.PropertyValue{
+                  priority: nil,
+                  property_array_index: nil,
+                  property_identifier: :time_of_active_time_reset,
+                  property_value: [
+                    %BACnet.Protocol.ApplicationTags.Encoding{
+                      encoding: :primitive,
+                      extras: [],
+                      type: :date,
+                      value: %BACnet.Protocol.BACnetDate{
+                        year: :unspecified,
+                        month: :unspecified,
+                        day: :unspecified,
+                        weekday: :unspecified
+                      }
+                    },
+                    %BACnet.Protocol.ApplicationTags.Encoding{
+                      encoding: :primitive,
+                      extras: [],
+                      type: :time,
+                      value: %BACnet.Protocol.BACnetTime{
+                        hour: :unspecified,
+                        minute: :unspecified,
+                        second: :unspecified,
+                        hundredth: :unspecified
+                      }
+                    }
+                  ]
+                },
+                %BACnet.Protocol.PropertyValue{
+                  property_identifier: :status_flags,
+                  property_array_index: nil,
+                  property_value: %BACnet.Protocol.ApplicationTags.Encoding{
+                    encoding: :primitive,
+                    extras: [],
+                    type: :bitstring,
+                    value: {true, false, false, true}
+                  },
+                  priority: nil
+                }
+              ]
+            }} =
+             UnconfirmedCovNotification.from_apdu(%UnconfirmedServiceRequest{
+               service: :unconfirmed_cov_notification,
+               parameters: [
+                 tagged: {0, <<40, 0, 0>>, 3},
+                 tagged: {1, <<2, 1, 192, 13>>, 4},
+                 tagged: {2, <<1, 64, 0, 189>>, 4},
+                 tagged: {3, <<14, 16>>, 2},
+                 constructed:
+                   {4,
+                    [
+                      tagged: {0, "r", 1},
+                      constructed:
+                        {2,
+                         [
+                           date: %BACnet.Protocol.BACnetDate{
+                             year: :unspecified,
+                             month: :unspecified,
+                             day: :unspecified,
+                             weekday: :unspecified
+                           },
+                           time: %BACnet.Protocol.BACnetTime{
+                             hour: :unspecified,
+                             minute: :unspecified,
+                             second: :unspecified,
+                             hundredth: :unspecified
+                           }
+                         ], 0},
+                      tagged: {0, "o", 1},
+                      constructed: {2, {:bitstring, {true, false, false, true}}, 0}
+                    ], 0}
+               ]
+             })
+  end
+
   test "decoding UnconfirmedCovNotification invalid missing pattern" do
     assert {:error, :invalid_request_parameters} =
              UnconfirmedCovNotification.from_apdu(%UnconfirmedServiceRequest{
