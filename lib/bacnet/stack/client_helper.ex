@@ -674,8 +674,8 @@ defmodule BACnet.Stack.ClientHelper do
               "got: #{inspect(opts)}"
     end
 
-    confirmed = Keyword.get(opts, :confirmed, false)
     lifetime = Keyword.get(opts, :lifetime, 3600)
+    confirmed = if lifetime, do: Keyword.get(opts, :confirmed, false), else: nil
     cov_increment = if lifetime, do: Keyword.get(opts, :cov_increment), else: nil
 
     pid =
