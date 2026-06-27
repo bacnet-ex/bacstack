@@ -92,6 +92,9 @@ defmodule BACnet.Protocol.Services.Ack.GetAlarmSummaryAck do
   defp parse_summaries(payload) do
     result =
       Enum.reduce_while(1..100_000//1, {payload, []}, fn
+        _iter, {[], acc} ->
+          {:halt, {:ok, acc}}
+
         _iter, {tags, acc} ->
           case AlarmSummary.parse(tags) do
             {:ok, {item, []}} -> {:halt, {:ok, [item | acc]}}

@@ -186,6 +186,20 @@ defmodule BACnet.Test.Protocol.Services.GetEnrollmentSummaryAckTest do
              })
   end
 
+  test "decoding GetEnrollmentSummaryAck empty" do
+    assert {:ok,
+            %GetEnrollmentSummaryAck{
+              summaries: []
+            }} ==
+             GetEnrollmentSummaryAck.from_apdu(%ComplexACK{
+               invoke_id: 0,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :get_enrollment_summary,
+               payload: []
+             })
+  end
+
   test "decoding GetEnrollmentSummaryAck invalid missing pattern" do
     assert {:error, :invalid_service_ack} =
              GetEnrollmentSummaryAck.from_apdu(%ComplexACK{

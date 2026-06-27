@@ -66,6 +66,20 @@ defmodule BACnet.Test.Protocol.Services.GetAlarmSummaryAckTest do
              })
   end
 
+  test "decoding GetAlarmSummaryAck empty" do
+    assert {:ok,
+            %GetAlarmSummaryAck{
+              summaries: []
+            }} ==
+             GetAlarmSummaryAck.from_apdu(%ComplexACK{
+               invoke_id: 0,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :get_alarm_summary,
+               payload: []
+             })
+  end
+
   test "decoding GetAlarmSummaryAck invalid missing pattern" do
     assert {:error, :invalid_service_ack} =
              GetAlarmSummaryAck.from_apdu(%ComplexACK{
