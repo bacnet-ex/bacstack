@@ -752,7 +752,9 @@ defmodule BACnet.Protocol.ObjectsMacro do
 
     implicit_relationships =
       Map.new(
-        get_default_implicit_relationships() ++
+        Enum.filter(get_default_implicit_relationships(), fn {key, _val} ->
+          Enum.member?(struct_deffields, key)
+        end) ++
           (fields_data
            |> Enum.reject(&(&1.implicit_relationship == nil))
            |> Enum.map(&{&1.name, &1.implicit_relationship}))
@@ -760,14 +762,21 @@ defmodule BACnet.Protocol.ObjectsMacro do
 
     # Default values for required properties (only fields with default value)
     default_properties =
-      get_default_required_properties() ++
+      Enum.filter(get_default_required_properties(), fn {key, _val} ->
+        Enum.member?(struct_deffields, key)
+      end) ++
         (fields_data
          |> Enum.filter(&(&1.required and &1.default != nil))
          |> Enum.map(&{&1.name, &1.default}))
 
+    default_optional_properties =
+      Enum.filter(get_default_optional_properties(), fn {key, _val} ->
+        Enum.member?(struct_deffields, key)
+      end)
+
     # Now add those optional properties that are required for this object type
     default_properties =
-      Enum.reduce(get_default_optional_properties(), default_properties, fn {name, value}, acc ->
+      Enum.reduce(default_optional_properties, default_properties, fn {name, value}, acc ->
         if name in required_properties and not Keyword.has_key?(acc, name) do
           [{name, value} | acc]
         else
@@ -785,7 +794,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
       Map.new(
         Enum.reject(
           default_properties ++
-            get_default_optional_properties() ++
+            default_optional_properties ++
             (fields_data
              |> Enum.filter(&(not &1.intrinsic and &1.default != nil))
              |> Enum.map(&{&1.name, &1.default})),

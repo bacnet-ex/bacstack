@@ -988,7 +988,6 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
   test "verify get_properties/1 of defined bacnet object" do
     # Verify properties (all properties that are part of the instanced object)
     assert [
-             :event_state,
              :object_instance,
              :object_name,
              :out_of_service,
@@ -1007,7 +1006,6 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
              :event_enable,
              :event_message_texts,
              :event_message_texts_config,
-             :event_state,
              :event_timestamps,
              :limit_enable,
              :notification_class,
@@ -1985,6 +1983,25 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
     assert {:ok, %{file_size: false}} = mod_name.create(1, "TEST", %{}, ghi: -1)
 
     assert {:ok, %{file_size: true}} = mod_name.create(1, "TEST", %{file_size: true}, ghi: -1)
+  end
+
+  test "verify get_required_properties/0 only lists properties that actually exist" do
+    mod_name = unquote(mod_name_minimal_stub)
+
+    assert [:object_instance, :object_name, :out_of_service, :present_value, :status_flags] =
+             Enum.sort(mod_name.get_required_properties())
+  end
+
+  test "verify get_readonly_properties/0 only lists properties that actually exist" do
+    mod_name = unquote(mod_name_minimal_stub)
+
+    assert [
+             :acked_transitions,
+             :event_message_texts,
+             :event_timestamps,
+             :object_instance,
+             :object_name
+           ] = Enum.sort(mod_name.get_readonly_properties())
   end
 
   test "bac_object with fields extensibility" do
