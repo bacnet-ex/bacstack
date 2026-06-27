@@ -175,6 +175,21 @@ defmodule BACnet.Test.Protocol.Services.GetEventInformationAckTest do
              })
   end
 
+  test "decoding GetEventInformationAck empty" do
+    assert {:ok,
+            %GetEventInformationAck{
+              events: [],
+              more_events: false
+            }} ==
+             GetEventInformationAck.from_apdu(%ComplexACK{
+               invoke_id: 0,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :get_event_information,
+               payload: [constructed: {0, [], 0}, tagged: {1, <<0>>, 1}]
+             })
+  end
+
   test "decoding GetEventInformationAck invalid missing pattern" do
     assert {:error, :invalid_service_ack} =
              GetEventInformationAck.from_apdu(%ComplexACK{

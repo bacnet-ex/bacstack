@@ -107,6 +107,9 @@ defmodule BACnet.Protocol.Services.Ack.GetEventInformationAck do
 
   defp parse_events(payload) do
     Enum.reduce_while(1..100_000//1, {payload, []}, fn
+      _iter, {[], acc} ->
+        {:halt, {:ok, Enum.reverse(acc)}}
+
       _iter, {tags, acc} ->
         case EventInformation.parse(tags) do
           {:ok, {item, []}} -> {:halt, {:ok, Enum.reverse([item | acc])}}
