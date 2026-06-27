@@ -1368,6 +1368,19 @@ defmodule BACnet.Protocol.ObjectsUtility do
                    %Encoding{} = item, {:ok, acc} ->
                      {:cont, {:ok, [item | acc]}}
 
+                   # List of list of "raw" encodings (i.e. BACnetArray)
+                   items, {:ok, acc} when is_list(items) ->
+                     Enum.reduce_while(items, {:cont, {:ok, acc}}, fn
+                       %Encoding{} = item, {:cont, {:ok, acc2}} ->
+                         {:cont, {:cont, {:ok, [item | acc2]}}}
+
+                       item, {:cont, {:ok, acc2}} ->
+                         case Encoding.create(item) do
+                           {:ok, enc} -> {:cont, {:cont, {:ok, [enc | acc2]}}}
+                           term -> {:halt, {:halt, term}}
+                         end
+                     end)
+
                    item, {:ok, acc} ->
                      case Encoding.create(item) do
                        {:ok, enc} -> {:cont, {:ok, [enc | acc]}}

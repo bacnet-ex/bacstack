@@ -83,7 +83,7 @@ defmodule BACnet.Protocol.PropertyValue do
             else
               {:ok, nil, nil}
             end),
-         {:ok, value} <- ApplicationTags.Encoding.to_encoding(property.property_value),
+         {:ok, value} <- do_encode_value(property.property_value),
          {:ok, priority, _header} <-
            (if property.priority do
               ApplicationTags.encode_value({:unsigned_integer, property.priority}, opts)
@@ -209,16 +209,39 @@ defmodule BACnet.Protocol.PropertyValue do
         %__MODULE__{
           property_identifier: prop_identifier,
           property_array_index: array_index,
-          property_value: %ApplicationTags.Encoding{},
+          property_value: encoding,
           priority: priority
         } = _t
       )
-      when is_nil(priority) or priority in 1..16 do
+      when (is_nil(priority) or priority in 1..16) and
+             (is_struct(encoding, ApplicationTags.Encoding) or is_list(encoding)) do
     (Constants.has_by_name(:property_identifier, prop_identifier) or
        (is_integer(prop_identifier) and prop_identifier >= 0 and
           prop_identifier <= Constants.macro_by_name(:asn1, :max_instance_and_property_id))) and
-      (is_nil(array_index) or (is_integer(array_index) and array_index >= 0))
+      (is_nil(array_index) or (is_integer(array_index) and array_index >= 0)) and
+      (is_struct(encoding, ApplicationTags.Encoding) or
+         Enum.all?(encoding, &is_struct(&1, ApplicationTags.Encoding)))
   end
 
   def valid?(%__MODULE__{} = _t), do: false
+
+  @spec do_encode_value(ApplicationTags.Encoding.t() | [ApplicationTags.Encoding.t()]) ::
+          {:ok, term()} | {:error, term()}
+  defp do_encode_value(%ApplicationTags.Encoding{} = encoding),
+    do: ApplicationTags.Encoding.to_encoding(encoding)
+
+  defp do_encode_value(encoding) when is_list(encoding) do
+    result =
+      Enum.reduce_while(encoding, {:ok, []}, fn item, {:ok, acc} ->
+        case ApplicationTags.Encoding.to_encoding(item) do
+          {:ok, enc} -> {:cont, {:ok, [enc | acc]}}
+          other -> {:halt, other}
+        end
+      end)
+
+    case result do
+      {:ok, list} -> {:ok, Enum.reverse(list)}
+      other -> other
+    end
+  end
 end

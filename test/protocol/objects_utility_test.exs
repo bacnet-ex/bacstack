@@ -1229,6 +1229,255 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
     }
   end
 
+  test "encode schedule BACnetArray weekly_schedule property correctly" do
+    weekly_schedule =
+      BACnet.Protocol.BACnetArray.from_list(
+        [
+          %BACnet.Protocol.DailySchedule{
+            schedule: [
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 0, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 0
+                }
+              },
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 6, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 1
+                }
+              },
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 18, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 0
+                }
+              }
+            ]
+          },
+          %BACnet.Protocol.DailySchedule{
+            schedule: [
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 0, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 0
+                }
+              },
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 6, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 1
+                }
+              },
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 18, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 0
+                }
+              }
+            ]
+          },
+          %BACnet.Protocol.DailySchedule{
+            schedule: [
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 0, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 0
+                }
+              },
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 6, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 1
+                }
+              },
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 18, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 0
+                }
+              }
+            ]
+          },
+          %BACnet.Protocol.DailySchedule{
+            schedule: [
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 0, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 0
+                }
+              },
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 6, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 1
+                }
+              },
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 18, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 0
+                }
+              }
+            ]
+          },
+          %BACnet.Protocol.DailySchedule{
+            schedule: [
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 0, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 0
+                }
+              },
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 6, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 1
+                }
+              },
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 18, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 0
+                }
+              }
+            ]
+          },
+          %BACnet.Protocol.DailySchedule{
+            schedule: [
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 0, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 0
+                }
+              },
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 6, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 1
+                }
+              },
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 18, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 0
+                }
+              }
+            ]
+          },
+          %BACnet.Protocol.DailySchedule{
+            schedule: [
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 0, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 0
+                }
+              },
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 6, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 1
+                }
+              },
+              %BACnet.Protocol.TimeValue{
+                time: %BACnet.Protocol.BACnetTime{hour: 18, minute: 0, second: 0, hundredth: 0},
+                value: %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :enumerated,
+                  value: 0
+                }
+              }
+            ]
+          }
+        ],
+        true
+      )
+
+    slot = %BACnet.Protocol.ApplicationTags.Encoding{
+      encoding: :constructed,
+      extras: [tag_number: 0],
+      type: nil,
+      value: [
+        time: %BACnet.Protocol.BACnetTime{hour: 0, minute: 0, second: 0, hundredth: 0},
+        enumerated: 0,
+        time: %BACnet.Protocol.BACnetTime{hour: 6, minute: 0, second: 0, hundredth: 0},
+        enumerated: 1,
+        time: %BACnet.Protocol.BACnetTime{hour: 18, minute: 0, second: 0, hundredth: 0},
+        enumerated: 0
+      ]
+    }
+
+    expected = [slot, slot, slot, slot, slot, slot, slot]
+
+    assert {:ok, ^expected} =
+             ObjectsUtility.cast_value_to_property(
+               %BACnet.Protocol.ObjectIdentifier{type: :schedule, instance: 0},
+               :weekly_schedule,
+               weekly_schedule
+             )
+  end
+
   defp get_device_object_for_read_property_multiple_ack_stub() do
     %BACnet.Protocol.ObjectTypes.Device{
       _metadata: %{
