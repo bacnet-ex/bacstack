@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.3">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>BACnet.Protocol.APDU — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-NHQLCD6Y.css" />
+
+    <script defer src="dist/sidebar_items-0B338154.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-Y2MUTVIN.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr />Protocol.<wbr />APDU</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0)</small>
+
+    </h1>
+
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/apdu.ex#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>This module provides decoding of Application Data Units (APDU).</p><p>APDUs form the application layer of the BACnet protocol. Every BACnet message
+exchanged between devices ultimately carries an APDU (after the NPCI and optional
+BVLL headers). See Clause 5.1 and 5.3 for the application layer model and
+transmission of APDUs.</p><p>The canonical definitions of all APDU types are given in Clause 21 as an ASN.1
+module (<code class="inline">BACnetModule</code>). The fixed-part encoding rules (APCI) are in Clause 20.1.</p><p>Encoding of APDUs is handled directly by the individual APDU submodules via their
+<code class="inline">encode/1</code> function (or through the <a href="BACnet.Stack.EncoderProtocol.html"><code class="inline">BACnet.Stack.EncoderProtocol</code></a>).</p><h2 id="module-apdu-types" class="section-heading"><a href="#module-apdu-types" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">APDU Types</span></h2><p>The BACnet standard defines eight APDU types, identified by the high nibble of the
+first byte (PDU Type):</p><table><thead><tr><th style="text-align: left;">Type</th><th style="text-align: left;">PDU</th><th style="text-align: left;">Sent By</th><th style="text-align: left;">Requires Reply</th><th style="text-align: left;">Segmentation</th><th style="text-align: left;">Description</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">ConfirmedServiceRequest</code></td><td style="text-align: left;">0</td><td style="text-align: left;">Client</td><td style="text-align: left;">Yes</td><td style="text-align: left;">Yes</td><td style="text-align: left;">Confirmed service invocation (Read/Write, etc.). See <code class="inline">BACnet-Confirmed-Request-PDU</code> in Clause 21</td></tr><tr><td style="text-align: left;"><code class="inline">UnconfirmedServiceRequest</code></td><td style="text-align: left;">1</td><td style="text-align: left;">Either</td><td style="text-align: left;">No</td><td style="text-align: left;">No</td><td style="text-align: left;">Unconfirmed services (Who-Is, I-Am, COV notifications, ...). See <code class="inline">BACnet-Unconfirmed-Request-PDU</code> in Clause 21</td></tr><tr><td style="text-align: left;"><code class="inline">SimpleACK</code></td><td style="text-align: left;">2</td><td style="text-align: left;">Server</td><td style="text-align: left;">No</td><td style="text-align: left;">No</td><td style="text-align: left;">Positive reply for services that return no data. See <code class="inline">BACnet-SimpleACK-PDU</code> in Clause 21</td></tr><tr><td style="text-align: left;"><code class="inline">ComplexACK</code></td><td style="text-align: left;">3</td><td style="text-align: left;">Server</td><td style="text-align: left;">No</td><td style="text-align: left;">Yes</td><td style="text-align: left;">Positive reply containing data (property values, etc.). See <code class="inline">BACnet-ComplexACK-PDU</code> in Clause 21</td></tr><tr><td style="text-align: left;"><code class="inline">SegmentACK</code></td><td style="text-align: left;">4</td><td style="text-align: left;">Either</td><td style="text-align: left;">No</td><td style="text-align: left;">No</td><td style="text-align: left;">Acknowledges received segments and/or requests more. See <code class="inline">BACnet-SegmentACK-PDU</code> in Clause 21</td></tr><tr><td style="text-align: left;"><code class="inline">Error</code></td><td style="text-align: left;">5</td><td style="text-align: left;">Server</td><td style="text-align: left;">No</td><td style="text-align: left;">No</td><td style="text-align: left;">Service failed; contains error class + code (+ optional payload). See <code class="inline">BACnet-Error-PDU</code> in Clause 21</td></tr><tr><td style="text-align: left;"><code class="inline">Reject</code></td><td style="text-align: left;">6</td><td style="text-align: left;">Server</td><td style="text-align: left;">No</td><td style="text-align: left;">No</td><td style="text-align: left;">Request rejected due to protocol/syntax error (before execution). See <code class="inline">BACnet-Reject-PDU</code> in Clause 21 and Clause 18.8</td></tr><tr><td style="text-align: left;"><code class="inline">Abort</code></td><td style="text-align: left;">7</td><td style="text-align: left;">Either</td><td style="text-align: left;">No</td><td style="text-align: left;">No</td><td style="text-align: left;">Transaction aborted (timeout, resources, security, etc.). See <code class="inline">BACnet-Abort-PDU</code> in Clause 21 and Clause 18.10</td></tr></tbody></table><h2 id="module-segmentation" class="section-heading"><a href="#module-segmentation" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Segmentation</span></h2><p>Only <code class="inline">ConfirmedServiceRequest</code> and <code class="inline">ComplexACK</code> APDUs support segmentation.
+When the &quot;segmented&quot; flag is set, <a href="#decode/1"><code class="inline">decode/1</code></a> (and the specific <code class="inline">decode_*</code> functions)
+return an <code class="inline">{:incomplete, BACnet.Protocol.IncompleteAPDU.t()}</code> tuple.</p><p>These incomplete APDUs <strong>must</strong> be passed to a <a href="BACnet.Stack.SegmentsStore.html"><code class="inline">BACnet.Stack.SegmentsStore</code></a>
+instance (usually started under a supervisor), so that segments can be reassembled.
+Once reassembly is complete, the <code class="inline">SegmentsStore</code> returns the full APDU for decoding.</p><p>The companion <a href="BACnet.Stack.Segmentator.html"><code class="inline">BACnet.Stack.Segmentator</code></a> is used when <em>sending</em> segmented APDU.</p><p>See the <a href="BACnet.Stack.SegmentsStore.html"><code class="inline">BACnet.Stack.SegmentsStore</code></a> and <a href="BACnet.Stack.Segmentator.html"><code class="inline">BACnet.Stack.Segmentator</code></a> documentation
+for details and configuration (timeouts, window sizes, etc.).</p><h2 id="module-working-with-apdus" class="section-heading"><a href="#module-working-with-apdus" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Working with APDUs</span></h2><p>Most applications should use the higher-level service modules
+(<code class="inline">BACnet.Protocol.Services.*</code>) together with <a href="BACnet.Stack.Client.html"><code class="inline">BACnet.Stack.Client</code></a> / <a href="BACnet.Stack.ClientHelper.html"><code class="inline">BACnet.Stack.ClientHelper</code></a>.
+Direct APDU manipulation is useful for:</p><ul><li>Implementing new services</li><li>Low-level debugging / protocol analysis tools</li><li>Building test harnesses or fuzzers</li></ul><h3 id="module-decoding-raw-data" class="section-heading"><a href="#module-decoding-raw-data" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Decoding raw data</span></h3><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="n">raw</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="3050498069-1">&lt;&lt;</span><span class="mh">0x20</span><span class="p">,</span><span class="w"> </span><span class="mh">0x46</span><span class="p">,</span><span class="w"> </span><span class="mh">0x0F</span><span class="p" data-group-id="3050498069-1">&gt;&gt;</span><span class="w">  </span><span class="c1"># Simple-ACK, invoke_id=70, service=15 (write_property)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">APDU</span><span class="o">.</span><span class="n">decode</span><span class="p" data-group-id="3050498069-2">(</span><span class="n">raw</span><span class="p" data-group-id="3050498069-2">)</span><span class="w">
+</span><span class="p" data-group-id="3050498069-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3050498069-4">%</span><span class="nc" data-group-id="3050498069-4">APDU.SimpleACK</span><span class="p" data-group-id="3050498069-4">{</span><span class="ss">invoke_id</span><span class="p">:</span><span class="w"> </span><span class="mi">70</span><span class="p">,</span><span class="w"> </span><span class="ss">service</span><span class="p">:</span><span class="w"> </span><span class="ss">:write_property</span><span class="p" data-group-id="3050498069-4">}</span><span class="p" data-group-id="3050498069-3">}</span></code></pre><h3 id="module-encoding-an-apdu-directly" class="section-heading"><a href="#module-encoding-an-apdu-directly" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Encoding an APDU directly</span></h3><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="n">apdu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="9061193313-1">%</span><span class="nc" data-group-id="9061193313-1">APDU.Abort</span><span class="p" data-group-id="9061193313-1">{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">sent_by_server</span><span class="p">:</span><span class="w"> </span><span class="no">false</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">invoke_id</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">reason</span><span class="p">:</span><span class="w"> </span><span class="ss">:other</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="p" data-group-id="9061193313-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">APDU.Abort</span><span class="o">.</span><span class="n">encode</span><span class="p" data-group-id="9061193313-2">(</span><span class="n">apdu</span><span class="p" data-group-id="9061193313-2">)</span><span class="w">
+</span><span class="p" data-group-id="9061193313-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9061193313-4">&lt;&lt;</span><span class="mh">0x70</span><span class="p">,</span><span class="w"> </span><span class="mh">0x2A</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p" data-group-id="9061193313-4">&gt;&gt;</span><span class="p" data-group-id="9061193313-3">}</span></code></pre><h3 id="module-converting-a-request-apdu-into-a-high-level-service-struct" class="section-heading"><a href="#module-converting-a-request-apdu-into-a-high-level-service-struct" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Converting a request APDU into a high-level service struct</span></h3><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="2508018871-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">req</span><span class="p" data-group-id="2508018871-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">APDU</span><span class="o">.</span><span class="n">decode</span><span class="p" data-group-id="2508018871-2">(</span><span class="p" data-group-id="2508018871-3">&lt;&lt;</span><span class="mh">0x02</span><span class="p">,</span><span class="w"> </span><span class="mh">0x03</span><span class="p">,</span><span class="w"> </span><span class="mh">0x23</span><span class="p">,</span><span class="w"> </span><span class="mh">0x0F</span><span class="p">,</span><span class="w"> </span><span class="mh">0x0C</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x80</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x19</span><span class="p">,</span><span class="w"> </span><span class="mh">0x55</span><span class="p">,</span><span class="w"> </span><span class="mh">0x3E</span><span class="p">,</span><span class="w"> </span><span class="mh">0x44</span><span class="p">,</span><span class="w"> </span><span class="mh">0x42</span><span class="p">,</span><span class="w"> </span><span class="mh">0xC8</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x3F</span><span class="p">,</span><span class="w"> </span><span class="mh">0x49</span><span class="p">,</span><span class="w"> </span><span class="mh">0x0A</span><span class="p" data-group-id="2508018871-3">&gt;&gt;</span><span class="p" data-group-id="2508018871-2">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="2508018871-4">%</span><span class="nc" data-group-id="2508018871-4">APDU.ConfirmedServiceRequest</span><span class="p" data-group-id="2508018871-4">{</span><span class="ss">service</span><span class="p">:</span><span class="w"> </span><span class="ss">:write_property</span><span class="p" data-group-id="2508018871-4">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">req</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">APDU.ConfirmedServiceRequest</span><span class="o">.</span><span class="n">to_service</span><span class="p" data-group-id="2508018871-5">(</span><span class="n">req</span><span class="p" data-group-id="2508018871-5">)</span><span class="w">
+</span><span class="p" data-group-id="2508018871-6">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2508018871-7">%</span><span class="nc" data-group-id="2508018871-7">BACnet.Protocol.Services.WriteProperty</span><span class="p" data-group-id="2508018871-7">{</span><span class="w">
+  </span><span class="ss">object_identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="2508018871-8">%</span><span class="nc" data-group-id="2508018871-8">BACnet.Protocol.ObjectIdentifier</span><span class="p" data-group-id="2508018871-8">{</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:analog_value</span><span class="p">,</span><span class="w"> </span><span class="ss">instance</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p" data-group-id="2508018871-8">}</span><span class="p">,</span><span class="w">
+  </span><span class="ss">priority</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w">
+  </span><span class="ss">property_array_index</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+  </span><span class="ss">property_identifier</span><span class="p">:</span><span class="w"> </span><span class="ss">:present_value</span><span class="p">,</span><span class="w">
+  </span><span class="ss">property_value</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="2508018871-9">%</span><span class="nc" data-group-id="2508018871-9">BACnet.Protocol.ApplicationTags.Encoding</span><span class="p" data-group-id="2508018871-9">{</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:real</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mf">100.0</span><span class="p">,</span><span class="w"> </span><span class="ss">encoding</span><span class="p">:</span><span class="w"> </span><span class="ss">:primitive</span><span class="p">,</span><span class="w"> </span><span class="ss">extras</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="2508018871-10">[</span><span class="p" data-group-id="2508018871-10">]</span><span class="p" data-group-id="2508018871-9">}</span><span class="w">
+</span><span class="p" data-group-id="2508018871-7">}</span><span class="p" data-group-id="2508018871-6">}</span></code></pre><h2 id="module-see-also" class="section-heading"><a href="#module-see-also" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">See Also</span></h2><ul><li><a href="BACnet.Protocol.html"><code class="inline">BACnet.Protocol</code></a> - top-level PDU decoding (BVLL / NPCI)</li><li><a href="BACnet.Protocol.APDU.Abort.html"><code class="inline">BACnet.Protocol.APDU.Abort</code></a></li><li><a href="BACnet.Protocol.APDU.ComplexACK.html"><code class="inline">BACnet.Protocol.APDU.ComplexACK</code></a></li><li><a href="BACnet.Protocol.APDU.ConfirmedServiceRequest.html"><code class="inline">BACnet.Protocol.APDU.ConfirmedServiceRequest</code></a></li><li><a href="BACnet.Protocol.APDU.Error.html"><code class="inline">BACnet.Protocol.APDU.Error</code></a></li><li><a href="BACnet.Protocol.APDU.Reject.html"><code class="inline">BACnet.Protocol.APDU.Reject</code></a></li><li><a href="BACnet.Protocol.APDU.SegmentACK.html"><code class="inline">BACnet.Protocol.APDU.SegmentACK</code></a></li><li><a href="BACnet.Protocol.APDU.SimpleACK.html"><code class="inline">BACnet.Protocol.APDU.SimpleACK</code></a></li><li><a href="BACnet.Protocol.APDU.UnconfirmedServiceRequest.html"><code class="inline">BACnet.Protocol.APDU.UnconfirmedServiceRequest</code></a></li><li><a href="BACnet.Protocol.IncompleteAPDU.html"><code class="inline">BACnet.Protocol.IncompleteAPDU</code></a></li><li><a href="BACnet.Stack.Segmentator.html"><code class="inline">BACnet.Stack.Segmentator</code></a></li><li><a href="BACnet.Stack.SegmentsStore.html"><code class="inline">BACnet.Stack.SegmentsStore</code></a></li></ul>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#decode/1" data-no-tooltip="" translate="no">decode(data)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Decodes a complete APDU from raw binary data.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#decode_abort/1" data-no-tooltip="" translate="no">decode_abort(data)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Decodes the Abort APDU from binary data.
+The data must contain the APDU header (such as the PDU type byte).</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#decode_complex_ack/1" data-no-tooltip="" translate="no">decode_complex_ack(data)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Decodes the Complex ACK APDU from binary data.
+The data must contain the APDU header (such as the PDU type byte).</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#decode_confirmed_request/1" data-no-tooltip="" translate="no">decode_confirmed_request(data)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Decodes the Confirmed Service Request APDU from binary data.
+The data must contain the APDU header (such as the PDU type byte).</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#decode_error/1" data-no-tooltip="" translate="no">decode_error(data)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Decodes the Error APDU from binary data.
+The data must contain the APDU header (such as the PDU type byte).</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#decode_reject/1" data-no-tooltip="" translate="no">decode_reject(data)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Decodes the Reject APDU from binary data.
+The data must contain the APDU header (such as the PDU type byte).</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#decode_segment_ack/1" data-no-tooltip="" translate="no">decode_segment_ack(data)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Decodes the Segment ACK APDU from binary data.
+The data must contain the APDU header (such as the PDU type byte).</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#decode_simple_ack/1" data-no-tooltip="" translate="no">decode_simple_ack(data)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Decodes the Simple ACK APDU from binary data.
+The data must contain the APDU header (such as the PDU type byte).</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#decode_unconfirmed_request/1" data-no-tooltip="" translate="no">decode_unconfirmed_request(data)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Decodes the Unconfirmed Service Request APDU from binary data.
+The data must contain the APDU header (such as the PDU type byte).</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_invoke_id_from_raw_apdu/1" data-no-tooltip="" translate="no">get_invoke_id_from_raw_apdu(apdu)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Extracts the invoke ID from a raw APDU binary without full decoding.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="decode/1">
+
+  <div class="detail-header">
+    <a href="#decode/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">decode(data)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/apdu.ex#L150" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> decode(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
+  {:ok, <a href="BACnet.Protocol.html#t:apdu/0">BACnet.Protocol.apdu</a>()}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}
+  | {:incomplete, <a href="BACnet.Protocol.IncompleteAPDU.html#t:t/0">BACnet.Protocol.IncompleteAPDU.t</a>()}</pre>
+
+      </div>
+
+<p>Decodes a complete APDU from raw binary data.</p><p>The binary must start with a valid APDU header (PDU type in the high nibble of
+the first byte). Only the APDU portion should be passed (i.e. after any BVLL
+and NPCI headers have been stripped).</p><p>On success a typed APDU struct is returned. When the APDU is the first (or a
+subsequent) segment of a segmented message, <code class="inline">{:incomplete, IncompleteAPDU.t()}</code>
+is returned instead. Pass that value to a <a href="BACnet.Stack.SegmentsStore.html"><code class="inline">BACnet.Stack.SegmentsStore</code></a> so the
+full message can be reassembled.</p><h3 id="decode/1-examples" class="section-heading"><a href="#decode/1-examples" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Examples</span></h3><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="nc">APDU</span><span class="o">.</span><span class="n">decode</span><span class="p" data-group-id="8681210826-1">(</span><span class="p" data-group-id="8681210826-2">&lt;&lt;</span><span class="mh">0x20</span><span class="p">,</span><span class="w"> </span><span class="mh">0x46</span><span class="p">,</span><span class="w"> </span><span class="mh">0x0F</span><span class="p" data-group-id="8681210826-2">&gt;&gt;</span><span class="p" data-group-id="8681210826-1">)</span><span class="w">
+</span><span class="p" data-group-id="8681210826-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8681210826-4">%</span><span class="nc" data-group-id="8681210826-4">APDU.SimpleACK</span><span class="p" data-group-id="8681210826-4">{</span><span class="ss">invoke_id</span><span class="p">:</span><span class="w"> </span><span class="mi">70</span><span class="p">,</span><span class="w"> </span><span class="ss">service</span><span class="p">:</span><span class="w"> </span><span class="ss">:write_property</span><span class="p" data-group-id="8681210826-4">}</span><span class="p" data-group-id="8681210826-3">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">APDU</span><span class="o">.</span><span class="n">decode</span><span class="p" data-group-id="8681210826-5">(</span><span class="p" data-group-id="8681210826-6">&lt;&lt;</span><span class="mh">0x10</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0xC4</span><span class="p">,</span><span class="w"> </span><span class="mh">0x02</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x03</span><span class="p">,</span><span class="w"> </span><span class="mh">0x22</span><span class="p">,</span><span class="w"> </span><span class="mh">0x05</span><span class="p">,</span><span class="w"> </span><span class="mh">0xC4</span><span class="p">,</span><span class="w"> </span><span class="mh">0x23</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x21</span><span class="p">,</span><span class="w"> </span><span class="mh">0x01</span><span class="p" data-group-id="8681210826-6">&gt;&gt;</span><span class="p" data-group-id="8681210826-5">)</span><span class="w">
+</span><span class="p" data-group-id="8681210826-7">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8681210826-8">%</span><span class="nc" data-group-id="8681210826-8">APDU.UnconfirmedServiceRequest</span><span class="p" data-group-id="8681210826-8">{</span><span class="ss">service</span><span class="p">:</span><span class="w"> </span><span class="ss">:i_am</span><span class="p">,</span><span class="w"> </span><span class="ss">parameters</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="8681210826-9">[</span><span class="p" data-group-id="8681210826-10">{</span><span class="ss">:object_identifier</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8681210826-11">%</span><span class="nc" data-group-id="8681210826-11">BACnet.Protocol.ObjectIdentifier</span><span class="p" data-group-id="8681210826-11">{</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:device</span><span class="p">,</span><span class="w"> </span><span class="ss">instance</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p" data-group-id="8681210826-11">}</span><span class="p" data-group-id="8681210826-10">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8681210826-12">{</span><span class="ss">:unsigned_integer</span><span class="p">,</span><span class="w"> </span><span class="mi">1476</span><span class="p" data-group-id="8681210826-12">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8681210826-13">{</span><span class="ss">:unsigned_integer</span><span class="p">,</span><span class="w"> </span><span class="mi">8449</span><span class="p" data-group-id="8681210826-13">}</span><span class="p" data-group-id="8681210826-9">]</span><span class="p" data-group-id="8681210826-8">}</span><span class="p" data-group-id="8681210826-7">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">APDU</span><span class="o">.</span><span class="n">decode</span><span class="p" data-group-id="8681210826-14">(</span><span class="p" data-group-id="8681210826-15">&lt;&lt;</span><span class="mh">0x10</span><span class="p">,</span><span class="w"> </span><span class="mh">0x08</span><span class="p" data-group-id="8681210826-15">&gt;&gt;</span><span class="p" data-group-id="8681210826-14">)</span><span class="w">
+</span><span class="p" data-group-id="8681210826-16">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8681210826-17">%</span><span class="nc" data-group-id="8681210826-17">APDU.UnconfirmedServiceRequest</span><span class="p" data-group-id="8681210826-17">{</span><span class="ss">service</span><span class="p">:</span><span class="w"> </span><span class="ss">:who_is</span><span class="p">,</span><span class="w"> </span><span class="ss">parameters</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="8681210826-18">[</span><span class="p" data-group-id="8681210826-18">]</span><span class="p" data-group-id="8681210826-17">}</span><span class="p" data-group-id="8681210826-16">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">APDU</span><span class="o">.</span><span class="n">decode</span><span class="p" data-group-id="8681210826-19">(</span><span class="p" data-group-id="8681210826-20">&lt;&lt;</span><span class="mh">0x60</span><span class="p">,</span><span class="w"> </span><span class="mh">0x2A</span><span class="p">,</span><span class="w"> </span><span class="mh">0x01</span><span class="p" data-group-id="8681210826-20">&gt;&gt;</span><span class="p" data-group-id="8681210826-19">)</span><span class="w">
+</span><span class="p" data-group-id="8681210826-21">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8681210826-22">%</span><span class="nc" data-group-id="8681210826-22">APDU.Reject</span><span class="p" data-group-id="8681210826-22">{</span><span class="ss">invoke_id</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span><span class="w"> </span><span class="ss">reason</span><span class="p">:</span><span class="w"> </span><span class="ss">:buffer_overflow</span><span class="p" data-group-id="8681210826-22">}</span><span class="p" data-group-id="8681210826-21">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">APDU</span><span class="o">.</span><span class="n">decode</span><span class="p" data-group-id="8681210826-23">(</span><span class="p" data-group-id="8681210826-24">&lt;&lt;</span><span class="mh">0xFF</span><span class="p" data-group-id="8681210826-24">&gt;&gt;</span><span class="p" data-group-id="8681210826-23">)</span><span class="w">
+</span><span class="p" data-group-id="8681210826-25">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="ss">:invalid_apdu_type</span><span class="p" data-group-id="8681210826-25">}</span></code></pre><p>Segmented messages return an incomplete tuple that must be handled by <code class="inline">SegmentsStore</code>:</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="2644957351-1">{</span><span class="ss">:incomplete</span><span class="p">,</span><span class="w"> </span><span class="n">inc</span><span class="p" data-group-id="2644957351-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">APDU</span><span class="o">.</span><span class="n">decode</span><span class="p" data-group-id="2644957351-2">(</span><span class="p" data-group-id="2644957351-3">&lt;&lt;</span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">117</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w"> </span><span class="mi">145</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">117</span><span class="p">,</span><span class="w"> </span><span class="mi">11</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">104</span><span class="p">,</span><span class="w"> </span><span class="mi">101</span><span class="p">,</span><span class="w"> </span><span class="mi">108</span><span class="p">,</span><span class="w"> </span><span class="mi">108</span><span class="p">,</span><span class="w"> </span><span class="mi">111</span><span class="p" data-group-id="2644957351-3">&gt;&gt;</span><span class="p" data-group-id="2644957351-2">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">inc</span><span class="o">.</span><span class="n">invoke_id</span><span class="w">
+</span><span class="mi">1</span></code></pre><p>See <a href="BACnet.Stack.SegmentsStore.html"><code class="inline">BACnet.Stack.SegmentsStore</code></a> for handling of segmented traffic and the
+individual <code class="inline">decode_*</code> functions for type-specific decoding.</p>
+  </section>
+</section>
+<section class="detail" id="decode_abort/1">
+
+  <div class="detail-header">
+    <a href="#decode_abort/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">decode_abort(data)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/apdu.ex#L437" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> decode_abort(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
+  {:ok, <a href="BACnet.Protocol.APDU.Abort.html#t:t/0">BACnet.Protocol.APDU.Abort.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Decodes the Abort APDU from binary data.
+The data must contain the APDU header (such as the PDU type byte).</p>
+  </section>
+</section>
+<section class="detail" id="decode_complex_ack/1">
+
+  <div class="detail-header">
+    <a href="#decode_complex_ack/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">decode_complex_ack(data)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/apdu.ex#L351" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> decode_complex_ack(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
+  {:ok, <a href="BACnet.Protocol.APDU.ComplexACK.html#t:t/0">BACnet.Protocol.APDU.ComplexACK.t</a>()}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}
+  | {:incomplete, <a href="BACnet.Protocol.IncompleteAPDU.html#t:t/0">BACnet.Protocol.IncompleteAPDU.t</a>()}</pre>
+
+      </div>
+
+<p>Decodes the Complex ACK APDU from binary data.
+The data must contain the APDU header (such as the PDU type byte).</p><p>When encountering segmentation, this function will return an <code class="inline">incomplete</code> tuple.
+See <a href="BACnet.Protocol.html"><code class="inline">BACnet.Protocol</code></a> module for more information.</p>
+  </section>
+</section>
+<section class="detail" id="decode_confirmed_request/1">
+
+  <div class="detail-header">
+    <a href="#decode_confirmed_request/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">decode_confirmed_request(data)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/apdu.ex#L219" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> decode_confirmed_request(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
+  {:ok, <a href="BACnet.Protocol.APDU.ConfirmedServiceRequest.html#t:t/0">BACnet.Protocol.APDU.ConfirmedServiceRequest.t</a>()}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}
+  | {:incomplete, <a href="BACnet.Protocol.IncompleteAPDU.html#t:t/0">BACnet.Protocol.IncompleteAPDU.t</a>()}</pre>
+
+      </div>
+
+<p>Decodes the Confirmed Service Request APDU from binary data.
+The data must contain the APDU header (such as the PDU type byte).</p><p>When encountering segmentation, this function will return an <code class="inline">incomplete</code> tuple.
+See <a href="BACnet.Protocol.html"><code class="inline">BACnet.Protocol</code></a> module for more information.</p>
+  </section>
+</section>
+<section class="detail" id="decode_error/1">
+
+  <div class="detail-header">
+    <a href="#decode_error/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">decode_error(data)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/apdu.ex#L464" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> decode_error(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
+  {:ok, <a href="BACnet.Protocol.APDU.Error.html#t:t/0">BACnet.Protocol.APDU.Error.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Decodes the Error APDU from binary data.
+The data must contain the APDU header (such as the PDU type byte).</p>
+  </section>
+</section>
+<section class="detail" id="decode_reject/1">
+
+  <div class="detail-header">
+    <a href="#decode_reject/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">decode_reject(data)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/apdu.ex#L498" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> decode_reject(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
+  {:ok, <a href="BACnet.Protocol.APDU.Reject.html#t:t/0">BACnet.Protocol.APDU.Reject.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Decodes the Reject APDU from binary data.
+The data must contain the APDU header (such as the PDU type byte).</p>
+  </section>
+</section>
+<section class="detail" id="decode_segment_ack/1">
+
+  <div class="detail-header">
+    <a href="#decode_segment_ack/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">decode_segment_ack(data)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/apdu.ex#L408" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> decode_segment_ack(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
+  {:ok, <a href="BACnet.Protocol.APDU.SegmentACK.html#t:t/0">BACnet.Protocol.APDU.SegmentACK.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Decodes the Segment ACK APDU from binary data.
+The data must contain the APDU header (such as the PDU type byte).</p>
+  </section>
+</section>
+<section class="detail" id="decode_simple_ack/1">
+
+  <div class="detail-header">
+    <a href="#decode_simple_ack/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">decode_simple_ack(data)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/apdu.ex#L319" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> decode_simple_ack(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
+  {:ok, <a href="BACnet.Protocol.APDU.SimpleACK.html#t:t/0">BACnet.Protocol.APDU.SimpleACK.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Decodes the Simple ACK APDU from binary data.
+The data must contain the APDU header (such as the PDU type byte).</p>
+  </section>
+</section>
+<section class="detail" id="decode_unconfirmed_request/1">
+
+  <div class="detail-header">
+    <a href="#decode_unconfirmed_request/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">decode_unconfirmed_request(data)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/apdu.ex#L286" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> decode_unconfirmed_request(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
+  {:ok, <a href="BACnet.Protocol.APDU.UnconfirmedServiceRequest.html#t:t/0">BACnet.Protocol.APDU.UnconfirmedServiceRequest.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Decodes the Unconfirmed Service Request APDU from binary data.
+The data must contain the APDU header (such as the PDU type byte).</p>
+  </section>
+</section>
+<section class="detail" id="get_invoke_id_from_raw_apdu/1">
+
+  <div class="detail-header">
+    <a href="#get_invoke_id_from_raw_apdu/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_invoke_id_from_raw_apdu(apdu)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/apdu.ex#L541" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_invoke_id_from_raw_apdu(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
+  {:ok, invoke_id :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">byte</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Extracts the invoke ID from a raw APDU binary without full decoding.</p><p>This is particularly useful when you need to send an Abort or Reject reply
+for a message that is too malformed to be decoded by the normal <a href="#decode/1"><code class="inline">decode/1</code></a>
+functions, or when performing very early filtering / logging.</p><p>Only APDU types that carry an invoke ID are supported.</p><h3 id="get_invoke_id_from_raw_apdu/1-example" class="section-heading"><a href="#get_invoke_id_from_raw_apdu/1-example" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example</span></h3><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="n">raw</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="5020101087-1">&lt;&lt;</span><span class="mh">0x02</span><span class="p">,</span><span class="w"> </span><span class="mh">0x03</span><span class="p">,</span><span class="w"> </span><span class="mh">0x23</span><span class="p">,</span><span class="w"> </span><span class="mh">0x0F</span><span class="p">,</span><span class="w"> </span><span class="mh">0x0C</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x80</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x19</span><span class="p">,</span><span class="w"> </span><span class="mh">0x55</span><span class="p" data-group-id="5020101087-1">&gt;&gt;</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">APDU</span><span class="o">.</span><span class="n">get_invoke_id_from_raw_apdu</span><span class="p" data-group-id="5020101087-2">(</span><span class="n">raw</span><span class="p" data-group-id="5020101087-2">)</span><span class="w">
+</span><span class="p" data-group-id="5020101087-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="mi">35</span><span class="p" data-group-id="5020101087-3">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">APDU</span><span class="o">.</span><span class="n">get_invoke_id_from_raw_apdu</span><span class="p" data-group-id="5020101087-4">(</span><span class="p" data-group-id="5020101087-5">&lt;&lt;</span><span class="mh">0x71</span><span class="p">,</span><span class="w"> </span><span class="mh">0x07</span><span class="p">,</span><span class="w"> </span><span class="mh">0x04</span><span class="p" data-group-id="5020101087-5">&gt;&gt;</span><span class="p" data-group-id="5020101087-4">)</span><span class="w">
+</span><span class="p" data-group-id="5020101087-6">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="mi">7</span><span class="p" data-group-id="5020101087-6">}</span></code></pre><p>Returns <code class="inline">{:error, :invalid_apdu}</code> for unconfirmed requests or completely
+truncated headers.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.3) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>
