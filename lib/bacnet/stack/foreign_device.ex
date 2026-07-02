@@ -750,9 +750,18 @@ defmodule BACnet.Stack.ForeignDevice do
     # We got a stop request, so try to delete ourself from the BBMD (if active)
     log_debug(fn -> "ForeignDevice: Received stop request for BBMD " <> format_ip(state.bbmd) end)
 
-    if state.registration.status == :registered do
-      delete_fd_registration(state)
-    end
+    # If we're registered, unregister from the BBMD
+    # Ignore any error - but accept any change,
+    # because otherwise we might double unregister
+    state =
+      if state.registration.status == :registered do
+        case delete_fd_registration(state) do
+          {:ok, state} -> state
+          _other -> state
+        end
+      else
+        state
+      end
 
     {:stop, :normal, :ok, state}
   end
