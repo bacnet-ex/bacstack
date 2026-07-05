@@ -376,8 +376,9 @@ defmodule BACnet.Stack.ClientHelper do
                password: password
              },
              opts
-           ) do
-      Client.send(server, destination, req, opts)
+           ),
+         {:ok, %APDU.SimpleACK{} = _apdu} <- Client.send(server, destination, req, opts) do
+      :ok
     end
   end
 
