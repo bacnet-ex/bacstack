@@ -1044,6 +1044,13 @@ defmodule BACnet.Protocol.ObjectsMacro do
              # due to how only partially the properties are present at check
              :ok <-
                (if needs_recheck or true do
+                  remote_skip_prop_validation =
+                    if opts[:remote_object] do
+                      opts[:skip_property_validation_remote_object]
+                    else
+                      false
+                    end
+
                   # A recheck my be needed if a property depends on another but
                   # the other property has not been added yet to the accumulator map
                   # due to how map key ordering works, so we will run the property
@@ -1068,7 +1075,13 @@ defmodule BACnet.Protocol.ObjectsMacro do
                       # which would cause this error too -
                       # however if the user would've tried to set a protected property,
                       # this would've been caught error, so it's safe to not check
-                      case check_property_value(props, property, value, false) do
+                      case check_property_value(
+                             props,
+                             property,
+                             value,
+                             false,
+                             remote_skip_prop_validation
+                           ) do
                         :ok -> {:cont, :ok}
                         term -> {:halt, term}
                       end
@@ -1127,7 +1140,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
                 else
                   :ok
                 end),
-             :ok <- check_property_value(object, property, value, true) do
+             :ok <- check_property_value(object, property, value, true, false) do
           new_object = %{
             object
             | _metadata: %{
@@ -1251,7 +1264,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
                     false
                   )
                 end),
-             :ok <- check_property_value(object, property, value, true) do
+             :ok <- check_property_value(object, property, value, true, false) do
           new_object = Map.put(object, property, value)
           new_object = propagate_properties(new_object)
           inhibit_object_check(new_object)
@@ -1293,7 +1306,16 @@ defmodule BACnet.Protocol.ObjectsMacro do
              # This is caused by random map keys ordering introduced with OTP 26
              # but may aswell have been needed to not depend on key ordering...
              {:ok, needs_recheck} <-
-               (case check_property_value(acc, prop, val, true) do
+               (case check_property_value(
+                       acc,
+                       prop,
+                       val,
+                       true,
+                       if(is_remote_object,
+                         do: opts[:skip_property_validation_remote_object],
+                         else: false
+                       )
+                     ) do
                   :ok -> {:ok, false}
                   {:error, {:value_failed_property_validation, _property}} -> {:ok, true}
                   term -> term
@@ -1783,7 +1805,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
             if value == nil do
               :ok
             else
-              check_property_value(object, :present_value, value, true)
+              check_property_value(object, :present_value, value, true, false)
             end
 
           case pv_check do
@@ -1869,11 +1891,18 @@ defmodule BACnet.Protocol.ObjectsMacro do
       - `revision` - The BACnet protocol revision to check required properties against.
         Optional properties are regardless of revision available.
         See `t:BACnet.Protocol.Constants.protocol_revision/0` for the available revisions.
+      - `skip_property_validation_remote_object` - Skips property validation for remote objects.
+        Sometimes it is possible that the value is invalid as per BACnet specification
+        (i.e. value 0 for a multistate object), but you still want those to be represented.
+        Value `true` neither type nor value are validated. Value `:value` means the type
+        is still validated and only the value validator is not run (if present).
+        The property's `validator_fun` will also be skipped.
       """
       @type common_object_opts ::
               {:allow_unknown_properties, boolean()}
               | {:ignore_unknown_properties, boolean()}
               | {:revision, Constants.protocol_revision()}
+              | {:skip_property_validation_remote_object, boolean() | :value}
 
       @typedoc """
       Available property names for this object.
@@ -1981,9 +2010,15 @@ defmodule BACnet.Protocol.ObjectsMacro do
               :ok | property_update_error()
       defp prevent_commandable_objects_write_pv(_object, _property), do: :ok
 
-      @spec check_property_value(t(), Constants.property_identifier(), term(), boolean()) ::
+      @spec check_property_value(
+              t(),
+              Constants.property_identifier(),
+              term(),
+              boolean(),
+              boolean() | :value
+            ) ::
               :ok | property_update_error()
-      defp check_property_value(object, property, value, check_protected)
+      defp check_property_value(object, property, value, check_protected, skip_property_validator)
 
       # The property priority_array needs some special handling
       unquote(
@@ -1993,7 +2028,8 @@ defmodule BACnet.Protocol.ObjectsMacro do
                    object,
                    :priority_array,
                    %PriorityArray{} = value,
-                   check_protected
+                   check_protected,
+                   skip_property_validator
                  ) do
               value
               |> Map.from_struct()
@@ -2001,7 +2037,13 @@ defmodule BACnet.Protocol.ObjectsMacro do
                 if val == nil do
                   {:cont, acc}
                 else
-                  case check_property_value(object, :present_value, val, check_protected) do
+                  case check_property_value(
+                         object,
+                         :present_value,
+                         val,
+                         check_protected,
+                         skip_property_validator
+                       ) do
                     :ok -> {:cont, acc}
                     {:error, {term, _prop}} -> {:halt, {:error, {term, :priority_array}}}
                   end
@@ -2012,7 +2054,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
         end
       )
 
-      defp check_property_value(object, property, value, check_protected) do
+      defp check_property_value(object, property, value, check_protected, skip_property_validator) do
         case Map.fetch(get_full_property_type_map(), property) do
           :error ->
             {:error, {:unknown_type_for_property, property}}
@@ -2023,22 +2065,29 @@ defmodule BACnet.Protocol.ObjectsMacro do
               check_protected and property in unquote(protected_properties) ->
                 {:error, {:protected_property, property}}
 
+              skip_property_validator == true ->
+                :ok
+
               BeamTypes.check_type(type, value) ->
-                case Keyword.fetch(unquote(properties_validators), property) do
-                  :error ->
-                    :ok
+                if skip_property_validator == :value do
+                  :ok
+                else
+                  case Keyword.fetch(unquote(properties_validators), property) do
+                    :error ->
+                      :ok
 
-                  {:ok, {nil, nil}} ->
-                    :ok
+                    {:ok, {nil, nil}} ->
+                      :ok
 
-                  {:ok, {tfun, vfun}} ->
-                    err = {:error, {:value_failed_property_validation, property}}
+                    {:ok, {tfun, vfun}} ->
+                      err = {:error, {:value_failed_property_validation, property}}
 
-                    cond do
-                      not apply_validator_fun(tfun, value, object, type) -> err
-                      not apply_validator_fun(vfun, value, object, type) -> err
-                      true -> :ok
-                    end
+                      cond do
+                        not apply_validator_fun(tfun, value, object, type) -> err
+                        not apply_validator_fun(vfun, value, object, type) -> err
+                        true -> :ok
+                      end
+                  end
                 end
 
               true ->

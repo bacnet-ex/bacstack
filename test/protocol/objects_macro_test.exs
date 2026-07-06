@@ -2030,4 +2030,78 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
         assert :access_doors in module.get_all_properties()
     end
   end
+
+  # Minimal stub module with number present_value for many tests
+  {:module, mod_name_min_int_stub, _bytecode_minimal_stub, _more} =
+    defmodule BacObjectMinimalIntStub do
+      use ObjectsMacro
+
+      @type object_opts :: nil
+
+      bac_object :integer_value do
+        services(intrinsic: true)
+
+        # Keep present_value first for coverage for pv_type_raw Enum.find_value/3
+        field(:present_value, pos_integer(),
+          required: true,
+          default: 0,
+          validator_fun: fn a -> a < 10 end
+        )
+
+        field(:description, String.t())
+        field(:device_type, String.t())
+        field(:out_of_service, boolean(), required: true)
+        field(:status_flags, StatusFlags.t(), required: true)
+      end
+    end
+
+  test "verify create/4 local object does not skip all property validation" do
+    assert {:error, {:invalid_property_type, :present_value}} =
+             unquote(mod_name_min_int_stub).create(0, "A", %{present_value: false},
+               skip_property_validation_remote_object: true
+             )
+  end
+
+  test "verify create/4 local object does not skip value property validation" do
+    assert {:error, {:invalid_property_type, :present_value}} =
+             unquote(mod_name_min_int_stub).create(0, "A", %{present_value: -5},
+               skip_property_validation_remote_object: :value
+             )
+  end
+
+  test "verify create/4 remote object skips all property validation if enabled" do
+    assert {:ok, %{present_value: false}} =
+             unquote(mod_name_min_int_stub).create(0, "A", %{present_value: false},
+               remote_object: 1,
+               skip_property_validation_remote_object: true
+             )
+  end
+
+  test "verify create/4 remote object skips value property validation if enabled" do
+    assert {:error, {:invalid_property_type, :present_value}} =
+             unquote(mod_name_min_int_stub).create(0, "A", %{present_value: false},
+               remote_object: 1,
+               skip_property_validation_remote_object: :value
+             )
+
+    assert {:ok, %{present_value: 0}} =
+             unquote(mod_name_min_int_stub).create(0, "A", %{present_value: 0},
+               remote_object: 1,
+               skip_property_validation_remote_object: :value
+             )
+  end
+
+  test "verify create/4 remote object skip property validation if enabled also skips validator_fun" do
+    assert {:ok, %{present_value: 25}} =
+             unquote(mod_name_min_int_stub).create(0, "A", %{present_value: 25},
+               remote_object: 1,
+               skip_property_validation_remote_object: true
+             )
+
+    assert {:ok, %{present_value: 550}} =
+             unquote(mod_name_min_int_stub).create(0, "A", %{present_value: 550},
+               remote_object: 1,
+               skip_property_validation_remote_object: :value
+             )
+  end
 end
