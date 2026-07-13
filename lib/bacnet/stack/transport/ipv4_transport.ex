@@ -339,6 +339,41 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
   end
 
   @doc """
+  Returns a map of network interfaces with their address, subnet and broadcast address.
+
+  The broadcast address will be calculated, if it is missing in the interface informations.
+  This may lead for some devices to being returned, despite not broadcast capable.
+
+  On Windows, the `ifname` is the device GUID and not an user friendly name.
+  """
+  @spec getifaddrs() ::
+          {:ok,
+           %{
+             (ifname :: String.t()) => [
+               {addr :: :inet.ip4_address(), subnet :: :inet.ip4_address(),
+                broadcast_addr :: :inet.ip4_address()}
+             ]
+           }}
+          | {:error, :inet.posix()}
+  def getifaddrs() do
+    case :inet.getifaddrs() do
+      {:ok, ifs} ->
+        res =
+          Enum.reduce(ifs, %{}, fn {ifname, props}, acc ->
+            case iterate_getifaddrs(props, []) do
+              [] -> acc
+              defs -> Map.put(acc, List.to_string(ifname), Enum.reverse(defs))
+            end
+          end)
+
+        {:ok, res}
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
   Checks whether the given destination is an address that needs to be routed.
   """
   @spec destination_routed?(GenServer.server(), iplink_address() | term()) :: boolean()
@@ -956,40 +991,40 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
   end
 
   # Calculates the broadcast address for the given IP address and subnet mask
-  # @spec calculate_broadcast_address(:inet.ip4_address(), :inet.ip4_address()) ::
-  #         :inet.ip4_address() | nil
-  # defp calculate_broadcast_address(
-  #        address,
-  #        subnet
-  #      )
+  @spec calculate_broadcast_address(:inet.ip4_address(), :inet.ip4_address()) ::
+          :inet.ip4_address() | nil
+  defp calculate_broadcast_address(
+         address,
+         subnet
+       )
 
-  # defp calculate_broadcast_address(
-  #        _address,
-  #        {255, 255, 255, 255}
-  #      ) do
-  #   nil
-  # end
+  defp calculate_broadcast_address(
+         _address,
+         {255, 255, 255, 255}
+       ) do
+    nil
+  end
 
-  # defp calculate_broadcast_address(
-  #        {ip_one, ip_two, ip_three, ip_four} = _address,
-  #        {net_one, net_two, net_three, net_four} = _subnet
-  #      ) do
-  #   ipaddr_int =
-  #     Bitwise.bsl(ip_one, 24) + Bitwise.bsl(ip_two, 16) + Bitwise.bsl(ip_three, 8) + ip_four
+  defp calculate_broadcast_address(
+         {ip_one, ip_two, ip_three, ip_four} = _address,
+         {net_one, net_two, net_three, net_four} = _subnet
+       ) do
+    ipaddr_int =
+      Bitwise.bsl(ip_one, 24) + Bitwise.bsl(ip_two, 16) + Bitwise.bsl(ip_three, 8) + ip_four
 
-  #   netmask_int =
-  #     Bitwise.bsl(net_one, 24) + Bitwise.bsl(net_two, 16) + Bitwise.bsl(net_three, 8) + net_four
+    netmask_int =
+      Bitwise.bsl(net_one, 24) + Bitwise.bsl(net_two, 16) + Bitwise.bsl(net_three, 8) + net_four
 
-  #   netmask_inverse = Bitwise.band(0xFFFFFFFF, Bitwise.bnot(netmask_int))
-  #   max_addr = Bitwise.bor(Bitwise.band(ipaddr_int, netmask_int), netmask_inverse)
+    netmask_inverse = Bitwise.band(0xFFFFFFFF, Bitwise.bnot(netmask_int))
+    max_addr = Bitwise.bor(Bitwise.band(ipaddr_int, netmask_int), netmask_inverse)
 
-  #   one = Bitwise.bsr(Bitwise.band(max_addr, 0xFF000000), 24)
-  #   two = Bitwise.bsr(Bitwise.band(max_addr, 0x00FF0000), 16)
-  #   three = Bitwise.bsr(Bitwise.band(max_addr, 0x0000FF00), 8)
-  #   four = Bitwise.band(max_addr, 0x000000FF)
+    one = Bitwise.bsr(Bitwise.band(max_addr, 0xFF000000), 24)
+    two = Bitwise.bsr(Bitwise.band(max_addr, 0x00FF0000), 16)
+    three = Bitwise.bsr(Bitwise.band(max_addr, 0x0000FF00), 8)
+    four = Bitwise.band(max_addr, 0x000000FF)
 
-  #   {one, two, three, four}
-  # end
+    {one, two, three, four}
+  end
 
   # Calculate the bitmask length of a subnet mask (netmask)
   @spec calculate_bitlength(:inet.ip4_address()) :: integer()
@@ -1087,35 +1122,6 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
     end
   end
 
-  # Iterates :inet.getifaddrs() and returns a neat map of list of IPv4 addresses
-  # (only those with broadcast-capabilities)
-  @spec getifaddrs() ::
-          {:ok,
-           %{
-             (ifname :: String.t()) => [
-               {addr :: :inet.ip4_address(), subnet :: :inet.ip4_address(),
-                broadcast_addr :: :inet.ip4_address()}
-             ]
-           }}
-          | {:error, :inet.posix()}
-  defp getifaddrs() do
-    case :inet.getifaddrs() do
-      {:ok, ifs} ->
-        res =
-          Enum.reduce(ifs, %{}, fn {ifname, props}, acc ->
-            case iterate_getifaddrs(props, []) do
-              [] -> acc
-              defs -> Map.put(acc, List.to_string(ifname), Enum.reverse(defs))
-            end
-          end)
-
-        {:ok, res}
-
-      error ->
-        error
-    end
-  end
-
   @spec iterate_getifaddrs([Keyword.t()], list()) :: [
           {addr :: :inet.ip4_address(), subnet :: :inet.ip4_address(),
            broadcast_addr :: :inet.ip4_address() | nil}
@@ -1138,12 +1144,16 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
     iterate_getifaddrs(tail, acc)
   end
 
-  # defp iterate_getifaddrs(
-  #        [{:addr, {_one, _two, _three, _four} = addr}, {:netmask, subnet} | tail],
-  #        acc
-  #      ) do
-  #   iterate_getifaddrs(tail, [{addr, subnet, calculate_broadcast_address(addr, subnet)} | acc])
-  # end
+  # On Windows, the broadaddr key is sometimes missing (i.e. for WiFi)
+  defp iterate_getifaddrs(
+         [{:addr, {_one, _two, _three, _four} = addr}, {:netmask, subnet} | tail],
+         acc
+       ) do
+    case calculate_broadcast_address(addr, subnet) do
+      {0, 0, 0, 0} -> []
+      brd -> iterate_getifaddrs(tail, [{addr, subnet, brd} | acc])
+    end
+  end
 
   defp iterate_getifaddrs([{:addr, _addr}, {:netmask, _subnet} | tail], acc) do
     iterate_getifaddrs(tail, acc)
