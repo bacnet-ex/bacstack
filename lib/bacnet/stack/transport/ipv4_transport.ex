@@ -121,6 +121,41 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
   @type iplink_address :: {:inet.ip4_address(), :inet.port_number()}
 
   @doc """
+  Returns a map of network interfaces with their address, subnet and broadcast address.
+
+  The broadcast address will be calculated, if it is missing in the interface informations.
+  This may lead for some devices to being returned, despite not broadcast capable.
+
+  On Windows, the `ifname` is the device GUID and not an user friendly name.
+  """
+  @spec getifaddrs() ::
+          {:ok,
+           %{
+             optional(ifname :: String.t()) => [
+               {addr :: :inet.ip4_address(), subnet :: :inet.ip4_address(),
+                broadcast_addr :: :inet.ip4_address()}
+             ]
+           }}
+          | {:error, :inet.posix()}
+  def getifaddrs() do
+    case :inet.getifaddrs() do
+      {:ok, ifs} ->
+        res =
+          Enum.reduce(ifs, %{}, fn {ifname, props}, acc ->
+            case iterate_getifaddrs(props, []) do
+              [] -> acc
+              defs -> Map.put(acc, List.to_string(ifname), Enum.reverse(defs))
+            end
+          end)
+
+        {:ok, res}
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
   Get the IPv4 address for the given ethernet interface name.
   Only interfaces with broadcast capabilities are considered.
 
@@ -336,41 +371,6 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
   @spec get_portal(GenServer.server()) :: port()
   def get_portal(transport) when is_server(transport) do
     GenServer.call(transport, :get_portal)
-  end
-
-  @doc """
-  Returns a map of network interfaces with their address, subnet and broadcast address.
-
-  The broadcast address will be calculated, if it is missing in the interface informations.
-  This may lead for some devices to being returned, despite not broadcast capable.
-
-  On Windows, the `ifname` is the device GUID and not an user friendly name.
-  """
-  @spec getifaddrs() ::
-          {:ok,
-           %{
-             (ifname :: String.t()) => [
-               {addr :: :inet.ip4_address(), subnet :: :inet.ip4_address(),
-                broadcast_addr :: :inet.ip4_address()}
-             ]
-           }}
-          | {:error, :inet.posix()}
-  def getifaddrs() do
-    case :inet.getifaddrs() do
-      {:ok, ifs} ->
-        res =
-          Enum.reduce(ifs, %{}, fn {ifname, props}, acc ->
-            case iterate_getifaddrs(props, []) do
-              [] -> acc
-              defs -> Map.put(acc, List.to_string(ifname), Enum.reverse(defs))
-            end
-          end)
-
-        {:ok, res}
-
-      error ->
-        error
-    end
   end
 
   @doc """
