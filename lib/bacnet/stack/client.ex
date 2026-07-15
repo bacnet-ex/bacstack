@@ -802,11 +802,32 @@ defmodule BACnet.Stack.Client do
     else
       is_valid_dest ->
         if is_valid_dest do
+          apdu_timer_id =
+            case Keyword.fetch(opts, :destination) do
+              {:ok, %NpciTarget{address: addr}} when not is_nil(addr) ->
+                addr
+
+              _other ->
+                case Keyword.fetch(opts, :npci) do
+                  {:ok, %NPCI{} = target} ->
+                    case target.destination do
+                      %NpciTarget{address: addr} when not is_nil(addr) ->
+                        addr
+
+                      _other ->
+                        nil
+                    end
+
+                  _other ->
+                    nil
+                end
+            end
+
           if state.opts.disable_invoke_id_management and
                Map.has_key?(data, :invoke_id) and
                Map.has_key?(
                  state.apdu_timers,
-                 {destination, opts[:device_id], Map.get(data, :invoke_id)}
+                 {destination, apdu_timer_id, Map.get(data, :invoke_id)}
                ) do
             {:reply, {:error, :duplicate_invoke_id}, state}
           else
@@ -818,6 +839,7 @@ defmodule BACnet.Stack.Client do
                    destination,
                    state.transport_portal,
                    opts[:device_id],
+                   apdu_timer_id,
                    needs_tracking,
                    from,
                    state,
@@ -886,6 +908,7 @@ defmodule BACnet.Stack.Client do
                  new_opts,
                  destination,
                  reply.portal,
+                 reply.device_id,
                  reply.device_id,
                  false,
                  nil,
@@ -1063,6 +1086,7 @@ defmodule BACnet.Stack.Client do
                  timer.destination,
                  timer.portal,
                  timer.device_id,
+                 nil,
                  # No tracking because we update the timer "inline"
                  false,
                  nil,
@@ -1123,6 +1147,7 @@ defmodule BACnet.Stack.Client do
                  get_reply_opts_for_npci(apdu, :original_unicast, reply.npci, state),
                  reply.source_addr,
                  reply.portal,
+                 reply.device_id,
                  reply.device_id,
                  false,
                  nil,
@@ -1420,6 +1445,7 @@ defmodule BACnet.Stack.Client do
            get_reply_opts_for_npci(reject, bvlc, npci, state),
            source_address,
            portal,
+           device_id,
            device_id,
            false,
            nil,
@@ -1808,7 +1834,22 @@ defmodule BACnet.Stack.Client do
         {timer, %{state | apdu_timers: Map.delete(state.apdu_timers, reply_key)}}
 
       _else ->
-        {nil, state}
+        # If device_id is not nil and we didn't find a APDU timer,
+        # try to find a generic one (with explicit nil)
+        if device_id do
+          reply_key2 = {source_address, nil, invoke_id}
+
+          case Map.fetch(state.apdu_timers, reply_key2) do
+            {:ok, %ApduTimer{} = timer} ->
+              if timer.timer, do: Process.cancel_timer(timer.timer)
+              {timer, %{state | apdu_timers: Map.delete(state.apdu_timers, reply_key2)}}
+
+            _else ->
+              {nil, state}
+          end
+        else
+          {nil, state}
+        end
     end
   end
 
@@ -1892,6 +1933,7 @@ defmodule BACnet.Stack.Client do
           term(),
           TransportBehaviour.portal(),
           non_neg_integer() | nil,
+          non_neg_integer() | nil,
           boolean(),
           term() | nil,
           State.t(),
@@ -1903,6 +1945,7 @@ defmodule BACnet.Stack.Client do
          destination,
          portal,
          device_id,
+         apdu_timer_device_key,
          needs_tracking,
          call_ref,
          state,
@@ -1915,11 +1958,14 @@ defmodule BACnet.Stack.Client do
          destination,
          portal,
          device_id,
+         apdu_timer_device_key,
          needs_tracking,
          call_ref,
          %State{opts: %{disable_invoke_id_management: false}} = state,
          false
-       ) do
+       )
+       when is_integer(device_id) or is_nil(device_id) or
+              (is_integer(apdu_timer_device_key) or is_nil(apdu_timer_device_key)) do
     case find_free_invoke_id(destination, device_id, state) do
       {:ok, new_invoke_id} ->
         send_data(
@@ -1928,6 +1974,7 @@ defmodule BACnet.Stack.Client do
           destination,
           portal,
           device_id,
+          apdu_timer_device_key,
           needs_tracking,
           call_ref,
           state,
@@ -1945,13 +1992,16 @@ defmodule BACnet.Stack.Client do
          destination,
          portal,
          device_id,
+         apdu_timer_device_key,
          needs_tracking,
          call_ref,
          %State{transport_mod: trans_mod} = state,
          _skip_invoke_id_check
-       ) do
+       )
+       when is_integer(device_id) or is_nil(device_id) or
+              (is_integer(apdu_timer_device_key) or is_nil(apdu_timer_device_key)) do
     sys_mono_time = System.monotonic_time()
-    key = {destination, device_id, Map.get(apdu, :invoke_id)}
+    key = {destination, apdu_timer_device_key, Map.get(apdu, :invoke_id)}
 
     try do
       # Catch any errors when trying to encode the APDU
@@ -2002,6 +2052,7 @@ defmodule BACnet.Stack.Client do
             destination,
             portal,
             device_id,
+            apdu_timer_device_key,
             state,
             {apdu_data, max_apdu_len0}
           )
@@ -2064,6 +2115,7 @@ defmodule BACnet.Stack.Client do
           term(),
           TransportBehaviour.portal(),
           non_neg_integer() | nil,
+          non_neg_integer() | nil,
           State.t(),
           {iodata(), non_neg_integer()}
         ) :: {result :: :ok | {:error, term()}, apdu_too_long :: boolean()}
@@ -2073,10 +2125,13 @@ defmodule BACnet.Stack.Client do
          destination,
          portal,
          device_id,
+         apdu_timer_device_key,
          %State{transport_mod: trans_mod} = state,
          {apdu_data, max_apdu_len0}
-       ) do
-    key = {destination, device_id, Map.get(apdu, :invoke_id)}
+       )
+       when is_integer(device_id) or is_nil(device_id) or
+              (is_integer(apdu_timer_device_key) or is_nil(apdu_timer_device_key)) do
+    key = {destination, apdu_timer_device_key, Map.get(apdu, :invoke_id)}
 
     # Do basic NPCI size calculation and subtract it from the max APDU size
     # 6 = APCI header, 2 = NPCI header
@@ -2237,6 +2292,7 @@ defmodule BACnet.Stack.Client do
                get_reply_opts_for_npci(reject, bvlc, npci, state),
                source_address,
                portal,
+               device_id,
                device_id,
                false,
                nil,

@@ -793,7 +793,14 @@ defmodule BACnet.Protocol.ApplicationTags do
         _opts
       )
       when is_integer(instance) and instance >= 0 do
-    case Constants.by_name(:object_type, value.type) do
+    res =
+      if is_integer(value.type) and value.type >= 0 do
+        {:ok, value.type}
+      else
+        Constants.by_name(:object_type, value.type)
+      end
+
+    case res do
       {:ok, type} ->
         {:ok, <<type::size(10), instance::size(22)>>,
          {
@@ -1127,17 +1134,11 @@ defmodule BACnet.Protocol.ApplicationTags do
          Constants.macro_by_name(:application_tag, :object_identifier),
          <<_length::size(32), type::size(10), instance::size(22)>>
        ) do
-    case Constants.by_value(:object_type, type) do
-      {:ok, object_type} ->
-        {:ok,
-         %Protocol.ObjectIdentifier{
-           type: object_type,
-           instance: instance
-         }}
-
-      :error ->
-        {:error, {:unknown_object_type, type}}
-    end
+    {:ok,
+     %Protocol.ObjectIdentifier{
+       type: Constants.by_value(:object_type, type, type),
+       instance: instance
+     }}
   end
 
   defp decode_value_internal(_tag_number, _data) do

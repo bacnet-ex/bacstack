@@ -74,7 +74,7 @@ defmodule BACnet.Protocol.ObjectIdentifier do
   ```elixir
   iex> unknown = %ObjectIdentifier{type: 999, instance: 1}
   iex> ObjectIdentifier.valid?(unknown)
-  false   # because 999 is not a known object_type constant
+  true
   ```
 
   ### See Also
@@ -102,7 +102,7 @@ defmodule BACnet.Protocol.ObjectIdentifier do
   `from_number/1` (see Clause 20.2.14 for the exact bit packing).
   """
   @type t :: %__MODULE__{
-          type: Constants.object_type(),
+          type: Constants.object_type() | non_neg_integer(),
           instance: non_neg_integer()
         }
 
@@ -169,7 +169,8 @@ defmodule BACnet.Protocol.ObjectIdentifier do
   """
   @spec valid?(t()) :: boolean()
   def valid?(%__MODULE__{} = t) do
-    Constants.has_by_name(:object_type, t.type) and is_integer(t.instance) and t.instance >= 0 and
+    ((is_integer(t.type) and t.type >= 0) or Constants.has_by_name(:object_type, t.type)) and
+      is_integer(t.instance) and t.instance >= 0 and
       t.instance <= Constants.macro_by_name(:asn1, :max_instance_and_property_id)
   end
 end

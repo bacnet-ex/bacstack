@@ -384,7 +384,7 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
     )
 
     field(:align_intervals, boolean(), default: false, implicit_relationship: :interval_offset)
-    field(:interval_offset, String.t(), default: "")
+    field(:interval_offset, non_neg_integer(), default: 0)
 
     field(:utc_offset, integer(), readonly: true, default: 0)
     field(:daylight_savings_status, boolean(), readonly: true, default: false)

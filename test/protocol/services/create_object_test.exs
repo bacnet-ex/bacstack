@@ -259,7 +259,7 @@ defmodule BACnet.Test.Protocol.Services.CreateObjectTest do
     assert {:error, :unknown_object_type} =
              CreateObject.to_apdu(
                %CreateObject{
-                 object_specifier: %ObjectIdentifier{type: 5124, instance: 15},
+                 object_specifier: %ObjectIdentifier{type: -5124, instance: 15},
                  initial_values: []
                },
                invoke_id: 1,

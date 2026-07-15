@@ -136,7 +136,7 @@ defmodule BACnet.Protocol.AccessSpecificationTest do
 
     assert false ==
              AccessSpecification.valid?(%AccessSpecification{
-               object_identifier: %ObjectIdentifier{type: 512, instance: 24},
+               object_identifier: %ObjectIdentifier{type: -512, instance: 24},
                properties: [
                  %AccessSpecification.Property{
                    property_identifier: :present_value,

@@ -42,12 +42,14 @@ defmodule BACnet.Protocol.ObjectIdentifierTest do
     assert true == ObjectIdentifier.valid?(%ObjectIdentifier{type: :device, instance: 12})
     assert true == ObjectIdentifier.valid?(%ObjectIdentifier{type: :analog_value, instance: 0})
     assert true == ObjectIdentifier.valid?(%ObjectIdentifier{type: :file, instance: 0x3FFFFF})
+    assert true == ObjectIdentifier.valid?(%ObjectIdentifier{type: 512, instance: 0})
   end
 
   test "invalid object identifier" do
     assert false == ObjectIdentifier.valid?(%ObjectIdentifier{type: :hello, instance: 0})
     assert false == ObjectIdentifier.valid?(%ObjectIdentifier{type: :file, instance: -1})
     assert false == ObjectIdentifier.valid?(%ObjectIdentifier{type: :device, instance: 0x400000})
+    assert false == ObjectIdentifier.valid?(%ObjectIdentifier{type: -4, instance: 0})
 
     assert false ==
              ObjectIdentifier.valid?(%ObjectIdentifier{type: :analog_value, instance: :hello})

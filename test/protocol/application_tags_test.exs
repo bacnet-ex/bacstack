@@ -301,7 +301,7 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
   end
 
   test "decode value primitive object identifier unknown object type" do
-    assert {:error, {:unknown_object_type, 1023}} =
+    assert {:ok, %ObjectIdentifier{type: 1023, instance: 4_191_669}} =
              ApplicationTags.decode_value(0xC, <<255, 255, 245, 181>>)
   end
 
@@ -371,9 +371,16 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
              )
   end
 
+  test "encode object identifier integer object type" do
+    assert {:ok, <<196, 1, 64, 0, 1>>} =
+             ApplicationTags.encode({:object_identifier, %ObjectIdentifier{type: 5, instance: 1}})
+  end
+
   test "encode object identifier invalid object type" do
     assert {:error, :unknown_object_type} =
-             ApplicationTags.encode({:object_identifier, %ObjectIdentifier{type: 5, instance: 1}})
+             ApplicationTags.encode(
+               {:object_identifier, %ObjectIdentifier{type: -5, instance: 1}}
+             )
   end
 
   test "encode tagged invalid tag num" do
