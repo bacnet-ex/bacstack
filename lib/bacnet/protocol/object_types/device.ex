@@ -262,7 +262,7 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
 
     field(:description, String.t())
     field(:location, String.t())
-    field(:serial_number, String.t())
+    field(:serial_number, String.t(), readonly: true)
     field(:profile_name, String.t())
 
     field(:vendor_name, String.t(), required: true, readonly: true, default: "")
