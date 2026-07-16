@@ -33,21 +33,29 @@ defmodule BACnet.Protocol.ObjectsUtility do
     __DIR__
     |> Path.join("/object_types/*.ex")
     |> Path.wildcard()
+    |> Enum.map(fn path ->
+      content = File.read!(path)
 
-  @types obj_files
-         |> Enum.map(fn path ->
-           path
-           |> Path.basename(".ex")
-           |> Macro.camelize()
-           |> then(&Module.concat([BACnet.Protocol.ObjectTypes, &1]))
-         end)
-         |> Enum.sort()
+      module =
+        path
+        |> Path.basename(".ex")
+        |> Macro.camelize()
+        # credo:disable-for-next-line Credo.Check.Warning.UnsafeToAtom
+        |> then(&Module.concat([BACnet.Protocol.ObjectTypes, &1]))
 
-  @types_commandable Enum.filter(@types, fn mod ->
-                       Code.ensure_compiled!(mod)
-                       Code.ensure_loaded!(mod)
-                       :priority_array in mod.get_all_properties()
-                     end)
+      # Reliable detection: the object explicitly declares field(:priority_array ...)
+      is_commandable =
+        Regex.match?(~r/field\(\s*:priority_array\b/, content)
+
+      {module, is_commandable}
+    end)
+    |> Enum.sort_by(fn {mod, _comm} -> mod end)
+
+  @types Enum.map(obj_files, fn {mod, _comm} -> mod end)
+
+  @types_commandable obj_files
+                     |> Enum.filter(fn {_mod, is_commandable} -> is_commandable end)
+                     |> Enum.map(fn {mod, _comm} -> mod end)
 
   defmacrop get_fa_str() do
     {fun, arity} = __CALLER__.function
