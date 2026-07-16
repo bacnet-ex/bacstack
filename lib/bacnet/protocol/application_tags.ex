@@ -14,6 +14,17 @@ defmodule BACnet.Protocol.ApplicationTags do
   number of consecutive repeating numbers), configure `:app_tags_truncate_float32_precision` (defaults to `4`).
   IEEE 754 double precision floating point numbers (64bit floats) are entirely unaffected by this behaviour.
 
+  There are some BACnet devices that incorrectly specify their Latin-1/ISO-8859-1 character strings as encoding 0.
+  The character encoding 0 is since ASHRAE 135-2010 the encoding UTF-8 and was previously ANSI.
+  Under both character encodings they're sending invalid character strings.
+  This behaviour seems to be present in some older european BACnet devices.
+  However to support those BACnet devices, you can configure bacstack at compile time,
+  using the application environment `:bacstack`, to automatically check and
+  convert as UTF-8 sent Latin-1/ISO-8859-1 character strings to UTF-8.
+  Set `:app_tags_convert_latin1_utf8` to `true`. The default value is `false`.
+  This configuration will have runtime performance impact due to that every UTF-8 character string
+  is iterated and validated.
+
   > #### Information {: .info}
   >
   > The following information is quite low-level and is only intended for reference. Knowledge of the BACnet protocol is
@@ -1198,8 +1209,27 @@ defmodule BACnet.Protocol.ApplicationTags do
   defp intify(true), do: 1
   defp intify(false), do: 0
 
-  defp decode_character_string(Constants.macro_by_name(:character_string_encoding, :utf8), bytes) do
-    {:ok, bytes}
+  if Application.compile_env(:bacstack, :app_tags_convert_latin1_utf8, false) do
+    defp decode_character_string(
+           Constants.macro_by_name(:character_string_encoding, :utf8),
+           bytes
+         ) do
+      if String.valid?(bytes) do
+        {:ok, bytes}
+      else
+        decode_character_string(
+          Constants.macro_by_name(:character_string_encoding, :iso_8859_1),
+          bytes
+        )
+      end
+    end
+  else
+    defp decode_character_string(
+           Constants.macro_by_name(:character_string_encoding, :utf8),
+           bytes
+         ) do
+      {:ok, bytes}
+    end
   end
 
   if "VENDORS/MICSFT/PC/CP850" in Codepagex.encoding_list() do
