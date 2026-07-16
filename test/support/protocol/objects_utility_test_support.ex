@@ -527,6 +527,11 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
         ]
   def generate_cast_tests(obj_type, mod, property_types_map, map_var)
 
+  def generate_cast_tests(_obj_type, _mod, _property_types_map, {_property, :any}), do: []
+
+  def generate_cast_tests(_obj_type, _mod, _property_types_map, {_property, {:list, :any}}),
+    do: []
+
   def generate_cast_tests(obj_type, _mod, _property_types_map, {property, {:array, type}})
       when is_atom(type) do
     encoding_type = @type_transform[type] || type
@@ -1127,8 +1132,14 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
       if function_exported?(mod, :encode, 1) do
         case mod.encode(struct_value) do
           {:ok, raw_value} ->
-            enc_value = Enum.map(raw_value, &Encoding.create!/1)
-            {struct_value, raw_value, enc_value}
+            # Process only list returns - some modules produce binaries
+            # Those need to be tested separately
+            if is_list(raw_value) do
+              enc_value = Enum.map(raw_value, &Encoding.create!/1)
+              {struct_value, raw_value, enc_value}
+            else
+              {struct_value, nil, nil}
+            end
 
           _else ->
             generate_spec_for_struct_type(property, spec, cause)

@@ -689,6 +689,7 @@ defmodule BACnet.Protocol.Constants do
   defconst(:network_type, :virtual, 0x07)
   defconst(:network_type, :ipv6, 0x09)
   defconst(:network_type, :serial, 0x0A)
+  defconst(:network_type, :sc, 0x0B)
 
   ###############################
 

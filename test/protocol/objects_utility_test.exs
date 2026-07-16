@@ -124,28 +124,118 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
     end
   end
 
-  test "Validate float range with empty object succeeds" do
+  test "cast property to value with any type" do
+    {:module, stub, _bytecode, _more} =
+      defmodule BacObjectMinimalTestStubForCastPropertyToValue do
+        use BACnet.Protocol.ObjectsMacro
+
+        @type object_opts :: nil
+
+        bac_object :network_port do
+          services(intrinsic: false)
+
+          field(:description, String.t())
+          field(:device_type, term())
+        end
+      end
+
+    ObjectsUtility.put_object_type_mapping(:network_port, stub)
+
+    try do
+      assert {:ok, %Encoding{value: :ok}} =
+               ObjectsUtility.cast_property_to_value(
+                 %ObjectIdentifier{type: :network_port, instance: 1},
+                 :device_type,
+                 %Encoding{encoding: :primitive, extras: [], type: nil, value: :ok},
+                 []
+               )
+    after
+      ObjectsUtility.delete_object_type_mapping(:network_port)
+    end
+  end
+
+  test "cast property to value with list any type" do
+    {:module, stub, _bytecode, _more} =
+      defmodule BacObjectMinimalTestStubForCastPropertyToValueList do
+        use BACnet.Protocol.ObjectsMacro
+
+        @type object_opts :: nil
+
+        bac_object :network_port do
+          services(intrinsic: false)
+
+          field(:description, String.t())
+          field(:device_type, [term()])
+        end
+      end
+
+    ObjectsUtility.put_object_type_mapping(:network_port, stub)
+
+    try do
+      assert {:ok, [:ok, :else]} =
+               ObjectsUtility.cast_property_to_value(
+                 %ObjectIdentifier{type: :network_port, instance: 1},
+                 :device_type,
+                 [:ok, :else],
+                 []
+               )
+    after
+      ObjectsUtility.delete_object_type_mapping(:network_port)
+    end
+  end
+
+  test "cast property to value with list any type invalid input" do
+    {:module, stub, _bytecode, _more} =
+      defmodule BacObjectMinimalTestStubForCastPropertyToValueListInvalid do
+        use BACnet.Protocol.ObjectsMacro
+
+        @type object_opts :: nil
+
+        bac_object :network_port do
+          services(intrinsic: false)
+
+          field(:description, String.t())
+          field(:device_type, [term()])
+        end
+      end
+
+    ObjectsUtility.put_object_type_mapping(:network_port, stub)
+
+    try do
+      assert {:error, {:invalid_property_value, {:device_type, %Encoding{}}}} =
+               ObjectsUtility.cast_property_to_value(
+                 %ObjectIdentifier{type: :network_port, instance: 1},
+                 :device_type,
+                 %Encoding{encoding: :primitive, extras: [], type: nil, value: :ok},
+                 []
+               )
+    after
+      ObjectsUtility.delete_object_type_mapping(:network_port)
+    end
+  end
+
+  test "validate float range with empty object succeeds" do
     assert ObjectsUtility.validate_float_range(:NaN, %{})
     assert ObjectsUtility.validate_float_range(:inf, %{})
     assert ObjectsUtility.validate_float_range(:infn, %{})
     assert ObjectsUtility.validate_float_range(3.14, %{})
   end
 
-  test "Validate float range with missing min present value succeeds" do
+  test "validate float range with missing min present value succeeds" do
     assert ObjectsUtility.validate_float_range(:NaN, %{max_present_value: 1})
     assert ObjectsUtility.validate_float_range(:inf, %{max_present_value: 1})
     assert ObjectsUtility.validate_float_range(:infn, %{max_present_value: 1})
     assert ObjectsUtility.validate_float_range(3.14, %{max_present_value: 1})
   end
 
-  test "Validate float range with missing max present value succeeds" do
+  test "validate float range with missing max present value succeeds" do
     assert ObjectsUtility.validate_float_range(:NaN, %{max_present_value: 10})
     assert ObjectsUtility.validate_float_range(:inf, %{max_present_value: 10})
     assert ObjectsUtility.validate_float_range(:infn, %{max_present_value: 10})
     assert ObjectsUtility.validate_float_range(3.14, %{max_present_value: 10})
   end
 
-  test "Validate float range with min/max present value floats" do
+  test "validate float range with min/max present value floats" do
     assert ObjectsUtility.validate_float_range(3.0, %{
              min_present_value: 2.0,
              max_present_value: 4.0
@@ -162,7 +252,7 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
            })
   end
 
-  test "Validate float range with min present value special atoms" do
+  test "validate float range with min present value special atoms" do
     refute ObjectsUtility.validate_float_range(3.0, %{
              min_present_value: :inf,
              max_present_value: 4.0
@@ -214,7 +304,7 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
            })
   end
 
-  test "Validate float range with max present value special atoms" do
+  test "validate float range with max present value special atoms" do
     assert ObjectsUtility.validate_float_range(3.0, %{
              min_present_value: 2.0,
              max_present_value: :inf
@@ -256,7 +346,7 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
            })
   end
 
-  test "Validate float range with min/max present value special atoms" do
+  test "validate float range with min/max present value special atoms" do
     assert ObjectsUtility.validate_float_range(3.0, %{
              min_present_value: :infn,
              max_present_value: :inf

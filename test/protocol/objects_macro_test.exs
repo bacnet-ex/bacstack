@@ -23,6 +23,8 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
 
   doctest ObjectsMacro
 
+  @status_flags StatusFlags.from_bitstring({false, false, false, false})
+
   # TODO: Add more create/4 tests (to verify working all features and also error conditions)
 
   test "get default BACnet DateTime" do
@@ -882,7 +884,15 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
 
   test "verify create/4 of defined bacnet object accepts unknown atomic properties with allowed if remote" do
     assert {:ok, obj} =
-             unquote(mod_name_minimal_stub).create(1, "TEST", %{present: false},
+             unquote(mod_name_minimal_stub).create(
+               1,
+               "TEST",
+               %{
+                 present: false,
+                 present_value: false,
+                 out_of_service: false,
+                 status_flags: @status_flags
+               },
                allow_unknown_properties: true,
                remote_object: 1555
              )
@@ -918,6 +928,35 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
                "TEST",
                %{}
              )
+  end
+
+  test "verify create/3 remote object does not inherit default properties if not present in map" do
+    {:module, stub, _bytecode, _more} =
+      defmodule BacObjectMinimalRemoteObjectNoInheritDefaultPropertiesStub do
+        use ObjectsMacro
+
+        @type object_opts :: nil
+
+        bac_object :binary_input do
+          services(intrinsic: false)
+
+          # present_value is NOT required and thus it should be absent (nil)
+          field(:present_value, boolean(), default: false)
+          field(:description, String.t())
+          field(:device_type, String.t())
+          field(:out_of_service, boolean(), required: true)
+        end
+      end
+
+    assert {:ok, %{present_value: nil} = obj} =
+             stub.create(
+               1,
+               "TEST",
+               %{out_of_service: false},
+               remote_object: 1
+             )
+
+    refute Enum.member?(obj._metadata.properties_list, :present_value)
   end
 
   # Minimal stub module with annotations for tests below
@@ -1684,15 +1723,19 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
     mod_name = unquote(mod_name_opt_required_stub)
 
     assert {:ok, %{max_master: nil}} = mod_name.create(1, "TEST")
-    assert {:ok, %{max_master: nil}} = mod_name.create(1, "TEST", %{}, remote_object: 0)
+
+    assert {:ok, %{max_master: nil}} =
+             mod_name.create(1, "TEST", %{present_value: false}, remote_object: 0)
 
     assert {:ok, %{max_master: true}} = mod_name.create(1, "TEST", %{max_master: true})
 
     assert {:error, {:missing_required_property, :max_master}} =
-             mod_name.create(1, "TEST", %{}, remote_object: 1)
+             mod_name.create(1, "TEST", %{present_value: false}, remote_object: 1)
 
     assert {:ok, %{max_master: false}} =
-             mod_name.create(1, "TEST", %{max_master: false}, remote_object: 1)
+             mod_name.create(1, "TEST", %{max_master: false, present_value: false},
+               remote_object: 1
+             )
   end
 
   test "verify create/4 optionally required_when property {:opts, property, value} with other" do
@@ -1713,15 +1756,19 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
     mod_name = unquote(mod_name_opt_required_stub)
 
     assert {:ok, %{program_state: nil}} = mod_name.create(1, "TEST")
-    assert {:ok, %{program_state: nil}} = mod_name.create(1, "TEST", %{}, remote_object: 0)
+
+    assert {:ok, %{program_state: nil}} =
+             mod_name.create(1, "TEST", %{present_value: false}, remote_object: 0)
 
     assert {:ok, %{program_state: true}} = mod_name.create(1, "TEST", %{program_state: true})
 
     assert {:error, {:missing_required_property, :program_state}} =
-             mod_name.create(1, "TEST", %{}, remote_object: -1)
+             mod_name.create(1, "TEST", %{present_value: false}, remote_object: -1)
 
     assert {:ok, %{program_state: false}} =
-             mod_name.create(1, "TEST", %{program_state: false}, remote_object: -1)
+             mod_name.create(1, "TEST", %{program_state: false, present_value: false},
+               remote_object: -1
+             )
   end
 
   test "verify create/4 optionally required_when property {:opts, property, op, value} with other" do
@@ -1912,16 +1959,20 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
     mod_name = unquote(mod_name_opt_only_stub)
 
     assert {:ok, %{max_master: nil}} = mod_name.create(1, "TEST")
-    assert {:ok, %{max_master: nil}} = mod_name.create(1, "TEST", %{}, remote_object: 0)
+
+    assert {:ok, %{max_master: nil}} =
+             mod_name.create(1, "TEST", %{present_value: false}, remote_object: 0)
 
     assert {:error, {:property_not_allowed, :max_master}} =
              mod_name.create(1, "TEST", %{max_master: true})
 
     assert {:error, {:missing_required_property, :max_master}} =
-             mod_name.create(1, "TEST", %{}, remote_object: 1)
+             mod_name.create(1, "TEST", %{present_value: false}, remote_object: 1)
 
     assert {:ok, %{max_master: false}} =
-             mod_name.create(1, "TEST", %{max_master: false}, remote_object: 1)
+             mod_name.create(1, "TEST", %{max_master: false, present_value: false},
+               remote_object: 1
+             )
   end
 
   test "verify create/4 optionally only_when property {:opts, property, value} with other" do
@@ -1943,16 +1994,20 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
     mod_name = unquote(mod_name_opt_only_stub)
 
     assert {:ok, %{program_state: nil}} = mod_name.create(1, "TEST")
-    assert {:ok, %{program_state: nil}} = mod_name.create(1, "TEST", %{}, remote_object: 0)
+
+    assert {:ok, %{program_state: nil}} =
+             mod_name.create(1, "TEST", %{present_value: false}, remote_object: 0)
 
     assert {:error, {:property_not_allowed, :program_state}} =
              mod_name.create(1, "TEST", %{program_state: true})
 
     assert {:error, {:missing_required_property, :program_state}} =
-             mod_name.create(1, "TEST", %{}, remote_object: -1)
+             mod_name.create(1, "TEST", %{present_value: false}, remote_object: -1)
 
     assert {:ok, %{program_state: false}} =
-             mod_name.create(1, "TEST", %{program_state: false}, remote_object: -1)
+             mod_name.create(1, "TEST", %{program_state: false, present_value: false},
+               remote_object: -1
+             )
   end
 
   test "verify create/4 optionally only_when property {:opts, property, op, value} with other" do
@@ -2071,7 +2126,10 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
 
   test "verify create/4 remote object skips all property validation if enabled" do
     assert {:ok, %{present_value: false}} =
-             unquote(mod_name_min_int_stub).create(0, "A", %{present_value: false},
+             unquote(mod_name_min_int_stub).create(
+               0,
+               "A",
+               %{present_value: false, out_of_service: false, status_flags: @status_flags},
                remote_object: 1,
                skip_property_validation_remote_object: true
              )
@@ -2079,13 +2137,19 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
 
   test "verify create/4 remote object skips value property validation if enabled" do
     assert {:error, {:invalid_property_type, :present_value}} =
-             unquote(mod_name_min_int_stub).create(0, "A", %{present_value: false},
+             unquote(mod_name_min_int_stub).create(
+               0,
+               "A",
+               %{present_value: false, out_of_service: false, status_flags: @status_flags},
                remote_object: 1,
                skip_property_validation_remote_object: :value
              )
 
     assert {:ok, %{present_value: 0}} =
-             unquote(mod_name_min_int_stub).create(0, "A", %{present_value: 0},
+             unquote(mod_name_min_int_stub).create(
+               0,
+               "A",
+               %{present_value: 0, out_of_service: false, status_flags: @status_flags},
                remote_object: 1,
                skip_property_validation_remote_object: :value
              )
@@ -2093,13 +2157,19 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
 
   test "verify create/4 remote object skip property validation if enabled also skips validator_fun" do
     assert {:ok, %{present_value: 25}} =
-             unquote(mod_name_min_int_stub).create(0, "A", %{present_value: 25},
+             unquote(mod_name_min_int_stub).create(
+               0,
+               "A",
+               %{present_value: 25, out_of_service: false, status_flags: @status_flags},
                remote_object: 1,
                skip_property_validation_remote_object: true
              )
 
     assert {:ok, %{present_value: 550}} =
-             unquote(mod_name_min_int_stub).create(0, "A", %{present_value: 550},
+             unquote(mod_name_min_int_stub).create(
+               0,
+               "A",
+               %{present_value: 550, out_of_service: false, status_flags: @status_flags},
                remote_object: 1,
                skip_property_validation_remote_object: :value
              )

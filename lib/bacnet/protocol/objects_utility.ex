@@ -1463,6 +1463,14 @@ defmodule BACnet.Protocol.ObjectsUtility do
           {:ok, term()} | {:error, term()}
   defp cast_value_to_type(type, property, value, opts)
 
+  defp cast_value_to_type(:any, _property, value, _opts), do: {:ok, value}
+
+  defp cast_value_to_type({:list, :any}, _property, value, _opts) when is_list(value),
+    do: {:ok, value}
+
+  defp cast_value_to_type({:list, :any}, property, value, _opts),
+    do: {:error, {:invalid_property_value, {property, value}}}
+
   # Handle these properties in a special way, so it works
   # This is because the property_value response contains multiple entries (a list),
   # so each item gets splitted into an Encoding struct, so we need to revert this here

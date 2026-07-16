@@ -307,6 +307,14 @@ defmodule BACnet.Protocol.ObjectsMacro do
   Use `define_bacnet_object/3` to use something that can be used outside of a module
   (it produces AST for `bac_object/2`).
 
+  For remote objects, some of the checks, implications and defaults are not applied.
+  Properties with default values, that are absent from the given properties map,
+  are not merged into the property list. As such, required properties with default values,
+  if missing, will fail to create the object.
+  Updating a property will not automatically propagate all properties and update them.
+  For example, setting `out_of_service` automatically updates `status_flags`, but for
+  remote objects, no update will be applied.
+
   ### Definition
 
   To use this macro, you need to pass it the BACnet object type (`t:BACnet.Protocol.Constants.object_type/0`) and
@@ -484,6 +492,8 @@ defmodule BACnet.Protocol.ObjectsMacro do
 
   Annotations with the key name `required_when` and `only_when` will be respected, if their value is supported.
   `required_when` can be used to conditionally require certain properties.
+  Both checks are executed after all properties have been accumulated.
+  More complex checks (as in multiple conditions, either `and` or `or` chained) can be implemented using functions.
 
   The following values are supported:
     - `{:property, Constants.property_identifier()}` - The given property must be present in the object.
@@ -499,10 +509,10 @@ defmodule BACnet.Protocol.ObjectsMacro do
     - `{:opts, atom(), operator, value}` - The given option must be present
       in the object options and have the specified value. The value is compared using the given
       operator from the `Kernel` module (must be a function in said module).
-    - `(map() -> boolean())` - Function with arity 1, receives the currently
-      accumulated properties. Returning `true` means the property is required.
-    - `(map(), map() -> boolean())` - Function with arity 2, receives the currently
-      accumulated properties and the metadata map. Returning `true` means the property is required.
+    - `(map() -> boolean())` - Function with arity 1, receives the object properties.
+      Returning `true` means the property is required.
+    - `(map(), map() -> boolean())` - Function with arity 2, receives the object properties and the metadata map.
+      Returning `true` means the property is required.
 
   Other values than the supported values get simply ignored - there's no error or warning.
 
@@ -1349,57 +1359,57 @@ defmodule BACnet.Protocol.ObjectsMacro do
 
       @spec add_defaults(map(), map()) :: map()
       defp add_defaults(properties, metadata) do
-        props = Map.merge(unquote(Macro.escape(Map.new(default_properties))), properties)
+        # Only add defaults if it is a local object -
+        # Remote objects should always come with all required properties given,
+        # otherwise we'll have a problem because we'll inject properties with defaults,
+        # despite them not being present on the remote device
+        if metadata.remote_object == nil do
+          props = Map.merge(unquote(Macro.escape(Map.new(default_properties))), properties)
 
-        # If min and max present, make sure to set relinquish_default if not set
-        unquote(
-          if Enum.all?(
-               [:relinquish_default, :min_present_value, :max_present_value],
-               &(&1 in struct_deffields)
-             ) do
-            quote do
-              props =
-                if Map.get(props, :priority_array) && Map.get(props, :min_present_value) &&
-                     Map.get(props, :max_present_value) do
-                  Map.put_new_lazy(props, :relinquish_default, fn ->
-                    Map.get(props, :min_present_value)
-                  end)
-                else
-                  props
-                end
+          # If min and max present, make sure to set relinquish_default if not set
+          unquote(
+            if Enum.all?(
+                 [:relinquish_default, :min_present_value, :max_present_value],
+                 &(&1 in struct_deffields)
+               ) do
+              quote do
+                props =
+                  if Map.get(props, :priority_array) && Map.get(props, :min_present_value) &&
+                       Map.get(props, :max_present_value) do
+                    Map.put_new_lazy(props, :relinquish_default, fn ->
+                      Map.get(props, :min_present_value)
+                    end)
+                  else
+                    props
+                  end
+              end
             end
-          end
-        )
+          )
 
-        # Insert cov_increment property if not remote object
-        props =
-          if unquote(default_cov_increment) != nil and metadata.remote_object == nil do
-            Map.put_new(props, :cov_increment, unquote(default_cov_increment))
-          else
-            props
-          end
+          # Insert cov_increment property
+          props =
+            if unquote(default_cov_increment) != nil do
+              Map.put_new(props, :cov_increment, unquote(default_cov_increment))
+            else
+              props
+            end
 
-        # Insert intrinsic properties if intrinsic reporting enabled
-        props =
-          if unquote(supports_intrinsic) and metadata.intrinsic_reporting and
-               metadata.remote_object == nil do
-            Map.merge(unquote(Macro.escape(Map.new(default_intrinsic_properties))), props)
-          else
-            props
-          end
+          # Insert intrinsic properties if intrinsic reporting enabled
+          props =
+            if unquote(supports_intrinsic) and metadata.intrinsic_reporting do
+              Map.merge(unquote(Macro.escape(Map.new(default_intrinsic_properties))), props)
+            else
+              props
+            end
 
-        # Insert properties which have an init_fun function for local objects
-        # Properties with init_fun get automatically added (as if required properties)
-        props =
-          if metadata.remote_object do
-            props
-          else
-            Enum.reduce(unquote(Macro.escape(init_fun_map)), props, fn
-              {name, init_fun}, acc -> Map.put_new_lazy(acc, name, init_fun)
-            end)
-          end
-
-        props
+          # Insert properties which have an init_fun function
+          # Properties with init_fun get automatically added (as if required properties)
+          Enum.reduce(unquote(Macro.escape(init_fun_map)), props, fn
+            {name, init_fun}, acc -> Map.put_new_lazy(acc, name, init_fun)
+          end)
+        else
+          properties
+        end
       end
 
       # Check implicit relationships, modify the object (add or remove), return new one
