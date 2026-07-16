@@ -29,67 +29,25 @@ defmodule BACnet.Protocol.ObjectsUtility do
 
   @object_type_mappings_key {__MODULE__, :object_type_mappings}
 
-  @types [
-    ObjectTypes.Accumulator,
-    ObjectTypes.AnalogInput,
-    ObjectTypes.AnalogOutput,
-    ObjectTypes.AnalogValue,
-    ObjectTypes.Averaging,
-    ObjectTypes.BinaryInput,
-    ObjectTypes.BinaryOutput,
-    ObjectTypes.BinaryValue,
-    ObjectTypes.BitstringValue,
-    ObjectTypes.Calendar,
-    ObjectTypes.CharacterStringValue,
-    ObjectTypes.Command,
-    ObjectTypes.DatePatternValue,
-    ObjectTypes.DateTimePatternValue,
-    ObjectTypes.DateTimeValue,
-    ObjectTypes.DateValue,
-    ObjectTypes.Device,
-    ObjectTypes.EventEnrollment,
-    ObjectTypes.EventLog,
-    ObjectTypes.File,
-    ObjectTypes.Group,
-    ObjectTypes.IntegerValue,
-    ObjectTypes.LargeAnalogValue,
-    ObjectTypes.Loop,
-    ObjectTypes.MultistateInput,
-    ObjectTypes.MultistateOutput,
-    ObjectTypes.MultistateValue,
-    ObjectTypes.NotificationClass,
-    ObjectTypes.OctetStringValue,
-    ObjectTypes.PositiveIntegerValue,
-    ObjectTypes.Program,
-    ObjectTypes.PulseConverter,
-    ObjectTypes.Schedule,
-    ObjectTypes.StructuredView,
-    ObjectTypes.TimePatternValue,
-    ObjectTypes.TimeValue,
-    ObjectTypes.TrendLog,
-    ObjectTypes.TrendLogMultiple
-  ]
+  obj_files =
+    __DIR__
+    |> Path.join("/object_types/*.ex")
+    |> Path.wildcard()
 
-  @types_commandable [
-    ObjectTypes.AnalogOutput,
-    ObjectTypes.AnalogValue,
-    ObjectTypes.BinaryOutput,
-    ObjectTypes.BinaryValue,
-    ObjectTypes.BitstringValue,
-    ObjectTypes.CharacterStringValue,
-    ObjectTypes.DatePatternValue,
-    ObjectTypes.DateTimePatternValue,
-    ObjectTypes.DateTimeValue,
-    ObjectTypes.DateValue,
-    ObjectTypes.IntegerValue,
-    ObjectTypes.LargeAnalogValue,
-    ObjectTypes.MultistateOutput,
-    ObjectTypes.MultistateValue,
-    ObjectTypes.OctetStringValue,
-    ObjectTypes.PositiveIntegerValue,
-    ObjectTypes.TimePatternValue,
-    ObjectTypes.TimeValue
-  ]
+  @types obj_files
+         |> Enum.map(fn path ->
+           path
+           |> Path.basename(".ex")
+           |> Macro.camelize()
+           |> then(&Module.concat([BACnet.Protocol.ObjectTypes, &1]))
+         end)
+         |> Enum.sort()
+
+  @types_commandable Enum.filter(@types, fn mod ->
+                       Code.ensure_compiled!(mod)
+                       Code.ensure_loaded!(mod)
+                       :priority_array in mod.get_all_properties()
+                     end)
 
   defmacrop get_fa_str() do
     {fun, arity} = __CALLER__.function
@@ -169,19 +127,41 @@ defmodule BACnet.Protocol.ObjectsUtility do
   @doc """
   Checks whether the given struct is a supported BACnet object (see `t:bacnet_object/0`).
 
-  Note: This guard is not widely used by this module itself, but may be useful for others.
+  Note: This guard is not used by this module itself, but may be useful for others.
+  This module uses the `is_object_loose/1` variant instead (for extensibility).
   """
   defguard is_object(object)
            when is_struct(object) and :erlang.map_get(:__struct__, object) in @types
 
   @doc """
+  Checks whether the given struct is a supported BACnet object (see `t:bacnet_object/0`).
+
+  The check is loose and does not enforce the type, instead it checks for presence of certain keys -
+  that's where the name comes from.
+  """
+  defguard is_object_loose(object)
+           when is_struct(object) and is_map(:erlang.map_get(:_metadata, object))
+
+  @doc """
   Checks whether the given struct is a supported BACnet object (see `t:bacnet_object/0`)
   and whether it is commandable (see `t:bacnet_object_commandable/0`).
 
-  Note: This guard is not widely used by this module itself, but may be useful for others.
+  Note: This guard is not used by this module itself, but may be useful for others.
+  This module uses the `is_object_commandable_loose/1` variant instead (for extensibility).
   """
   defguard is_object_commandable(object)
            when is_struct(object) and :erlang.map_get(:__struct__, object) in @types_commandable
+
+  @doc """
+  Checks whether the given struct is a supported BACnet object (see `t:bacnet_object/0`)
+  and whether it is commandable (see `t:bacnet_object_commandable/0`).
+
+  The check is loose and does not enforce the type, instead it checks for presence of certain keys -
+  that's where the name comes from.
+  """
+  defguard is_object_commandable_loose(object)
+           when is_struct(object) and is_map(:erlang.map_get(:_metadata, object)) and
+                  :erlang.is_map_key(:priority_array, object)
 
   @doc """
   Checks whether the given BACnet object has Intrinsic Reporting enabled.
@@ -297,10 +277,11 @@ defmodule BACnet.Protocol.ObjectsUtility do
   end
 
   @doc """
-  Get the object identifier for the BACnet object. The `bacnet_object` contract is enforced.
+  Get the object identifier for the BACnet object.
   """
   @spec get_object_identifier(bacnet_object()) :: ObjectIdentifier.t()
-  def get_object_identifier(%_any{object_instance: instance} = object) when is_object(object) do
+  def get_object_identifier(%_any{object_instance: instance} = object)
+      when is_object_loose(object) do
     %ObjectIdentifier{
       type: get_object_type(object),
       instance: instance
@@ -308,7 +289,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
   end
 
   @doc """
-  Get the BACnet object type. The `bacnet_object` contract is enforced.
+  Get the BACnet object type.
   """
   @spec get_object_type(bacnet_object()) :: Constants.object_type()
   def get_object_type(%mod{} = _object) do
@@ -418,7 +399,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
   @spec add_property(bacnet_object(), Constants.property_identifier(), term()) ::
           {:ok, bacnet_object()} | {:error, term()}
   def add_property(%bac{} = object, property, value)
-      when is_object(object) and is_atom(property) do
+      when is_object_loose(object) and is_atom(property) do
     bac.add_property(object, property, value)
   end
 
@@ -430,7 +411,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
   @spec get_property(bacnet_object(), Constants.property_identifier()) ::
           {:ok, term()} | {:error, term()}
   def get_property(%bac{} = object, property)
-      when is_object(object) and is_atom(property) do
+      when is_object_loose(object) and is_atom(property) do
     bac.get_property(object, property)
   end
 
@@ -444,7 +425,8 @@ defmodule BACnet.Protocol.ObjectsUtility do
   """
   @spec remove_property(bacnet_object(), Constants.property_identifier()) ::
           {:ok, bacnet_object()} | {:error, term()}
-  def remove_property(%bac{} = object, property) when is_object(object) and is_atom(property) do
+  def remove_property(%bac{} = object, property)
+      when is_object_loose(object) and is_atom(property) do
     bac.remove_property(object, property)
   end
 
@@ -456,7 +438,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
   @spec update_property(bacnet_object(), Constants.property_identifier(), term()) ::
           {:ok, bacnet_object()} | {:error, term()}
   def update_property(%bac{} = object, property, value)
-      when is_object(object) and is_atom(property) do
+      when is_object_loose(object) and is_atom(property) do
     bac.update_property(object, property, value)
   end
 
@@ -478,7 +460,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
   This function also updates the present value.
 
   This function calls to the object module directly and only objects with a priority array can be used (commandable objects),
-  as such it enforces the `t:bacnet_object_commandable/0` contract.
+  as such it uses the `is_object_commandable_loose/1` guard.
   """
   @spec set_priority(bacnet_object_commandable(), 1..16, term()) ::
           {:ok, bacnet_object_commandable()} | {:error, term()}
@@ -487,7 +469,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
   end
 
   def set_priority(%bac{priority_array: %PriorityArray{} = _pa} = object, priority, value)
-      when is_object_commandable(object) do
+      when is_object_commandable_loose(object) do
     bac.set_priority(object, priority, value)
   end
 
@@ -891,14 +873,14 @@ defmodule BACnet.Protocol.ObjectsUtility do
 
   @doc """
   Turns the given object's properties with their values into a keyword list.
-  Only properties in the properties list are taken. The `bacnet_object` contract is enforced.
+  Only properties in the properties list are taken.
 
   The key `:object_instance` will be converted into `:object_identifier`.
 
   The list is sorted in ascending order by the property name.
   """
   @spec to_list(bacnet_object()) :: [{Constants.property_identifier(), term()}]
-  def to_list(%_bac{} = object) when is_object(object) do
+  def to_list(%_bac{} = object) when is_object_loose(object) do
     object
     |> to_map()
     |> Map.to_list()
@@ -907,12 +889,12 @@ defmodule BACnet.Protocol.ObjectsUtility do
 
   @doc """
   Turns the given object's properties with their values into a map.
-  Only properties in the properties list are taken. The `bacnet_object` contract is enforced.
+  Only properties in the properties list are taken.
 
   The key `:object_instance` will be converted into `:object_identifier`.
   """
   @spec to_map(bacnet_object()) :: %{optional(Constants.property_identifier()) => term()}
-  def to_map(%_bac{_metadata: %{properties_list: props}} = object) when is_object(object) do
+  def to_map(%_bac{_metadata: %{properties_list: props}} = object) when is_object_loose(object) do
     object
     |> Map.take(props)
     |> Map.drop([:_metadata, :object_instance])
