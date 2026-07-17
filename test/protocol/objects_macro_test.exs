@@ -1842,6 +1842,31 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
           default: false,
           annotation: [only_when: {:opts, :ghi, :<, 0}]
         )
+
+        field(:mac_address, boolean(),
+          annotation: [
+            only_when: fn _props, meta ->
+              if meta.other[:hello] == :there do
+                :optional
+              else
+                false
+              end
+            end
+          ]
+        )
+
+        field(:bacnet_ip_mode, boolean(),
+          default: false,
+          annotation: [
+            only_when: fn _props, meta ->
+              if meta.other[:hello] == :there do
+                :optional
+              else
+                false
+              end
+            end
+          ]
+        )
       end
     end
 
@@ -2038,6 +2063,30 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
     assert {:ok, %{file_size: false}} = mod_name.create(1, "TEST", %{}, ghi: -1)
 
     assert {:ok, %{file_size: true}} = mod_name.create(1, "TEST", %{file_size: true}, ghi: -1)
+  end
+
+  test "verify create/4 optionally only_when fun/2 with :optional" do
+    mod_name = unquote(mod_name_opt_only_stub)
+
+    assert {:ok, %{mac_address: nil}} = mod_name.create(1, "TEST", %{}, hello: :there)
+
+    assert {:ok, %{mac_address: true}} =
+             mod_name.create(1, "TEST", %{mac_address: true}, hello: :there)
+
+    assert {:error, {:property_not_allowed, :mac_address}} =
+             mod_name.create(1, "TEST", %{mac_address: true}, hello: :denied)
+  end
+
+  test "verify create/4 optionally only_when fun/2 with :optional and default value" do
+    mod_name = unquote(mod_name_opt_only_stub)
+
+    assert {:ok, %{bacnet_ip_mode: false}} = mod_name.create(1, "TEST", %{}, hello: :there)
+
+    assert {:ok, %{bacnet_ip_mode: true}} =
+             mod_name.create(1, "TEST", %{bacnet_ip_mode: true}, hello: :there)
+
+    assert {:error, {:property_not_allowed, :bacnet_ip_mode}} =
+             mod_name.create(1, "TEST", %{bacnet_ip_mode: true}, hello: :denied)
   end
 
   test "verify get_required_properties/0 only lists properties that actually exist" do

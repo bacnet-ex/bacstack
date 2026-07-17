@@ -68,6 +68,8 @@ defmodule BACnet.Protocol.BroadcastDistributionTableEntry do
 
   # TODO: Throw argument error in encode if not valid
 
+  alias BACnet.Protocol.ApplicationTags
+
   @typedoc """
   An entry in the Broadcast Distribution Table (BDT) used by BBMDs in BACnet/IP.
 
@@ -126,4 +128,60 @@ defmodule BACnet.Protocol.BroadcastDistributionTableEntry do
   end
 
   def encode(%__MODULE__{} = _entry), do: {:error, :invalid_data}
+
+  @doc """
+  Parse a Broadcast Distribution Entry from application tags.
+  """
+  @spec from_app_encoding(ApplicationTags.encoding_list()) ::
+          {:ok, {t(), rest :: ApplicationTags.encoding_list()}}
+          | {:error, term()}
+  def from_app_encoding(tags) when is_list(tags) do
+    case tags do
+      [
+        {:constructed,
+         {0,
+          [
+            constructed: {0, {:tagged, {1, ip, 4}}, 0},
+            tagged: {1, port, 2}
+          ], 0}},
+        {:tagged, {1, mask, 4}}
+        | rest
+      ] ->
+        with {:ok, {val, _rest}} <- decode(ip <> port <> mask) do
+          {:ok, {val, rest}}
+        end
+
+      _other ->
+        {:error, :invalid_tags}
+    end
+  end
+
+  @doc """
+  Enocde a Broadcast Distribution Table Entry to application tags.
+  """
+  @spec to_app_encoding(t()) ::
+          {:ok, ApplicationTags.encoding_list()}
+          | {:error, term()}
+  def to_app_encoding(entry)
+
+  def to_app_encoding(
+        %__MODULE__{
+          ip: {ip_a, ip_b, ip_c, ip_d},
+          port: port,
+          mask: {mask_a, mask_b, mask_c, mask_d}
+        } = _entry
+      ) do
+    {:ok,
+     [
+       {:constructed,
+        {0,
+         [
+           constructed: {0, {:tagged, {1, <<ip_a, ip_b, ip_c, ip_d>>, 4}}, 0},
+           tagged: {1, <<port::size(16)>>, 2}
+         ], 0}},
+       {:tagged, {1, <<mask_a, mask_b, mask_c, mask_d>>, 4}}
+     ]}
+  end
+
+  def to_app_encoding(%__MODULE__{} = _entry), do: {:error, :invalid_data}
 end

@@ -73,6 +73,8 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntry do
   - `BACnet.Stack.ForeignDevice` - the client that creates registrations (and therefore indirectly causes FDT entries to be created on the remote BBMD)
   """
 
+  alias BACnet.Protocol.ApplicationTags
+
   @typedoc """
   An entry in the Foreign Device Table (FDT) maintained by a BBMD.
 
@@ -152,4 +154,66 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntry do
   end
 
   def encode(%__MODULE__{} = _entry), do: {:error, :invalid_data}
+
+  @doc """
+  Parse a Foreign Device Table Entry from application tags.
+  """
+  @spec from_app_encoding(ApplicationTags.encoding_list()) ::
+          {:ok, {t(), rest :: ApplicationTags.encoding_list()}}
+          | {:error, term()}
+  def from_app_encoding(tags) when is_list(tags) do
+    case tags do
+      [
+        {:tagged, {0, ip_port, 6}},
+        {:tagged, {1, ttl, len1}},
+        {:tagged, {2, remaining, len2}}
+        | rest
+      ]
+      when len1 in 1..2//1 and len2 in 1..2//1 ->
+        with {:ok, {val, _rest}} <- decode(ip_port <> pad_binary(ttl) <> pad_binary(remaining)) do
+          {:ok, {val, rest}}
+        end
+
+      _other ->
+        {:error, :invalid_tags}
+    end
+  end
+
+  @doc """
+  Enocde a Foreign Device Table Entry to application tags.
+  """
+  @spec to_app_encoding(t()) ::
+          {:ok, ApplicationTags.encoding_list()}
+          | {:error, term()}
+  def to_app_encoding(entry)
+
+  def to_app_encoding(
+        %__MODULE__{
+          ip: {ip_a, ip_b, ip_c, ip_d},
+          port: port,
+          time_to_live: ttl,
+          remaining_time: rem
+        } = _entry
+      ) do
+    ttl = ttl || 0
+    rem = rem || 0
+
+    {:ok,
+     [
+       {:tagged, {0, <<ip_a, ip_b, ip_c, ip_d, port::size(16)>>, 6}},
+       {:tagged, {1, <<ttl::size(16)>>, 2}},
+       {:tagged, {2, <<rem::size(16)>>, 2}}
+     ]}
+  end
+
+  def to_app_encoding(%__MODULE__{} = _entry), do: {:error, :invalid_data}
+
+  @spec pad_binary(binary()) :: binary()
+  defp pad_binary(binary) do
+    if byte_size(binary) == 1 do
+      <<0>> <> binary
+    else
+      binary
+    end
+  end
 end

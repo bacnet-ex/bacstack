@@ -545,7 +545,13 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
         range.()
       end)
 
-    wrong_type = {:real, 5.0}
+    wrong_type =
+      if type == :real do
+        {:octet_string, <<>>}
+      else
+        {:real, 5.0}
+      end
+
     {_key, wrong_value} = wrong_type
     wrong_raw_value = [Encoding.create!(wrong_type)]
 
@@ -571,7 +577,13 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
         range.()
       end)
 
-    wrong_type = {:real, 5.0}
+    wrong_type =
+      if type == :real do
+        {:octet_string, <<>>}
+      else
+        {:real, 5.0}
+      end
+
     {_key, wrong_value} = wrong_type
     wrong_raw_value = [Encoding.create!(wrong_type)]
 
@@ -609,7 +621,13 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
   def generate_cast_tests(obj_type, _mod, _property_types_map, {property, {:in_range, min, max}}) do
     value = Enum.random(min..max//1)
 
-    wrong_type = {:real, 5.0}
+    wrong_type =
+      if is_float(min) do
+        {:octet_string, <<>>}
+      else
+        {:real, 5.0}
+      end
+
     {_key, wrong_value} = wrong_type
     wrong_raw_value = Encoding.create!(wrong_type)
 
@@ -634,7 +652,13 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
         range.()
       end)
 
-    wrong_type = {:real, 5.0}
+    wrong_type =
+      if type == :real do
+        {:octet_string, <<>>}
+      else
+        {:real, 5.0}
+      end
+
     {_key, wrong_value} = wrong_type
     wrong_raw_value = [Encoding.create!(wrong_type)]
 
@@ -1129,8 +1153,15 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
             end
         end
 
-      if function_exported?(mod, :encode, 1) do
-        case mod.encode(struct_value) do
+      if function_exported?(mod, :encode, 1) or function_exported?(mod, :to_app_encoding, 1) do
+        res =
+          if function_exported?(mod, :to_app_encoding, 1) do
+            mod.to_app_encoding(struct_value)
+          else
+            mod.encode(struct_value)
+          end
+
+        case res do
           {:ok, raw_value} ->
             # Process only list returns - some modules produce binaries
             # Those need to be tested separately
@@ -1190,6 +1221,12 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
       {value, _raw, _encoded} = generate_spec_for_struct_type(property, type)
       value
     end
+  end
+
+  defp get_generator_for_type(_property, {:constant, :network_type}) do
+    # SC is the only network_type that doesn't require other properties
+    # (for now)
+    fn -> :sc end
   end
 
   defp get_generator_for_type(_property, {:constant, const_name}) do

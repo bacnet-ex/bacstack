@@ -32,24 +32,6 @@ defmodule BACnet.Protocol.VmacEntry do
   defstruct @fields
 
   @doc """
-  Encodes a BACnetVMACEntry into application tags encoding.
-  """
-  @spec encode(t(), Keyword.t()) ::
-          {:ok, ApplicationTags.encoding_list()} | {:error, term()}
-  def encode(%__MODULE__{} = entry, _opts \\ []) do
-    with true <- byte_size(entry.virtual_mac_address) <= 6,
-         {:ok, vmac_tag} <-
-           ApplicationTags.create_tag_encoding(0, :octet_string, entry.virtual_mac_address),
-         {:ok, nmac_tag} <-
-           ApplicationTags.create_tag_encoding(1, :octet_string, entry.native_mac_address) do
-      {:ok, [vmac_tag, nmac_tag]}
-    else
-      false -> {:error, :virtual_mac_too_long}
-      {:error, _err} = err -> err
-    end
-  end
-
-  @doc """
   Parses a BACnetVMACEntry from application tags encoding.
   """
   @spec parse(ApplicationTags.encoding_list()) ::
@@ -71,6 +53,24 @@ defmodule BACnet.Protocol.VmacEntry do
 
       _other ->
         {:error, :invalid_tags}
+    end
+  end
+
+  @doc """
+  Encodes a BACnetVMACEntry into application tags encoding.
+  """
+  @spec encode(t(), Keyword.t()) ::
+          {:ok, ApplicationTags.encoding_list()} | {:error, term()}
+  def encode(%__MODULE__{} = entry, _opts \\ []) do
+    with true <- byte_size(entry.virtual_mac_address) <= 6,
+         {:ok, vmac_tag} <-
+           ApplicationTags.create_tag_encoding(0, :octet_string, entry.virtual_mac_address),
+         {:ok, nmac_tag} <-
+           ApplicationTags.create_tag_encoding(1, :octet_string, entry.native_mac_address) do
+      {:ok, [vmac_tag, nmac_tag]}
+    else
+      false -> {:error, :virtual_mac_too_long}
+      {:error, _err} = err -> err
     end
   end
 

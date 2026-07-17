@@ -179,11 +179,21 @@ defmodule BACnet.Protocol.ObjectsMacro do
   @type encoder :: (term() -> {:ok, Encoding.t() | [Encoding.t()] | term()} | {:error, term()})
 
   @typedoc """
-  Supported values for annotation `required_when` and `only_when`.
+  Supported values for annotation `only_when`.
 
   `operator` must be a function from the module `Kernel`.
   """
-  @type required_only_when ::
+  @type only_when ::
+          required_when()
+          | (properties_so_far :: map() -> boolean() | :optional)
+          | (properties_so_far :: map(), metadata :: map() -> boolean() | :optional)
+
+  @typedoc """
+  Supported values for annotation `required_when`.
+
+  `operator` must be a function from the module `Kernel`.
+  """
+  @type required_when ::
           {:property, name :: Constants.property_identifier()}
           | {:property, name :: Constants.property_identifier(), value :: term()}
           | {:property, name :: Constants.property_identifier(), operator :: atom(),
@@ -486,8 +496,8 @@ defmodule BACnet.Protocol.ObjectsMacro do
   The following annotations are used currently:
   - `decoder: decoder()` - Function used to decode the ASN.1 value to an Elixir value (the typespec).
   - `encoder: encoder()` - Function used to encode the Elixir value (the typespec) to an ASN.1 value.
-  - `only_when: required_only_when()` - See below. Allows a property to "exist" only when the condition is met.
-  - `required_when: required_only_when()` - See below. Marks a property as required when the condition is met.
+  - `only_when: only_when() | :optional` - See below. Allows a property to "exist" only when the condition is met.
+  - `required_when: required_when()` - See below. Marks a property as required when the condition is met.
 
   The encoder and decoder annotations are used by the `BACnet.Protocol.ObjectsUtility` module to encode and decode properties.
 
@@ -535,7 +545,13 @@ defmodule BACnet.Protocol.ObjectsMacro do
 
   To have the property only present and can only be instantiated when the property is required,
   to meet BACnet requirements to have some properties only present when some condition is met,
-  the annotation `only_when` is supported. It supports the same values as `required_when`.
+  the annotation `only_when` is supported. It supports the same values as `required_when` and
+  an additional `:optional`.
+
+  The special value `:optional` makes the property optional,
+  meaning the property CAN be present but does not have to.
+  The value `true` forces the property to be present.
+  The value `false` forces the property to be NOT present.
 
   That means, the optional property can not be used unless the `only_when` test passes true.
   The exception being remote objects, where all optional properties can always be used,
@@ -1563,7 +1579,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
         end
       end
 
-      @spec verify_properties_required_when(map(), map(), term()) :: boolean()
+      @spec verify_properties_required_when(map(), map(), term()) :: boolean() | :optional
       defp verify_properties_required_when(properties, metadata, annotation)
 
       defp verify_properties_required_when(properties, metadata, {:property, property}) do
@@ -1608,11 +1624,17 @@ defmodule BACnet.Protocol.ObjectsMacro do
       end
 
       defp verify_properties_required_when(properties, _metadata, fun) when is_function(fun, 1) do
-        fun.(properties) == true
+        case fun.(properties) do
+          val when val in [true, :optional] -> val
+          _other -> false
+        end
       end
 
       defp verify_properties_required_when(properties, metadata, fun) when is_function(fun, 2) do
-        fun.(properties, metadata) == true
+        case fun.(properties, metadata) do
+          val when val in [true, :optional] -> val
+          _other -> false
+        end
       end
 
       defp verify_properties_required_when(properties, _metadata, _other), do: false
@@ -1633,7 +1655,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
           ),
           {:ok, properties},
           fn {name, annotation}, {:ok, properties} ->
-            with true <- verify_properties_required_when(properties, metadata, annotation),
+            with true <- !!verify_properties_required_when(properties, metadata, annotation),
                  {:error, _term} <- check_property_exists(%{_metadata: metadata}, name),
                  {:ok, default_val} <-
                    Map.fetch(unquote(Macro.escape(default_properties_all)), name) do
@@ -1666,16 +1688,20 @@ defmodule BACnet.Protocol.ObjectsMacro do
             has_key = check_property_exists(%{_metadata: metadata}, name) == :ok
 
             cond do
-              required_state and not has_key ->
+              !!required_state and not has_key ->
                 case Map.fetch(unquote(Macro.escape(default_properties_all)), name) do
                   {:ok, default_val} ->
                     {:cont, {:ok, Map.put(properties, name, default_val)}}
 
                   _else ->
-                    {:halt, {:error, {:missing_required_property, name}}}
+                    if required_state == :optional do
+                      {:cont, {:ok, properties}}
+                    else
+                      {:halt, {:error, {:missing_required_property, name}}}
+                    end
                 end
 
-              not required_state and has_key ->
+              !required_state and has_key ->
                 {:halt, {:error, {:property_not_allowed, name}}}
 
               true ->

@@ -33,10 +33,10 @@ defmodule BACnet.Protocol.HostNPort do
   The host part of a HostNPort.
 
   - `:none` - no address configured
-  - `{:ip_address, binary()}` - raw IP address octets (IPv4 = 4 bytes, IPv6 = 16 bytes)
+  - `{:ip_address, :inet.ip_address()}` - raw IP address octets (IPv4 = 4 bytes, IPv6 = 16 bytes)
   - `{:name, String.t()}` - DNS host name (RFC 1123)
   """
-  @type host :: :none | {:ip_address, binary()} | {:name, String.t()}
+  @type host :: :none | {:ip_address, :inet.ip_address()} | {:name, String.t()}
 
   @typedoc """
   A BACnetHostNPort value.
@@ -49,18 +49,6 @@ defmodule BACnet.Protocol.HostNPort do
   @fields [:host, :port]
   @enforce_keys @fields
   defstruct @fields
-
-  @doc """
-  Encodes a BACnetHostNPort into application tags encoding (list of tags).
-  """
-  @spec encode(t(), Keyword.t()) ::
-          {:ok, ApplicationTags.encoding_list()} | {:error, term()}
-  def encode(%__MODULE__{} = hnp, opts \\ []) do
-    with {:ok, host_tag} <- encode_host(hnp.host, opts),
-         {:ok, port_tag} <- ApplicationTags.create_tag_encoding(1, :unsigned_integer, hnp.port) do
-      {:ok, [{:constructed, {0, host_tag, 0}}, port_tag]}
-    end
-  end
 
   @doc """
   Parses a BACnetHostNPort from application tags encoding.
@@ -93,6 +81,18 @@ defmodule BACnet.Protocol.HostNPort do
   end
 
   @doc """
+  Encodes a BACnetHostNPort into application tags encoding (list of tags).
+  """
+  @spec encode(t(), Keyword.t()) ::
+          {:ok, ApplicationTags.encoding_list()} | {:error, term()}
+  def encode(%__MODULE__{} = hnp, opts \\ []) do
+    with {:ok, host_tag} <- encode_host(hnp.host, opts),
+         {:ok, port_tag} <- ApplicationTags.create_tag_encoding(1, :unsigned_integer, hnp.port) do
+      {:ok, [{:constructed, {0, host_tag, 0}}, port_tag]}
+    end
+  end
+
+  @doc """
   Validates whether the given HostNPort is well-formed.
   """
   @spec valid?(t()) :: boolean()
@@ -101,7 +101,7 @@ defmodule BACnet.Protocol.HostNPort do
       do: true
 
   def valid?(%__MODULE__{host: {:ip_address, ip}, port: port})
-      when is_binary(ip) and byte_size(ip) in [4, 16] and is_integer(port) and port >= 0 and
+      when is_tuple(ip) and tuple_size(ip) in [4, 8] and is_integer(port) and port >= 0 and
              port <= 65_535,
       do: true
 
@@ -120,8 +120,23 @@ defmodule BACnet.Protocol.HostNPort do
     ApplicationTags.create_tag_encoding(0, :null, nil)
   end
 
-  defp encode_host({:ip_address, ip}, _opts) when is_binary(ip) do
-    ApplicationTags.create_tag_encoding(1, :octet_string, ip)
+  defp encode_host({:ip_address, ip}, _opts) when is_tuple(ip) and tuple_size(ip) == 4 do
+    bytes =
+      ip
+      |> Tuple.to_list()
+      |> :binary.list_to_bin()
+
+    ApplicationTags.create_tag_encoding(1, :octet_string, bytes)
+  end
+
+  defp encode_host({:ip_address, ip}, _opts) when is_tuple(ip) and tuple_size(ip) == 8 do
+    bytes =
+      ip
+      |> Tuple.to_list()
+      |> Enum.map(fn int -> <<int::size(16)>> end)
+      |> :binary.list_to_bin()
+
+    ApplicationTags.create_tag_encoding(1, :octet_string, bytes)
   end
 
   defp encode_host({:name, name}, _opts) when is_binary(name) do
@@ -138,8 +153,24 @@ defmodule BACnet.Protocol.HostNPort do
     {:ok, :none}
   end
 
-  defp parse_host({:tagged, {1, bytes, _len}}) when is_binary(bytes) do
-    {:ok, {:ip_address, bytes}}
+  defp parse_host({:tagged, {1, bytes, len}}) when is_binary(bytes) and len == 4 do
+    ip =
+      bytes
+      |> :binary.bin_to_list()
+      |> List.to_tuple()
+
+    {:ok, {:ip_address, ip}}
+  end
+
+  defp parse_host({:tagged, {1, bytes, len}}) when is_binary(bytes) and len == 16 do
+    ip =
+      bytes
+      |> :binary.bin_to_list()
+      |> Stream.chunk_every(2)
+      |> Enum.map(fn [a, b] -> Bitwise.bsl(a, 8) + b end)
+      |> List.to_tuple()
+
+    {:ok, {:ip_address, ip}}
   end
 
   defp parse_host({:tagged, {2, bytes, _len}}) do

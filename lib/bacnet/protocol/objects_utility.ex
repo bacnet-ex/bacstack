@@ -1212,8 +1212,23 @@ defmodule BACnet.Protocol.ObjectsUtility do
                   end)
 
                 case res do
-                  {:ok, list} -> {:ok, Enum.reverse(list)}
-                  term -> term
+                  {:ok, list} ->
+                    list2 = Enum.reverse(list)
+
+                    # We need to convert the list to a BACnetArray if type is {:array, ...}
+                    cond do
+                      match?({:array, _mod}, type) ->
+                        {:ok, BACnetArray.from_list(list2)}
+
+                      match?({:array, _mod, _size}, type) ->
+                        {:ok, BACnetArray.from_list(list2, true)}
+
+                      true ->
+                        {:ok, list2}
+                    end
+
+                  term ->
+                    term
                 end
 
               true ->
@@ -1292,6 +1307,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
     e -> {:error, {:exception_during_decoding, e, __STACKTRACE__}}
   end
 
+  # credo:disable-for-lines:150 Credo.Check.Refactor.CyclomaticComplexity
   @spec do_cast_value_to_property(
           module(),
           Constants.property_identifier(),
@@ -1330,7 +1346,14 @@ defmodule BACnet.Protocol.ObjectsUtility do
             e -> {:error, {:exception_during_casting, e, __STACKTRACE__}}
           end
 
-        is_list(value) ->
+        is_list(value) or is_struct(value, BACnetArray) ->
+          value =
+            if is_struct(value, BACnetArray) do
+              BACnetArray.to_list(value)
+            else
+              value
+            end
+
           res =
             Enum.reduce_while(value, {:ok, []}, fn val, {:ok, acc} ->
               case encode_property_value(type, encoder, property_identifier, val) do
@@ -1389,6 +1412,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
     end
   end
 
+  # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
   @spec cast_value_to_type_manual(
           BeamTypes.typechecker_types(),
           Constants.property_identifier(),
@@ -1406,12 +1430,28 @@ defmodule BACnet.Protocol.ObjectsUtility do
         {:struct, mod} -> {false, mod, false, true}
       end
 
+    fun_from_app_enc = function_exported?(mod, :from_app_encoding, 1)
+    fun_parse = function_exported?(mod, :parse, 1)
+
     res =
       Enum.reduce_while(1..1_000_000, {:ok, {[], tags}}, fn _iter, {:ok, {acc, tags}} ->
-        case mod.parse(tags) do
-          {:ok, {struc, []}} -> {:halt, {:ok, {[struc | acc], []}}}
-          {:ok, {struc, rest}} -> {:cont, {:ok, {[struc | acc], rest}}}
-          term -> {:halt, term}
+        cond do
+          fun_from_app_enc ->
+            case mod.from_app_encoding(tags) do
+              {:ok, {struc, []}} -> {:halt, {:ok, {[struc | acc], []}}}
+              {:ok, {struc, rest}} -> {:cont, {:ok, {[struc | acc], rest}}}
+              term -> {:halt, term}
+            end
+
+          fun_parse ->
+            case mod.parse(tags) do
+              {:ok, {struc, []}} -> {:halt, {:ok, {[struc | acc], []}}}
+              {:ok, {struc, rest}} -> {:cont, {:ok, {[struc | acc], rest}}}
+              term -> {:halt, term}
+            end
+
+          true ->
+            {:halt, {:error, {:missing_parse_fun, mod}}}
         end
       end)
 
@@ -1702,7 +1742,14 @@ defmodule BACnet.Protocol.ObjectsUtility do
   defp cast_value_struct_to_type(mod, raw_value) do
     cond do
       function_exported?(mod, :from_app_encoding, 1) ->
-        mod.from_app_encoding(raw_value)
+        raw_values =
+          if is_list(raw_value) do
+            Enum.map(raw_value, &Encoding.to_encoding!/1)
+          else
+            List.wrap(Encoding.to_encoding!(raw_value))
+          end
+
+        mod.from_app_encoding(raw_values)
 
       match?(%{type: :bitstring}, raw_value) and function_exported?(mod, :from_bitstring, 1) ->
         {:ok, mod.from_bitstring(raw_value.value)}

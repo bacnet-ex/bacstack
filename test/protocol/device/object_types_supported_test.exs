@@ -502,7 +502,7 @@ defmodule BACnet.Protocol.Device.ObjectTypesSupportedTest do
              channel: false,
              lighting_output: false,
              binary_lighting_output: false,
-             network_port: false,
+             network_port: true,
              elevator_group: false,
              escalator: false,
              lift: false
