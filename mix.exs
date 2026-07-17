@@ -191,6 +191,7 @@ defmodule BACstack.MixProject do
           BACnet.Protocol.EventTimestamps,
           BACnet.Protocol.EventTransitionBits,
           BACnet.Protocol.GroupChannelValue,
+          BACnet.Protocol.HostNPort,
           BACnet.Protocol.LimitEnable,
           BACnet.Protocol.LogMultipleRecord,
           BACnet.Protocol.LogRecord,
@@ -208,11 +209,13 @@ defmodule BACstack.MixProject do
           BACnet.Protocol.Recipient,
           BACnet.Protocol.RecipientAddress,
           BACnet.Protocol.ResultFlags,
+          BACnet.Protocol.RouterEntry,
           BACnet.Protocol.SetpointReference,
           BACnet.Protocol.SpecialEvent,
           BACnet.Protocol.StatusFlags,
           BACnet.Protocol.TimeValue,
-          BACnet.Protocol.WeekNDay
+          BACnet.Protocol.WeekNDay,
+          BACnet.Protocol.VmacEntry
         ],
         "Protocol: Objects": [
           BACnet.Protocol.ObjectsUtility,
