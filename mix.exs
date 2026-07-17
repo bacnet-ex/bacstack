@@ -164,6 +164,7 @@ defmodule BACstack.MixProject do
           BACnet.Protocol.ApplicationTags.Encoding,
           BACnet.Protocol.Constants,
           BACnet.Protocol.IncompleteAPDU,
+          BACnet.Protocol.NameValue,
           BACnet.Protocol.NetworkLayerProtocolMessage
         ],
         "Protocol: Data Types": [
@@ -214,8 +215,8 @@ defmodule BACstack.MixProject do
           BACnet.Protocol.SpecialEvent,
           BACnet.Protocol.StatusFlags,
           BACnet.Protocol.TimeValue,
-          BACnet.Protocol.WeekNDay,
-          BACnet.Protocol.VmacEntry
+          BACnet.Protocol.VmacEntry,
+          BACnet.Protocol.WeekNDay
         ],
         "Protocol: Objects": [
           BACnet.Protocol.ObjectsUtility,

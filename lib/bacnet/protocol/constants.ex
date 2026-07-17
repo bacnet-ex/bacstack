@@ -76,8 +76,10 @@ defmodule BACnet.Protocol.Constants do
   The default BACnet Revision is 14 (2012).
   """
   defconst(:protocol_revision, :default, :revision_14)
+  # Revision 14 = 135-2012
   defconst(:protocol_revision, :revision_14, 14)
   # TODO: Support Protocol Revision 19 and 22
+  # Revision 19 = 135-2016
   # defconst(:protocol_revision, :revision_19, 19)
   # defconst(:protocol_revision, :revision_22, 22)
 

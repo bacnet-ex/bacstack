@@ -101,6 +101,7 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.ForeignDeviceTableEntry
   alias BACnet.Protocol.HostNPort
+  alias BACnet.Protocol.NameValue
   alias BACnet.Protocol.ObjectsMacro
   alias BACnet.Protocol.RouterEntry
   alias BACnet.Protocol.VmacEntry
@@ -143,10 +144,11 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
 
     field(:reliability_evaluation_inhibit, boolean())
 
-    field(:network_type, Constants.network_type(), required: true)
+    field(:network_type, Constants.network_type(), required: true, readonly: true)
 
     field(:protocol_level, Constants.protocol_level(),
       required: true,
+      readonly: true,
       default: :bacnet_application
     )
 
@@ -156,10 +158,11 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
 
     field(:network_number_quality, Constants.network_number_quality(),
       required: true,
+      readonly: true,
       default: :unknown
     )
 
-    field(:changes_pending, boolean(), required: true, default: false, readonly: true)
+    field(:changes_pending, boolean(), required: true, readonly: true, default: false)
 
     field(:command, Constants.network_port_command(),
       default: :idle,
@@ -185,16 +188,11 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
             :virtual,
             :zigbee
           ]
-        end,
-        readonly_when: [
-          {:property, :network_type, :==, :ipv4},
-          {:property, :network_type, :==, :ipv6},
-          :vmac_addressing
-        ]
+        end
       ]
     )
 
-    field(:apdu_length, non_neg_integer(), required: true, default: 1476)
+    field(:apdu_length, non_neg_integer(), required: true, readonly: true, default: 1476)
 
     field(:link_speed, float(),
       default: 0.0,
@@ -213,11 +211,11 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
       ]
     )
 
-    field(:link_speeds, BACnetArray.t(float()), default: BACnetArray.new())
+    field(:link_speeds, BACnetArray.t(float()), readonly: true, default: BACnetArray.new())
 
     field(:link_speed_autonegotiate, boolean(), default: false)
 
-    field(:network_interface_name, String.t())
+    field(:network_interface_name, String.t(), readonly: true)
 
     # BACnet/IP (IPv4) related properties
     field(:bacnet_ip_mode, Constants.ip_mode(),
@@ -314,7 +312,23 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
       ]
     )
 
+    field(:ip_dhcp_server, :inet.ip4_address(),
+      readonly: true,
+      annotation: [
+        decoder: &decode_ipv4_address(:ip_dhcp_server, &1),
+        encoder: &encode_ipv4_address(:ip_dhcp_server, &1),
+        only_when: fn props, _object ->
+          if Map.get(props, :network_type) == :ipv4 do
+            :optional
+          else
+            false
+          end
+        end
+      ]
+    )
+
     field(:ip_dhcp_lease_time, non_neg_integer(),
+      readonly: true,
       annotation: [
         only_when: fn props, _object ->
           if Map.get(props, :network_type) == :ipv4 do
@@ -339,20 +353,6 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
       ]
     )
 
-    field(:ip_dhcp_server, :inet.ip4_address(),
-      annotation: [
-        decoder: &decode_ipv4_address(:ip_dhcp_server, &1),
-        encoder: &encode_ipv4_address(:ip_dhcp_server, &1),
-        only_when: fn props, _object ->
-          if Map.get(props, :network_type) == :ipv4 do
-            :optional
-          else
-            false
-          end
-        end
-      ]
-    )
-
     field(:bacnet_ip_nat_traversal, boolean())
 
     field(:bacnet_ip_global_address, HostNPort.t(),
@@ -364,21 +364,27 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
     )
 
     # BBMD / Foreign Device
-    field(:bbmd_broadcast_distribution_table, [BroadcastDistributionTableEntry.t()])
+    field(:bbmd_broadcast_distribution_table, [BroadcastDistributionTableEntry.t()],
+      annotation: [
+        required_when: fn props, _object ->
+          Map.get(props, :bacnet_ip_mode) == :bbmd
+        end
+      ]
+    )
 
     field(:bbmd_accept_fd_registrations, boolean(),
       implicit_relationship: :bbmd_broadcast_distribution_table
     )
 
     field(:bbmd_foreign_device_table, [ForeignDeviceTableEntry.t()],
+      readonly: true,
       implicit_relationship: :bbmd_broadcast_distribution_table
     )
 
     field(:fd_bbmd_address, HostNPort.t(),
       annotation: [
         required_when: fn props, _object ->
-          Map.get(props, :bacnet_ip_mode) == :foreign or
-            Map.get(props, :bacnet_ipv6_mode) == :foreign
+          Map.get(props, :bacnet_ip_mode) == :foreign
         end
       ]
     )
@@ -478,6 +484,7 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
     )
 
     field(:ipv6_dhcp_lease_time, non_neg_integer(),
+      readonly: true,
       annotation: [
         only_when: fn props, _object ->
           if Map.get(props, :network_type) == :ipv6 do
@@ -551,7 +558,7 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
     )
 
     field(:manual_slave_address_binding, [AddressBinding.t()])
-    field(:slave_address_binding, [AddressBinding.t()])
+    field(:slave_address_binding, [AddressBinding.t()], readonly: true)
 
     # Properties for slave proxy functionality (per-se not provided by this bacstack)
     field(:slave_proxy_enable, boolean())
@@ -560,10 +567,50 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
     # Virtual MAC (for certain network types that require VMAC)
     field(:virtual_mac_address_table, [VmacEntry.t()])
 
-    field(:routing_table, [RouterEntry.t()])
+    field(:routing_table, [RouterEntry.t()], readonly: true)
 
     # Common
-    field(:profile_name, String.t(), default: "")
+    field(:profile_name, String.t())
+    field(:profile_location, String.t())
+    field(:tags, BACnetArray.t(NameValue.t()), annotation: [revision: 19])
+  end
+
+  # Override property_writable?/2, to be able to override behaviour
+  def property_writable?(%__MODULE__{} = object, property) when is_atom(property) do
+    case property do
+      :ip_address ->
+        object[:ip_dhcp_enable] != true
+
+      :ip_default_gateway ->
+        object[:ip_dhcp_enable] != true
+
+      :ip_dns_server ->
+        object[:ip_dhcp_enable] != true
+
+      :ip_subnet_mask ->
+        object[:ip_dhcp_enable] != true
+
+      :ipv6_address ->
+        object[:ip_dhcp_enable] != true
+
+      :ipv6_prefix_length ->
+        object[:ip_dhcp_enable] != true
+
+      :ipv6_default_gateway ->
+        object[:ip_dhcp_enable] != true
+
+      :ipv6_dns_server ->
+        object[:ip_dhcp_enable] != true
+
+      :ipv6_subnet_mask ->
+        object[:ip_dhcp_enable] != true
+
+      :mac_address ->
+        object.network_type not in [:ipv4, :ipv6, :sc]
+
+      _term ->
+        super(object, property)
+    end
   end
 
   defp decode_ipv4_address(_property, %Encoding{encoding: :primitive, type: :octet_string} = tags) do
