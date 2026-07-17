@@ -319,7 +319,6 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
 
     # Structured Object List: Only object identifiers for Structured View and Life Safety Zone objects
     field(:structured_object_list, BACnetArray.t(ObjectIdentifier.t()),
-      required: true,
       readonly: true,
       default: BACnetArray.new()
     )

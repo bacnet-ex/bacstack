@@ -340,6 +340,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
     - `default` - Default value for the property. This can be a constant value, function call,
       anonymous function or capture expression (arity 0!).
       Function calls, definitions and captures are executed at compile time.
+    - `remote_default` - Used to mark that for remote objects if the property is missing, the default value is applied.
     - `implicit_relationship` - Implicit relationship between two properties.
       The other property gets automatically added, if one of the relationship gets added.
     - `init_fun` - Used to initialize the property with an initial value
@@ -822,6 +823,22 @@ defmodule BACnet.Protocol.ObjectsMacro do
       Enum.find_value(fields_data, nil, fn
         %{name: :cov_increment, default: value} -> value
         _term -> nil
+      end)
+
+    # Optional properties that are required for _remote_ objects if missing
+    remote_default_properties =
+      Enum.reduce(default_properties_all, %{}, fn {name, value}, acc ->
+        remote_default =
+          Enum.find_value(fields_data, fn
+            %{name: ^name, required: true, remote_default: remote_default} -> remote_default
+            _other -> nil
+          end)
+
+        if remote_default do
+          Map.put(acc, name, value)
+        else
+          acc
+        end
       end)
 
     supports_intrinsic = supported_services.intrinsic
@@ -1408,7 +1425,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
             {name, init_fun}, acc -> Map.put_new_lazy(acc, name, init_fun)
           end)
         else
-          properties
+          Map.merge(unquote(Macro.escape(remote_default_properties)), properties)
         end
       end
 
@@ -2334,6 +2351,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
     cov = Keyword.get(opts, :cov, false)
     intrinsic = Keyword.get(opts, :intrinsic, false)
     default = Keyword.get(opts, :default, nil)
+    remote_default = Keyword.get(opts, :remote_default, false)
     implicit_relationship = Keyword.get(opts, :implicit_relationship, nil)
     annotations = List.flatten(Keyword.get_values(opts, :annotation))
 
@@ -2459,6 +2477,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
       cov: cov,
       intrinsic: intrinsic,
       default: default,
+      remote_default: remote_default,
       implicit_relationship: implicit_relationship,
       type_validator: type_validator,
       validator_fun: validator_fun,

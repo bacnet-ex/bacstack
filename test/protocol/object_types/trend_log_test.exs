@@ -116,6 +116,32 @@ defmodule BACnet.Test.Protocol.ObjectTypes.TrendLogTest do
              )
   end
 
+  test "verify create/4 adds Log_Buffer for remote objects" do
+    assert {:ok, %TrendLog{log_buffer: []}} =
+             TrendLog.create(
+               1,
+               "TEST",
+               %{
+                 align_intervals: false,
+                 interval_offset: 0,
+                 buffer_size: 100,
+                 enable: false,
+                 log_device_object_property: ObjectsMacro.get_default_dev_object_ref(),
+                 log_interval: 0,
+                 logging_type: :triggered,
+                 event_state: :normal,
+                 record_count: 0,
+                 total_record_count: 0,
+                 stop_when_full: false,
+                 start_time: ObjectsMacro.get_default_bacnet_datetime(),
+                 stop_time: ObjectsMacro.get_default_bacnet_datetime(),
+                 status_flags:
+                   BACnet.Protocol.StatusFlags.from_bitstring({false, false, false, false})
+               },
+               remote_object: 1
+             )
+  end
+
   test "verify property_writable?/2 for log_interval and cov is true" do
     {:ok, obj} =
       TrendLog.create(1, "TEST", %{

@@ -218,9 +218,11 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLog do
       validator_fun: &(&1 >= 1 and &1 <= 4_294_967_295)
     )
 
+    # Log_Buffer property can only be read through Read-Range service
     field(:log_buffer, [LogRecord.t()],
       required: true,
       default: [],
+      remote_default: true,
       validator_fun:
         &(Enum.count_until(&1, fn _any -> true end, &2[:buffer_size] + 1) <= &2[:buffer_size])
     )
