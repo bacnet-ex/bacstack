@@ -162,6 +162,7 @@ defmodule BACstack.MixProject do
           BACnet.Protocol,
           BACnet.Protocol.ApplicationTags,
           BACnet.Protocol.ApplicationTags.Encoding,
+          BACnet.Protocol.BACnetURI,
           BACnet.Protocol.Constants,
           BACnet.Protocol.IncompleteAPDU,
           BACnet.Protocol.NameValue,

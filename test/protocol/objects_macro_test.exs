@@ -2264,4 +2264,11 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
     assert {:error, {:value_failed_property_validation, :profile_location}} =
              unquote(mod_name_minimal_stub).create(1, "TEST", %{profile_location: url})
   end
+
+  test "verify profile_location property validator_fun rejects non BACnet URI" do
+    url = "bacnet://1140/124445,5/"
+
+    assert {:error, {:value_failed_property_validation, :profile_location}} =
+             unquote(mod_name_minimal_stub).create(1, "TEST", %{profile_location: url})
+  end
 end

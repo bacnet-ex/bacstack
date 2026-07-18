@@ -169,7 +169,9 @@ defmodule BACnet.Protocol.ObjectIdentifier do
   """
   @spec valid?(t()) :: boolean()
   def valid?(%__MODULE__{} = t) do
-    ((is_integer(t.type) and t.type >= 0) or Constants.has_by_name(:object_type, t.type)) and
+    ((is_integer(t.type) and t.type >= 0 and
+        t.type <= Constants.macro_by_name(:asn1, :max_object_type)) or
+       Constants.has_by_name(:object_type, t.type)) and
       is_integer(t.instance) and t.instance >= 0 and
       t.instance <= Constants.macro_by_name(:asn1, :max_instance_and_property_id)
   end

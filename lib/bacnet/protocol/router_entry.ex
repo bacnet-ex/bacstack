@@ -53,6 +53,49 @@ defmodule BACnet.Protocol.RouterEntry do
   defstruct @fields
 
   @doc """
+  Encodes a BACnetRouterEntry into application tags encoding.
+  """
+  @spec encode(t(), Keyword.t()) ::
+          {:ok, ApplicationTags.encoding_list()} | {:error, term()}
+  def encode(%__MODULE__{} = entry, _opts \\ []) do
+    with true <- entry.network_number >= 0 and entry.network_number <= 65_535,
+         true <- is_binary(entry.mac_address),
+         {:ok, status_val} <- status_to_int(entry.status),
+         {:ok, net_tag} <-
+           ApplicationTags.create_tag_encoding(0, :unsigned_integer, entry.network_number),
+         {:ok, mac_tag} <-
+           ApplicationTags.create_tag_encoding(1, :octet_string, entry.mac_address),
+         {:ok, status_tag} <-
+           ApplicationTags.create_tag_encoding(2, :enumerated, status_val) do
+      tags = [net_tag, mac_tag, status_tag]
+
+      tags =
+        case entry.performance_index do
+          nil ->
+            tags
+
+          idx when is_integer(idx) and idx >= 0 and idx <= 255 ->
+            case ApplicationTags.create_tag_encoding(3, :unsigned_integer, idx) do
+              # credo:disable-for-next-line Credo.Check.Refactor.AppendSingleItem
+              {:ok, perf_tag} -> tags ++ [perf_tag]
+              err -> err
+            end
+
+          _other ->
+            {:error, :invalid_performance_index}
+        end
+
+      case tags do
+        list when is_list(list) -> {:ok, list}
+        {:error, _err} = err -> err
+      end
+    else
+      {:error, _err} = err -> err
+      _else -> {:error, :invalid_data}
+    end
+  end
+
+  @doc """
   Parses a BACnetRouterEntry from application tags encoding.
   """
   @spec parse(ApplicationTags.encoding_list()) ::
@@ -96,49 +139,6 @@ defmodule BACnet.Protocol.RouterEntry do
     else
       {:error, _err} = err -> err
       _else -> {:error, :invalid_tags}
-    end
-  end
-
-  @doc """
-  Encodes a BACnetRouterEntry into application tags encoding.
-  """
-  @spec encode(t(), Keyword.t()) ::
-          {:ok, ApplicationTags.encoding_list()} | {:error, term()}
-  def encode(%__MODULE__{} = entry, _opts \\ []) do
-    with true <- entry.network_number >= 0 and entry.network_number <= 65_535,
-         true <- is_binary(entry.mac_address),
-         {:ok, status_val} <- status_to_int(entry.status),
-         {:ok, net_tag} <-
-           ApplicationTags.create_tag_encoding(0, :unsigned_integer, entry.network_number),
-         {:ok, mac_tag} <-
-           ApplicationTags.create_tag_encoding(1, :octet_string, entry.mac_address),
-         {:ok, status_tag} <-
-           ApplicationTags.create_tag_encoding(2, :enumerated, status_val) do
-      tags = [net_tag, mac_tag, status_tag]
-
-      tags =
-        case entry.performance_index do
-          nil ->
-            tags
-
-          idx when is_integer(idx) and idx >= 0 and idx <= 255 ->
-            case ApplicationTags.create_tag_encoding(3, :unsigned_integer, idx) do
-              # credo:disable-for-next-line Credo.Check.Refactor.AppendSingleItem
-              {:ok, perf_tag} -> tags ++ [perf_tag]
-              err -> err
-            end
-
-          _other ->
-            {:error, :invalid_performance_index}
-        end
-
-      case tags do
-        list when is_list(list) -> {:ok, list}
-        {:error, _err} = err -> err
-      end
-    else
-      {:error, _err} = err -> err
-      _else -> {:error, :invalid_data}
     end
   end
 

@@ -32,6 +32,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
   alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.BACnetTime
   alias BACnet.Protocol.BACnetTimestamp
+  alias BACnet.Protocol.BACnetURI
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.DeviceObjectPropertyRef
   alias BACnet.Protocol.EventMessageTexts
@@ -63,8 +64,11 @@ defmodule BACnet.Protocol.ObjectsMacro do
                           field(:profile_location, String.t(),
                             validator_fun: fn str ->
                               case URI.new(str) do
+                                {:ok, %URI{scheme: "bacnet"} = _uri} ->
+                                  BACnetURI.valid_str?(str)
+
                                 {:ok, %URI{scheme: scheme} = uri}
-                                when scheme in ["http", "https", "bacnet"] ->
+                                when scheme in ["http", "https"] ->
                                   true
 
                                 _other ->

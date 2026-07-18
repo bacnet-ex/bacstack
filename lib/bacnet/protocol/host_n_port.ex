@@ -51,6 +51,18 @@ defmodule BACnet.Protocol.HostNPort do
   defstruct @fields
 
   @doc """
+  Encodes a BACnetHostNPort into application tags encoding (list of tags).
+  """
+  @spec encode(t(), Keyword.t()) ::
+          {:ok, ApplicationTags.encoding_list()} | {:error, term()}
+  def encode(%__MODULE__{} = hnp, opts \\ []) do
+    with {:ok, host_tag} <- encode_host(hnp.host, opts),
+         {:ok, port_tag} <- ApplicationTags.create_tag_encoding(1, :unsigned_integer, hnp.port) do
+      {:ok, [{:constructed, {0, host_tag, 0}}, port_tag]}
+    end
+  end
+
+  @doc """
   Parses a BACnetHostNPort from application tags encoding.
   """
   @spec parse(ApplicationTags.encoding_list()) ::
@@ -77,18 +89,6 @@ defmodule BACnet.Protocol.HostNPort do
 
       _tags ->
         {:error, :invalid_tags}
-    end
-  end
-
-  @doc """
-  Encodes a BACnetHostNPort into application tags encoding (list of tags).
-  """
-  @spec encode(t(), Keyword.t()) ::
-          {:ok, ApplicationTags.encoding_list()} | {:error, term()}
-  def encode(%__MODULE__{} = hnp, opts \\ []) do
-    with {:ok, host_tag} <- encode_host(hnp.host, opts),
-         {:ok, port_tag} <- ApplicationTags.create_tag_encoding(1, :unsigned_integer, hnp.port) do
-      {:ok, [{:constructed, {0, host_tag, 0}}, port_tag]}
     end
   end
 
