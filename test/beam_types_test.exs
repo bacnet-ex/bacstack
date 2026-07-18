@@ -27,7 +27,7 @@ defmodule BACnet.BeamTypesTest do
     refute BeamTypes.check_type(nil, {true, false})
     refute BeamTypes.check_type(nil, BACnetArray.new())
     refute BeamTypes.check_type(nil, BACnetArray.new(7))
-    refute BeamTypes.check_type(nil, Constants.macro_assert_name(:asn1, :max_object))
+    refute BeamTypes.check_type(nil, Constants.macro_assert_name(:asn1, :max_object_type))
     refute BeamTypes.check_type(nil, [])
     refute BeamTypes.check_type(nil, Date.utc_today())
   end
@@ -46,7 +46,7 @@ defmodule BACnet.BeamTypesTest do
     assert BeamTypes.check_type(:any, {true, false})
     assert BeamTypes.check_type(:any, BACnetArray.new())
     assert BeamTypes.check_type(:any, BACnetArray.new(7))
-    assert BeamTypes.check_type(:any, Constants.macro_assert_name(:asn1, :max_object))
+    assert BeamTypes.check_type(:any, Constants.macro_assert_name(:asn1, :max_object_type))
     assert BeamTypes.check_type(:any, [])
     assert BeamTypes.check_type(:any, Date.utc_today())
   end
@@ -65,7 +65,7 @@ defmodule BACnet.BeamTypesTest do
     refute BeamTypes.check_type(:boolean, {true, false})
     refute BeamTypes.check_type(:boolean, BACnetArray.new())
     refute BeamTypes.check_type(:boolean, BACnetArray.new(7))
-    refute BeamTypes.check_type(:boolean, Constants.macro_assert_name(:asn1, :max_object))
+    refute BeamTypes.check_type(:boolean, Constants.macro_assert_name(:asn1, :max_object_type))
     refute BeamTypes.check_type(:boolean, [])
     refute BeamTypes.check_type(:boolean, Date.utc_today())
   end
@@ -86,7 +86,7 @@ defmodule BACnet.BeamTypesTest do
     refute BeamTypes.check_type(:string, {true, false})
     refute BeamTypes.check_type(:string, BACnetArray.new())
     refute BeamTypes.check_type(:string, BACnetArray.new(7))
-    refute BeamTypes.check_type(:string, Constants.macro_assert_name(:asn1, :max_object))
+    refute BeamTypes.check_type(:string, Constants.macro_assert_name(:asn1, :max_object_type))
     refute BeamTypes.check_type(:string, [])
     refute BeamTypes.check_type(:string, Date.utc_today())
   end
@@ -107,7 +107,12 @@ defmodule BACnet.BeamTypesTest do
     refute BeamTypes.check_type(:octet_string, {true, false})
     refute BeamTypes.check_type(:octet_string, BACnetArray.new())
     refute BeamTypes.check_type(:octet_string, BACnetArray.new(7))
-    refute BeamTypes.check_type(:octet_string, Constants.macro_assert_name(:asn1, :max_object))
+
+    refute BeamTypes.check_type(
+             :octet_string,
+             Constants.macro_assert_name(:asn1, :max_object_type)
+           )
+
     refute BeamTypes.check_type(:octet_string, [])
     refute BeamTypes.check_type(:octet_string, Date.utc_today())
   end
@@ -129,7 +134,12 @@ defmodule BACnet.BeamTypesTest do
     refute BeamTypes.check_type(:signed_integer, {true, false})
     refute BeamTypes.check_type(:signed_integer, BACnetArray.new())
     refute BeamTypes.check_type(:signed_integer, BACnetArray.new(7))
-    refute BeamTypes.check_type(:signed_integer, Constants.macro_assert_name(:asn1, :max_object))
+
+    refute BeamTypes.check_type(
+             :signed_integer,
+             Constants.macro_assert_name(:asn1, :max_object_type)
+           )
+
     refute BeamTypes.check_type(:signed_integer, [])
     refute BeamTypes.check_type(:signed_integer, Date.utc_today())
   end
@@ -151,7 +161,12 @@ defmodule BACnet.BeamTypesTest do
     refute BeamTypes.check_type(:unsigned_integer, {true, false})
     refute BeamTypes.check_type(:unsigned_integer, BACnetArray.new())
     refute BeamTypes.check_type(:unsigned_integer, BACnetArray.new(7))
-    refute BeamTypes.check_type(:unsigned_integer, Constants.assert_name!(:asn1, :max_object))
+
+    refute BeamTypes.check_type(
+             :unsigned_integer,
+             Constants.assert_name!(:asn1, :max_object_type)
+           )
+
     refute BeamTypes.check_type(:unsigned_integer, [])
     refute BeamTypes.check_type(:unsigned_integer, Date.utc_today())
   end
@@ -172,7 +187,7 @@ defmodule BACnet.BeamTypesTest do
     refute BeamTypes.check_type(:real, {true, false})
     refute BeamTypes.check_type(:real, BACnetArray.new())
     refute BeamTypes.check_type(:real, BACnetArray.new(7))
-    refute BeamTypes.check_type(:real, Constants.assert_name!(:asn1, :max_object))
+    refute BeamTypes.check_type(:real, Constants.assert_name!(:asn1, :max_object_type))
     refute BeamTypes.check_type(:real, [])
     refute BeamTypes.check_type(:real, Date.utc_today())
   end
@@ -193,7 +208,7 @@ defmodule BACnet.BeamTypesTest do
     refute BeamTypes.check_type(:double, {true, false})
     refute BeamTypes.check_type(:double, BACnetArray.new())
     refute BeamTypes.check_type(:double, BACnetArray.new(7))
-    refute BeamTypes.check_type(:double, Constants.assert_name!(:asn1, :max_object))
+    refute BeamTypes.check_type(:double, Constants.assert_name!(:asn1, :max_object_type))
     refute BeamTypes.check_type(:double, [])
     refute BeamTypes.check_type(:double, Date.utc_today())
   end
@@ -216,7 +231,7 @@ defmodule BACnet.BeamTypesTest do
     refute BeamTypes.check_type(:bitstring, {1, false})
     refute BeamTypes.check_type(:bitstring, BACnetArray.new())
     refute BeamTypes.check_type(:bitstring, BACnetArray.new(7))
-    refute BeamTypes.check_type(:bitstring, Constants.assert_name!(:asn1, :max_object))
+    refute BeamTypes.check_type(:bitstring, Constants.assert_name!(:asn1, :max_object_type))
     refute BeamTypes.check_type(:bitstring, [])
     refute BeamTypes.check_type(:bitstring, Date.utc_today())
   end
@@ -250,7 +265,11 @@ defmodule BACnet.BeamTypesTest do
     assert BeamTypes.check_type({:array, :boolean}, BACnetArray.from_list([true, false], true))
     refute BeamTypes.check_type({:array, :boolean}, BACnetArray.from_list([1, false], true))
 
-    refute BeamTypes.check_type({:array, :boolean}, Constants.assert_name!(:asn1, :max_object))
+    refute BeamTypes.check_type(
+             {:array, :boolean},
+             Constants.assert_name!(:asn1, :max_object_type)
+           )
+
     refute BeamTypes.check_type({:array, :boolean}, [])
     refute BeamTypes.check_type({:array, :boolean}, Date.utc_today())
   end
@@ -300,7 +319,11 @@ defmodule BACnet.BeamTypesTest do
     refute BeamTypes.check_type({:array, :boolean, 7}, BACnetArray.from_list([true, false], true))
     refute BeamTypes.check_type({:array, :boolean, 7}, BACnetArray.from_list([1, false], true))
 
-    refute BeamTypes.check_type({:array, :boolean}, Constants.assert_name!(:asn1, :max_object))
+    refute BeamTypes.check_type(
+             {:array, :boolean},
+             Constants.assert_name!(:asn1, :max_object_type)
+           )
+
     refute BeamTypes.check_type({:array, :boolean}, [])
     refute BeamTypes.check_type({:array, :boolean}, Date.utc_today())
 
@@ -328,13 +351,18 @@ defmodule BACnet.BeamTypesTest do
     refute BeamTypes.check_type({:constant, :asn1}, {true, false})
     refute BeamTypes.check_type({:constant, :asn1}, BACnetArray.new())
     refute BeamTypes.check_type({:constant, :asn1}, BACnetArray.new(7))
-    assert BeamTypes.check_type({:constant, :asn1}, Constants.assert_name!(:asn1, :max_object))
+
+    assert BeamTypes.check_type(
+             {:constant, :asn1},
+             Constants.assert_name!(:asn1, :max_object_type)
+           )
+
     refute BeamTypes.check_type({:constant, :asn1}, :nano)
     refute BeamTypes.check_type({:constant, :asn1}, [])
     refute BeamTypes.check_type({:constant, :asn1}, Date.utc_today())
 
     assert_raise ArgumentError, fn ->
-      BeamTypes.check_type({:constant, 1}, Constants.assert_name!(:asn1, :max_object))
+      BeamTypes.check_type({:constant, 1}, Constants.assert_name!(:asn1, :max_object_type))
     end
   end
 
@@ -359,7 +387,7 @@ defmodule BACnet.BeamTypesTest do
 
     refute BeamTypes.check_type(
              {:in_list, [nil, :string]},
-             Constants.assert_name!(:asn1, :max_object)
+             Constants.assert_name!(:asn1, :max_object_type)
            )
 
     refute BeamTypes.check_type({:in_list, [nil, :string]}, [])
@@ -391,7 +419,12 @@ defmodule BACnet.BeamTypesTest do
     refute BeamTypes.check_type({:in_range, 3, 7}, {true, false})
     refute BeamTypes.check_type({:in_range, 3, 7}, BACnetArray.new())
     refute BeamTypes.check_type({:in_range, 3, 7}, BACnetArray.new(7))
-    refute BeamTypes.check_type({:in_range, 3, 7}, Constants.assert_name!(:asn1, :max_object))
+
+    refute BeamTypes.check_type(
+             {:in_range, 3, 7},
+             Constants.assert_name!(:asn1, :max_object_type)
+           )
+
     refute BeamTypes.check_type({:in_range, 3, 7}, [])
     refute BeamTypes.check_type({:in_range, 3, 7}, Date.utc_today())
 
@@ -424,7 +457,7 @@ defmodule BACnet.BeamTypesTest do
 
     refute BeamTypes.check_type(
              {:list, :signed_integer},
-             Constants.assert_name!(:asn1, :max_object)
+             Constants.assert_name!(:asn1, :max_object_type)
            )
 
     assert BeamTypes.check_type({:list, :signed_integer}, [])
@@ -466,7 +499,7 @@ defmodule BACnet.BeamTypesTest do
 
     refute BeamTypes.check_type(
              {:tuple, [:boolean, :unsigned_integer]},
-             Constants.assert_name!(:asn1, :max_object)
+             Constants.assert_name!(:asn1, :max_object_type)
            )
 
     refute BeamTypes.check_type({:tuple, [:boolean, :unsigned_integer]}, [])
@@ -500,7 +533,7 @@ defmodule BACnet.BeamTypesTest do
 
     refute BeamTypes.check_type(
              {:struct, BeamTypesSupport.StructNoValidator},
-             Constants.assert_name!(:asn1, :max_object)
+             Constants.assert_name!(:asn1, :max_object_type)
            )
 
     refute BeamTypes.check_type({:struct, BeamTypesSupport.StructNoValidator}, [])
@@ -538,7 +571,7 @@ defmodule BACnet.BeamTypesTest do
 
     refute BeamTypes.check_type(
              {:struct, BeamTypesSupport.StructValidator},
-             Constants.assert_name!(:asn1, :max_object)
+             Constants.assert_name!(:asn1, :max_object_type)
            )
 
     refute BeamTypes.check_type({:struct, BeamTypesSupport.StructValidator}, [])
@@ -586,7 +619,7 @@ defmodule BACnet.BeamTypesTest do
 
     refute BeamTypes.check_type(
              {:type_list, [nil, :string]},
-             Constants.assert_name!(:asn1, :max_object)
+             Constants.assert_name!(:asn1, :max_object_type)
            )
 
     refute BeamTypes.check_type({:type_list, [nil, :string]}, [])
@@ -621,7 +654,7 @@ defmodule BACnet.BeamTypesTest do
 
     refute BeamTypes.check_type(
              {:with_validator, :signed_integer, fun},
-             Constants.assert_name!(:asn1, :max_object)
+             Constants.assert_name!(:asn1, :max_object_type)
            )
 
     refute BeamTypes.check_type({:with_validator, :signed_integer, fun}, [])
@@ -660,7 +693,7 @@ defmodule BACnet.BeamTypesTest do
 
     refute BeamTypes.check_type(
              {:with_validator, :signed_integer, fun},
-             Constants.assert_name!(:asn1, :max_object)
+             Constants.assert_name!(:asn1, :max_object_type)
            )
 
     refute BeamTypes.check_type({:with_validator, :signed_integer, fun}, [])

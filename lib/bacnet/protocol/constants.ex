@@ -54,13 +54,12 @@ defmodule BACnet.Protocol.Constants do
 
   # BACnet ASN.1
   @constdoc false
-  defconst(:asn1, :max_object, 0x3FF)
+  defconst(:asn1, :max_object_type, 0x3FF)
   defconst(:asn1, :max_instance_and_property_id, 0x3FFFFF)
   defconst(:asn1, :instance_bits, 22)
   defconst(:asn1, :max_bitstring_bytes, 15)
   defconst(:asn1, :array_all, 0xFFFFFFFF)
   defconst(:asn1, :max_application_tag, 16)
-  defconst(:asn1, :max_object_type, 1024)
 
   @constdoc """
   When creating BACnet objects, the designated revision can
