@@ -34,6 +34,14 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BasicTest do
           unquote(appendum_code)
         end
       end
+
+      test "basic object test assert all optional common properties exist" do
+        properties = unquote(module).get_all_properties()
+
+        assert :profile_name in properties
+        assert :profile_location in properties
+        assert :tags in properties
+      end
     end
   end
 end

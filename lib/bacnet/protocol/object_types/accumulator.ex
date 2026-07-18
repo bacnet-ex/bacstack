@@ -307,8 +307,6 @@ defmodule BACnet.Protocol.ObjectTypes.Accumulator do
     field(:logging_record, [AccumulatorRecord.t()], readonly: true)
     field(:logging_object, ObjectIdentifier.t())
 
-    field(:profile_name, String.t())
-
     # Intrinsic Reporting
     field(:high_limit, non_neg_integer(), intrinsic: true, default: 0)
     field(:low_limit, non_neg_integer(), intrinsic: true, default: 0)

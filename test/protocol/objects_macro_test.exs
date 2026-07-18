@@ -787,6 +787,9 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
              :limit_enable,
              :notification_class,
              :notify_type,
+             :profile_location,
+             :profile_name,
+             :tags,
              :time_delay,
              :time_delay_normal
            ] = Enum.sort(unquote(mod_name_minimal_stub).get_optional_properties())
@@ -1004,6 +1007,9 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
              {:object_name, []},
              {:out_of_service, [{:test, true}, {:test2, false}]},
              {:present_value, []},
+             {:profile_location, [revision: 19]},
+             {:profile_name, []},
+             {:tags, [revision: 19]},
              {:time_delay, []},
              {:time_delay_normal, []}
            ] = Enum.sort_by(unquote(mod_name_annotations_stub).get_annotations(), &elem(&1, 0))
@@ -1134,10 +1140,10 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
   end
 
   test "verify add_property/1 of defined bacnet object fails for unknown property" do
-    assert {:error, {:unknown_property, :profile_name}} =
+    assert {:error, {:unknown_property, :window_interval}} =
              unquote(mod_name_minimal_stub).add_property(
                unquote(Macro.escape(test_obj)),
-               :profile_name,
+               :window_interval,
                "hello"
              )
   end
@@ -2222,5 +2228,40 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
                remote_object: 1,
                skip_property_validation_remote_object: :value
              )
+  end
+
+  test "verify profile_location property validator_fun accepts http URI" do
+    url = "http://github.com/bacnet-ex/bacstack.git"
+
+    assert {:ok, %{profile_location: ^url}} =
+             unquote(mod_name_minimal_stub).create(1, "TEST", %{profile_location: url})
+  end
+
+  test "verify profile_location property validator_fun accepts https URI" do
+    url = "https://github.com/bacnet-ex/bacstack.git"
+
+    assert {:ok, %{profile_location: ^url}} =
+             unquote(mod_name_minimal_stub).create(1, "TEST", %{profile_location: url})
+  end
+
+  test "verify profile_location property validator_fun accepts bacnet URI" do
+    url = "bacnet://1140/1,5"
+
+    assert {:ok, %{profile_location: ^url}} =
+             unquote(mod_name_minimal_stub).create(1, "TEST", %{profile_location: url})
+  end
+
+  test "verify profile_location property validator_fun rejects non valid scheme" do
+    url = "git://github.com/bacnet-ex/bacstack.git"
+
+    assert {:error, {:value_failed_property_validation, :profile_location}} =
+             unquote(mod_name_minimal_stub).create(1, "TEST", %{profile_location: url})
+  end
+
+  test "verify profile_location property validator_fun rejects non-URI" do
+    url = "bacnet-ex/bacstack"
+
+    assert {:error, {:value_failed_property_validation, :profile_location}} =
+             unquote(mod_name_minimal_stub).create(1, "TEST", %{profile_location: url})
   end
 end

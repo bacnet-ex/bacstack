@@ -213,7 +213,5 @@ defmodule BACnet.Protocol.ObjectTypes.Averaging do
 
     field(:window_interval, non_neg_integer(), required: true)
     field(:window_samples, non_neg_integer(), required: true, default: 0)
-
-    field(:profile_name, String.t())
   end
 end

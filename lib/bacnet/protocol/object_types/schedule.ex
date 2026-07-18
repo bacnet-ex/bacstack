@@ -224,7 +224,6 @@ defmodule BACnet.Protocol.ObjectTypes.Schedule do
     )
 
     field(:priority_for_writing, 1..16, required: true, default: 16)
-    field(:profile_name, String.t())
   end
 
   # Override add_defaults/2, to assert weeky_schedule or exception_schedule is present

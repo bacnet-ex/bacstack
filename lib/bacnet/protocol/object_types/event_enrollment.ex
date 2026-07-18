@@ -209,7 +209,5 @@ defmodule BACnet.Protocol.ObjectTypes.EventEnrollment do
 
     field(:fault_type, Constants.fault_type(), readonly: true)
     field(:fault_parameters, FaultParameters.fault_parameter())
-
-    field(:profile_name, String.t())
   end
 end

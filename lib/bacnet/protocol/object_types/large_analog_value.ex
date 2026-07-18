@@ -143,7 +143,6 @@ defmodule BACnet.Protocol.ObjectTypes.LargeAnalogValue do
 
     field(:max_present_value, float(), bac_type: :double)
     field(:min_present_value, float(), bac_type: :double)
-    field(:profile_name, String.t())
 
     # COV Reporting
     field(:cov_increment, float(), cov: true, default: 0.1, bac_type: :double)

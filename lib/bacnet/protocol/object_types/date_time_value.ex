@@ -117,6 +117,5 @@ defmodule BACnet.Protocol.ObjectTypes.DateTimeValue do
     field(:is_utc, boolean())
 
     field(:event_state, Constants.event_state())
-    field(:profile_name, String.t())
   end
 end

@@ -151,7 +151,6 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryValue do
     )
 
     field(:reliability_evaluation_inhibit, boolean())
-    field(:profile_name, String.t())
 
     field(:active_text, String.t(), default: "Active", implicit_relationship: :inactive_text)
     field(:inactive_text, String.t(), default: "Inactive")

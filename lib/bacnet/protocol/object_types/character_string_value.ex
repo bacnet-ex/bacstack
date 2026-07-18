@@ -131,8 +131,6 @@ defmodule BACnet.Protocol.ObjectTypes.CharacterStringValue do
 
     field(:fault_values, BACnetArray.t(String.t() | nil), default: BACnetArray.new())
 
-    field(:profile_name, String.t())
-
     # Intrinsic Reporting
     field(:alarm_values, BACnetArray.t(String.t() | nil),
       default: BACnetArray.new(),

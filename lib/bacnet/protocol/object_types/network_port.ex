@@ -101,7 +101,6 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.ForeignDeviceTableEntry
   alias BACnet.Protocol.HostNPort
-  alias BACnet.Protocol.NameValue
   alias BACnet.Protocol.ObjectsMacro
   alias BACnet.Protocol.RouterEntry
   alias BACnet.Protocol.VmacEntry
@@ -568,11 +567,6 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
     field(:virtual_mac_address_table, [VmacEntry.t()])
 
     field(:routing_table, [RouterEntry.t()], readonly: true)
-
-    # Common
-    field(:profile_name, String.t())
-    field(:profile_location, String.t())
-    field(:tags, BACnetArray.t(NameValue.t()), annotation: [revision: 19])
   end
 
   # Override property_writable?/2, to be able to override behaviour

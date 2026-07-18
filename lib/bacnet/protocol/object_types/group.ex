@@ -117,6 +117,5 @@ defmodule BACnet.Protocol.ObjectTypes.Group do
     )
 
     field(:present_value, [ReadAccessResult.t()], required: true, readonly: true, default: [])
-    field(:profile_name, String.t())
   end
 end

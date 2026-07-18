@@ -151,8 +151,6 @@ defmodule BACnet.Protocol.ObjectTypes.File do
           Constants.macro_assert_name(:file_access_method, :record_access)
       end
     )
-
-    field(:profile_name, String.t())
   end
 
   # Override property_writable?/2, to be able to override :file_size behaviour

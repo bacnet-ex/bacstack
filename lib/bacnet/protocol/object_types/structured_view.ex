@@ -112,6 +112,5 @@ defmodule BACnet.Protocol.ObjectTypes.StructuredView do
     field(:node_subtype, String.t())
     field(:subordinate_list, [DeviceObjectRef.t()], required: true, default: [])
     field(:subordinate_annotations, [String.t()])
-    field(:profile_name, String.t())
   end
 end

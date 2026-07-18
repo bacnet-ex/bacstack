@@ -256,7 +256,6 @@ defmodule BACnet.Protocol.ObjectTypes.AnalogInput do
     field(:max_present_value, float())
     field(:min_present_value, float())
     field(:update_interval, non_neg_integer())
-    field(:profile_name, String.t())
 
     # COV Reporting
     field(:cov_increment, float(), cov: true, default: 0.1)

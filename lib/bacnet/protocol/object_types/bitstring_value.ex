@@ -146,8 +146,6 @@ defmodule BACnet.Protocol.ObjectTypes.BitstringValue do
       validator_fun: &(BACnetArray.size(&1) == tuple_size(&2[:present_value]))
     )
 
-    field(:profile_name, String.t())
-
     # Intrinsic Reporting
     field(:alarm_values, [tuple()],
       intrinsic: true,

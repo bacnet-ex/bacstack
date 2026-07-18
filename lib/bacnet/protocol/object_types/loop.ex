@@ -213,7 +213,6 @@ defmodule BACnet.Protocol.ObjectTypes.Loop do
     field(:setpoint, float(), required: true, default: 0.0)
 
     field(:update_interval, non_neg_integer())
-    field(:profile_name, String.t())
 
     field(:proportional_constant, float(), implicit_relationship: :proportional_constant_units)
     field(:proportional_constant_units, Constants.engineering_unit())

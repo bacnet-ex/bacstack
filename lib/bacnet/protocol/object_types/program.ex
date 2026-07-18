@@ -145,7 +145,6 @@ defmodule BACnet.Protocol.ObjectTypes.Program do
     )
 
     field(:reliability_evaluation_inhibit, boolean())
-    field(:profile_name, String.t())
   end
 
   defp inhibit_object_check(obj) do

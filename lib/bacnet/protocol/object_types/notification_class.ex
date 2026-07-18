@@ -114,7 +114,5 @@ defmodule BACnet.Protocol.ObjectTypes.NotificationClass do
     )
 
     field(:recipient_list, [Destination.t()], required: true, default: [])
-
-    field(:profile_name, String.t())
   end
 end

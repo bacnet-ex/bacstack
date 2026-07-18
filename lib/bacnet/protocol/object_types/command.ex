@@ -130,7 +130,5 @@ defmodule BACnet.Protocol.ObjectTypes.Command do
     field(:action_text, BACnetArray.t(String.t()),
       validator_fun: &(BACnetArray.size(&1) == BACnetArray.size(&2[:action]))
     )
-
-    field(:profile_name, String.t())
   end
 end

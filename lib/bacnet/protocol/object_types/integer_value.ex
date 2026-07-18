@@ -143,7 +143,6 @@ defmodule BACnet.Protocol.ObjectTypes.IntegerValue do
 
     field(:max_present_value, integer())
     field(:min_present_value, integer())
-    field(:profile_name, String.t())
 
     # COV Reporting
     field(:cov_increment, non_neg_integer(), cov: true, default: 0)

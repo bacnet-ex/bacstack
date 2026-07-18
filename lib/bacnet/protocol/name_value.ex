@@ -6,9 +6,17 @@ defmodule BACnet.Protocol.NameValue do
 
   Each entry associates a name (CharacterString) with an optional value.
   When the value is absent the tag is considered a "semantic tag".
+  To allow tag names to be concatenated,
+  tag names shall not contain semicolon characters (ASHRAE 135-2016 Y.1.4).
+
+  Simple tag names, e.g., `exhaust`, are reserved for definition by ASHRAE.
+  Tag names defined by organizations other than ASHRAE shall use a prefix to ensure uniqueness.
+  This prefix shall be either:
+  1) A reversed registered DNS name, followed by a period character.  e.g., `com.example.`, or
+  2) A BACnet vendor identifier in decimal, followed by a dash character. e.g., `555-`
 
   The value, when present, is limited to any primitive BACnet datatype
-  or BACnetDateTime.
+  or `BACnet.Protocol.BACnetDateTime`.
 
   ### ASN.1 (ASHRAE 135-2016)
 
@@ -109,12 +117,15 @@ defmodule BACnet.Protocol.NameValue do
   @spec valid?(t()) :: boolean()
   def valid?(%__MODULE__{name: name, value: value} = _t)
       when is_binary(name) and byte_size(name) > 0 do
-    case value do
-      nil -> true
-      %BACnetDateTime{} -> true
-      %Encoding{encoding: :primitive} -> true
-      _other -> false
-    end
+    # ASHRAE Y.1.4 specifies:
+    # "To allow tag names to be concatenated, tag names shall not contain semicolon characters."
+    not String.contains?(name, ";") and
+      case value do
+        nil -> true
+        %BACnetDateTime{} -> true
+        %Encoding{encoding: :primitive} -> true
+        _other -> false
+      end
   end
 
   def valid?(%__MODULE__{} = _tag), do: false

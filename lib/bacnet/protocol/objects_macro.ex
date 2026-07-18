@@ -27,6 +27,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
 
   alias BACnet.BeamTypes
   alias BACnet.Protocol.ApplicationTags.Encoding
+  alias BACnet.Protocol.BACnetArray
   alias BACnet.Protocol.BACnetDate
   alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.BACnetTime
@@ -35,6 +36,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
   alias BACnet.Protocol.DeviceObjectPropertyRef
   alias BACnet.Protocol.EventMessageTexts
   alias BACnet.Protocol.EventTransitionBits
+  alias BACnet.Protocol.NameValue
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.ObjectPropertyRef
   alias BACnet.Protocol.PriorityArray
@@ -44,6 +46,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
   # Allow to store the BACnet object definition AST using the application env
   @bacobj_store_ast Application.compile_env(:bacstack, :store_bacobj_ast, false)
 
+  # Required properties for all object types
   @required_struct_ast (quote do
                           field(:object_instance, non_neg_integer(),
                             required: true,
@@ -51,6 +54,27 @@ defmodule BACnet.Protocol.ObjectsMacro do
                           )
 
                           field(:object_name, String.t(), required: true, readonly: true)
+                        end)
+
+  # Optional properties for all object types
+  @optional_struct_ast (quote do
+                          field(:profile_name, String.t())
+
+                          field(:profile_location, String.t(),
+                            validator_fun: fn str ->
+                              case URI.new(str) do
+                                {:ok, %URI{scheme: scheme} = uri}
+                                when scheme in ["http", "https", "bacnet"] ->
+                                  true
+
+                                _other ->
+                                  false
+                              end
+                            end,
+                            annotation: [revision: 19]
+                          )
+
+                          field(:tags, BACnetArray.t(NameValue.t()), annotation: [revision: 19])
                         end)
 
   @intrinsic_struct_ast (quote do
@@ -628,6 +652,11 @@ defmodule BACnet.Protocol.ObjectsMacro do
         {:__block__, _meta, fields} -> fields
       end
 
+    optional_struct_ast =
+      case @optional_struct_ast do
+        {:__block__, _meta, fields} -> fields
+      end
+
     intrins_struct_ast =
       case @intrinsic_struct_ast do
         {:__block__, _meta, fields} -> fields
@@ -652,7 +681,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
         []
       end
 
-    fields_ast = req_struct_ast ++ intrins_fields_ast ++ fields_ast
+    fields_ast = req_struct_ast ++ optional_struct_ast ++ intrins_fields_ast ++ fields_ast
 
     fields_data =
       fields_ast

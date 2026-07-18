@@ -103,6 +103,5 @@ defmodule BACnet.Protocol.ObjectTypes.Calendar do
     field(:description, String.t())
     field(:date_list, [CalendarEntry.t()], required: true, default: [])
     field(:present_value, boolean(), required: true, default: false)
-    field(:profile_name, String.t())
   end
 end

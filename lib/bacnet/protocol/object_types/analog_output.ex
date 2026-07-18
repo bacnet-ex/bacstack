@@ -235,7 +235,6 @@ defmodule BACnet.Protocol.ObjectTypes.AnalogOutput do
 
     field(:max_present_value, float())
     field(:min_present_value, float())
-    field(:profile_name, String.t())
 
     # COV Reporting
     field(:cov_increment, float(), cov: true, default: 0.1)

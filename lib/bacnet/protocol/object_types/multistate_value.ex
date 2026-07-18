@@ -164,8 +164,6 @@ defmodule BACnet.Protocol.ObjectTypes.MultistateValue do
       validator_fun: &(BACnetArray.size(&1) == (&2[:number_of_states] || -1))
     )
 
-    field(:profile_name, String.t())
-
     # Intrinsic Reporting
     field(:alarm_values, [non_neg_integer()], intrinsic: true, default: [])
   end

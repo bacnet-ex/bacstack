@@ -113,6 +113,5 @@ defmodule BACnet.Protocol.ObjectTypes.DatePatternValue do
     field(:reliability_evaluation_inhibit, boolean())
 
     field(:event_state, Constants.event_state())
-    field(:profile_name, String.t())
   end
 end

@@ -149,8 +149,6 @@ defmodule BACnet.Protocol.ObjectTypes.PulseConverter do
 
     field(:count_before_change, non_neg_integer(), required: true, readonly: true, default: 0)
 
-    field(:profile_name, String.t())
-
     # COV Reporting
     field(:cov_increment, float(), cov: true, default: 0.1)
 

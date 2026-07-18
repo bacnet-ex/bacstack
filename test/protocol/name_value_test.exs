@@ -119,4 +119,10 @@ defmodule BACnet.Protocol.NameValueTest do
     refute NameValue.valid?(%NameValue{name: "x", value: "invalid"})
     refute NameValue.valid?(%NameValue{name: "x", value: %{encoding: :constructed}})
   end
+
+  test "valid? rejects semicolon in name" do
+    # ASHRAE Y.1.4 specifies:
+    # "To allow tag names to be concatenated, tag names shall not contain semicolon characters."
+    refute NameValue.valid?(%NameValue{name: ";", value: nil})
+  end
 end

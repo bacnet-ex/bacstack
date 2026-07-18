@@ -255,7 +255,6 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLog do
     field(:reliability_evaluation_inhibit, boolean())
 
     field(:event_state, Constants.event_state(), required: true, default: :normal)
-    field(:profile_name, String.t())
 
     # Intrinsic Reporting
     field(:notification_threshold, ApplicationTags.unsigned32(),
