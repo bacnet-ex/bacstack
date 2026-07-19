@@ -1190,7 +1190,7 @@ defmodule BACnet.Stack.TrendLogger do
       log.enabled ->
         apply_log_mechanism(log, log.object, id, state)
 
-      not log.enabled and previous_log.enabled ->
+      previous_log.enabled ->
         # Remove COV subscription if remote object and COV logging
         if log.mode == @const_log_type_cov do
           apply_cov_unsub(state.opts.cov_cb, log.object.log_device_object_property, id, state)
@@ -1234,10 +1234,6 @@ defmodule BACnet.Stack.TrendLogger do
 
   @spec update_intrinsic_reporting(Log.t(), State.t()) ::
           {:event | :no_event, Log.t(), struct() | nil}
-  defp update_intrinsic_reporting(%Log{intrinsic_reporting: nil} = log, _state) do
-    {:no_event, log, nil}
-  end
-
   defp update_intrinsic_reporting(%Log{intrinsic_reporting: algo} = log, %State{} = state) do
     event =
       algo

@@ -1165,7 +1165,6 @@ defmodule BACnet.Protocol.NotificationParameters do
          ], 0}}}
     else
       false -> {:error, :invalid_params}
-      {:error, _err} = err -> err
     end
   end
 
@@ -1275,7 +1274,6 @@ defmodule BACnet.Protocol.NotificationParameters do
          ], 0}}}
     else
       false -> {:error, :invalid_params}
-      {:error, _err} = err -> err
     end
   end
 
@@ -1303,7 +1301,6 @@ defmodule BACnet.Protocol.NotificationParameters do
          ], 0}}}
     else
       false -> {:error, :invalid_params}
-      {:error, _err} = err -> err
     end
   end
 
@@ -1473,7 +1470,6 @@ defmodule BACnet.Protocol.NotificationParameters do
          ], 0}}}
     else
       false -> {:error, :invalid_params}
-      {:error, _err} = err -> err
     end
   end
 

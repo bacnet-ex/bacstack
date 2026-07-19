@@ -1630,7 +1630,7 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
       restore_preparation_time: 60,
       configuration_files: %BACnet.Protocol.BACnetArray{
         fixed_size: nil,
-        items: {:array, 0, 10, :undefined, 10},
+        items: :array.new(),
         size: 0
       },
       backup_preparation_time: 60,
@@ -1645,20 +1645,19 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
       object_list: %BACnet.Protocol.BACnetArray{
         fixed_size: nil,
         items:
-          {:array, 11, 100, :undefined,
-           {{%BACnet.Protocol.ObjectIdentifier{type: :analog_value, instance: 0},
-             %BACnet.Protocol.ObjectIdentifier{type: :device, instance: 1_201_610},
-             %BACnet.Protocol.ObjectIdentifier{type: :file, instance: 1},
-             %BACnet.Protocol.ObjectIdentifier{type: :file, instance: 2},
-             %BACnet.Protocol.ObjectIdentifier{type: :file, instance: 3},
-             %BACnet.Protocol.ObjectIdentifier{type: :file, instance: 4},
-             %BACnet.Protocol.ObjectIdentifier{type: :file, instance: 5},
-             %BACnet.Protocol.ObjectIdentifier{type: :file, instance: 6},
-             %BACnet.Protocol.ObjectIdentifier{type: :file, instance: 7},
-             %BACnet.Protocol.ObjectIdentifier{type: :file, instance: 8}},
-            {%BACnet.Protocol.ObjectIdentifier{type: :network_port, instance: 1}, :undefined,
-             :undefined, :undefined, :undefined, :undefined, :undefined, :undefined, :undefined,
-             :undefined}, 10, 10, 10, 10, 10, 10, 10, 10, 10}},
+          :array.from_list([
+            %BACnet.Protocol.ObjectIdentifier{type: :analog_value, instance: 0},
+            %BACnet.Protocol.ObjectIdentifier{type: :device, instance: 1_201_610},
+            %BACnet.Protocol.ObjectIdentifier{type: :file, instance: 1},
+            %BACnet.Protocol.ObjectIdentifier{type: :file, instance: 2},
+            %BACnet.Protocol.ObjectIdentifier{type: :file, instance: 3},
+            %BACnet.Protocol.ObjectIdentifier{type: :file, instance: 4},
+            %BACnet.Protocol.ObjectIdentifier{type: :file, instance: 5},
+            %BACnet.Protocol.ObjectIdentifier{type: :file, instance: 6},
+            %BACnet.Protocol.ObjectIdentifier{type: :file, instance: 7},
+            %BACnet.Protocol.ObjectIdentifier{type: :file, instance: 8},
+            %BACnet.Protocol.ObjectIdentifier{type: :network_port, instance: 1}
+          ]),
         size: 11
       },
       firmware_revision: "1.6.2 / 04.01.10(23)",
@@ -1815,7 +1814,7 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
       },
       structured_object_list: %BACnet.Protocol.BACnetArray{
         fixed_size: nil,
-        items: {:array, 0, 10, :undefined, 10},
+        items: :array.new(),
         size: 0
       },
       system_status: :operational,

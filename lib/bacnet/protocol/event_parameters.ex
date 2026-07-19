@@ -769,7 +769,7 @@ defmodule BACnet.Protocol.EventParameters do
   def encode(%BufferReady{} = params, opts) do
     with true <-
            is_integer(params.threshold) and params.threshold >= 0 and
-             ApplicationTags.valid_int?(params.previous_count, 32),
+             ApplicationTags.valid_int?(params.threshold, 32),
          true <- is_integer(params.previous_count) and params.previous_count >= 0,
          {:ok, threshold, _header} <-
            ApplicationTags.encode_value({:unsigned_integer, params.threshold}, opts),

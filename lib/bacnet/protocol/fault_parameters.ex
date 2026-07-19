@@ -311,7 +311,7 @@ defmodule BACnet.Protocol.FaultParameters do
   end
 
   def encode(%FaultStatusFlags{} = params, opts) do
-    with true <- is_struct(params.status_flags, StatusFlags),
+    with true <- is_struct(params.status_flags, DeviceObjectPropertyRef),
          {:ok, flags} <- DeviceObjectPropertyRef.encode(params.status_flags, opts) do
       {:ok,
        {:constructed,

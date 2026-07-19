@@ -240,10 +240,10 @@ defmodule BACnet.Protocol.EventAlgorithms.CommandFailure do
   @spec typeof(term()) :: atom()
   defp typeof(a) do
     cond do
+      is_boolean(a) -> :boolean
       is_atom(a) -> :atom
       is_binary(a) -> :binary
       is_bitstring(a) -> :bitstring
-      is_boolean(a) -> :boolean
       is_float(a) -> :float
       is_integer(a) -> :integer
       is_tuple(a) -> :tuple
