@@ -56,6 +56,36 @@ defmodule BACnet.Protocol.BACnetURI do
   as in allows different casing and `_` for object types
   and property identifiers. Not only `analog-value` is allowed,
   but also `Analog_Value` or `analog_value`.
+
+  ### Examples
+
+  Local object:
+
+      iex> BACnetURI.parse("bacnet://.this/1,5/85")
+      {:ok, %BACnetURI{
+        device_identifier: nil,
+        object_identifier: %BACnet.Protocol.ObjectIdentifier{type: :analog_output, instance: 5},
+        property_identifier: :present_value,
+        property_array_index: nil
+      }}
+
+      iex> BACnetURI.parse("bacnet://.this/analog-output,5")
+      {:ok, %BACnetURI{
+        device_identifier: nil,
+        object_identifier: %BACnet.Protocol.ObjectIdentifier{type: :analog_output, instance: 5},
+        property_identifier: :present_value,
+        property_array_index: nil
+      }}
+
+  Remote object with array index:
+
+      iex> BACnetURI.parse("bacnet://114705/4,15555/priority-array/16")
+      {:ok, %BACnetURI{
+        device_identifier: %BACnet.Protocol.ObjectIdentifier{type: :device, instance: 114705},
+        object_identifier: %BACnet.Protocol.ObjectIdentifier{type: :binary_output, instance: 15555},
+        property_identifier: :priority_array,
+        property_array_index: 16
+      }}
   """
   @spec parse(String.t()) :: {:ok, t()} | {:error, term()}
   def parse(uri) when is_binary(uri) do
@@ -84,6 +114,30 @@ defmodule BACnet.Protocol.BACnetURI do
 
   When the property is `nil` (for File objects), the property segment is omitted.
   Otherwise the property is always included.
+
+  This function will never use Clause 21 text for the URI encoding and
+  always use the decimal number for better compatibility.
+
+  ### Examples
+
+  Local object:
+
+      iex> object = %BACnet.Protocol.ObjectIdentifier{type: :analog_output, instance: 5}
+      iex> BACnetURI.encode(%BACnetURI{
+      ...>   device_identifier: nil, object_identifier: object,
+      ...>   property_identifier: :present_value, property_array_index: nil
+      ...> })
+      {:ok, "bacnet://.this/1,5/85"}
+
+  Remote object with array index:
+
+      iex> device = %BACnet.Protocol.ObjectIdentifier{type: :device, instance: 114705}
+      iex> object = %BACnet.Protocol.ObjectIdentifier{type: :binary_output, instance: 15555}
+      iex> BACnetURI.encode(%BACnetURI{
+      ...>   device_identifier: device, object_identifier: object,
+      ...>   property_identifier: :priority_array, property_array_index: 16
+      ...> })
+      {:ok, "bacnet://114705/4,15555/87/16"}
   """
   @spec encode(t()) :: {:ok, String.t()} | {:error, term()}
   def encode(uri)
@@ -94,7 +148,8 @@ defmodule BACnet.Protocol.BACnetURI do
         property_identifier: prop,
         property_array_index: idx
       })
-      when is_nil(device) or (is_struct(device, ObjectIdentifier) and device.type == :device) do
+      when (is_nil(device) or (is_struct(device, ObjectIdentifier) and device.type == :device)) and
+             (is_nil(idx) or (is_integer(idx) and idx >= 0)) do
     device_str = if device, do: Integer.to_string(device.instance), else: ".this"
 
     obj_type_str = identifier_to_string(:object_type, obj_type)
@@ -281,7 +336,7 @@ defmodule BACnet.Protocol.BACnetURI do
 
   defp parse_index(str) when is_binary(str) do
     case Integer.parse(str) do
-      {num, ""} -> {:ok, num}
+      {num, ""} when num >= 0 -> {:ok, num}
       _other -> {:error, :invalid_index}
     end
   end

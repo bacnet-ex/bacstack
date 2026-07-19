@@ -127,6 +127,11 @@ defmodule BACnet.Protocol.BACnetURITest do
                BACnetURI.parse("bacnet://123/analog-value,1/present-value/abc")
     end
 
+    test "returns error for negative index" do
+      assert {:error, :invalid_index} =
+               BACnetURI.parse("bacnet://123/analog-value,1/present-value/-1")
+    end
+
     test "handles URI.new error" do
       assert {:error, _} = BACnetURI.parse(":::not a uri")
     end
@@ -232,9 +237,20 @@ defmodule BACnet.Protocol.BACnetURITest do
       assert {:error, :invalid_data} = BACnetURI.encode(bad)
     end
 
+    test "returns error for invalid struct (bad index)" do
+      bad = %BACnetURI{
+        device_identifier: nil,
+        object_identifier: %ObjectIdentifier{type: :analog_value, instance: 1},
+        property_identifier: :present_value,
+        property_array_index: -5
+      }
+
+      assert {:error, :invalid_data} = BACnetURI.encode(bad)
+    end
+
     test "returns error for completely invalid input" do
       assert_raise FunctionClauseError, fn ->
-        BACnetURI.encode("not a struct")
+        BACnetURI.encode(Process.get({__MODULE__, __ENV__}, "not a struct"))
       end
     end
   end
@@ -286,7 +302,7 @@ defmodule BACnet.Protocol.BACnetURITest do
 
     test "fails for non-struct" do
       assert_raise FunctionClauseError, fn ->
-        BACnetURI.valid?("string")
+        BACnetURI.valid?(Process.get({__MODULE__, __ENV__}, "string"))
       end
     end
 
