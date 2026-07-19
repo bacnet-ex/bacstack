@@ -395,7 +395,7 @@ defmodule BACnet.Stack.Segmentator do
     {apdu_struct, encoded_data} =
       case apdu do
         {apdu, data} -> {apdu, data}
-        other -> {other, nil}
+        _other -> {apdu, nil}
       end
 
     log_debug(fn ->

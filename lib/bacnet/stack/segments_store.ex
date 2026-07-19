@@ -152,6 +152,7 @@ defmodule BACnet.Stack.SegmentsStore do
     - `max_segments: Constants.max_segments()` - Optional. The maximum amount of segments to allow (defaults to `:more_than_64`).
       While `:unspecified` is allowed here, it shouldn't be used anywhere, because it makes it for the server unable to determine
       if the response is transmittable. Since this setting here does not go to the server, `:unspecified` is allowed here.
+      For production systems this setting should be set to a number (i.e. 64 segments à 1476 bytes = 34KiB at most).
   """
   @spec start_link(start_options()) :: GenServer.on_start()
   def start_link(opts) do
@@ -413,7 +414,7 @@ defmodule BACnet.Stack.SegmentsStore do
           {reply, new_sequence} =
             cond do
               is_integer(state.opts.max_segments) and
-                  sequence.count_segments >= state.opts.max_segments ->
+                  sequence.count_segments > state.opts.max_segments ->
                 abort = %APDU.Abort{
                   sent_by_server: sequence.server,
                   invoke_id: sequence.invoke_id,
