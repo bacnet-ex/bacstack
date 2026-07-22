@@ -579,7 +579,15 @@ defmodule BACnet.Protocol.ApplicationTags do
   end
 
   def encode_value({:signed_integer, value}, _opts) when is_integer(value) do
-    int_length = div(byte_size(Integer.to_string(value, 2)) + 7, 8)
+    bits_length =
+      case value do
+        -1 -> 1
+        0 -> 1
+        _num when value > 0 -> floor(:math.log2(value)) + 2
+        _num when value < 0 -> floor(:math.log2(-value - 1)) + 2
+      end
+
+    int_length = ceil(bits_length / 8)
     {len_value_type, length} = length_to_lenvaluetype(int_length)
 
     {:ok, <<value::signed-size(int_length)-unit(8)>>,
