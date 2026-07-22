@@ -240,6 +240,9 @@ defmodule BACnet.Stack.Client do
             app_reply_timers: %{
               optional(app_timer_key()) => BACnet.Stack.Client.ReplyTimer.t()
             },
+            free_invoke_ids: %{
+              optional({term(), non_neg_integer() | nil}) => :queue.queue(byte())
+            },
             notification_receiver: [Process.dest()],
             segmentator: Segmentator.server(),
             segments_store: SegmentsStore.server(),
@@ -262,6 +265,7 @@ defmodule BACnet.Stack.Client do
       :apdu_timeouts,
       :app_reply_mapping,
       :app_reply_timers,
+      :free_invoke_ids,
       :notification_receiver,
       :segmentator,
       :segments_store,
@@ -656,6 +660,7 @@ defmodule BACnet.Stack.Client do
       apdu_timeouts: %{},
       app_reply_mapping: %{},
       app_reply_timers: %{},
+      free_invoke_ids: %{},
       notification_receiver: List.wrap(Map.get(opts, :notification_receiver, [])),
       segmentator: opts.segmentator,
       segments_store: opts.segments_store,
@@ -1813,6 +1818,28 @@ defmodule BACnet.Stack.Client do
     end
   end
 
+  @spec update_free_invoke_ids(term(), non_neg_integer() | nil, byte(), State.t()) :: State.t()
+  defp update_free_invoke_ids(destination, device_id, invoke_id, state) do
+    key = {destination, device_id}
+
+    case Map.fetch(state.free_invoke_ids, key) do
+      {:ok, queue} ->
+        new = :queue.in(invoke_id, queue)
+
+        new_ids =
+          if :queue.len(new) == 256 do
+            Map.delete(state.free_invoke_ids, key)
+          else
+            Map.put(state.free_invoke_ids, key, new)
+          end
+
+        %{state | free_invoke_ids: new_ids}
+
+      :error ->
+        state
+    end
+  end
+
   @spec remove_apdu_timer_for_response(
           term(),
           Protocol.apdu(),
@@ -1831,7 +1858,9 @@ defmodule BACnet.Stack.Client do
     case Map.fetch(state.apdu_timers, reply_key) do
       {:ok, %ApduTimer{} = timer} ->
         if timer.timer, do: Process.cancel_timer(timer.timer)
-        {timer, %{state | apdu_timers: Map.delete(state.apdu_timers, reply_key)}}
+
+        new_state = update_free_invoke_ids(timer.destination, timer.device_id, invoke_id, state)
+        {timer, %{new_state | apdu_timers: Map.delete(state.apdu_timers, reply_key)}}
 
       _else ->
         # If device_id is not nil and we didn't find a APDU timer,
@@ -1842,7 +1871,11 @@ defmodule BACnet.Stack.Client do
           case Map.fetch(state.apdu_timers, reply_key2) do
             {:ok, %ApduTimer{} = timer} ->
               if timer.timer, do: Process.cancel_timer(timer.timer)
-              {timer, %{state | apdu_timers: Map.delete(state.apdu_timers, reply_key2)}}
+
+              new_state =
+                update_free_invoke_ids(timer.destination, timer.device_id, invoke_id, state)
+
+              {timer, %{new_state | apdu_timers: Map.delete(state.apdu_timers, reply_key2)}}
 
             _else ->
               {nil, state}
@@ -1890,40 +1923,27 @@ defmodule BACnet.Stack.Client do
     end)
   end
 
-  # We do this here at compile time, so we have at runtime no need to recompute the same thing (hot path)
-  # It is not a MapSet because MapSet.to_list/1 gets always called, so using Map iterator is cheaper
-  @new_invoke_id_mapset Map.new(Enum.to_list(0..255//1), fn key -> {key, nil} end)
+  defp new_invoke_id_queue(), do: :queue.from_list(Enum.to_list(0..255//1))
 
   @spec find_free_invoke_id(term(), non_neg_integer() | nil, State.t()) ::
-          {:ok, byte()} | :error
-  defp find_free_invoke_id(destination, device_id, state)
+          {:ok, byte(), State.t()} | :error
+  defp find_free_invoke_id(destination, device_id, %State{free_invoke_ids: free} = state) do
+    key = {destination, device_id}
 
-  # Optimize case where apdu timers is empty
-  defp find_free_invoke_id(_destination, _device_id, %State{apdu_timers: timers} = _state)
-       when map_size(timers) == 0,
-       do: {:ok, 0}
+    case Map.fetch(free, key) do
+      {:ok, queue} ->
+        case :queue.out(queue) do
+          {{:value, id}, new} ->
+            {:ok, id, %{state | free_invoke_ids: Map.put(free, key, new)}}
 
-  defp find_free_invoke_id(destination, device_id, %State{} = state) do
-    free_ids =
-      Enum.reduce(state.apdu_timers, @new_invoke_id_mapset, fn
-        {_key,
-         %ApduTimer{destination: ^destination, device_id: ^device_id, apdu: %{invoke_id: id}}} =
-            _timer,
-        acc ->
-          Map.delete(acc, id)
+          {:empty, _queue} ->
+            :error
+        end
 
-        _else, acc ->
-          acc
-      end)
-
-    if map_size(free_ids) > 0 do
-      free_ids
-      |> :maps.iterator()
-      |> :maps.next()
-      |> elem(0)
-      |> then(&{:ok, &1})
-    else
-      :error
+      :error ->
+        # First request (or previously fully freed) for this destination
+        {{:value, id}, new} = :queue.out(new_invoke_id_queue())
+        {:ok, id, %{state | free_invoke_ids: Map.put(free, key, new)}}
     end
   end
 
@@ -1967,7 +1987,7 @@ defmodule BACnet.Stack.Client do
        when is_integer(device_id) or is_nil(device_id) or
               (is_integer(apdu_timer_device_key) or is_nil(apdu_timer_device_key)) do
     case find_free_invoke_id(destination, device_id, state) do
-      {:ok, new_invoke_id} ->
+      {:ok, new_invoke_id, new_state} ->
         send_data(
           %{apdu | invoke_id: new_invoke_id},
           opts,
@@ -1977,7 +1997,7 @@ defmodule BACnet.Stack.Client do
           apdu_timer_device_key,
           needs_tracking,
           call_ref,
-          state,
+          new_state,
           true
         )
 

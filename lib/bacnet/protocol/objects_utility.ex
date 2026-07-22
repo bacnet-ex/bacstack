@@ -1430,6 +1430,9 @@ defmodule BACnet.Protocol.ObjectsUtility do
         {:struct, mod} -> {false, mod, false, true}
       end
 
+    # Assert module is already loaded
+    unless_env(:prod, do: Code.ensure_loaded!(mod))
+
     fun_from_app_enc = function_exported?(mod, :from_app_encoding, 1)
     fun_parse = function_exported?(mod, :parse, 1)
 
@@ -1740,6 +1743,9 @@ defmodule BACnet.Protocol.ObjectsUtility do
   end
 
   defp cast_value_struct_to_type(mod, raw_value) do
+    # Assert module is already loaded
+    unless_env(:prod, do: Code.ensure_loaded!(mod))
+
     cond do
       function_exported?(mod, :from_app_encoding, 1) ->
         raw_values =
@@ -1945,6 +1951,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
   end
 
   defp cast_value_to_encoding({:struct, mod}, property, value, _opts) do
+    # Assert module is already loaded
     unless_env(:prod, do: Code.ensure_loaded!(mod))
 
     try do
