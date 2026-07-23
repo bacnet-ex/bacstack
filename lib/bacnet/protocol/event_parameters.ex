@@ -1130,7 +1130,7 @@ defmodule BACnet.Protocol.EventParameters do
 
   # 0 = Change Of Bitstring
   def parse({:constructed, {0, event_values, 0}}) do
-    case event_values do
+    case List.wrap(event_values) do
       [
         tagged: {0, time_delay_raw, _length},
         tagged: {1, bitmask_raw, _length2},
@@ -1164,7 +1164,7 @@ defmodule BACnet.Protocol.EventParameters do
 
   # 1 = Change Of State
   def parse({:constructed, {1, event_values, 0}}) do
-    case event_values do
+    case List.wrap(event_values) do
       [
         tagged: {0, time_delay_raw, _length},
         constructed: {1, seq_propstates, _length2}
@@ -1197,7 +1197,7 @@ defmodule BACnet.Protocol.EventParameters do
 
   # 2 = Change Of Value
   def parse({:constructed, {2, event_values, 0}}) do
-    case event_values do
+    case List.wrap(event_values) do
       [
         tagged: {0, time_delay_raw, _length},
         constructed: {1, cov_criteria_raw, _length2}
@@ -1238,7 +1238,7 @@ defmodule BACnet.Protocol.EventParameters do
 
   # 3 = Command Failure
   def parse({:constructed, {3, event_values, 0}}) do
-    case event_values do
+    case List.wrap(event_values) do
       [
         tagged: {0, time_delay_raw, _length},
         constructed: {_context2, 1, feedback_value, _length3}
@@ -1264,7 +1264,7 @@ defmodule BACnet.Protocol.EventParameters do
 
   # 4 = Floating Limit
   def parse({:constructed, {4, event_values, 0}}) do
-    case event_values do
+    case List.wrap(event_values) do
       [
         tagged: {0, time_delay_raw, _length},
         constructed: {1, setpoint_ref_raw, _length2},
@@ -1302,7 +1302,7 @@ defmodule BACnet.Protocol.EventParameters do
 
   # 5 = Out Of Range
   def parse({:constructed, {5, event_values, 0}}) do
-    case event_values do
+    case List.wrap(event_values) do
       [
         tagged: {0, time_delay_raw, _length},
         tagged: {1, low_limit_raw, _length2},
@@ -1337,7 +1337,7 @@ defmodule BACnet.Protocol.EventParameters do
 
   # 8 = Change Of Life Safety
   def parse({:constructed, {8, event_values, 0}}) do
-    case event_values do
+    case List.wrap(event_values) do
       [
         tagged: {0, time_delay_raw, _length},
         constructed: {1, life_safety_state_raw, _length2},
@@ -1401,7 +1401,7 @@ defmodule BACnet.Protocol.EventParameters do
 
   # 9 = Extended
   def parse({:constructed, {9, event_values, 0}}) do
-    case event_values do
+    case List.wrap(event_values) do
       [
         tagged: {0, vendor_id_raw, _length},
         tagged: {1, ext_event_raw, _length2},
@@ -1435,7 +1435,7 @@ defmodule BACnet.Protocol.EventParameters do
 
   # 10 = Buffer Ready
   def parse({:constructed, {10, event_values, 0}}) do
-    case event_values do
+    case List.wrap(event_values) do
       [
         tagged: {0, threshold_raw, _length},
         tagged: {1, previous_count_raw, _length2}
@@ -1466,7 +1466,7 @@ defmodule BACnet.Protocol.EventParameters do
 
   # 11 = Unsigned Range
   def parse({:constructed, {11, event_values, 0}}) do
-    case event_values do
+    case List.wrap(event_values) do
       [
         tagged: {0, time_delay_raw, _length},
         tagged: {1, low_limit_raw, _length2},
@@ -1502,7 +1502,7 @@ defmodule BACnet.Protocol.EventParameters do
 
   # 14 = Double Out Of Range
   def parse({:constructed, {14, event_values, 0}}) do
-    case event_values do
+    case List.wrap(event_values) do
       [
         tagged: {0, time_delay_raw, _length},
         tagged: {1, low_limit_raw, _length2},
@@ -1537,7 +1537,7 @@ defmodule BACnet.Protocol.EventParameters do
 
   # 15 = Signed Out Of Range
   def parse({:constructed, {15, event_values, 0}}) do
-    case event_values do
+    case List.wrap(event_values) do
       [
         tagged: {0, time_delay_raw, _length},
         tagged: {1, low_limit_raw, _length2},
@@ -1572,7 +1572,7 @@ defmodule BACnet.Protocol.EventParameters do
 
   # 16 = Unsigned Out Of Range
   def parse({:constructed, {16, event_values, 0}}) do
-    case event_values do
+    case List.wrap(event_values) do
       [
         tagged: {0, time_delay_raw, _length},
         tagged: {1, low_limit_raw, _length2},
@@ -1607,7 +1607,7 @@ defmodule BACnet.Protocol.EventParameters do
 
   # 17 = Change Of Character String
   def parse({:constructed, {17, event_values, 0}}) do
-    case event_values do
+    case List.wrap(event_values) do
       [
         tagged: {0, time_delay_raw, _length},
         constructed: {1, strings, _length2}
@@ -1637,7 +1637,7 @@ defmodule BACnet.Protocol.EventParameters do
 
   # 18 = Change Of Status Flags
   def parse({:constructed, {18, event_values, 0}}) do
-    case event_values do
+    case List.wrap(event_values) do
       [
         tagged: {0, time_delay_raw, _length},
         tagged: {1, sel_flags_raw, _length2}
@@ -1665,8 +1665,8 @@ defmodule BACnet.Protocol.EventParameters do
 
   # 20 = None
   def parse({:constructed, {20, event_values, 0}}) do
-    case event_values do
-      {:null, nil} -> {:ok, %None{}}
+    case List.wrap(event_values) do
+      [{:null, nil}] -> {:ok, %None{}}
       _term -> {:error, :invalid_event_values}
     end
   end

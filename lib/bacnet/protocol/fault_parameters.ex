@@ -397,8 +397,8 @@ defmodule BACnet.Protocol.FaultParameters do
 
   # 0 = None
   def parse({:constructed, {0, fault_values_tags, 0}}) do
-    case fault_values_tags do
-      {:null, nil} -> {:ok, %None{}}
+    case List.wrap(fault_values_tags) do
+      [{:null, nil}] -> {:ok, %None{}}
       _term -> {:error, :invalid_fault_values}
     end
   end
@@ -410,7 +410,7 @@ defmodule BACnet.Protocol.FaultParameters do
 
   # 1 = Fault Character String
   def parse({:constructed, {1, fault_values_tags, 0}}) do
-    case fault_values_tags do
+    case List.wrap(fault_values_tags) do
       [
         constructed: {0, strings, _length2}
       ]
@@ -440,7 +440,7 @@ defmodule BACnet.Protocol.FaultParameters do
 
   # 2 = Extended
   def parse({:constructed, {2, fault_values_tags, 0}}) do
-    case fault_values_tags do
+    case List.wrap(fault_values_tags) do
       [
         tagged: {0, vendor_id_raw, _length},
         tagged: {1, ext_fault_raw, _length2},
@@ -474,7 +474,7 @@ defmodule BACnet.Protocol.FaultParameters do
 
   # 3 = Fault Life Safety
   def parse({:constructed, {3, fault_values_tags, 0}}) do
-    case fault_values_tags do
+    case List.wrap(fault_values_tags) do
       [
         constructed: {0, fault_values_raw, _length3},
         constructed: {1, mode_raw, _length4}
@@ -514,7 +514,7 @@ defmodule BACnet.Protocol.FaultParameters do
 
   # 4 = Fault State
   def parse({:constructed, {4, fault_values_tags, 0}}) do
-    case fault_values_tags do
+    case List.wrap(fault_values_tags) do
       [
         constructed: {0, seq_propstates, _length2}
       ] ->
@@ -543,7 +543,7 @@ defmodule BACnet.Protocol.FaultParameters do
 
   # 5 = Fault Status Flags
   def parse({:constructed, {5, fault_values_tags, 0}}) do
-    case fault_values_tags do
+    case List.wrap(fault_values_tags) do
       [
         constructed: {0, status_flags_ref_raw, _length2}
       ] ->
