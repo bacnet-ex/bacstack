@@ -652,7 +652,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
         {:error, :unsupported_object_type}
 
       object_mod ->
-        unless_env(:prod, do: Code.ensure_loaded!(object_mod))
+        unless_env(:prod, do: Code.ensure_loaded(object_mod))
 
         process_make_property(object_mod, property_identifier, value,
           allow_partial: get_bool_opts(opts, :allow_partial, get_fa_str(), false)
@@ -707,7 +707,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
         {:error, :unsupported_object_type}
 
       object_mod ->
-        unless_env(:prod, do: Code.ensure_loaded!(object_mod))
+        unless_env(:prod, do: Code.ensure_loaded(object_mod))
 
         case Map.pop(properties, Constants.macro_assert_name(:property_identifier, :object_name)) do
           {nil, _term} ->
@@ -787,7 +787,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
         {:error, :unsupported_object_type}
 
       object_mod ->
-        unless_env(:prod, do: Code.ensure_loaded!(object_mod))
+        unless_env(:prod, do: Code.ensure_loaded(object_mod))
 
         fun_name = get_fa_str()
         allow_unknown_props = Keyword.get(opts, :allow_unknown_properties, false)
@@ -850,7 +850,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
         {:error, :unsupported_object_type}
 
       object_mod ->
-        unless_env(:prod, do: Code.ensure_loaded!(object_mod))
+        unless_env(:prod, do: Code.ensure_loaded(object_mod))
 
         if function_exported?(object_mod, :get_properties_type_map, 0) do
           prop_type_map = object_mod.get_properties_type_map()
@@ -1025,6 +1025,9 @@ defmodule BACnet.Protocol.ObjectsUtility do
       {:error, {:invalid_property_value, _prop}} when ignore_invalid_properties ->
         {:cont, {:ok, %{}}}
 
+      {:error, {:missing_parse_fun, _prop}} when ignore_invalid_properties ->
+        {:cont, {:ok, %{}}}
+
       {:error, {:unknown_property, _prop}} when allow_unknown_properties != false ->
         {:cont,
          {:ok,
@@ -1122,6 +1125,9 @@ defmodule BACnet.Protocol.ObjectsUtility do
                   {:cont, {:ok, Map.put(acc, result.property_identifier, value)}}
 
                 {:error, {:invalid_property_value, _prop}} when ignore_invalid_properties ->
+                  {:cont, {:ok, acc}}
+
+                {:error, {:missing_parse_fun, _prop}} when ignore_invalid_properties ->
                   {:cont, {:ok, acc}}
 
                 {:error, {:unknown_property, _prop}} when ignore_unknown_properties ->
@@ -1431,7 +1437,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
       end
 
     # Assert module is already loaded
-    unless_env(:prod, do: Code.ensure_loaded!(mod))
+    unless_env(:prod, do: Code.ensure_loaded(mod))
 
     fun_from_app_enc = function_exported?(mod, :from_app_encoding, 1)
     fun_parse = function_exported?(mod, :parse, 1)
@@ -1597,7 +1603,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
       end)
 
     # Count the elements and make sure we have 16 elements
-    if Enum.count_until(raw_values, fn _val -> true end, 17) == 16 or
+    if Enum.count_until(raw_values, fn _val -> true end, 17) == 16 and
          Enum.all?(raw_values, &(&1 == nil or BeamTypes.check_type(pv_type, &1))) do
       {:ok, PriorityArray.from_list(raw_values)}
     else
@@ -1713,7 +1719,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
   end
 
   defp cast_value_to_type({:struct, mod}, _property, value, _opts) do
-    unless_env(:prod, do: Code.ensure_loaded!(mod))
+    unless_env(:prod, do: Code.ensure_loaded(mod))
     cast_value_struct_to_type(mod, value)
   end
 
@@ -1744,7 +1750,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
 
   defp cast_value_struct_to_type(mod, raw_value) do
     # Assert module is already loaded
-    unless_env(:prod, do: Code.ensure_loaded!(mod))
+    unless_env(:prod, do: Code.ensure_loaded(mod))
 
     cond do
       function_exported?(mod, :from_app_encoding, 1) ->
@@ -1952,7 +1958,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
 
   defp cast_value_to_encoding({:struct, mod}, property, value, _opts) do
     # Assert module is already loaded
-    unless_env(:prod, do: Code.ensure_loaded!(mod))
+    unless_env(:prod, do: Code.ensure_loaded(mod))
 
     try do
       is_struct(value, mod) and (not function_exported?(mod, :valid?, 1) or mod.valid?(value))

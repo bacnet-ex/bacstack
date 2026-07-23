@@ -853,9 +853,18 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
       {:ok, partial_raw_value} ->
         pv_encoding_type = @type_transform[pv_prop_type] || pv_prop_type
 
+        # Boolean present value is actually enumerated
+        {pv_encoding_type, pv_encoding_value} =
+          if pv_prop_type == :boolean do
+            {:enumerated, if(partial_raw_value, do: 1, else: 0)}
+          else
+            {pv_encoding_type, partial_raw_value}
+          end
+
         partial_wrong_type =
           Enum.find(@type_mapping, fn
             {:string, _value} -> nil
+            {^pv_encoding_type, _value} -> nil
             {^pv_prop_type, _value} -> nil
             {_type, _value} -> true
           end)
@@ -871,19 +880,35 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
           priority_4: partial_raw_value
         }
 
+        partial_encoding = Encoding.create!({pv_encoding_type, pv_encoding_value})
+        arr_succ_cast = [partial_encoding | List.duplicate(raw_nil_value, 15)]
+
+        arr_m_succ_cast = [
+          partial_encoding,
+          raw_nil_value,
+          raw_nil_value,
+          partial_encoding
+          | List.duplicate(raw_nil_value, 12)
+        ]
+
+        arr_wrong_cast = [partial_wrong_raw_value | List.duplicate(raw_nil_value, 15)]
+        arr_wrong_cast2 = [partial_encoding | List.duplicate(raw_nil_value, 14)]
+        arr_wrong_cast3 = [partial_encoding | List.duplicate(raw_nil_value, 16)]
+
         [
-          {"#{obj_type} #{property} successful cast (s_pa)", obj_type, property,
-           [Encoding.create!({pv_encoding_type, partial_raw_value})], value, {:ok, value}, []},
+          {"#{obj_type} #{property} successful cast (s_pa)", obj_type, property, arr_succ_cast,
+           value, {:ok, value}, []},
           {"#{obj_type} #{property} successful cast multi (s_pa)", obj_type, property,
-           [
-             Encoding.create!({pv_encoding_type, partial_raw_value}),
-             raw_nil_value,
-             raw_nil_value,
-             Encoding.create!({pv_encoding_type, partial_raw_value})
-           ], multi_value, {:ok, multi_value}, []},
-          {"#{obj_type} #{property} wrong type (s_pa)", obj_type, property,
-           [partial_wrong_raw_value], partial_wrong_raw_value,
-           {:error, {:invalid_property_value, {property, [partial_wrong_raw_value]}}}, []},
+           arr_m_succ_cast, multi_value, {:ok, multi_value}, []},
+          {"#{obj_type} #{property} wrong type (s_pa)", obj_type, property, arr_wrong_cast,
+           partial_wrong_raw_value,
+           {:error, {:invalid_property_value, {property, arr_wrong_cast}}}, []},
+          {"#{obj_type} #{property} not enough elements (s_pa)", obj_type, property,
+           arr_wrong_cast2, partial_wrong_raw_value,
+           {:error, {:invalid_property_value, {property, arr_wrong_cast2}}}, []},
+          {"#{obj_type} #{property} too many elements (s_pa)", obj_type, property,
+           arr_wrong_cast3, partial_wrong_raw_value,
+           {:error, {:invalid_property_value, {property, arr_wrong_cast3}}}, []},
           {"#{obj_type} #{property} successful partial cast (s_pa)", obj_type, property,
            Encoding.create!({pv_encoding_type, partial_raw_value}), partial_raw_value,
            {:ok, partial_raw_value}, [allow_partial: true]},

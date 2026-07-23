@@ -240,7 +240,7 @@ defmodule BACnet.Protocol.ObjectTypes.Accumulator do
 
   Creating an Accumulator:
 
-      iex> {:ok, acc} = BACnet.Protocol.ObjectTypes.Accumulator.create(200, "Energy", %{units: :kilowatt_hours, scale: :integer_scale, prescale: %BACnet.Protocol.Prescale{multiplier: 1, modulo_divide: 1}}); acc.object_name
+      iex> {:ok, acc} = BACnet.Protocol.ObjectTypes.Accumulator.create(200, "Energy", %{units: :kilowatt_hours, scale: 10, prescale: %BACnet.Protocol.Prescale{multiplier: 1, modulo_divide: 1}}); acc.object_name
       "Energy"
 
   ### See Also
@@ -248,6 +248,8 @@ defmodule BACnet.Protocol.ObjectTypes.Accumulator do
   """
 
   alias BACnet.Protocol.AccumulatorRecord
+  alias BACnet.Protocol.ApplicationTags
+  alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.ObjectIdentifier
@@ -287,7 +289,43 @@ defmodule BACnet.Protocol.ObjectTypes.Accumulator do
 
     field(:units, Constants.engineering_unit(), required: true, default: :no_units)
 
-    field(:scale, Constants.accumulator_scale(), required: true)
+    field(:scale, float() | integer(),
+      required: true,
+      annotation: [
+        decoder: fn %Encoding{extras: extras} = encoding ->
+          case Keyword.fetch(extras, :tag_number) do
+            {:ok, 0} ->
+              with {:ok, {_tag, value}} <- ApplicationTags.unfold_to_type(:real, encoding.value) do
+                {:ok, value}
+              end
+
+            {:ok, 1} ->
+              with {:ok, {_tag, value}} <-
+                     ApplicationTags.unfold_to_type(:signed_integer, encoding.value) do
+                {:ok, value}
+              end
+
+            _other ->
+              {:error, :invalid_value}
+          end
+        end,
+        encoder: fn
+          float when is_float(float) ->
+            with {:ok, raw, _more} <- ApplicationTags.encode_value({:real, float}) do
+              Encoding.create({:tagged, {0, raw, byte_size(raw)}})
+            end
+
+          int when is_integer(int) ->
+            with {:ok, raw, _more} <- ApplicationTags.encode_value({:signed_integer, int}) do
+              Encoding.create({:tagged, {1, raw, byte_size(raw)}})
+            end
+
+          _other ->
+            {:error, :invalid_value}
+        end
+      ]
+    )
+
     field(:prescale, Prescale.t(), required: true)
     field(:max_present_value, non_neg_integer(), required: true, default: 4_294_967_295)
 

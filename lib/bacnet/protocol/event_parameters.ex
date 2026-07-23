@@ -100,6 +100,17 @@ defmodule BACnet.Protocol.EventParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 0
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.EventParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.EventParameters.encode(param)
   end
 
   defmodule ChangeOfState do
@@ -128,6 +139,17 @@ defmodule BACnet.Protocol.EventParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 1
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.EventParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.EventParameters.encode(param)
   end
 
   defmodule ChangeOfValue do
@@ -162,6 +184,17 @@ defmodule BACnet.Protocol.EventParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 2
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.EventParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.EventParameters.encode(param)
   end
 
   defmodule CommandFailure do
@@ -188,6 +221,17 @@ defmodule BACnet.Protocol.EventParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 3
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.EventParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.EventParameters.encode(param)
   end
 
   defmodule FloatingLimit do
@@ -217,6 +261,17 @@ defmodule BACnet.Protocol.EventParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 4
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.EventParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.EventParameters.encode(param)
   end
 
   defmodule OutOfRange do
@@ -247,6 +302,17 @@ defmodule BACnet.Protocol.EventParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 5
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.EventParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.EventParameters.encode(param)
   end
 
   defmodule ChangeOfLifeSafety do
@@ -279,6 +345,17 @@ defmodule BACnet.Protocol.EventParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 8
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.EventParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.EventParameters.encode(param)
   end
 
   defmodule Extended do
@@ -310,6 +387,17 @@ defmodule BACnet.Protocol.EventParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 9
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.EventParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.EventParameters.encode(param)
   end
 
   defmodule BufferReady do
@@ -335,6 +423,17 @@ defmodule BACnet.Protocol.EventParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 10
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.EventParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.EventParameters.encode(param)
   end
 
   defmodule UnsignedRange do
@@ -362,6 +461,17 @@ defmodule BACnet.Protocol.EventParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 11
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.EventParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.EventParameters.encode(param)
   end
 
   # AccessEvent (13, 13.3.12) not implemented
@@ -394,6 +504,17 @@ defmodule BACnet.Protocol.EventParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 14
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.EventParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.EventParameters.encode(param)
   end
 
   defmodule SignedOutOfRange do
@@ -424,6 +545,17 @@ defmodule BACnet.Protocol.EventParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 15
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.EventParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.EventParameters.encode(param)
   end
 
   defmodule UnsignedOutOfRange do
@@ -454,6 +586,17 @@ defmodule BACnet.Protocol.EventParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 16
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.EventParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.EventParameters.encode(param)
   end
 
   defmodule ChangeOfCharacterString do
@@ -481,6 +624,17 @@ defmodule BACnet.Protocol.EventParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 17
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.EventParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.EventParameters.encode(param)
   end
 
   defmodule ChangeOfStatusFlags do
@@ -507,6 +661,17 @@ defmodule BACnet.Protocol.EventParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 18
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.EventParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.EventParameters.encode(param)
   end
 
   defmodule None do
@@ -530,6 +695,17 @@ defmodule BACnet.Protocol.EventParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 20
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.EventParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.EventParameters.encode(param)
   end
 
   @doc """
@@ -1493,6 +1669,11 @@ defmodule BACnet.Protocol.EventParameters do
       {:null, nil} -> {:ok, %None{}}
       _term -> {:error, :invalid_event_values}
     end
+  end
+
+  # 20 = None
+  def parse({:tagged, {20, "", 0}}) do
+    {:ok, %None{}}
   end
 
   def parse(_event_values_tag) do

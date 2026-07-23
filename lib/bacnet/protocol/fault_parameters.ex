@@ -69,6 +69,17 @@ defmodule BACnet.Protocol.FaultParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 0
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.FaultParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.FaultParameters.encode(param)
   end
 
   defmodule FaultCharacterString do
@@ -94,6 +105,17 @@ defmodule BACnet.Protocol.FaultParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 1
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.FaultParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.FaultParameters.encode(param)
   end
 
   defmodule FaultExtended do
@@ -125,6 +147,17 @@ defmodule BACnet.Protocol.FaultParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 2
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.FaultParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.FaultParameters.encode(param)
   end
 
   defmodule FaultLifeSafety do
@@ -157,6 +190,17 @@ defmodule BACnet.Protocol.FaultParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 3
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.FaultParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.FaultParameters.encode(param)
   end
 
   defmodule FaultState do
@@ -184,6 +228,17 @@ defmodule BACnet.Protocol.FaultParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 4
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.FaultParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.FaultParameters.encode(param)
   end
 
   defmodule FaultStatusFlags do
@@ -208,6 +263,17 @@ defmodule BACnet.Protocol.FaultParameters do
     @doc false
     @spec get_tag_number() :: non_neg_integer()
     def get_tag_number(), do: 5
+
+    @doc false
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, t()} | {:error, term()}
+    def from_app_encoding([tag]), do: BACnet.Protocol.FaultParameters.parse(tag)
+    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
+
+    @doc false
+    @spec to_app_encoding(t()) ::
+            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
+    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.FaultParameters.encode(param)
   end
 
   @doc """
@@ -335,6 +401,11 @@ defmodule BACnet.Protocol.FaultParameters do
       {:null, nil} -> {:ok, %None{}}
       _term -> {:error, :invalid_fault_values}
     end
+  end
+
+  # 0 = None
+  def parse({:tagged, {0, "", 0}}) do
+    {:ok, %None{}}
   end
 
   # 1 = Fault Character String

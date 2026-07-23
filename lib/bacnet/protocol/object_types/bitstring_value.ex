@@ -114,26 +114,11 @@ defmodule BACnet.Protocol.ObjectTypes.BitstringValue do
     field(:status_flags, BACnet.Protocol.StatusFlags.t(), required: true, readonly: true)
     field(:out_of_service, boolean())
 
-    field(:present_value, tuple(),
-      required: true,
-      validator_fun: fn val ->
-        is_tuple(val) and
-          val
-          |> Tuple.to_list()
-          |> Enum.all?(&is_boolean/1)
-      end
-    )
+    field(:present_value, tuple(), required: true)
 
     field(:priority_array, PriorityArray.t(tuple()), readonly: true)
 
-    field(:relinquish_default, tuple(),
-      validator_fun: fn val ->
-        is_tuple(val) and
-          val
-          |> Tuple.to_list()
-          |> Enum.all?(&is_boolean/1)
-      end
-    )
+    field(:relinquish_default, tuple())
 
     field(:reliability, Constants.reliability(),
       implicit_relationship: :reliability_evaluation_inhibit
@@ -141,24 +126,10 @@ defmodule BACnet.Protocol.ObjectTypes.BitstringValue do
 
     field(:reliability_evaluation_inhibit, boolean())
 
-    field(:bit_text, BACnetArray.t(String.t()),
-      default: BACnetArray.new(),
-      validator_fun: &(BACnetArray.size(&1) == tuple_size(&2[:present_value]))
-    )
+    field(:bit_text, BACnetArray.t(String.t()), default: BACnetArray.new())
 
     # Intrinsic Reporting
-    field(:alarm_values, [tuple()],
-      intrinsic: true,
-      default: [],
-      validator_fun: fn list ->
-        Enum.all?(list, fn val ->
-          is_tuple(val) and
-            val
-            |> Tuple.to_list()
-            |> Enum.all?(&is_boolean/1)
-        end)
-      end
-    )
+    field(:alarm_values, [tuple()], intrinsic: true, default: [])
 
     field(:bit_mask, tuple(), intrinsic: true)
     field(:event_state, Constants.event_state(), intrinsic: true)

@@ -54,7 +54,7 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
            cast_opts} <- test_list do
         @tag String.to_atom("bacnet_property_#{prop_identifier}")
         @tag String.to_atom("bacnet_property_from_raw_#{prop_identifier}")
-        test "cast property to value #{description}" do
+        test "cast property to value #{description} [Encoding -> Elixir]" do
           assert unquote(Macro.escape(pattern_match)) =
                    ObjectsUtility.cast_property_to_value(
                      %ObjectIdentifier{type: unquote(object_type), instance: 1},
@@ -93,7 +93,7 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
 
           @tag String.to_atom("bacnet_property_#{prop_identifier}")
           @tag String.to_atom("bacnet_property_to_raw_#{prop_identifier}")
-          test "cast value to property #{description}" do
+          test "cast value to property #{description} [Elixir -> Encoding]" do
             value =
               ObjectsUtility.cast_value_to_property(
                 %ObjectIdentifier{type: unquote(object_type), instance: 1},
