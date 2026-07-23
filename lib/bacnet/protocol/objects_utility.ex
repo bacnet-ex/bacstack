@@ -1974,7 +1974,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
        when is_list(subtypes) do
     Enum.reduce_while(subtypes, {:error, {:invalid_property_value, {property, value}}}, fn
       subtype, {:error, _term} ->
-        case cast_value_to_type(subtype, property, value, opts) do
+        case cast_value_to_encoding(subtype, property, value, opts) do
           {:ok, val} -> {:halt, {:ok, val}}
           term -> {:cont, term}
         end
