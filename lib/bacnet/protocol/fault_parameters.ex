@@ -496,7 +496,7 @@ defmodule BACnet.Protocol.FaultParameters do
                      {:halt, term}
                  end
                end),
-             {:ok, mode} <- DeviceObjectPropertyRef.parse(mode_raw) do
+             {:ok, {mode, _tags}} <- DeviceObjectPropertyRef.parse(mode_raw) do
           fault = %FaultLifeSafety{
             mode: mode,
             fault_values: Enum.reverse(fault_values)
@@ -548,7 +548,7 @@ defmodule BACnet.Protocol.FaultParameters do
         constructed: {0, status_flags_ref_raw, _length2}
       ] ->
         case DeviceObjectPropertyRef.parse(status_flags_ref_raw) do
-          {:ok, status_flags_ref} ->
+          {:ok, {status_flags_ref, _tags}} ->
             fault = %FaultStatusFlags{
               status_flags: status_flags_ref
             }

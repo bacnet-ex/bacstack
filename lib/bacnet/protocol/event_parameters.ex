@@ -1245,7 +1245,7 @@ defmodule BACnet.Protocol.EventParameters do
       ] ->
         with {:ok, {:unsigned_integer, time_delay}} <-
                ApplicationTags.unfold_to_type(:unsigned_integer, time_delay_raw),
-             {:ok, feedback_value} <- DeviceObjectPropertyRef.parse(feedback_value) do
+             {:ok, {feedback_value, _tags}} <- DeviceObjectPropertyRef.parse(feedback_value) do
           event = %CommandFailure{
             feedback_value: feedback_value,
             time_delay: time_delay,
@@ -1274,7 +1274,7 @@ defmodule BACnet.Protocol.EventParameters do
       ] ->
         with {:ok, {:unsigned_integer, time_delay}} <-
                ApplicationTags.unfold_to_type(:unsigned_integer, time_delay_raw),
-             {:ok, setpoint_ref} <- DeviceObjectPropertyRef.parse(setpoint_ref_raw),
+             {:ok, {setpoint_ref, _tags}} <- DeviceObjectPropertyRef.parse(setpoint_ref_raw),
              {:ok, {:real, low_diff}} <-
                ApplicationTags.unfold_to_type(:real, low_diff_raw),
              {:ok, {:real, high_diff}} <-
@@ -1380,7 +1380,7 @@ defmodule BACnet.Protocol.EventParameters do
                      {:halt, term}
                  end
                end),
-             {:ok, mode} <- DeviceObjectPropertyRef.parse(mode_raw) do
+             {:ok, {mode, _tags}} <- DeviceObjectPropertyRef.parse(mode_raw) do
           event = %ChangeOfLifeSafety{
             mode: mode,
             alarm_values: Enum.reverse(alarm_values),
