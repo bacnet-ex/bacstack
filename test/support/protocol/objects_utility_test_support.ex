@@ -28,6 +28,7 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
   alias BACnet.Protocol.Recipient
   alias BACnet.Protocol.SetpointReference
   alias BACnet.Protocol.StatusFlags
+  alias BACnet.Protocol.ObjectTypes.EventEnrollment
   alias BACnet.Protocol.ObjectTypes.Program
   alias BACnet.Protocol.ObjectTypes.TrendLog
   alias BACnet.Protocol.ObjectTypes.TrendLogMultiple
@@ -1474,6 +1475,13 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
     %{struct | device: %{device | type: :device}}
   end
 
+  defp amend_struct_spec_for_cause(%EventEnrollment{} = struct, _cause) do
+    {:ok, struct} = update_event_type(struct)
+    {:ok, struct} = update_fault_type(struct)
+
+    struct
+  end
+
   defp amend_struct_spec_for_cause(
          %TrendLog{logging_type: :polled, log_interval: 0} = struct,
          _cause
@@ -1550,4 +1558,28 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
   defp amend_struct_spec_for_cause(struct, _cause) do
     struct
   end
+
+  # --- Helpers for Event Enrollment object type ---
+  defp update_event_type(%{event_parameters: %type{}} = obj) do
+    if function_exported?(type, :get_tag_number, 0) do
+      with {:ok, val} <- Constants.by_value(:event_type, type.get_tag_number()) do
+        {:ok, %{obj | event_type: val}}
+      end
+    else
+      {:error, {:invalid_or_unknown_type, :event_parameters}}
+    end
+  end
+
+  defp update_fault_type(%{fault_parameters: %type{}} = obj) do
+    if function_exported?(type, :get_tag_number, 0) do
+      with {:ok, val} <- Constants.by_value(:fault_type, type.get_tag_number()) do
+        {:ok, %{obj | fault_type: val}}
+      end
+    else
+      {:error, {:invalid_or_unknown_type, :fault_parameters}}
+    end
+  end
+
+  defp update_fault_type(obj), do: {:ok, obj}
+  # ---
 end

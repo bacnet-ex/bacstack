@@ -61,8 +61,7 @@ defmodule BACnet.Protocol.ObjectTypes.EventEnrollment do
 
   - `status_flags`, `reliability`:
     **Dev must**: Update based on ability to read the reference or internal faults.
-    `fault_type` for the fault algo. `in_alarm`/`fault`/`out_of_service` bits
-    are auto-managed (`overridden` is a local matter).
+    `in_alarm`/`fault`/`out_of_service` bits are auto-managed (`overridden` is a local matter).
 
   - `event_algorithm_inhibit*`, `reliability_evaluation_inhibit`: Control.
     **Dev must**: Respect when inhibiting detection or reliability.
@@ -165,7 +164,7 @@ defmodule BACnet.Protocol.ObjectTypes.EventEnrollment do
 
     field(:description, String.t())
 
-    field(:event_type, Constants.event_type(), required: true, default: :none)
+    field(:event_type, Constants.event_type(), required: true, readonly: true, default: :none)
     field(:notify_type, Constants.notify_type(), required: true, default: :alarm)
 
     field(:event_parameters, EventParameters.event_parameter(),
@@ -208,6 +207,38 @@ defmodule BACnet.Protocol.ObjectTypes.EventEnrollment do
     field(:reliability_evaluation_inhibit, boolean())
 
     field(:fault_type, Constants.fault_type(), readonly: true)
-    field(:fault_parameters, FaultParameters.fault_parameter())
+
+    field(:fault_parameters, FaultParameters.fault_parameter(),
+      implicit_relationship: :fault_type
+    )
   end
+
+  @spec inhibit_object_check(t()) :: {:ok, t()} | {:error, term()}
+  defp inhibit_object_check(%__MODULE__{} = obj) do
+    with {:ok, obj} <- update_event_type(obj) do
+      update_fault_type(obj)
+    end
+  end
+
+  defp update_event_type(%{event_parameters: %type{}} = obj) do
+    if function_exported?(type, :get_tag_number, 0) do
+      with {:ok, val} <- Constants.by_value(:event_type, type.get_tag_number()) do
+        {:ok, %{obj | event_type: val}}
+      end
+    else
+      {:error, {:invalid_or_unknown_type, :event_parameters}}
+    end
+  end
+
+  defp update_fault_type(%{fault_parameters: %type{}} = obj) do
+    if function_exported?(type, :get_tag_number, 0) do
+      with {:ok, val} <- Constants.by_value(:fault_type, type.get_tag_number()) do
+        {:ok, %{obj | fault_type: val}}
+      end
+    else
+      {:error, {:invalid_or_unknown_type, :fault_parameters}}
+    end
+  end
+
+  defp update_fault_type(obj), do: {:ok, obj}
 end
