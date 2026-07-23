@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.3">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>BACnet.Protocol.BvlcFunction — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-NHQLCD6Y.css" />
+
+    <script defer src="dist/sidebar_items-E8E68E80.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-Y2MUTVIN.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr />Protocol.<wbr />BvlcFunction</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0)</small>
+
+    </h1>
+
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/bvlc_function.ex#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>A BVLC Function is the payload of a BACnet Virtual Link Layer (BVLL) message
+used on BACnet/IP networks (ASHRAE 135 Annex J). Each function code corresponds
+to a different operation: Register-Foreign-Device, Read-Broadcast-Distribution-Table,
+Write-Broadcast-Distribution-Table, and several others used for BBMD and
+Foreign Device management.</p><p>This module models the seven management BVLC functions that carry structured
+payloads (as opposed to the five simple NPDU-carrier functions that are
+represented as atoms in <a href="BACnet.Protocol.html#t:bvlc/0"><code class="inline">BACnet.Protocol.bvlc/0</code></a>). It is the central &quot;CHOICE&quot;
+type for BVLC in the library: the <code class="inline">function</code> field (an atom from the
+<code class="inline">:bvlc_result_purpose</code> constants) acts as the discriminant and determines the
+shape of the <code class="inline">data</code> field.</p><h2 id="module-bacnet-specification-references" class="section-heading"><a href="#module-bacnet-specification-references" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">BACnet Specification References</span></h2><ul><li>Annex J.2 defines the BACnet Virtual Link Layer (BVLL) and the BVLC Function
+field (1 octet) together with the overall message format (Type 0x81, Length,
+Function, Data).</li><li>J.2.2-J.2.9 give the exact purpose and octet layout for each management
+function handled here (Write-BDT 0x01, Read-BDT 0x02, Read-BDT-Ack 0x03,
+Register-Foreign-Device 0x05, Read-FDT 0x06, Read-FDT-Ack 0x07,
+Delete-FDT-Entry 0x08).</li><li>J.2.1 and J.2.1.1 define the companion BVLC-Result (0x00) and its result codes
+(see <a href="BACnet.Protocol.BvlcResult.html"><code class="inline">BACnet.Protocol.BvlcResult</code></a> and the <code class="inline">:bvlc_result_format</code> constants).</li><li>J.4.3-J.4.5 and J.5 describe how a BBMD uses these functions to maintain the
+Broadcast Distribution Table (BDT) and Foreign Device Table (FDT) and to
+forward broadcasts.</li></ul><h2 id="module-supported-bvlc-functions-and-data-shapes" class="section-heading"><a href="#module-supported-bvlc-functions-and-data-shapes" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Supported BVLC Functions and Data Shapes</span></h2><p>Only the functions listed below are decoded/encoded by this module. All other
+function codes (including the five NPDU carriers and Secure-BVLL 0x0C) are
+handled elsewhere or return <code class="inline">{:error, :unsupported_bvlc_function}</code>.</p><table><thead><tr><th style="text-align: left;">Function Atom</th><th style="text-align: left;">Code</th><th style="text-align: left;"><code class="inline">data</code> Shape</th><th style="text-align: left;">Spec Reference</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">:bvlc_write_broadcast_distribution_table</code></td><td style="text-align: left;">0x01</td><td style="text-align: left;"><code class="inline">[BroadcastDistributionTableEntry.t()]</code></td><td style="text-align: left;">J.2.2</td></tr><tr><td style="text-align: left;"><code class="inline">:bvlc_read_broadcast_distribution_table</code></td><td style="text-align: left;">0x02</td><td style="text-align: left;"><code class="inline">nil</code></td><td style="text-align: left;">J.2.3</td></tr><tr><td style="text-align: left;"><code class="inline">:bvlc_read_broadcast_distribution_table_ack</code></td><td style="text-align: left;">0x03</td><td style="text-align: left;"><code class="inline">[BroadcastDistributionTableEntry.t()]</code></td><td style="text-align: left;">J.2.4</td></tr><tr><td style="text-align: left;"><code class="inline">:bvlc_register_foreign_device</code></td><td style="text-align: left;">0x05</td><td style="text-align: left;"><code class="inline">non_neg_integer()</code> (TTL in seconds, 1..65535)</td><td style="text-align: left;">J.2.6</td></tr><tr><td style="text-align: left;"><code class="inline">:bvlc_read_foreign_device_table</code></td><td style="text-align: left;">0x06</td><td style="text-align: left;"><code class="inline">nil</code></td><td style="text-align: left;">J.2.7</td></tr><tr><td style="text-align: left;"><code class="inline">:bvlc_read_foreign_device_table_ack</code></td><td style="text-align: left;">0x07</td><td style="text-align: left;"><code class="inline">[ForeignDeviceTableEntry.t()]</code></td><td style="text-align: left;">J.2.8</td></tr><tr><td style="text-align: left;"><code class="inline">:bvlc_delete_foreign_device_table_entry</code></td><td style="text-align: left;">0x08</td><td style="text-align: left;"><code class="inline">ForeignDeviceTableEntry.t()</code> (with <code class="inline">time_to_live</code> and <code class="inline">remaining_time</code> set to <code class="inline">nil</code>)</td><td style="text-align: left;">J.2.9</td></tr></tbody></table><h2 id="module-construction-gotchas" class="section-heading"><a href="#module-construction-gotchas" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Construction &amp; Gotchas</span></h2><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol</span><span class="o">.</span><span class="p" data-group-id="2784402035-1">{</span><span class="nc">BvlcFunction</span><span class="p">,</span><span class="w"> </span><span class="nc">Constants</span><span class="p">,</span><span class="w"> </span><span class="nc">ForeignDeviceTableEntry</span><span class="p" data-group-id="2784402035-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">require</span><span class="w"> </span><span class="nc">Constants</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">ttl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3600</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">fun</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="2784402035-2">%</span><span class="nc" data-group-id="2784402035-2">BvlcFunction</span><span class="p" data-group-id="2784402035-2">{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">function</span><span class="p">:</span><span class="w"> </span><span class="nc">Constants</span><span class="o">.</span><span class="n">macro_assert_name</span><span class="p" data-group-id="2784402035-3">(</span><span class="ss">:bvlc_result_purpose</span><span class="p">,</span><span class="w"> </span><span class="ss">:bvlc_register_foreign_device</span><span class="p" data-group-id="2784402035-3">)</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="n">ttl</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="p" data-group-id="2784402035-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">fun</span><span class="o">.</span><span class="n">data</span><span class="w">
+</span><span class="mi">3600</span></code></pre><p>Special cases you must know:</p><ul><li>Read requests (0x02, 0x06) and their &quot;no data&quot; paths always use <code class="inline">data: nil</code>.</li><li>Delete-Foreign-Device-Table-Entry (0x08) re-uses the <a href="BACnet.Protocol.ForeignDeviceTableEntry.html"><code class="inline">BACnet.Protocol.ForeignDeviceTableEntry</code></a>
+struct but <strong>must</strong> have both <code class="inline">time_to_live</code> and <code class="inline">remaining_time</code> set to <code class="inline">nil</code>.
+The encoder produces the short 6-octet form required by J.2.9.1. See
+<a href="BACnet.Protocol.ForeignDeviceTableEntry.html"><code class="inline">BACnet.Protocol.ForeignDeviceTableEntry</code></a> for the exact encoding rules.</li><li>Secure-BVLL (0x0C) and the five simple NPDU functions (0x00 result, 0x04
+forwarded, 0x09 distribute, 0x0A/0x0B original) are <strong>never</strong> represented as
+a <a href="BACnet.Protocol.BvlcFunction.html"><code class="inline">BACnet.Protocol.BvlcFunction</code></a> struct. They appear as <a href="BACnet.Protocol.BvlcResult.html"><code class="inline">BACnet.Protocol.BvlcResult</code></a>, <a href="BACnet.Protocol.BvlcForwardedNPDU.html"><code class="inline">BACnet.Protocol.BvlcForwardedNPDU</code></a> or
+atoms inside <a href="BACnet.Protocol.html#t:bvlc/0"><code class="inline">BACnet.Protocol.bvlc/0</code></a>.</li><li>The library does not implement Secure-BVLL (Clause 24) or IPv6 BVLL (Type
+0x82). Attempting to decode those codes returns <code class="inline">{:error, :unsupported_bvlc_function}</code>.</li></ul><h3 id="module-examples" class="section-heading"><a href="#module-examples" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Examples</span></h3><p>Register-Foreign-Device (TTL = 3600 s):</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol</span><span class="o">.</span><span class="p" data-group-id="2617690986-1">{</span><span class="nc">BvlcFunction</span><span class="p">,</span><span class="w"> </span><span class="nc">Constants</span><span class="p" data-group-id="2617690986-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">require</span><span class="w"> </span><span class="nc">Constants</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">fun</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="2617690986-2">%</span><span class="nc" data-group-id="2617690986-2">BvlcFunction</span><span class="p" data-group-id="2617690986-2">{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">function</span><span class="p">:</span><span class="w"> </span><span class="nc">Constants</span><span class="o">.</span><span class="n">macro_assert_name</span><span class="p" data-group-id="2617690986-3">(</span><span class="ss">:bvlc_result_purpose</span><span class="p">,</span><span class="w"> </span><span class="ss">:bvlc_register_foreign_device</span><span class="p" data-group-id="2617690986-3">)</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="mi">3600</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="p" data-group-id="2617690986-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">BvlcFunction</span><span class="o">.</span><span class="n">encode</span><span class="p" data-group-id="2617690986-4">(</span><span class="n">fun</span><span class="p" data-group-id="2617690986-4">)</span><span class="w">
+</span><span class="p" data-group-id="2617690986-5">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2617690986-6">{</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2617690986-7">&lt;&lt;</span><span class="mi">14</span><span class="p">,</span><span class="w"> </span><span class="mi">16</span><span class="p" data-group-id="2617690986-7">&gt;&gt;</span><span class="p" data-group-id="2617690986-6">}</span><span class="p" data-group-id="2617690986-5">}</span></code></pre><p>Write-Broadcast-Distribution-Table with a single entry (two-hop mask):</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol</span><span class="o">.</span><span class="p" data-group-id="0341410663-1">{</span><span class="nc">BvlcFunction</span><span class="p">,</span><span class="w"> </span><span class="nc">Constants</span><span class="p">,</span><span class="w"> </span><span class="nc">BroadcastDistributionTableEntry</span><span class="p" data-group-id="0341410663-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">require</span><span class="w"> </span><span class="nc">Constants</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">entry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="0341410663-2">%</span><span class="nc" data-group-id="0341410663-2">BroadcastDistributionTableEntry</span><span class="p" data-group-id="0341410663-2">{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">ip</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0341410663-3">{</span><span class="mi">192</span><span class="p">,</span><span class="w"> </span><span class="mi">168</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p" data-group-id="0341410663-3">}</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">port</span><span class="p">:</span><span class="w"> </span><span class="mh">0xBAC0</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">mask</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0341410663-4">{</span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p" data-group-id="0341410663-4">}</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="p" data-group-id="0341410663-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">fun</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="0341410663-5">%</span><span class="nc" data-group-id="0341410663-5">BvlcFunction</span><span class="p" data-group-id="0341410663-5">{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">function</span><span class="p">:</span><span class="w"> </span><span class="nc">Constants</span><span class="o">.</span><span class="n">macro_assert_name</span><span class="p" data-group-id="0341410663-6">(</span><span class="ss">:bvlc_result_purpose</span><span class="p">,</span><span class="w"> </span><span class="ss">:bvlc_write_broadcast_distribution_table</span><span class="p" data-group-id="0341410663-6">)</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0341410663-7">[</span><span class="n">entry</span><span class="p" data-group-id="0341410663-7">]</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="p" data-group-id="0341410663-5">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">BvlcFunction</span><span class="o">.</span><span class="n">encode</span><span class="p" data-group-id="0341410663-8">(</span><span class="n">fun</span><span class="p" data-group-id="0341410663-8">)</span><span class="w">
+</span><span class="p" data-group-id="0341410663-9">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0341410663-10">{</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0341410663-11">&lt;&lt;</span><span class="mi">192</span><span class="p">,</span><span class="w"> </span><span class="mi">168</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">186</span><span class="p">,</span><span class="w"> </span><span class="mi">192</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p" data-group-id="0341410663-11">&gt;&gt;</span><span class="p" data-group-id="0341410663-10">}</span><span class="p" data-group-id="0341410663-9">}</span></code></pre><p>Delete-Foreign-Device-Table-Entry (note the <code class="inline">nil</code> fields producing the short 6-octet form):</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol</span><span class="o">.</span><span class="p" data-group-id="3408277334-1">{</span><span class="nc">BvlcFunction</span><span class="p">,</span><span class="w"> </span><span class="nc">Constants</span><span class="p">,</span><span class="w"> </span><span class="nc">ForeignDeviceTableEntry</span><span class="p" data-group-id="3408277334-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">require</span><span class="w"> </span><span class="nc">Constants</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">del</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="3408277334-2">%</span><span class="nc" data-group-id="3408277334-2">ForeignDeviceTableEntry</span><span class="p" data-group-id="3408277334-2">{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">ip</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3408277334-3">{</span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p" data-group-id="3408277334-3">}</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">port</span><span class="p">:</span><span class="w"> </span><span class="mh">0xBAC0</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">time_to_live</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">remaining_time</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="p" data-group-id="3408277334-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">fun</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="3408277334-4">%</span><span class="nc" data-group-id="3408277334-4">BvlcFunction</span><span class="p" data-group-id="3408277334-4">{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">function</span><span class="p">:</span><span class="w"> </span><span class="nc">Constants</span><span class="o">.</span><span class="n">macro_assert_name</span><span class="p" data-group-id="3408277334-5">(</span><span class="ss">:bvlc_result_purpose</span><span class="p">,</span><span class="w"> </span><span class="ss">:bvlc_delete_foreign_device_table_entry</span><span class="p" data-group-id="3408277334-5">)</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="n">del</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="p" data-group-id="3408277334-4">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">BvlcFunction</span><span class="o">.</span><span class="n">encode</span><span class="p" data-group-id="3408277334-6">(</span><span class="n">fun</span><span class="p" data-group-id="3408277334-6">)</span><span class="w">
+</span><span class="p" data-group-id="3408277334-7">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3408277334-8">{</span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3408277334-9">&lt;&lt;</span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">186</span><span class="p">,</span><span class="w"> </span><span class="mi">192</span><span class="p" data-group-id="3408277334-9">&gt;&gt;</span><span class="p" data-group-id="3408277334-8">}</span><span class="p" data-group-id="3408277334-7">}</span></code></pre><h2 id="module-usage-contexts" class="section-heading"><a href="#module-usage-contexts" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Usage Contexts</span></h2><p><a href="BACnet.Protocol.BvlcFunction.html"><code class="inline">BACnet.Protocol.BvlcFunction</code></a> values are produced by <a href="BACnet.Protocol.html#decode_bvll/3"><code class="inline">BACnet.Protocol.decode_bvll/3</code></a> when the
+incoming BVLC function code is one of the seven management values. They are
+primarily consumed by <a href="BACnet.Stack.BBMD.html"><code class="inline">BACnet.Stack.BBMD</code></a> (which answers Read-BDT/Read-FDT,
+accepts Write-BDT and Register-Foreign-Device, and emits the corresponding Ack
+or Result messages) and by <a href="BACnet.Stack.ForeignDevice.html"><code class="inline">BACnet.Stack.ForeignDevice</code></a> (which emits Register,
+Read-BDT, Read-FDT and Distribute-Broadcast requests).</p><p>The encode side is used when a client or BBMD needs to emit a management
+request or response over a <a href="BACnet.Stack.Transport.IPv4Transport.html"><code class="inline">BACnet.Stack.Transport.IPv4Transport</code></a>.</p><h2 id="module-see-also" class="section-heading"><a href="#module-see-also" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">See Also</span></h2><ul><li><a href="BACnet.Protocol.html"><code class="inline">BACnet.Protocol</code></a> - top-level <code class="inline">bvlc()</code> union type and <code class="inline">decode_bvll/3</code> dispatcher</li><li><a href="BACnet.Protocol.BroadcastDistributionTableEntry.html"><code class="inline">BACnet.Protocol.BroadcastDistributionTableEntry</code></a> - rows stored in BDT payloads</li><li><a href="BACnet.Protocol.BvlcForwardedNPDU.html"><code class="inline">BACnet.Protocol.BvlcForwardedNPDU</code></a> - the Forwarded-NPDU carrier (0x04)</li><li><a href="BACnet.Protocol.BvlcResult.html"><code class="inline">BACnet.Protocol.BvlcResult</code></a> - companion result/NAK message (function 0x00)</li><li><a href="BACnet.Protocol.ForeignDeviceTableEntry.html"><code class="inline">BACnet.Protocol.ForeignDeviceTableEntry</code></a> - rows stored in FDT payloads (and the special nil form used for Delete)</li><li><a href="BACnet.Stack.BBMD.html"><code class="inline">BACnet.Stack.BBMD</code></a> - primary consumer that maintains BDT/FDT using these functions</li><li><a href="BACnet.Stack.ForeignDevice.html"><code class="inline">BACnet.Stack.ForeignDevice</code></a> - client-side registration and table reading</li></ul>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-types summary">
+  <h3>
+    <a href="#types">Types</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:t/0" data-no-tooltip="" translate="no">t()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents a BACnet Virtual Link Control (BVLC) function used in BACnet/IP.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#decode/2" data-no-tooltip="" translate="no">decode(bvlc_function, data)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Decodes BACnet Virtual Link Control Functions into a struct.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#encode/1" data-no-tooltip="" translate="no">encode(bvlc)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Encodes BACnet Virtual Link Control Functions into binary data.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h2>
+
+    <div class="types-list">
+<section class="detail" id="t:t/0">
+
+  <div class="detail-header">
+    <a href="#t:t/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">t()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/bvlc_function.ex#L158" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> t() :: %BACnet.Protocol.BvlcFunction{
+  data:
+    [<a href="BACnet.Protocol.BroadcastDistributionTableEntry.html#t:t/0">BACnet.Protocol.BroadcastDistributionTableEntry.t</a>()]
+    | [<a href="BACnet.Protocol.ForeignDeviceTableEntry.html#t:t/0">BACnet.Protocol.ForeignDeviceTableEntry.t</a>()]
+    | (delete_foreign_device_table_entry ::
+         <a href="BACnet.Protocol.ForeignDeviceTableEntry.html#t:t/0">BACnet.Protocol.ForeignDeviceTableEntry.t</a>())
+    | (read_broadcast_distribution_table :: nil)
+    | (read_foreign_device_table :: nil)
+    | (register_foreign_device :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()),
+  function: <a href="BACnet.Protocol.Constants.html#t:bvlc_result_purpose/0">BACnet.Protocol.Constants.bvlc_result_purpose</a>()
+}</pre>
+
+      </div>
+
+<p>Represents a BACnet Virtual Link Control (BVLC) function used in BACnet/IP.</p><p>The <code class="inline">function</code> field is the discriminant. Its value determines the required
+shape of <code class="inline">data</code> (see the moduledoc table). Use the
+<a href="BACnet.Protocol.Constants.html#macro_assert_name/2"><code class="inline">BACnet.Protocol.Constants.macro_assert_name/2</code></a> helpers when constructing
+values for maximum safety and readability.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="decode/2">
+
+  <div class="detail-header">
+    <a href="#decode/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">decode(bvlc_function, data)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/bvlc_function.ex#L186" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> decode(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) :: {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Decodes BACnet Virtual Link Control Functions into a struct.</p><p>Supported are the following BVLC functions:</p><ul><li>Delete-Foreign-Device-Table-Entry</li><li>Read-Broadcast-Distribution-Table</li><li>Read-Broadcast-Distribution-Table-Ack</li><li>Read-Foreign-Device-Table</li><li>Read-Foreign-Device-Table-Ack</li><li>Register-Foreign-Device</li><li>Write-Broadcast-Distribution-Table</li></ul>
+  </section>
+</section>
+<section class="detail" id="encode/1">
+
+  <div class="detail-header">
+    <a href="#encode/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">encode(bvlc)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/bvlc_function.ex#L384" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> encode(<a href="#t:t/0">t</a>()) ::
+  {:ok, {bvlc_function :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(), data :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()}}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Encodes BACnet Virtual Link Control Functions into binary data.</p><p>Supported are the following BVLC functions:</p><ul><li>Delete-Foreign-Device-Table-Entry</li><li>Read-Broadcast-Distribution-Table</li><li>Read-Broadcast-Distribution-Table-Ack</li><li>Read-Foreign-Device-Table</li><li>Read-Foreign-Device-Table-Ack</li><li>Register-Foreign-Device</li><li>Write-Broadcast-Distribution-Table</li></ul>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.3) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

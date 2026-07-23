@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.3">
+    <meta name="project" content="bacstack v0.1.0">
+
+
+    <title>BACnet.Protocol.ObjectTypes.AnalogInput — bacstack v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-NHQLCD6Y.css" />
+
+    <script defer src="dist/sidebar_items-E8E68E80.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-Y2MUTVIN.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr />Protocol.<wbr />ObjectTypes.<wbr />AnalogInput</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0)</small>
+
+    </h1>
+
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>The Analog Input object is the primary BACnet object type for exposing continuous
+sensor measurements such as temperature, pressure, flow, humidity, current, voltage,
+or any other physical analog quantity. Its <code class="inline">present_value</code> (a float) reflects the
+current reading, scaled and in the units specified by the required <code class="inline">units</code> property.
+Supporting properties include <code class="inline">min_present_value</code>/<code class="inline">max_present_value</code> limits,
+<code class="inline">resolution</code>, <code class="inline">update_interval</code>, <code class="inline">device_type</code> (for the physical sensor), and
+reliability/out_of_service handling.</p><p>Change-of-value (COV) reporting is supported and can be tuned with the <code class="inline">cov_increment</code>
+property (only notifications are sent when the value changes by at least that amount).
+When <code class="inline">intrinsic_reporting: true</code> is passed to <a href="#create/4"><code class="inline">create/4</code></a>, the object activates
+OUT_OF_RANGE intrinsic alarming with <code class="inline">high_limit</code>, <code class="inline">low_limit</code>, and <code class="inline">deadband</code>
+properties plus the full event reporting machinery.</p><h3 id="module-object-description-ashrae-135" class="section-heading"><a href="#module-object-description-ashrae-135" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Object Description (ASHRAE 135)</span></h3><blockquote><p>The Analog Input object type defines a standardized object whose properties represent
+the externally visible characteristics of an analog input.</p><p>Analog Input objects that support intrinsic reporting shall apply the OUT_OF_RANGE
+event algorithm.</p></blockquote><h3 id="module-behaviour-and-operation" class="section-heading"><a href="#module-behaviour-and-operation" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Behaviour and Operation</span></h3><p>Analog Input objects are measurement objects. The <code class="inline">present_value</code> (a float in the
+units declared by the required <code class="inline">units</code> property) is normally maintained by the local
+application or I/O subsystem that reads the physical sensor and writes the current
+value (subject to any scaling, filtering or calibration the device performs).</p><p>BACnet clients may freely read <code class="inline">present_value</code>, <code class="inline">status_flags</code>, <code class="inline">reliability</code>, etc.
+Direct writes to <code class="inline">present_value</code> from the network side are only permitted while
+<code class="inline">out_of_service</code> is <code class="inline">true</code> (this allows forcing a value for testing, simulation or
+commissioning). When <code class="inline">out_of_service</code> is <code class="inline">false</code>, the device server must reject
+writes to <code class="inline">present_value</code> coming over BACnet (the object struct itself does not
+enforce this for input objects because it cannot distinguish local vs. remote
+writers; see <a href="BACnet.Protocol.ObjectsMacro.html"><code class="inline">BACnet.Protocol.ObjectsMacro</code></a> for guidance).</p><p>Setting <code class="inline">out_of_service</code> to <code class="inline">true</code> also signals that the physical input is
+disconnected or ignored. The <code class="inline">reliability</code> property (together with <code class="inline">status_flags.fault</code>)
+is used to indicate sensor or input hardware problems. COV reporting is supported and
+can be tuned with <code class="inline">cov_increment</code> so that notifications are only generated for
+changes large enough to matter.</p><p>When the object is created with <code class="inline">intrinsic_reporting: true</code>, the intrinsic event
+properties become available and the object will use the OUT_OF_RANGE algorithm to
+manage <code class="inline">event_state</code> transitions and generate notifications via the configured
+<code class="inline">notification_class</code>.</p><h3 id="module-developer-implementation-notes-geared-to-device-server-application-authors" class="section-heading"><a href="#module-developer-implementation-notes-geared-to-device-server-application-authors" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Developer Implementation Notes (geared to device server / application authors)</span></h3><p>The generated code handles storage + basic mechanics (validation, implicit_relationships,
+readonly annotations as hints to your server, etc.). <strong>You must drive &quot;special&quot; live
+properties and side effects yourself</strong>, analogous to maintaining <code class="inline">present_value</code> on
+inputs via <a href="#update_property/3"><code class="inline">update_property/3</code></a> (never direct mutation). Read notes below + generated
+tables for details.</p><p><strong>Special / live properties and expected developer behaviour</strong></p><ul><li><p><code class="inline">present_value</code>: The measured analog value in engineering units.
+<strong>Dev must</strong>: Your I/O / ADC / sensor driver or polling task computes the value
+(apply calibration, scaling, filtering) and calls <code class="inline">update_property(obj, :present_value, val)</code>
+on samples or significant changes. This is the core &quot;live input&quot; contract.</p></li><li><p><code class="inline">status_flags</code>: The <code class="inline">in_alarm</code>, <code class="inline">fault</code> and <code class="inline">out_of_service</code> bits are automatically
+maintained by the object (based on <code class="inline">event_state</code>, <code class="inline">reliability</code> and
+the <code class="inline">out_of_service</code> property). The <code class="inline">overridden</code> bit is a local matter for the
+user to set when appropriate.</p></li><li><p><code class="inline">out_of_service</code>: Suspends real input.
+<strong>Dev must</strong>: Your driver ignores hardware while <code class="inline">true</code>; your BACnet write handler
+allows forcing present_value only while <code class="inline">true</code>.</p></li><li><p><code class="inline">reliability</code> (implicit to <code class="inline">reliability_evaluation_inhibit</code>): Sensor health.
+<strong>Dev must</strong>: Set based on hardware (e.g. <code class="inline">:no_sensor</code>, <code class="inline">:over_range</code>). The <code class="inline">fault</code> bit
+in <code class="inline">status_flags</code> is automatically set by the object. Re-evaluate intrinsic events on change.</p></li><li><p><code class="inline">cov_increment</code>: Affects when COV notifications are sent for <code class="inline">present_value</code> changes.</p></li><li><p>Intrinsic only (<code class="inline">high_limit</code>, <code class="inline">low_limit</code>, <code class="inline">deadband</code>, + event_<em> set): Limits for
+alarming.
+<em>*Dev must</em></em>: After PV/reliability update, your central event engine must run the
+OUT_OF_RANGE algorithm (using these params on the object), transition <code class="inline">event_state</code>,
+manage timestamps/acked, and send notifications if needed via notification_class.
+Object only stores; you execute.</p></li><li><p><code class="inline">resolution</code>, <code class="inline">update_interval</code>, <code class="inline">min/max_present_value</code>, <code class="inline">device_type</code>: Mostly
+static metadata/config.
+<strong>Dev must</strong>: Set at creation or allow writes; publish accurate info from your
+transducer characteristics. <code class="inline">update_interval</code> can reflect your scan rate.</p></li></ul><p>See the rest of these notes and the generated tables (at end of moduledoc) for
+creation, runtime PV, write protection, COV, intrinsic, remote objects, etc.</p><p><strong>Creation</strong>: <code class="inline">create(instance, name, %{units: :degrees_celsius, ...}, intrinsic_reporting: true)</code>
+Optional fields like <code class="inline">min_present_value</code>, <code class="inline">max_present_value</code>, <code class="inline">resolution</code>, <code class="inline">update_interval</code>,
+<code class="inline">device_type</code>, <code class="inline">cov_increment</code> can be supplied.
+If <code class="inline">intrinsic_reporting: true</code> is passed in <code class="inline">opts</code>, the limit fields
+(<code class="inline">high_limit</code>, <code class="inline">low_limit</code>, <code class="inline">pulse_rate</code>, <code class="inline">limit_monitoring_interval</code>)
+plus the full intrinsic set (<code class="inline">event_enable</code>, etc.) become active and non-nil.</p><p><strong>Runtime PV maintenance (the heart of an input object)</strong>: Your I/O scanner, ADC
+driver or periodic task is 100% responsible for the engineering value. Compute it
+(apply any local calibration, filtering, unit conversion), then call
+<code class="inline">update_property(obj, :present_value, val)</code>. This will:</p><ul><li>run the validator (float range check)</li><li>update <code class="inline">status_flags</code> (<code class="inline">in_alarm</code>/<code class="inline">fault</code>/<code class="inline">out_of_service</code>) automatically as needed</li><li>return a (possibly mutated) object that you must persist back into your
+object store / ETS / GenServer state.
+Never do <code class="inline">%{obj | present_value: val}</code> unless you are inside a controlled
+test path; you will bypass protection, validation, etc.</li></ul><p><strong>Network write protection for inputs (MANDATORY for conformance)</strong>: The library
+explicitly documents that input objects do <strong>not</strong> protect <code class="inline">present_value</code> themselves
+because they cannot know whether the caller is &quot;local app&quot; or &quot;BACnet wire&quot;.
+Therefore your WriteProperty / WritePropertyMultiple / ConfirmedWriteProperty
+service handler (or the generic property writer) <strong>must</strong> protect writes to <code class="inline">present_value</code>
+when the object is not out of service.
+Local driver code bypasses this check (it calls the function directly).
+When <code class="inline">out_of_service</code> becomes true the protection is lifted, so a technician or
+simulator can force a value for diagnostics. The <code class="inline">out_of_service</code> bit in
+<code class="inline">status_flags</code> is automatically kept in sync by the object.</p><p><strong>out_of_service + reliability contract</strong>: Setting <code class="inline">out_of_service = true</code> tells
+everybody &quot;ignore the real sensor, the value you see may be synthetic&quot;.
+Your driver should stop (or ignore) hardware reads while it is true. You must
+keep <code class="inline">:reliability</code> accurate at all times (<code class="inline">:no_fault_detected</code>,
+<code class="inline">:over_range</code>, <code class="inline">:under_range</code>, <code class="inline">:communication_failure</code>, <code class="inline">:process_error</code>, ...). When
+reliability is not the no-fault value the <code class="inline">.fault</code> bit of <code class="inline">status_flags</code> is
+automatically set by the object (the <code class="inline">overridden</code> bit is a local matter).
+<code class="inline">reliability_evaluation_inhibit</code> can be used to temporarily suppress reliability evaluation.</p><p><strong>Intrinsic reporting / event generation</strong>: With <code class="inline">intrinsic_reporting: true</code> the
+object carries a complete OUT_OF_RANGE event machine (<code class="inline">high_limit</code>, <code class="inline">low_limit</code>,
+<code class="inline">deadband</code>, <code class="inline">time_delay</code>, <code class="inline">time_delay_normal</code>, <code class="inline">event_enable</code>, <code class="inline">acked_transitions</code>,
+<code class="inline">event_state</code>, <code class="inline">event_timestamps</code>, <code class="inline">notification_class</code>, ...). After a PV update
+(or a reliability change) your event-detection task must:</p><ol><li>Re-evaluate the OUT_OF_RANGE algorithm using the limit/deadband values on
+this object + the current PV.</li><li>Possibly transition <code class="inline">event_state</code> (normal &lt;-&gt; high-limit &lt;-&gt; low-limit).</li><li>Update timestamps, ack bits etc.</li><li>If a transition that requires notification occurred, look up the
+NotificationClass object and send the appropriate notifications (using the
+priority and ack-required flags from the class).
+The object struct only <em>stores</em> the state; the evaluation and notification
+emission is server code (often centralised in an EventManager or similar).
+The same applies to the optional fault algorithm if you support one.</li></ol><p><strong>Other properties your driver may need to touch</strong>:</p><ul><li><code class="inline">update_interval</code> - you can publish how often you intend to refresh the value.</li><li><code class="inline">device_type</code> - static string describing the transducer (&quot;10k thermistor&quot;,
+&quot;4-20mA pressure transducer&quot; …).</li><li><code class="inline">resolution</code> - the smallest change the hardware can reliably report.</li><li><code class="inline">min_present_value</code> / <code class="inline">max_present_value</code> - Engineering limits of the sensor.
+All of these are normally written once at creation/configuration time.</li></ul><p><strong>Remote objects</strong>: If <code class="inline">_metadata.remote_object</code> is set (populated by
+<a href="BACnet.Protocol.ObjectsUtility.html"><code class="inline">BACnet.Protocol.ObjectsUtility</code></a> when reading from a remote device), all mutation
+operations (<code class="inline">update_property</code>, <code class="inline">add_property</code>, <code class="inline">set_priority</code>, etc.) will be rejected
+by the generated code. You can only read remote analog inputs.</p><p><strong>Threading / concurrency note</strong>: Your object store must handle concurrent reads
+(many COV subscribers, ReadPropertyMultiple) while you are doing an update.
+The returned object from <code class="inline">update_property</code> is the new canonical version; atomically
+replace it.</p><p><strong>Testing / simulation</strong>: The canonical way to force a value for a test is:</p><ol><li>Write <code class="inline">out_of_service = true</code> (allowed even on inputs).</li><li>Write the desired <code class="inline">present_value</code>.</li><li>Later set <code class="inline">out_of_service = false</code> to return to real hardware.</li></ol><p>The generated moduledoc lists every field with its revision,
+required/readonly/protected/ intrinsic flags, default, init_fun,
+validator and annotations - use it as the authoritative reference when writing your driver.</p><p>See also the <code class="inline">ObjectsMacro</code> moduledoc for the generic rules that apply to all
+objects (protected properties, common defaults, remote-object behaviour, etc.).</p><h3 id="module-intrinsic-reporting" class="section-heading"><a href="#module-intrinsic-reporting" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Intrinsic Reporting</span></h3><p>When <code class="inline">intrinsic_reporting: true</code> is passed to <a href="#create/4"><code class="inline">create/4</code></a> (or the object is
+configured that way), the following additional properties become active:
+<code class="inline">deadband</code>, <code class="inline">high_limit</code>, <code class="inline">low_limit</code>, plus the standard event reporting set
+(<code class="inline">event_enable</code>, <code class="inline">event_state</code>, etc.). The object will use the OUT_OF_RANGE event
+algorithm.</p><h3 id="module-cov-reporting" class="section-heading"><a href="#module-cov-reporting" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">COV Reporting</span></h3><p>Change-of-value reporting is supported via the <code class="inline">cov_increment</code> property.</p><h3 id="module-examples" class="section-heading"><a href="#module-examples" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Examples</span></h3><p>Creating a simple Analog Input (minimal properties):</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="2040131532-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">ai</span><span class="p" data-group-id="2040131532-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectTypes.AnalogInput</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="2040131532-2">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Room Temp&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2040131532-3">%{</span><span class="ss">units</span><span class="p">:</span><span class="w"> </span><span class="ss">:degrees_celsius</span><span class="p" data-group-id="2040131532-3">}</span><span class="p" data-group-id="2040131532-2">)</span><span class="p">;</span><span class="w"> </span><span class="n">ai</span><span class="o">.</span><span class="n">units</span><span class="w">
+</span><span class="ss">:degrees_celsius</span></code></pre><p>Enabling intrinsic reporting (additional properties become available):</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="0141310412-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">ai</span><span class="p" data-group-id="0141310412-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectTypes.AnalogInput</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="0141310412-2">(</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Pressure&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0141310412-3">%{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">units</span><span class="p">:</span><span class="w"> </span><span class="ss">:pascals</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="p" data-group-id="0141310412-3">}</span><span class="p">,</span><span class="w"> </span><span class="ss">intrinsic_reporting</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="p" data-group-id="0141310412-2">)</span><span class="p">;</span><span class="w"> </span><span class="n">ai</span><span class="o">.</span><span class="n">high_limit</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="no">nil</span><span class="w">
+</span><span class="no">true</span></code></pre><h3 id="module-see-also" class="section-heading"><a href="#module-see-also" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">See Also</span></h3><ul><li><a href="BACnet.Protocol.EventAlgorithms.OutOfRange.html"><code class="inline">BACnet.Protocol.EventAlgorithms.OutOfRange</code></a></li></ul><hr style="height: 10px;visibility: hidden;"/><hr class="thin"/><p>The following part has been automatically generated.</p><details><summary>Click to expand</summary>
+
+This module defines a BACnet object of the type `analog_input`. The following properties are defined:
+
+| Property | Revision | Required | Readonly | Protected | Intrinsic |
+|----------|----------|----------|----------|-----------|-----------|
+| acked_transitions |  |  | X |  | X |
+| cov_increment |  |  |  |  |  |
+| deadband |  |  |  |  | X |
+| description |  |  |  |  |  |
+| device_type |  |  |  |  |  |
+| event_algorithm_inhibit |  |  |  |  | X |
+| event_algorithm_inhibit_ref |  |  |  |  | X |
+| event_detection_enable |  |  |  |  | X |
+| event_enable |  |  |  |  | X |
+| event_message_texts |  |  | X |  | X |
+| event_message_texts_config |  |  |  |  | X |
+| event_state |  | X |  |  |  |
+| event_timestamps |  |  | X |  | X |
+| high_limit |  |  |  |  | X |
+| limit_enable |  |  |  |  | X |
+| low_limit |  |  |  |  | X |
+| max_present_value |  |  |  |  |  |
+| min_present_value |  |  |  |  |  |
+| notification_class |  |  |  |  | X |
+| notify_type |  |  |  |  | X |
+| object_instance |  | X | X |  |  |
+| object_name |  | X | X |  |  |
+| out_of_service |  | X |  |  |  |
+| present_value |  | X |  |  |  |
+| profile_location | 19 |  |  |  |  |
+| profile_name |  |  |  |  |  |
+| reliability |  |  |  |  |  |
+| reliability_evaluation_inhibit |  |  |  |  |  |
+| resolution |  |  | X |  |  |
+| status_flags |  | X | X |  |  |
+| tags | 19 |  |  |  |  |
+| time_delay |  |  |  |  | X |
+| time_delay_normal |  |  |  |  | X |
+| units |  | X |  |  |  |
+| update_interval |  |  |  |  |  |
+
+The following properties have additional semantics:
+
+| Property | Has Default | Has Init | Implicit Relationships | Validators | Annotations |
+|----------|-------------|----------|------------------------|------------|-------------|
+| cov_increment | X |  |  |  |  |
+| deadband | X |  |  |  |  |
+| event_algorithm_inhibit_ref |  |  | event_algorithm_inhibit |  |  |
+| high_limit | X |  |  |  |  |
+| low_limit | X |  |  |  |  |
+| present_value | X |  |  | Fun | `readonly_when: {:out_of_service, false}` |
+| profile_location |  |  |  | Fun | `revision: 19` |
+| reliability |  |  | reliability_evaluation_inhibit |  |  |
+| resolution | X |  |  |  |  |
+| tags |  |  |  |  | `revision: 19` |
+| units | X |  |  |  |  |
+
+The following table shows the default values and/or init functions:
+
+| Property | Default Value | Init Function |
+|----------|---------------|---------------|
+| cov_increment | `0.1` |  |
+| deadband | `0.0` |  |
+| high_limit | `0.0` |  |
+| low_limit | `0.0` |  |
+| present_value | `0.0` |  |
+| resolution | `0.1` |  |
+| units | `:no_units` |  |</details>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-types summary">
+  <h3>
+    <a href="#types">Types</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:common_object_opts/0" data-no-tooltip="" translate="no">common_object_opts()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Common object options for creation - all are optional.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:object_opts/0" data-no-tooltip="" translate="no">object_opts()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Options accepted when creating or configuring an Analog Input object.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:property_name/0" data-no-tooltip="" translate="no">property_name()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Available property names for this object.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:property_update_error/0" data-no-tooltip="" translate="no">property_update_error()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>The structure for property errors.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:t/0" data-no-tooltip="" translate="no">t()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents an Analog Input object. All keys should be treated as read-only,
+all updates should go only through <a href="#update_property/3"><code class="inline">update_property/3</code></a>.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#add_property/3" data-no-tooltip="" translate="no">add_property(object, property, value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Adds an optional property to an object.
+Remote objects can not be mutated using this operation.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#create/4" data-no-tooltip="" translate="no">create(instance_number, object_name, properties \\ %{}, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Creates a new object struct with the defined properties. Optional properties are not
+created when not given, only required, given and dependency properties are created.
+Properties with a value of <code class="inline">nil</code> are ignored.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_all_properties/0" data-no-tooltip="" translate="no">get_all_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of all properties this object supports.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_annotation/1" data-no-tooltip="" translate="no">get_annotation(name)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the annotations for the given property name.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_annotations/0" data-no-tooltip="" translate="no">get_annotations()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the list of annotations for each property.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_cov_properties/0" data-no-tooltip="" translate="no">get_cov_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of properties used for COV reporting.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_intrinsic_properties/0" data-no-tooltip="" translate="no">get_intrinsic_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of intrinsic properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_object_identifier/1" data-no-tooltip="" translate="no">get_object_identifier(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the BACnet object identifier.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_optional_properties/0" data-no-tooltip="" translate="no">get_optional_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of optional properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_properties/1" data-no-tooltip="" translate="no">get_properties(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the list of properties the object has.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_properties_type_map/0" data-no-tooltip="" translate="no">get_properties_type_map()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get a map of property name to type.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_property/2" data-no-tooltip="" translate="no">get_property(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get a property's value from an object.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_protected_properties/0" data-no-tooltip="" translate="no">get_protected_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of protected properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_readonly_properties/0" data-no-tooltip="" translate="no">get_readonly_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of readonly properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_required_properties/0" data-no-tooltip="" translate="no">get_required_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of required properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#has_property?/2" data-no-tooltip="" translate="no">has_property?(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks if the given object has the given property.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#intrinsic_reporting?/1" data-no-tooltip="" translate="no">intrinsic_reporting?(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks if the given object has Intrinsic Reporting enabled.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#property_writable?/2" data-no-tooltip="" translate="no">property_writable?(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks if the given property is writable.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#remove_property/2" data-no-tooltip="" translate="no">remove_property(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Removes an optional property from an object. This function is idempotent.
+Remote objects can not be mutated using this operation.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#supports_intrinsic/0" data-no-tooltip="" translate="no">supports_intrinsic()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to check whether the object type supports intrinsic reporting.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#update_property/3" data-no-tooltip="" translate="no">update_property(object, property, value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Updates a property of an object.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h2>
+
+    <div class="types-list">
+<section class="detail" id="t:common_object_opts/0">
+
+  <div class="detail-header">
+    <a href="#t:common_object_opts/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">common_object_opts()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> common_object_opts() ::
+  {:allow_unknown_properties, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | {:ignore_unknown_properties, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}
+  | {:revision, <a href="BACnet.Protocol.Constants.html#t:protocol_revision/0">BACnet.Protocol.Constants.protocol_revision</a>()}
+  | {:skip_property_validation_remote_object, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>() | :value}</pre>
+
+      </div>
+
+<p>Common object options for creation - all are optional.</p><ul><li><code class="inline">allow_unknown_properties</code> - Properties that are unknown to the object implementation are usually rejected.
+With this option, unknown properties (numeric identifiers usually means we dont know them) are accepted
+and put into a separate map. This does mean we can not validate or write them.
+Types of the values can be anything at this point. While you can read unknown properties with atom
+or integer as property identifier, you can only remove numeric unknown property identifiers from an object.
+Property identifiers of type <code class="inline">atom</code> are only accepted, if it is a remote object (object implementation is only
+enforced if it is a local object). Numeric property identifiers are accepted regardless of remote object or not.
+For remote objects, this means you have to write &quot;raw values&quot; (usually <code class="inline">Encoding</code> structs).</li><li><code class="inline">ignore_unknown_properties</code> - Properties that are unknown to the object implementation are usually rejected.
+With this option, unknown properties get ignored, as if they were not specified.</li><li><code class="inline">revision</code> - The BACnet protocol revision to check required properties against.
+Optional properties are regardless of revision available.
+See <a href="BACnet.Protocol.Constants.html#t:protocol_revision/0"><code class="inline">BACnet.Protocol.Constants.protocol_revision/0</code></a> for the available revisions.</li><li><code class="inline">skip_property_validation_remote_object</code> - Skips property validation for remote objects.
+Sometimes it is possible that the value is invalid as per BACnet specification
+(i.e. value 0 for a multistate object), but you still want those to be represented.
+Value <code class="inline">true</code> neither type nor value are validated. Value <code class="inline">:value</code> means the type
+is still validated and only the value validator is not run (if present).
+The property's <code class="inline">validator_fun</code> will also be skipped.</li></ul>
+  </section>
+</section>
+<section class="detail" id="t:object_opts/0">
+
+  <div class="detail-header">
+    <a href="#t:object_opts/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">object_opts()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L222" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> object_opts() :: {:intrinsic_reporting, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()} | <a href="#t:common_object_opts/0">common_object_opts</a>()</pre>
+
+      </div>
+
+<p>Options accepted when creating or configuring an Analog Input object.</p><p>In addition to the common object options, supports enabling intrinsic
+reporting via <code class="inline">intrinsic_reporting</code>.</p>
+  </section>
+</section>
+<section class="detail" id="t:property_name/0">
+
+  <div class="detail-header">
+    <a href="#t:property_name/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">property_name()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> property_name() ::
+  :acked_transitions
+  | :cov_increment
+  | :deadband
+  | :description
+  | :device_type
+  | :event_algorithm_inhibit
+  | :event_algorithm_inhibit_ref
+  | :event_detection_enable
+  | :event_enable
+  | :event_message_texts
+  | :event_message_texts_config
+  | :event_state
+  | :event_timestamps
+  | :high_limit
+  | :limit_enable
+  | :low_limit
+  | :max_present_value
+  | :min_present_value
+  | :notification_class
+  | :notify_type
+  | :object_instance
+  | :object_name
+  | :out_of_service
+  | :present_value
+  | :profile_location
+  | :profile_name
+  | :reliability
+  | :reliability_evaluation_inhibit
+  | :resolution
+  | :status_flags
+  | :tags
+  | :time_delay
+  | :time_delay_normal
+  | :units
+  | :update_interval</pre>
+
+      </div>
+
+<p>Available property names for this object.</p>
+  </section>
+</section>
+<section class="detail" id="t:property_update_error/0">
+
+  <div class="detail-header">
+    <a href="#t:property_update_error/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">property_update_error()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> property_update_error() ::
+  {:error,
+   {error :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(),
+    property :: <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()}}</pre>
+
+      </div>
+
+<p>The structure for property errors.</p>
+  </section>
+</section>
+<section class="detail" id="t:t/0">
+
+  <div class="detail-header">
+    <a href="#t:t/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">t()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> t() :: %BACnet.Protocol.ObjectTypes.AnalogInput{
+  _metadata: internal_metadata(),
+  _unknown_properties: %{
+    optional(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()) =&gt;
+      <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+      | <a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()
+      | [<a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()]
+  },
+  acked_transitions: <a href="BACnet.Protocol.EventTransitionBits.html#t:t/0">BACnet.Protocol.EventTransitionBits.t</a>() | nil,
+  cov_increment: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">float</a>() | nil,
+  deadband: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">float</a>() | nil,
+  description: <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>() | nil,
+  device_type: <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>() | nil,
+  event_algorithm_inhibit: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>() | nil,
+  event_algorithm_inhibit_ref: <a href="BACnet.Protocol.ObjectPropertyRef.html#t:t/0">BACnet.Protocol.ObjectPropertyRef.t</a>() | nil,
+  event_detection_enable: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>() | nil,
+  event_enable: <a href="BACnet.Protocol.EventTransitionBits.html#t:t/0">BACnet.Protocol.EventTransitionBits.t</a>() | nil,
+  event_message_texts: <a href="BACnet.Protocol.EventMessageTexts.html#t:t/0">BACnet.Protocol.EventMessageTexts.t</a>() | nil,
+  event_message_texts_config: <a href="BACnet.Protocol.EventMessageTexts.html#t:t/0">BACnet.Protocol.EventMessageTexts.t</a>() | nil,
+  event_state: <a href="BACnet.Protocol.Constants.html#t:event_state/0">BACnet.Protocol.Constants.event_state</a>(),
+  event_timestamps: <a href="BACnet.Protocol.EventTimestamps.html#t:t/0">BACnet.Protocol.EventTimestamps.t</a>() | nil,
+  high_limit: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">float</a>() | nil,
+  limit_enable: <a href="BACnet.Protocol.LimitEnable.html#t:t/0">BACnet.Protocol.LimitEnable.t</a>() | nil,
+  low_limit: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">float</a>() | nil,
+  max_present_value: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">float</a>() | nil,
+  min_present_value: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">float</a>() | nil,
+  notification_class: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>() | nil,
+  notify_type: <a href="BACnet.Protocol.Constants.html#t:notify_type/0">BACnet.Protocol.Constants.notify_type</a>() | nil,
+  object_instance: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(),
+  object_name: <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
+  out_of_service: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>(),
+  present_value: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">float</a>(),
+  profile_location: <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>() | nil,
+  profile_name: <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>() | nil,
+  reliability: <a href="BACnet.Protocol.Constants.html#t:reliability/0">BACnet.Protocol.Constants.reliability</a>() | nil,
+  reliability_evaluation_inhibit: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>() | nil,
+  resolution: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">float</a>() | nil,
+  status_flags: <a href="BACnet.Protocol.StatusFlags.html#t:t/0">BACnet.Protocol.StatusFlags.t</a>(),
+  tags: <a href="BACnet.Protocol.BACnetArray.html#t:t/1">BACnet.Protocol.BACnetArray.t</a>(<a href="BACnet.Protocol.NameValue.html#t:t/0">BACnet.Protocol.NameValue.t</a>()) | nil,
+  time_delay: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>() | nil,
+  time_delay_normal: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>() | nil,
+  units: <a href="BACnet.Protocol.Constants.html#t:engineering_unit/0">BACnet.Protocol.Constants.engineering_unit</a>(),
+  update_interval: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>() | nil
+}</pre>
+
+      </div>
+
+<p>Represents an Analog Input object. All keys should be treated as read-only,
+all updates should go only through <a href="#update_property/3"><code class="inline">update_property/3</code></a>.</p><p>Properties which are for Intrinsic Reporting are nil, if disabled. If Intrinsic Reporting is enabled on the object,
+then the properties can not be nil.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="add_property/3">
+
+  <div class="detail-header">
+    <a href="#add_property/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">add_property(object, property, value)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> add_property(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Adds an optional property to an object.
+Remote objects can not be mutated using this operation.</p><p>Please note that properties of services can <strong>not</strong> be dynamically added and instead
+the object must be newly created using <a href="#create/4"><code class="inline">create/4</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="create/4">
+
+    <span id="create/2"></span>
+
+    <span id="create/3"></span>
+
+  <div class="detail-header">
+    <a href="#create/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">create(instance_number, object_name, properties \\ %{}, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> create(
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(),
+  <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
+  %{optional(<a href="#t:property_name/0">property_name</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()) =&gt; <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()},
+  [<a href="#t:object_opts/0">object_opts</a>() | internal_metadata()]
+) :: {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Creates a new object struct with the defined properties. Optional properties are not
+created when not given, only required, given and dependency properties are created.
+Properties with a value of <code class="inline">nil</code> are ignored.</p><p>Only properties that are required for specific services (i.e. Intrinsic Reporting)
+are automatically created.</p><p>By default,  a default <code class="inline">cov_increment</code> of <code class="inline">0.1</code> is used.
+It is strongly advised to change this to something reasonable for the application.</p>
+  </section>
+</section>
+<section class="detail" id="get_all_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_all_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_all_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_all_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of all properties this object supports.</p>
+  </section>
+</section>
+<section class="detail" id="get_annotation/1">
+
+  <div class="detail-header">
+    <a href="#get_annotation/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_annotation(name)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_annotation(<a href="#t:property_name/0">property_name</a>()) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the annotations for the given property name.</p>
+  </section>
+</section>
+<section class="detail" id="get_annotations/0">
+
+  <div class="detail-header">
+    <a href="#get_annotations/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_annotations()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_annotations() :: [{name :: <a href="#t:property_name/0">property_name</a>(), values :: [<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()]}]</pre>
+
+      </div>
+
+<p>Auto generated function to get the list of annotations for each property.</p>
+  </section>
+</section>
+<section class="detail" id="get_cov_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_cov_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_cov_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_cov_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of properties used for COV reporting.</p>
+  </section>
+</section>
+<section class="detail" id="get_intrinsic_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_intrinsic_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_intrinsic_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_intrinsic_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of intrinsic properties.</p>
+  </section>
+</section>
+<section class="detail" id="get_object_identifier/1">
+
+  <div class="detail-header">
+    <a href="#get_object_identifier/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_object_identifier(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_object_identifier(<a href="#t:t/0">t</a>()) :: <a href="BACnet.Protocol.ObjectIdentifier.html#t:t/0">BACnet.Protocol.ObjectIdentifier.t</a>()</pre>
+
+      </div>
+
+<p>Get the BACnet object identifier.</p>
+  </section>
+</section>
+<section class="detail" id="get_optional_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_optional_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_optional_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_optional_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of optional properties.</p>
+  </section>
+</section>
+<section class="detail" id="get_properties/1">
+
+  <div class="detail-header">
+    <a href="#get_properties/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_properties(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_properties(<a href="#t:t/0">t</a>()) :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Get the list of properties the object has.</p>
+  </section>
+</section>
+<section class="detail" id="get_properties_type_map/0">
+
+  <div class="detail-header">
+    <a href="#get_properties_type_map/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_properties_type_map()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_properties_type_map() :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()</pre>
+
+      </div>
+
+<p>Auto generated function to get a map of property name to type.</p>
+  </section>
+</section>
+<section class="detail" id="get_property/2">
+
+  <div class="detail-header">
+    <a href="#get_property/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_property(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_property(
+  <a href="#t:t/0">t</a>(),
+  <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()
+) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Get a property's value from an object.</p>
+  </section>
+</section>
+<section class="detail" id="get_protected_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_protected_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_protected_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_protected_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of protected properties.</p><p>Protected is an annotation and the object modules prevent writing to
+this property directly in code. The protected properties are either
+written on creation or updated automatically depending on other properties
+being written to. Some properties are only written once at creation and
+never updated.</p>
+  </section>
+</section>
+<section class="detail" id="get_readonly_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_readonly_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_readonly_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_readonly_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of readonly properties.</p><p>Readonly is only an annotation that the property should be write protected
+on the BACnet side, there is no actual write protection in the object.
+This is a hint to the device server. If you need actual write protection, see <code class="inline">protected</code>.</p>
+  </section>
+</section>
+<section class="detail" id="get_required_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_required_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_required_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_required_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of required properties.</p>
+  </section>
+</section>
+<section class="detail" id="has_property?/2">
+
+  <div class="detail-header">
+    <a href="#has_property?/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">has_property?(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> has_property?(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks if the given object has the given property.</p><p>See <a href="BACnet.Protocol.ObjectsUtility.html#has_property?/2"><code class="inline">BACnet.Protocol.ObjectsUtility.has_property?/2</code></a> for implementation details.</p>
+  </section>
+</section>
+<section class="detail" id="intrinsic_reporting?/1">
+
+  <div class="detail-header">
+    <a href="#intrinsic_reporting?/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">intrinsic_reporting?(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> intrinsic_reporting?(<a href="#t:t/0">t</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks if the given object has Intrinsic Reporting enabled.</p>
+  </section>
+</section>
+<section class="detail" id="property_writable?/2">
+
+  <div class="detail-header">
+    <a href="#property_writable?/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">property_writable?(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> property_writable?(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()) ::
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks if the given property is writable.</p><p>Check <a href="BACnet.Protocol.ObjectsUtility.html#property_writable?/2"><code class="inline">BACnet.Protocol.ObjectsUtility.property_writable?/2</code></a> for a basic run-down.</p>
+  </section>
+</section>
+<section class="detail" id="remove_property/2">
+
+  <div class="detail-header">
+    <a href="#remove_property/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">remove_property(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> remove_property(
+  <a href="#t:t/0">t</a>(),
+  <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()
+) ::
+  {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Removes an optional property from an object. This function is idempotent.
+Remote objects can not be mutated using this operation.</p><p>Please note that properties of services can <strong>not</strong> be dynamically removed and instead
+the object must be newly created using <a href="#create/4"><code class="inline">create/4</code></a>. Required properties can not be removed.</p>
+  </section>
+</section>
+<section class="detail" id="supports_intrinsic/0">
+
+  <div class="detail-header">
+    <a href="#supports_intrinsic/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">supports_intrinsic()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> supports_intrinsic() :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Auto generated function to check whether the object type supports intrinsic reporting.</p>
+  </section>
+</section>
+<section class="detail" id="update_property/3">
+
+  <div class="detail-header">
+    <a href="#update_property/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">update_property(object, property, value)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/analog_input.ex#L232" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> update_property(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Updates a property of an object.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.3) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>
