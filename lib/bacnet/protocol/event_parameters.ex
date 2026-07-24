@@ -48,6 +48,7 @@ defmodule BACnet.Protocol.EventParameters do
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
+  alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.DeviceObjectPropertyRef
   alias BACnet.Protocol.EventParameters.BufferReady
@@ -66,6 +67,7 @@ defmodule BACnet.Protocol.EventParameters do
   alias BACnet.Protocol.EventParameters.SignedOutOfRange
   alias BACnet.Protocol.EventParameters.UnsignedOutOfRange
   alias BACnet.Protocol.EventParameters.UnsignedRange
+  alias BACnet.Protocol.PropertyState
   alias BACnet.Protocol.StatusFlags
 
   @typedoc """
@@ -124,14 +126,16 @@ defmodule BACnet.Protocol.EventParameters do
 
   def encode(%ChangeOfState{} = params, opts) do
     with true <- is_integer(params.time_delay) and params.time_delay >= 0,
-         true <- is_list(params.alarm_values) and Enum.all?(params.alarm_values, &is_atom/1),
+         true <-
+           is_list(params.alarm_values) and
+             Enum.all?(params.alarm_values, &is_struct(&1, PropertyState)),
          {:ok, time_delay, _header} <-
            ApplicationTags.encode_value({:unsigned_integer, params.time_delay}, opts),
          {:ok, alarm_values} <-
            Enum.reduce_while(params.alarm_values, {:ok, []}, fn enum, {:ok, acc} ->
-             case Constants.by_name(:property_state, enum) do
-               {:ok, val} -> {:cont, {:ok, [{:enumerated, val} | acc]}}
-               :error -> {:halt, {:error, {:unknown_property_state, enum}}}
+             case PropertyState.encode(enum) do
+               {:ok, [val]} -> {:cont, {:ok, [val | acc]}}
+               {:error, _err} = err -> {:halt, {:error, err}}
              end
            end) do
       {:ok,
@@ -186,10 +190,10 @@ defmodule BACnet.Protocol.EventParameters do
 
   def encode(%CommandFailure{} = params, opts) do
     with true <- is_integer(params.time_delay) and params.time_delay >= 0,
-         true <- is_struct(params.feedback_value, DeviceObjectPropertyRef),
+         true <- is_struct(params.feedback_value, Encoding),
          {:ok, time_delay, _header} <-
            ApplicationTags.encode_value({:unsigned_integer, params.time_delay}, opts),
-         {:ok, feedback} <- DeviceObjectPropertyRef.encode(params.feedback_value, opts) do
+         {:ok, feedback} <- Encoding.to_encoding(params.feedback_value) do
       {:ok,
        {:constructed,
         {3,

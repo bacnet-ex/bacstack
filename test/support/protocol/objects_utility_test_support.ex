@@ -1183,13 +1183,26 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
             end
         end
 
-      # Skip EventParameters and FaultParameter struct - they cause mix test to hang
-      if not (String.starts_with?(Atom.to_string(mod), "Elixir.BACnet.Protocol.EventParameters.") or
-                String.starts_with?(
-                  Atom.to_string(mod),
-                  "Elixir.BACnet.Protocol.FaultParameters."
-                )) and
-           (function_exported?(mod, :encode, 1) or function_exported?(mod, :to_app_encoding, 1)) do
+      if function_exported?(mod, :encode, 1) or function_exported?(mod, :to_app_encoding, 1) do
+        # logger =
+        #   if String.starts_with?(Atom.to_string(mod), "Elixir.BACnet.Protocol.EventParameters.") or
+        #        String.starts_with?(
+        #          Atom.to_string(mod),
+        #          "Elixir.BACnet.Protocol.FaultParameters."
+        #        ) do
+        #     spawn(fn ->
+        #       receive do
+        #         :stop -> :ok
+        #       after
+        #         10_000 ->
+        #           IO.puts("\nModule trying to encode!")
+        #           IO.inspect(mod, label: "module")
+        #           IO.inspect(struct_value, label: "struct_value")
+        #           System.stop()
+        #       end
+        #     end)
+        #   end
+
         res =
           if function_exported?(mod, :to_app_encoding, 1) do
             mod.to_app_encoding(struct_value)
@@ -1199,6 +1212,8 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
 
         case res do
           {:ok, raw_value} ->
+            # if logger, do: send(logger, :stop)
+
             # Process only list returns - some modules produce binaries
             # Those need to be tested separately
             if is_list(raw_value) do

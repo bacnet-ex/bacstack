@@ -41,6 +41,7 @@ defmodule BACnet.Protocol.FaultParameters do
   alias BACnet.Protocol.FaultParameters.FaultState
   alias BACnet.Protocol.FaultParameters.FaultStatusFlags
   alias BACnet.Protocol.FaultParameters.None
+  alias BACnet.Protocol.PropertyState
 
   @typedoc """
   Possible BACnet fault parameters.
@@ -113,9 +114,9 @@ defmodule BACnet.Protocol.FaultParameters do
          true <- is_list(params.fault_values) and Enum.all?(params.fault_values, &is_atom/1),
          {:ok, fault_values} <-
            Enum.reduce_while(params.fault_values, {:ok, []}, fn enum, {:ok, acc} ->
-             case Constants.by_name(:property_state, enum) do
+             case Constants.by_name(:life_safety_state, enum) do
                {:ok, val} -> {:cont, {:ok, [{:enumerated, val} | acc]}}
-               :error -> {:halt, {:error, {:unknown_property_State, enum}}}
+               :error -> {:halt, {:error, {:unknown_life_safety_fault_value, enum}}}
              end
            end),
          {:ok, mode} <- DeviceObjectPropertyRef.encode(params.mode, opts) do
@@ -133,12 +134,14 @@ defmodule BACnet.Protocol.FaultParameters do
   end
 
   def encode(%FaultState{} = params, _opts) do
-    with true <- is_list(params.fault_values) and Enum.all?(params.fault_values, &is_atom/1),
+    with true <-
+           is_list(params.fault_values) and
+             Enum.all?(params.fault_values, &is_struct(&1, PropertyState)),
          {:ok, fault_values} <-
            Enum.reduce_while(params.fault_values, {:ok, []}, fn enum, {:ok, acc} ->
-             case Constants.by_name(:property_state, enum) do
-               {:ok, val} -> {:cont, {:ok, [{:enumerated, val} | acc]}}
-               :error -> {:halt, {:error, {:unknown_property_State, enum}}}
+             case PropertyState.encode(enum) do
+               {:ok, [val]} -> {:cont, {:ok, [val | acc]}}
+               {:error, _err} = err -> {:halt, {:error, err}}
              end
            end) do
       {:ok,
@@ -262,9 +265,9 @@ defmodule BACnet.Protocol.FaultParameters do
                    {:ok, {:enumerated, value}} ->
                      with {:ok, value_c} <-
                             Constants.by_value_with_reason(
-                              :property_state,
+                              :life_safety_state,
                               value,
-                              {:unknown_property_state, value}
+                              {:unknown_life_safety_fault_value, value}
                             ) do
                        {:cont, {:ok, [value_c | acc]}}
                      end
