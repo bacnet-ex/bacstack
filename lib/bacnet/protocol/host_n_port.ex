@@ -64,6 +64,12 @@ defmodule BACnet.Protocol.HostNPort do
 
   @doc """
   Parses a BACnetHostNPort from application tags encoding.
+
+  Zero length hostnames (`{:name, _}`) will automatically be rewritten to `:none`.
+  Some BACnet devices use invalid zero length hostnames instead of using `:none`,
+  so we allow communication with those by changing them to `:none`.
+  You can disable this behaviour by setting the
+  application env `:bacstack, :hostnport_disable_host_zero_rewrite` to `true`
   """
   @spec parse(ApplicationTags.encoding_list()) ::
           {:ok, {t(), rest :: ApplicationTags.encoding_list()}} | {:error, term()}
@@ -171,6 +177,15 @@ defmodule BACnet.Protocol.HostNPort do
       |> List.to_tuple()
 
     {:ok, {:ip_address, ip}}
+  end
+
+  if not Application.compile_env(:bacstack, :hostnport_disable_host_zero_rewrite, false) do
+    defp parse_host({:tagged, {2, <<_encoding>>, _len}}) do
+      # Let's be conservative and re-write zero length hostname to NONE
+      # Some devices incorrectly set {:name, ""} instead of :none,
+      # so we re-write it to allow communication with those
+      {:ok, :none}
+    end
   end
 
   defp parse_host({:tagged, {2, bytes, _len}}) do

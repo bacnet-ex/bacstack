@@ -44,6 +44,19 @@ defmodule BACnet.Protocol.HostNPortTest do
              ])
   end
 
+  test "parse empty name host as none" do
+    assert {:ok,
+            {%HostNPort{
+               host: :none,
+               port: 0
+             },
+             []}} =
+             HostNPort.parse([
+               {:constructed, {0, {:tagged, {2, <<0>>, 1}}, 0}},
+               {:tagged, {1, <<0>>, 1}}
+             ])
+  end
+
   test "parse leaves remaining tags" do
     extra = {:unsigned_integer, 99}
 
