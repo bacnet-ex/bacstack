@@ -30,251 +30,28 @@ defmodule BACnet.Protocol.FaultParameters do
   ```
   """
 
-  # credo:disable-for-this-file Credo.Check.Design.AliasUsage
-
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.DeviceObjectPropertyRef
+  alias BACnet.Protocol.FaultParameters.FaultCharacterString
+  alias BACnet.Protocol.FaultParameters.FaultExtended
+  alias BACnet.Protocol.FaultParameters.FaultLifeSafety
+  alias BACnet.Protocol.FaultParameters.FaultState
+  alias BACnet.Protocol.FaultParameters.FaultStatusFlags
+  alias BACnet.Protocol.FaultParameters.None
 
   @typedoc """
   Possible BACnet fault parameters.
   """
   @type fault_parameter ::
-          __MODULE__.None.t()
-          | __MODULE__.FaultCharacterString.t()
-          | __MODULE__.FaultExtended.t()
-          | __MODULE__.FaultLifeSafety.t()
-          | __MODULE__.FaultState.t()
-          | __MODULE__.FaultStatusFlags.t()
-
-  defmodule None do
-    @moduledoc """
-    Represents the BACnet fault algorithm `None` parameters.
-
-    The NONE fault algorithm is a placeholder for the case where no fault algorithm is applied by the object.
-    This fault algorithm has no parameters, no conditions, and does not indicate any transitions of reliability.
-
-    For more specific information about the fault algorithm, consult ASHRAE 135 13.4.1.
-    """
-
-    @typedoc """
-    Representative type for the fault parameter.
-    """
-    @type t :: %__MODULE__{}
-
-    defstruct []
-
-    @doc false
-    @spec get_tag_number() :: non_neg_integer()
-    def get_tag_number(), do: 0
-
-    @doc false
-    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
-            {:ok, t()} | {:error, term()}
-    def from_app_encoding([tag]), do: BACnet.Protocol.FaultParameters.parse(tag)
-    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
-
-    @doc false
-    @spec to_app_encoding(t()) ::
-            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
-    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.FaultParameters.encode(param)
-  end
-
-  defmodule FaultCharacterString do
-    @moduledoc """
-    Represents the BACnet fault algorithm `FaultCharacterString` parameters.
-
-    The FAULT_CHRACTERSTRING fault algorithm detects whether the monitored value matches a
-    character string that is listed as a fault value. Fault values are of type
-    BACnetOptionalCharacterString and may also be NULL or an empty character string.
-
-    For more specific information about the fault algorithm, consult ASHRAE 135 13.4.2.
-    """
-
-    use TypedStruct
-
-    @typedoc """
-    Representative type for the fault parameter.
-    """
-    typedstruct do
-      field :fault_values, [String.t()], enforce: true
-    end
-
-    @doc false
-    @spec get_tag_number() :: non_neg_integer()
-    def get_tag_number(), do: 1
-
-    @doc false
-    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
-            {:ok, t()} | {:error, term()}
-    def from_app_encoding([tag]), do: BACnet.Protocol.FaultParameters.parse(tag)
-    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
-
-    @doc false
-    @spec to_app_encoding(t()) ::
-            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
-    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.FaultParameters.encode(param)
-  end
-
-  defmodule FaultExtended do
-    @moduledoc """
-    Represents the BACnet fault algorithm `FaultExtended` parameters.
-
-    The FAULT_EXTENDED fault algorithm detects fault conditions based on a
-    proprietary fault algorithm. The proprietary fault algorithm uses parameters
-    and conditions defined by the vendor. The algorithm is identified by a
-    vendor-specific fault type that is in the scope of the vendor's
-    vendor identification code. The algorithm may, at the vendor's discretion,
-    indicate a new reliability, a transition to the same reliability, or
-    no transition to the reliability-evaluation process.
-
-    For more specific information about the fault algorithm, consult ASHRAE 135 13.4.3.
-    """
-
-    use TypedStruct
-
-    @typedoc """
-    Representative type for the fault parameter.
-    """
-    typedstruct do
-      field :vendor_id, BACnet.Protocol.ApplicationTags.unsigned16(), enforce: true
-      field :extended_fault_type, non_neg_integer(), enforce: true
-      field :parameters, BACnet.Protocol.ApplicationTags.encoding_list(), enforce: true
-    end
-
-    @doc false
-    @spec get_tag_number() :: non_neg_integer()
-    def get_tag_number(), do: 2
-
-    @doc false
-    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
-            {:ok, t()} | {:error, term()}
-    def from_app_encoding([tag]), do: BACnet.Protocol.FaultParameters.parse(tag)
-    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
-
-    @doc false
-    @spec to_app_encoding(t()) ::
-            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
-    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.FaultParameters.encode(param)
-  end
-
-  defmodule FaultLifeSafety do
-    @moduledoc """
-    Represents the BACnet fault algorithm `FaultLifeSafety` parameters.
-
-    The FAULT_LIFE_SAFETY fault algorithm detects whether the monitored value equals
-    a value that is listed as a fault value.
-    The monitored value is of type BACnetLifeSafetyState. If internal operational
-    reliability is unreliable, then the internal reliability takes precedence over
-    evaluation of the monitored value.
-
-    In addition, this algorithm monitors a life safety mode value. If reliability is
-    MULTI_STATE_FAULT, then new transitions to MULTI_STATE_FAULT are indicated upon
-    change of the mode value.
-
-    For more specific information about the fault algorithm, consult ASHRAE 135 13.4.4.
-    """
-
-    use TypedStruct
-
-    @typedoc """
-    Representative type for the fault parameter.
-    """
-    typedstruct do
-      field :mode, BACnet.Protocol.DeviceObjectPropertyRef.t(), enforce: true
-      field :fault_values, [BACnet.Protocol.Constants.life_safety_state()], enforce: true
-    end
-
-    @doc false
-    @spec get_tag_number() :: non_neg_integer()
-    def get_tag_number(), do: 3
-
-    @doc false
-    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
-            {:ok, t()} | {:error, term()}
-    def from_app_encoding([tag]), do: BACnet.Protocol.FaultParameters.parse(tag)
-    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
-
-    @doc false
-    @spec to_app_encoding(t()) ::
-            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
-    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.FaultParameters.encode(param)
-  end
-
-  defmodule FaultState do
-    @moduledoc """
-    Represents the BACnet fault algorithm `FaultState` parameters.
-
-    The FAULT_STATE fault algorithm detects whether the monitored value
-    equals a value that is listed as a fault value. The monitored value
-    may be of any discrete or enumerated datatype, including Boolean.
-    If internal operational reliability is unreliable, then the
-    internal reliability takes precedence over evaluation of the monitored value.
-
-    For more specific information about the fault algorithm, consult ASHRAE 135 13.4.5.
-    """
-
-    use TypedStruct
-
-    @typedoc """
-    Representative type for the fault parameter.
-    """
-    typedstruct do
-      field :fault_values, [BACnet.Protocol.PropertyState.t()], enforce: true
-    end
-
-    @doc false
-    @spec get_tag_number() :: non_neg_integer()
-    def get_tag_number(), do: 4
-
-    @doc false
-    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
-            {:ok, t()} | {:error, term()}
-    def from_app_encoding([tag]), do: BACnet.Protocol.FaultParameters.parse(tag)
-    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
-
-    @doc false
-    @spec to_app_encoding(t()) ::
-            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
-    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.FaultParameters.encode(param)
-  end
-
-  defmodule FaultStatusFlags do
-    @moduledoc """
-    Represents the BACnet fault algorithm `FaultStatusFlags` parameters.
-
-    The FAULT_STATUS_FLAGS fault algorithm detects whether the monitored
-    status flags are indicating a fault condition.
-
-    For more specific information about the fault algorithm, consult ASHRAE 135 13.4.6.
-    """
-
-    use TypedStruct
-
-    @typedoc """
-    Representative type for the fault parameter.
-    """
-    typedstruct do
-      field :status_flags, BACnet.Protocol.DeviceObjectPropertyRef.t(), enforce: true
-    end
-
-    @doc false
-    @spec get_tag_number() :: non_neg_integer()
-    def get_tag_number(), do: 5
-
-    @doc false
-    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
-            {:ok, t()} | {:error, term()}
-    def from_app_encoding([tag]), do: BACnet.Protocol.FaultParameters.parse(tag)
-    def from_app_encoding(_tags), do: {:error, :invalid_encoding}
-
-    @doc false
-    @spec to_app_encoding(t()) ::
-            {:ok, BACnet.Protocol.ApplicationTags.encoding_list()} | {:error, term()}
-    def to_app_encoding(%__MODULE__{} = param), do: BACnet.Protocol.FaultParameters.encode(param)
-  end
+          None.t()
+          | FaultCharacterString.t()
+          | FaultExtended.t()
+          | FaultLifeSafety.t()
+          | FaultState.t()
+          | FaultStatusFlags.t()
 
   @doc """
   Encodes a fault parameter variant into BACnet application tag encoding.
@@ -577,12 +354,12 @@ defmodule BACnet.Protocol.FaultParameters do
   def valid?(t)
 
   for module <- [
-        __MODULE__.FaultCharacterString,
-        __MODULE__.FaultExtended,
-        __MODULE__.FaultLifeSafety,
-        __MODULE__.FaultState,
-        __MODULE__.FaultStatusFlags,
-        __MODULE__.None
+        FaultCharacterString,
+        FaultExtended,
+        FaultLifeSafety,
+        FaultState,
+        FaultStatusFlags,
+        None
       ] do
     var = Macro.var(:t, __MODULE__)
 

@@ -398,10 +398,10 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
         {:with_validator, term(),
          fn
            {ip, port} ->
-             :inet.is_ipv6_address(ip) and is_integer(port) and port >= 0 and port <= 65_535
+             ipv6_address?(ip) and is_integer(port) and port >= 0 and port <= 65_535
 
            ip ->
-             :inet.is_ipv6_address(ip)
+             ipv6_address?(ip)
          end},
       annotation: [
         decoder: &decode_ipv6_address(:bacnet_ipv6_multicast_address, &1),
@@ -601,6 +601,14 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
 
   defp encode_ipv4_address(_property, _data), do: {:error, :invalid_data}
 
+  # defp ipv4_address?({ip_a, ip_b, ip_c, ip_d})
+  #      when is_integer(ip_a) and ip_a in 0..255//1 and
+  #             is_integer(ip_b) and ip_b in 0..255//1 and is_integer(ip_c) and ip_c in 0..255//1 and
+  #             is_integer(ip_d) and ip_d in 0..255//1,
+  #      do: true
+
+  # defp ipv4_address?(_ip), do: false
+
   defp decode_ipv6_address(_property, %Encoding{encoding: :primitive, type: :octet_string} = tags) do
     case tags.value do
       # Parse empty string as unused
@@ -636,4 +644,16 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
   end
 
   defp encode_ipv6_address(_property, _data), do: {:error, :invalid_data}
+
+  defp ipv6_address?({ip_a, ip_b, ip_c, ip_d, ip_e, ip_f, ip_g, ip_h})
+       when is_integer(ip_a) and ip_a in 0..65_535//1 and
+              is_integer(ip_b) and ip_b in 0..65_535//1 and is_integer(ip_c) and
+              ip_c in 0..65_535//1 and
+              is_integer(ip_d) and ip_d in 0..65_535//1 and is_integer(ip_e) and
+              ip_e in 0..65_535//1 and is_integer(ip_f) and ip_f in 0..65_535//1 and
+              is_integer(ip_g) and ip_g in 0..65_535//1 and is_integer(ip_h) and
+              ip_h in 0..65_535//1,
+       do: true
+
+  defp ipv6_address?(_ip), do: false
 end
