@@ -189,6 +189,7 @@ defmodule BACnet.Stack.ClientHelper do
   The following options are available:
   - All options from `BACnet.Stack.Client.send/4`.
   - All options from `BACnet.Protocol.Services.ReadProperty.to_apdu/2`.
+  - `allow_numeric_constants: boolean()` for `BACnet.Protocol.ObjectsUtility.cast_property_to_value/4`.
   - `raw: boolean()` - Optional. Returns the `t:Encoding.t/0` (or list of) instead of trying to transform the value.
   """
   @spec read_property(
@@ -254,6 +255,7 @@ defmodule BACnet.Stack.ClientHelper do
                     cast_object_id,
                     ack.property_identifier,
                     ack.property_value,
+                    allow_numeric_constants: opts[:allow_numeric_constants],
                     allow_partial: array_index != nil
                   )
                 end
@@ -275,6 +277,7 @@ defmodule BACnet.Stack.ClientHelper do
   The following options are available:
   - All options from `BACnet.Stack.Client.send/4`.
   - All options from `BACnet.Protocol.Services.ReadPropertyMultiple.to_apdu/2`.
+  - All options from `BACnet.Protocol.ObjectsUtility.cast_read_properties_ack/3`.
   - `raw: boolean()` - Optional. Returns the results instead of trying to transform each value.
   """
   @spec read_property_multiple(
