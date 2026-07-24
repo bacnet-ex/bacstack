@@ -214,6 +214,44 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
     end
   end
 
+  test "cast property to value constants with known succeeds as atom" do
+    assert {:ok, :no_fault_detected} =
+             ObjectsUtility.cast_property_to_value(
+               %ObjectIdentifier{type: :binary_input, instance: 1},
+               :reliability,
+               %Encoding{encoding: :primitive, extras: [], type: :enumerated, value: 0}
+             )
+  end
+
+  test "cast property to value constants with unknown fails" do
+    assert {:error, {:invalid_property_value, {:reliability, 65_536}}} =
+             ObjectsUtility.cast_property_to_value(
+               %ObjectIdentifier{type: :binary_input, instance: 1},
+               :reliability,
+               %Encoding{encoding: :primitive, extras: [], type: :enumerated, value: 65_536}
+             )
+  end
+
+  test "cast property to value constants with allow_numeric_constants and known succeeds as atom" do
+    assert {:ok, :no_fault_detected} =
+             ObjectsUtility.cast_property_to_value(
+               %ObjectIdentifier{type: :binary_input, instance: 1},
+               :reliability,
+               %Encoding{encoding: :primitive, extras: [], type: :enumerated, value: 0},
+               allow_numeric_constants: true
+             )
+  end
+
+  test "cast property to value constants with allow_numeric_constants and unknown succeeds as integer" do
+    assert {:ok, 65_536} =
+             ObjectsUtility.cast_property_to_value(
+               %ObjectIdentifier{type: :binary_input, instance: 1},
+               :reliability,
+               %Encoding{encoding: :primitive, extras: [], type: :enumerated, value: 65_536},
+               allow_numeric_constants: true
+             )
+  end
+
   test "validate float range with empty object succeeds" do
     assert ObjectsUtility.validate_float_range(:NaN, %{})
     assert ObjectsUtility.validate_float_range(:inf, %{})

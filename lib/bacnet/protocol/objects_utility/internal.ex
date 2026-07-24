@@ -42,6 +42,7 @@ defmodule BACnet.Protocol.ObjectsUtility.Internal do
     @moduledoc false
 
     @type t :: %__MODULE__{
+            allow_numeric_constants: boolean(),
             allow_unknown_properties: boolean(),
             ignore_array_indexes: boolean(),
             ignore_invalid_properties: boolean(),
@@ -50,6 +51,7 @@ defmodule BACnet.Protocol.ObjectsUtility.Internal do
           }
 
     @fields [
+      :allow_numeric_constants,
       :allow_unknown_properties,
       :ignore_array_indexes,
       :ignore_invalid_properties,

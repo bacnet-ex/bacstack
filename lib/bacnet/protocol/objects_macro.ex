@@ -723,14 +723,31 @@ defmodule BACnet.Protocol.ObjectsMacro do
           | fields_data
         ],
         fn
-          %{name: name, typespec: typespec, required: true} ->
-            {name, typespec}
+          %{name: name, typespec: typespec, required: true} = spec ->
+            final =
+              if match?({:constant, _type}, spec[:bac_type]) do
+                quote do
+                  unquote(typespec) | (reserved_or_vendor_extension :: non_neg_integer())
+                end
+              else
+                typespec
+              end
 
-          %{name: name, typespec: typespec} ->
-            {
-              name,
-              {:|, [], [typespec, nil]}
-            }
+            {name, final}
+
+          %{name: name, typespec: typespec} = spec ->
+            final =
+              if match?({:constant, _type}, spec[:bac_type]) do
+                quote do
+                  unquote(typespec) | (reserved_or_vendor_extension :: non_neg_integer()) | nil
+                end
+              else
+                quote do
+                  unquote(typespec) | nil
+                end
+              end
+
+            {name, final}
         end
       )
 
@@ -1381,16 +1398,20 @@ defmodule BACnet.Protocol.ObjectsMacro do
              # but we need to recheck after all properties have been added
              # This is caused by random map keys ordering introduced with OTP 26
              # but may aswell have been needed to not depend on key ordering...
-             {:ok, needs_recheck} <-
+             {:ok, _needs_recheck} <-
                (case check_property_value(
                        acc,
                        prop,
                        val,
                        true,
-                       if(is_remote_object,
-                         do: opts[:skip_property_validation_remote_object],
-                         else: false
-                       )
+                       # Skip all property validations during property aggregation,
+                       # all properties will be re-checked after
+                       # all properties are aggregated and available
+                       true
+                       #  if(is_remote_object,
+                       #    do: opts[:skip_property_validation_remote_object],
+                       #    else: false
+                       #  )
                      ) do
                   :ok -> {:ok, false}
                   {:error, {:value_failed_property_validation, _property}} -> {:ok, true}
@@ -1408,6 +1429,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
                     false
                   )
                 end) do
+          needs_recheck = true
           {:cont, {:ok, {Map.put(acc, prop, val), unknown_acc, flag or needs_recheck}}}
         else
           {:error, {:unknown_property, prop}}
@@ -1964,6 +1986,9 @@ defmodule BACnet.Protocol.ObjectsMacro do
       @typedoc """
       Common object options for creation - all are optional.
 
+      - `allow_numeric_constants` - Constants are atoms and thus unknown constants or vendor extensions are integers
+        and thus are rejected. Enabling this option will allow integers (`non_neg_integer()`) for properties with
+        a `Constants.type()` spec.
       - `allow_unknown_properties` - Properties that are unknown to the object implementation are usually rejected.
         With this option, unknown properties (numeric identifiers usually means we dont know them) are accepted
         and put into a separate map. This does mean we can not validate or write them.
@@ -1985,7 +2010,8 @@ defmodule BACnet.Protocol.ObjectsMacro do
         The property's `validator_fun` will also be skipped.
       """
       @type common_object_opts ::
-              {:allow_unknown_properties, boolean()}
+              {:allow_numeric_constants, boolean()}
+              | {:allow_unknown_properties, boolean()}
               | {:ignore_unknown_properties, boolean()}
               | {:revision, Constants.protocol_revision()}
               | {:skip_property_validation_remote_object, boolean() | :value}
@@ -2152,6 +2178,10 @@ defmodule BACnet.Protocol.ObjectsMacro do
                 {:error, {:protected_property, property}}
 
               skip_property_validator == true ->
+                :ok
+
+              object._metadata.other[:allow_numeric_constants] == true and
+                match?({:constant, _type}, type) and is_integer(value) and value >= 0 ->
                 :ok
 
               BeamTypes.check_type(type, value) ->

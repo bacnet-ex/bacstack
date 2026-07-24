@@ -31,6 +31,12 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
   > of a device. All BACnet devices shall contain one Network Port object per configured port.
   > It is a local matter whether or not Network Port objects exist for non-configured ports.
   > It is a local matter whether or not the Network Port object is used for non-BACnet ports.
+  >
+  > It is suggested that instances greater than 255 be used for Network Port objects with a
+  > Protocol_Level of PHYSICAL or PROTOCOL.
+  > When the Protocol_Level property has a value of BACNET_APPLICATION, the
+  > instance number (see Clause 20.2.14) shall correspond to the Port ID of the associated network
+  > as described in Clause 6.
 
   ### Behaviour and Operation
 
@@ -148,17 +154,32 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
     field(:protocol_level, Constants.protocol_level(),
       required: true,
       readonly: true,
-      default: :bacnet_application
+      validator_fun: fn value, object ->
+        (value != Constants.macro_assert_name(:network_type, :non_bacnet) and
+           value != Constants.macro_by_name(:network_type, :non_bacnet)) or
+          !!object._metadata.remote_object
+      end
     )
 
     field(:reference_port, non_neg_integer())
 
-    field(:network_number, ApplicationTags.unsigned16(), required: true, default: 0)
+    field(:network_number, ApplicationTags.unsigned16(),
+      default: 0,
+      annotation: [
+        required_when: fn props, _meta ->
+          Map.get(props, :protocol_level) in [:bacnet_application, :non_bacnet_application]
+        end
+      ]
+    )
 
     field(:network_number_quality, Constants.network_number_quality(),
-      required: true,
       readonly: true,
-      default: :unknown
+      default: :unknown,
+      annotation: [
+        required_when: fn props, _meta ->
+          Map.get(props, :protocol_level) in [:bacnet_application, :non_bacnet_application]
+        end
+      ]
     )
 
     field(:changes_pending, boolean(), required: true, readonly: true, default: false)
@@ -191,7 +212,15 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
       ]
     )
 
-    field(:apdu_length, non_neg_integer(), required: true, readonly: true, default: 1476)
+    field(:apdu_length, non_neg_integer(),
+      readonly: true,
+      default: 1476,
+      annotation: [
+        required_when: fn props, _object ->
+          Map.get(props, :protocol_level) in [:bacnet_application, :non_bacnet_application]
+        end
+      ]
+    )
 
     field(:link_speed, float(),
       default: 0.0,
@@ -220,49 +249,44 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
     field(:bacnet_ip_mode, Constants.ip_mode(),
       annotation: [
         required_when: fn props, _object ->
-          Map.get(props, :network_type) == :ipv4 and
-            Map.get(props, :protocol_level) == :bacnet_application
-        end
-      ]
-    )
-
-    field(:ip_address, :inet.ip4_address(),
-      implicit_relationship: :bacnet_ip_mode,
-      annotation: [
-        decoder: &decode_ipv4_address(:ip_address, &1),
-        encoder: &encode_ipv4_address(:ip_address, &1),
-        only_when: fn props, _object ->
           Map.get(props, :network_type) == :ipv4
         end
       ]
     )
 
     field(:bacnet_ip_udp_port, ApplicationTags.unsigned16(),
-      implicit_relationship: :bacnet_ip_mode,
       annotation: [
-        only_when: fn props, _object ->
+        required_when: fn props, _object ->
+          Map.get(props, :network_type) == :ipv4
+        end
+      ]
+    )
+
+    field(:ip_address, :inet.ip4_address(),
+      annotation: [
+        decoder: &decode_ipv4_address(:ip_address, &1),
+        encoder: &encode_ipv4_address(:ip_address, &1),
+        required_when: fn props, _object ->
           Map.get(props, :network_type) == :ipv4
         end
       ]
     )
 
     field(:ip_subnet_mask, :inet.ip4_address(),
-      implicit_relationship: :bacnet_ip_mode,
       annotation: [
         decoder: &decode_ipv4_address(:ip_subnet_mask, &1),
         encoder: &encode_ipv4_address(:ip_subnet_mask, &1),
-        only_when: fn props, _object ->
+        required_when: fn props, _object ->
           Map.get(props, :network_type) == :ipv4
         end
       ]
     )
 
     field(:ip_default_gateway, :inet.ip4_address(),
-      implicit_relationship: :bacnet_ip_mode,
       annotation: [
         decoder: &decode_ipv4_address(:ip_default_gateway, &1),
         encoder: &encode_ipv4_address(:ip_default_gateway, &1),
-        only_when: fn props, _object ->
+        required_when: fn props, _object ->
           Map.get(props, :network_type) == :ipv4
         end
       ]
@@ -272,41 +296,25 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
     field(:bacnet_ip_multicast_address, :inet.ip4_address(),
       annotation: [
         decoder: &decode_ipv4_address(:bacnet_ip_multicast_address, &1),
-        encoder: &encode_ipv4_address(:bacnet_ip_multicast_address, &1),
-        only_when: fn props, _object ->
-          if Map.get(props, :network_type) == :ipv4 do
-            :optional
-          else
-            false
-          end
-        end
+        encoder: &encode_ipv4_address(:bacnet_ip_multicast_address, &1)
+        # bacstack does not support multicast - so no annotation required_when
       ]
     )
 
     field(:ip_dns_server, BACnetArray.t(:inet.ip4_address()),
-      implicit_relationship: :bacnet_ip_mode,
       annotation: [
         decoder: &decode_ipv4_address(:ip_dns_server, &1),
         encoder: &encode_ipv4_address(:ip_dns_server, &1),
-        only_when: fn props, _object ->
-          if Map.get(props, :network_type) == :ipv4 do
-            :optional
-          else
-            false
-          end
+        required_when: fn props, _object ->
+          Map.get(props, :network_type) == :ipv4
         end
       ]
     )
 
     field(:ip_dhcp_enable, boolean(),
-      implicit_relationship: :bacnet_ip_mode,
       annotation: [
-        only_when: fn props, _object ->
-          if Map.get(props, :network_type) == :ipv4 do
-            :optional
-          else
-            false
-          end
+        required_when: fn props, _object ->
+          Map.get(props, :network_type) == :ipv4
         end
       ]
     )
@@ -315,45 +323,19 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
       readonly: true,
       annotation: [
         decoder: &decode_ipv4_address(:ip_dhcp_server, &1),
-        encoder: &encode_ipv4_address(:ip_dhcp_server, &1),
-        only_when: fn props, _object ->
-          if Map.get(props, :network_type) == :ipv4 do
-            :optional
-          else
-            false
-          end
-        end
+        encoder: &encode_ipv4_address(:ip_dhcp_server, &1)
       ]
     )
 
-    field(:ip_dhcp_lease_time, non_neg_integer(),
-      readonly: true,
-      annotation: [
-        only_when: fn props, _object ->
-          if Map.get(props, :network_type) == :ipv4 do
-            :optional
-          else
-            false
-          end
-        end
-      ]
-    )
+    field(:ip_dhcp_lease_time, non_neg_integer(), readonly: true)
+    field(:ip_dhcp_lease_time_remaining, non_neg_integer(), readonly: true)
 
-    field(:ip_dhcp_lease_time_remaining, non_neg_integer(),
-      readonly: true,
-      annotation: [
-        only_when: fn props, _object ->
-          if Map.get(props, :network_type) == :ipv4 do
-            :optional
-          else
-            false
-          end
-        end
-      ]
-    )
-
+    # Required to be present if the Network_Type is IPV4, Protocol_Level is BACNET_APPLICATION, and the device is
+    # capable of communicating through a NAT router as described in Clause J.7.8.
     field(:bacnet_ip_nat_traversal, boolean())
 
+    # Required if Network_Type is IPV4, Protocol_Level is BACNET_APPLICATION, and the device is configured to
+    # communicate through a NAT router as described in Clause J.7.8
     field(:bacnet_ip_global_address, HostNPort.t(),
       annotation: [
         required_when: fn props, _object ->
@@ -396,27 +378,8 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
     field(:bacnet_ipv6_mode, Constants.ip_mode(),
       annotation: [
         required_when: fn props, _object ->
-          Map.get(props, :network_type) == :ipv6
-        end
-      ]
-    )
-
-    field(:ipv6_address, :inet.ip6_address(),
-      implicit_relationship: :bacnet_ipv6_mode,
-      annotation: [
-        decoder: &decode_ipv6_address(:ipv6_address, &1),
-        encoder: &encode_ipv6_address(:ipv6_address, &1),
-        only_when: fn props, _object ->
-          Map.get(props, :network_type) == :ipv6
-        end
-      ]
-    )
-
-    field(:ipv6_prefix_length, 0..128,
-      implicit_relationship: :bacnet_ipv6_mode,
-      annotation: [
-        only_when: fn props, _object ->
-          Map.get(props, :network_type) == :ipv6
+          Map.get(props, :network_type) == :ipv6 and
+            Map.get(props, :protocol_level) == :bacnet_application
         end
       ]
     )
@@ -426,45 +389,64 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
         required_when: fn props, _object ->
           Map.get(props, :network_type) == :ipv6 and
             Map.get(props, :protocol_level) == :bacnet_application
-        end,
-        only_when: fn props, _object ->
+        end
+      ]
+    )
+
+    field(:bacnet_ipv6_multicast_address, {:inet.ip6_address(), :inet.port_number()},
+      bac_type:
+        {:with_validator, term(),
+         fn
+           {ip, port} ->
+             :inet.is_ipv6_address(ip) and is_integer(port) and port >= 0 and port <= 65_535
+
+           ip ->
+             :inet.is_ipv6_address(ip)
+         end},
+      annotation: [
+        decoder: &decode_ipv6_address(:bacnet_ipv6_multicast_address, &1),
+        encoder: &encode_ipv6_address(:bacnet_ipv6_multicast_address, &1),
+        required_when: fn props, _object ->
+          Map.get(props, :network_type) == :ipv6 and
+            Map.get(props, :protocol_level) == :bacnet_application
+        end
+      ]
+    )
+
+    field(:ipv6_address, :inet.ip6_address(),
+      annotation: [
+        decoder: &decode_ipv6_address(:ipv6_address, &1),
+        encoder: &encode_ipv6_address(:ipv6_address, &1),
+        required_when: fn props, _object ->
+          Map.get(props, :network_type) == :ipv6
+        end
+      ]
+    )
+
+    field(:ipv6_prefix_length, 0..128,
+      annotation: [
+        required_when: fn props, _object ->
           Map.get(props, :network_type) == :ipv6
         end
       ]
     )
 
     field(:ipv6_default_gateway, :inet.ip6_address(),
-      implicit_relationship: :bacnet_ipv6_mode,
       annotation: [
         decoder: &decode_ipv6_address(:ipv6_default_gateway, &1),
         encoder: &encode_ipv6_address(:ipv6_default_gateway, &1),
-        only_when: fn props, _object ->
+        required_when: fn props, _object ->
           Map.get(props, :network_type) == :ipv6
-        end
-      ]
-    )
-
-    field(:bacnet_ipv6_multicast_address, :inet.ip6_address(),
-      annotation: [
-        decoder: &decode_ipv6_address(:bacnet_ipv6_multicast_address, &1),
-        encoder: &encode_ipv6_address(:bacnet_ipv6_multicast_address, &1),
-        only_when: fn props, _object ->
-          if Map.get(props, :network_type) == :ipv6 do
-            :optional
-          else
-            false
-          end
         end
       ]
     )
 
     field(:ipv6_dns_server, BACnetArray.t(:inet.ip6_address()),
       default: BACnetArray.new(),
-      implicit_relationship: :bacnet_ipv6_mode,
       annotation: [
         decoder: &decode_ipv6_address(:ipv6_dns_server, &1),
         encoder: &encode_ipv6_address(:ipv6_dns_server, &1),
-        only_when: fn props, _object ->
+        required_when: fn props, _object ->
           Map.get(props, :network_type) == :ipv6
         end
       ]
@@ -472,69 +454,34 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
 
     field(:ipv6_auto_addressing_enable, boolean(),
       annotation: [
-        only_when: fn props, _object ->
-          if Map.get(props, :network_type) == :ipv6 do
-            :optional
-          else
-            false
-          end
-        end
+        # required_when: fn props, object ->
+        #   Map.get(props, :network_type) == :ipv6 and Keyword.get(object._metadata.other, :supports_ipv6_auto_address_assignment) == true
+        # end
       ]
     )
 
-    field(:ipv6_dhcp_lease_time, non_neg_integer(),
-      readonly: true,
-      annotation: [
-        only_when: fn props, _object ->
-          if Map.get(props, :network_type) == :ipv6 do
-            :optional
-          else
-            false
-          end
-        end
-      ]
-    )
-
-    field(:ipv6_dhcp_lease_time_remaining, non_neg_integer(),
-      readonly: true,
-      annotation: [
-        only_when: fn props, _object ->
-          if Map.get(props, :network_type) == :ipv6 do
-            :optional
-          else
-            false
-          end
-        end
-      ]
-    )
+    field(:ipv6_dhcp_lease_time, non_neg_integer(), readonly: true)
+    field(:ipv6_dhcp_lease_time_remaining, non_neg_integer(), readonly: true)
 
     field(:ipv6_dhcp_server, :inet.ip6_address(),
       annotation: [
         decoder: &decode_ipv6_address(:ipv6_dhcp_server, &1),
-        encoder: &encode_ipv6_address(:ipv6_dhcp_server, &1),
-        only_when: fn props, _object ->
-          if Map.get(props, :network_type) == :ipv6 do
-            :optional
-          else
-            false
-          end
-        end
+        encoder: &encode_ipv6_address(:ipv6_dhcp_server, &1)
       ]
     )
 
     field(:ipv6_zone_index, String.t(),
       annotation: [
-        only_when: fn props, _object ->
-          if Map.get(props, :network_type) == :ipv6 do
-            :optional
-          else
-            false
-          end
-        end
+        # required_when: fn props, _object ->
+        #   Map.get(props, :network_type) == :ipv6
+        # end
       ]
     )
 
     # MS/TP related
+
+    # Required to be present and writable if Network_Type is MSTP, the device is an MS/TP master node,
+    # and the device supports the WriteProperty service
     field(:max_master, 1..127,
       readonly: true,
       implicit_relationship: :max_info_frames,
@@ -547,6 +494,8 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
       ]
     )
 
+    # Required to be present and writable if Network_Type is MSTP, the device is an MS/TP master node,
+    # and the device supports the WriteProperty service
     field(:max_info_frames, pos_integer(),
       bac_type: {:with_validator, :unsigned_integer, &(&1 >= 1)},
       annotation: [
@@ -556,15 +505,31 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
       ]
     )
 
+    # Properties for slave proxy functionality (per-se not provided by this bacstack)
+
+    # Required to be present and writable if Network_Type is MSTP,
+    # and the device is capable of being a Slave-Proxy device
     field(:manual_slave_address_binding, [AddressBinding.t()])
+
+    # Required if Network_Type is MSTP, Protocol_Level is BACNET_APPLICATION,
+    # and the device is capable of being a Slave-Proxy device
     field(:slave_address_binding, [AddressBinding.t()], readonly: true)
 
-    # Properties for slave proxy functionality (per-se not provided by this bacstack)
+    # Required to be present and writable if Network_Type is MSTP,
+    # and the device is capable of being a Slave-Proxy device
     field(:slave_proxy_enable, boolean())
+    # Required if Network_Type is MSTP, Protocol_Level is BACNET_APPLICATION,
+    # and the device is capable of being a Slave-Proxy device that implements automatic discovery of slaves
     field(:auto_slave_discovery, boolean(), implicit_relationship: :slave_proxy_enable)
 
     # Virtual MAC (for certain network types that require VMAC)
-    field(:virtual_mac_address_table, [VmacEntry.t()])
+    field(:virtual_mac_address_table, [VmacEntry.t()],
+      annotation: [
+        required_when: fn props, _object ->
+          Map.get(props, :network_type) in [:ipv6, :sc, :zigbee]
+        end
+      ]
+    )
 
     field(:routing_table, [RouterEntry.t()], readonly: true)
   end
@@ -575,32 +540,36 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
       :ip_address ->
         object[:ip_dhcp_enable] != true
 
+      :ip_subnet_mask ->
+        object[:ip_dhcp_enable] != true
+
       :ip_default_gateway ->
         object[:ip_dhcp_enable] != true
 
       :ip_dns_server ->
         object[:ip_dhcp_enable] != true
 
-      :ip_subnet_mask ->
-        object[:ip_dhcp_enable] != true
-
       :ipv6_address ->
-        object[:ip_dhcp_enable] != true
+        object[:ipv6_auto_addressing_enable] != true
 
       :ipv6_prefix_length ->
-        object[:ip_dhcp_enable] != true
+        object[:ipv6_auto_addressing_enable] != true
 
       :ipv6_default_gateway ->
-        object[:ip_dhcp_enable] != true
+        object[:ipv6_auto_addressing_enable] != true
 
       :ipv6_dns_server ->
-        object[:ip_dhcp_enable] != true
-
-      :ipv6_subnet_mask ->
-        object[:ip_dhcp_enable] != true
+        object[:ipv6_auto_addressing_enable] != true
 
       :mac_address ->
-        object.network_type not in [:ipv4, :ipv6, :sc]
+        object.network_type not in [
+          # BACnet/IP
+          :ipv4,
+          # VMAC Addressing
+          :ipv6,
+          :sc,
+          :zigbee
+        ]
 
       _term ->
         super(object, property)
@@ -609,6 +578,10 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
 
   defp decode_ipv4_address(_property, %Encoding{encoding: :primitive, type: :octet_string} = tags) do
     case tags.value do
+      # Parse empty string as unused
+      <<>> ->
+        {:ok, {0, 0, 0, 0}}
+
       <<ip_a, ip_b, ip_c, ip_d>> ->
         {:ok, {ip_a, ip_b, ip_c, ip_d}}
 
@@ -621,10 +594,23 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
     {:ok, {:octet_string, <<ip_a, ip_b, ip_c, ip_d>>}}
   end
 
+  defp encode_ipv4_address(_property, {{ip_a, ip_b, ip_c, ip_d}, port})
+       when is_integer(port) and port >= 0 and port <= 65_535 do
+    {:ok, {:octet_string, <<ip_a, ip_b, ip_c, ip_d, port::size(16)>>}}
+  end
+
   defp encode_ipv4_address(_property, _data), do: {:error, :invalid_data}
 
   defp decode_ipv6_address(_property, %Encoding{encoding: :primitive, type: :octet_string} = tags) do
     case tags.value do
+      # Parse empty string as unused
+      <<>> ->
+        {:ok, {{0, 0, 0, 0, 0, 0, 0, 0}, 0}}
+
+      <<ip_a::size(16), ip_b::size(16), ip_c::size(16), ip_d::size(16), ip_e::size(16),
+        ip_f::size(16), ip_g::size(16), ip_h::size(16), port::size(16)>> ->
+        {:ok, {{ip_a, ip_b, ip_c, ip_d, ip_e, ip_f, ip_g, ip_h}, port}}
+
       <<ip_a::size(16), ip_b::size(16), ip_c::size(16), ip_d::size(16), ip_e::size(16),
         ip_f::size(16), ip_g::size(16), ip_h::size(16)>> ->
         {:ok, {ip_a, ip_b, ip_c, ip_d, ip_e, ip_f, ip_g, ip_h}}
@@ -639,6 +625,14 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
      {:octet_string,
       <<ip_a::size(16), ip_b::size(16), ip_c::size(16), ip_d::size(16), ip_e::size(16),
         ip_f::size(16), ip_g::size(16), ip_h::size(16)>>}}
+  end
+
+  defp encode_ipv6_address(_property, {{ip_a, ip_b, ip_c, ip_d, ip_e, ip_f, ip_g, ip_h}, port})
+       when is_integer(port) and port >= 0 and port <= 65_535 do
+    {:ok,
+     {:octet_string,
+      <<ip_a::size(16), ip_b::size(16), ip_c::size(16), ip_d::size(16), ip_e::size(16),
+        ip_f::size(16), ip_g::size(16), ip_h::size(16), port::size(16)>>}}
   end
 
   defp encode_ipv6_address(_property, _data), do: {:error, :invalid_data}

@@ -75,7 +75,7 @@ defmodule BACstack.MixProject do
       {:cidr, "~> 1.1"},
       {:circuits_uart, "~> 1.5", optional: true},
       {:codepagex, "~> 0.1"},
-      {:const_enum, "~> 0.1.0"},
+      {:const_enum, "~> 0.2.0"},
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
       {:dialyxir, "1.4.3", only: [:dev, :test], runtime: false},
       {:doctor, "~> 0.21", only: [:dev, :test], runtime: false},

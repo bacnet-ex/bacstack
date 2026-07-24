@@ -142,6 +142,10 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
       %{number_of_states: ns} = obj ->
         %{obj | present_value: min(ns, obj.present_value)}
 
+      # Amend NetworkPort objects and make sure network_type is not VMAC addressing without VMAC table
+      %{network_type: type} = obj when type in [:ipv6, :sc, :zigbee] ->
+        %{obj | network_type: :ptp, virtual_mac_address_table: nil}
+
       # Amend TrendLog* objects and make sure buffer_size is at least 1
       %{buffer_size: 0} = obj ->
         %{obj | buffer_size: 1}

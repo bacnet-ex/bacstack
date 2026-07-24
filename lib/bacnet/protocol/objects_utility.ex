@@ -103,7 +103,8 @@ defmodule BACnet.Protocol.ObjectsUtility do
   @typedoc """
   Valid options for `cast_property_to_value/4`.
   """
-  @type cast_property_to_value_option :: {:allow_partial, boolean()}
+  @type cast_property_to_value_option ::
+          {:allow_numeric_constants, boolean()} | {:allow_partial, boolean()}
 
   @typedoc """
   Valid options for `cast_properties_to_object/3`.
@@ -122,6 +123,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
   """
   @type cast_read_properties_ack_option ::
           {:allow_unknown_properties, boolean() | :no_unpack}
+          | {:allow_numeric_constants, boolean()}
           | {:ignore_array_indexes, boolean()}
           | {:ignore_invalid_properties, boolean()}
           | {:ignore_object_identifier_mismatch, boolean()}
@@ -624,6 +626,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
   Note: In prod environment, required modules are not explicitely loaded.
 
   The following options are available:
+  - `allow_numeric_constants: boolean()` - Optional. Allows numeric (unknown or vendor extension) constants (enumerated).
   - `allow_partial: boolean()` - Optional. Allows partial values of array or list properties (a single value).
   """
   @spec cast_property_to_value(
@@ -655,6 +658,8 @@ defmodule BACnet.Protocol.ObjectsUtility do
         unless_env(:prod, do: Code.ensure_loaded(object_mod))
 
         process_make_property(object_mod, property_identifier, value,
+          allow_numeric_constants:
+            get_bool_opts(opts, :allow_numeric_constants, get_fa_str(), false),
           allow_partial: get_bool_opts(opts, :allow_partial, get_fa_str(), false)
         )
     end
@@ -757,6 +762,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
 
   The following options are available:
   - `allow_unknown_properties: boolean() | :no_unpack` - Optional. Allows unknown property identifiers - which means we have no validation (defaults to `false`).
+  - `allow_numeric_constants: boolean()` - Optional. Allows numeric (unknown or vendor extension) constants (enumerated).
   - `ignore_array_indexes: boolean()` - Optional. Ignores property array indexes as they are currently not supported (defaults to `false`).
   - `ignore_invalid_properties: boolean()` - Optional. Ignores invalid properties (defaults to `false`).
   - `ignore_object_identifier_mismatch: boolean()` - Optional. Ignores mismatches between object identifiers (defaults to `false`).
@@ -790,6 +796,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
         unless_env(:prod, do: Code.ensure_loaded(object_mod))
 
         fun_name = get_fa_str()
+        allow_numeric_constants = get_bool_opts(opts, :allow_numeric_constants, fun_name, false)
         allow_unknown_props = Keyword.get(opts, :allow_unknown_properties, false)
         ignore_array_indexes = get_bool_opts(opts, :ignore_array_indexes, fun_name, false)
         ignore_invalid_props = get_bool_opts(opts, :ignore_invalid_properties, fun_name, false)
@@ -797,6 +804,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
         ignore_unknown_props = get_bool_opts(opts, :ignore_unknown_properties, fun_name, false)
 
         internal_opts = %RPATransformOptions{
+          allow_numeric_constants: allow_numeric_constants,
           allow_unknown_properties: allow_unknown_props,
           ignore_array_indexes: ignore_array_indexes,
           ignore_invalid_properties: ignore_invalid_props,
@@ -1008,6 +1016,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
          object_mod,
          %ReadPropertyAck{property_array_index: nil} = ack,
          %RPATransformOptions{
+           allow_numeric_constants: allow_numeric_constants,
            allow_unknown_properties: allow_unknown_properties,
            ignore_invalid_properties: ignore_invalid_properties,
            ignore_unknown_properties: ignore_unknown_properties
@@ -1017,6 +1026,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
            object_mod,
            ack.property_identifier,
            ack.property_value,
+           allow_numeric_constants: allow_numeric_constants,
            allow_unknown_properties: allow_unknown_properties
          ) do
       {:ok, value} ->
@@ -1070,6 +1080,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
          object_mod,
          %ReadPropertyMultipleAck{} = ack,
          %RPATransformOptions{
+           allow_numeric_constants: allow_numeric_constants,
            allow_unknown_properties: allow_unknown_properties,
            ignore_array_indexes: ignore_array_indexes,
            ignore_invalid_properties: ignore_invalid_properties,
@@ -1119,6 +1130,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
                      object_mod,
                      result.property_identifier,
                      result.property_value,
+                     allow_numeric_constants: allow_numeric_constants,
                      allow_unknown_properties: allow_unknown_properties
                    ) do
                 {:ok, value} ->
@@ -1178,6 +1190,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
 
       case Map.fetch(prop_type_map, property_identifier) do
         {:ok, type} ->
+          allow_num_const = opts[:allow_numeric_constants] || false
           allow_partial = opts[:allow_partial] || false
 
           annotations = object_mod.get_annotation(property_identifier)
@@ -1199,6 +1212,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
                     property_identifier,
                     value,
                     %{
+                      allow_numeric_constants: opts[:allow_numeric_constants],
                       allow_partial: allow_partial,
                       object_mod: object_mod,
                       properties_type_map: prop_type_map
@@ -1245,29 +1259,37 @@ defmodule BACnet.Protocol.ObjectsUtility do
             {:ok, decoder_value} ->
               # If partials allowed and the value is not a list, extract the subtype
               check_type =
-                if allow_partial and not is_list(value) do
-                  case type do
-                    {:array, subtype} ->
-                      subtype
+                cond do
+                  allow_partial and not is_list(value) ->
+                    case type do
+                      {:array, subtype} ->
+                        subtype
 
-                    {:array, subtype, _size} ->
-                      subtype
+                      {:array, subtype, _size} ->
+                        subtype
 
-                    {:list, subtype} ->
-                      subtype
+                      {:list, subtype} ->
+                        subtype
 
-                    {:struct, PriorityArray} ->
-                      {:type_list, [Map.fetch!(prop_type_map, :present_value), {:literal, nil}]}
+                      {:struct, PriorityArray} ->
+                        {:type_list, [Map.fetch!(prop_type_map, :present_value), {:literal, nil}]}
 
-                    term ->
-                      term
-                  end
-                else
-                  type
+                      term ->
+                        term
+                    end
+
+                  # Numeric constants (integers) are allowed and we got one
+                  # Pass it as uint type
+                  match?({:constant, _type}, type) and allow_num_const and
+                      is_integer(decoder_value) ->
+                    :unsigned_integer
+
+                  true ->
+                    type
                 end
 
               if BeamTypes.check_type(check_type, decoder_value) do
-                {:ok, decoder_value}
+                decoder_result
               else
                 {:error, {:invalid_property_value, {property_identifier, decoder_value}}}
               end
@@ -1690,10 +1712,17 @@ defmodule BACnet.Protocol.ObjectsUtility do
     {:ok, value == 1}
   end
 
-  defp cast_value_to_type({:constant, subtype}, property, %Encoding{value: value}, _opts) do
+  defp cast_value_to_type({:constant, subtype}, property, %Encoding{value: value}, opts) do
     case Constants.by_value(subtype, value) do
-      {:ok, _val} = val -> val
-      :error -> {:error, {:invalid_property_value, {property, value}}}
+      {:ok, _val} = val ->
+        val
+
+      :error ->
+        if is_integer(value) and value >= 0 and opts[:allow_numeric_constants] do
+          {:ok, value}
+        else
+          {:error, {:invalid_property_value, {property, value}}}
+        end
     end
   end
 

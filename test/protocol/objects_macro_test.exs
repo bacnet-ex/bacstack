@@ -729,6 +729,8 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
         field(:device_type, String.t())
         field(:out_of_service, boolean(), required: true)
         field(:status_flags, StatusFlags.t(), required: true)
+
+        field(:reliability, Constants.reliability())
       end
     end
 
@@ -789,6 +791,7 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
              :notify_type,
              :profile_location,
              :profile_name,
+             :reliability,
              :tags,
              :time_delay,
              :time_delay_normal
@@ -2270,5 +2273,43 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
 
     assert {:error, {:value_failed_property_validation, :profile_location}} =
              unquote(mod_name_minimal_stub).create(1, "TEST", %{profile_location: url})
+  end
+
+  test "verify disabled allow_numeric_constants accepts atoms (constants)" do
+    assert {:ok, %{reliability: :no_fault_detected}} =
+             unquote(mod_name_minimal_stub).create(1, "TEST", %{reliability: :no_fault_detected})
+  end
+
+  test "verify disabled allow_numeric_constants reject integer / non-atoms (constants)" do
+    assert {:error, {:invalid_property_type, :reliability}} =
+             unquote(mod_name_minimal_stub).create(1, "TEST", %{reliability: 0})
+  end
+
+  test "verify enabled allow_numeric_constants accepts atoms (constants)" do
+    assert {:ok, %{reliability: :no_fault_detected}} =
+             unquote(mod_name_minimal_stub).create(1, "TEST", %{reliability: :no_fault_detected},
+               allow_numeric_constants: true
+             )
+  end
+
+  test "verify enabled allow_numeric_constants accepts integer / non-atoms (constants)" do
+    assert {:ok, %{reliability: 0}} =
+             unquote(mod_name_minimal_stub).create(1, "TEST", %{reliability: 0},
+               allow_numeric_constants: true
+             )
+  end
+
+  test "verify enabled allow_numeric_constants still rejects negative integers non-atoms (constants)" do
+    assert {:error, {:invalid_property_type, :reliability}} =
+             unquote(mod_name_minimal_stub).create(1, "TEST", %{reliability: -1},
+               allow_numeric_constants: true
+             )
+  end
+
+  test "verify enabled allow_numeric_constants still rejects non integers non-atoms (constants)" do
+    assert {:error, {:invalid_property_type, :reliability}} =
+             unquote(mod_name_minimal_stub).create(1, "TEST", %{reliability: "hello"},
+               allow_numeric_constants: true
+             )
   end
 end

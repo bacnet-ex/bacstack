@@ -688,6 +688,8 @@ defmodule BACnet.Protocol.Constants do
   defconst(:network_type, :ipv4, 0x05)
   defconst(:network_type, :zigbee, 0x06)
   defconst(:network_type, :virtual, 0x07)
+  # 8 was removed in Revision 18, but we'll keep it for compatibility
+  defconst(:network_type, :non_bacnet, 0x08)
   defconst(:network_type, :ipv6, 0x09)
   defconst(:network_type, :serial, 0x0A)
   defconst(:network_type, :sc, 0x0B)
@@ -1098,6 +1100,10 @@ defmodule BACnet.Protocol.Constants do
 
   ###############################
 
+  defconstforward(VendorExtensions, :vendor_extensions)
+
+  ###############################
+
   # The below macros need to be at the end because of the @constant attribute
 
   @doc """
@@ -1107,7 +1113,7 @@ defmodule BACnet.Protocol.Constants do
   defmacro macro_list_all(type) when is_atom(type) do
     consts =
       Enum.flat_map(@constants, fn
-        {^type, name, value, _docs, _cdocs} -> [{name, value}]
+        {^type, name, value, _docs, _cdocs, _ctable} -> [{name, value}]
         _else -> []
       end)
 
@@ -1123,7 +1129,7 @@ defmodule BACnet.Protocol.Constants do
   defmacro macro_list_names(type) when is_atom(type) do
     names =
       Enum.flat_map(@constants, fn
-        {^type, name, _value, _docs, _cdocs} -> [name]
+        {^type, name, _value, _docs, _cdocs, _ctable} -> [name]
         _else -> []
       end)
 
