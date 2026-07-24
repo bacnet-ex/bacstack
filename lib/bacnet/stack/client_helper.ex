@@ -251,12 +251,21 @@ defmodule BACnet.Stack.ClientHelper do
                 if array_index == 0 and is_integer(ack.property_value.value) do
                   {:ok, ack.property_value.value}
                 else
+                  cast_opts =
+                    []
+                    |> Keyword.put(:allow_partial, array_index != nil)
+                    |> then(fn kw ->
+                      case Keyword.fetch(opts, :allow_numeric_constants) do
+                        {:ok, allow} -> Keyword.put(kw, :allow_numeric_constants, allow)
+                        :error -> kw
+                      end
+                    end)
+
                   ObjectsUtility.cast_property_to_value(
                     cast_object_id,
                     ack.property_identifier,
                     ack.property_value,
-                    allow_numeric_constants: opts[:allow_numeric_constants],
-                    allow_partial: array_index != nil
+                    cast_opts
                   )
                 end
             end) do
