@@ -527,9 +527,11 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
     # Virtual MAC (for certain network types that require VMAC)
     field(:virtual_mac_address_table, [VmacEntry.t()],
       annotation: [
-        required_when: fn props, _object ->
-          Map.get(props, :network_type) in [:ipv6, :sc, :zigbee]
-        end
+        # Required if the network represented by this object requires VMAC addressing
+        # -> but not all devices with BACnet/SC, and revision 19+ (i.e. 23) certified, have this property
+        # required_when: fn props, _object ->
+        #   Map.get(props, :network_type) in [:ipv6, :sc, :zigbee]
+        # end
       ]
     )
 
