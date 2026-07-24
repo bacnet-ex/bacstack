@@ -58,8 +58,10 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
 
   - `changes_pending`: Set to true when configuration properties are written that require
     activation via Command.
-    **Dev must**: Maintain this flag correctly; clear it when Command is written with
-    appropriate value (e.g. discard_changes or restart_port that applies changes).
+    **Dev must**: Clear it when Command is written with appropriate value
+    (e.g. discard_changes or restart_port that applies changes).
+    This flag is automatically set to true when a configuration property is written
+    (using `update_property/3`), as specified by ASHRAE 135-2016.
 
   - `command`: Writing a value other than :idle causes the device to perform the action
     (discard pending changes, renew FD registration, renew DHCP, restart autonegotiation,
@@ -532,6 +534,53 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
     )
 
     field(:routing_table, [RouterEntry.t()], readonly: true)
+  end
+
+  # Override update_property?/3 to allow updating changes_pending property
+  @spec update_property(t(), Constants.property_identifier(), term()) ::
+          {:ok, t()} | property_update_error()
+  def update_property(%__MODULE__{} = object, property, value) when is_atom(property) do
+    with {:ok, obj} <- super(object, property, value) do
+      obj =
+        if property in [
+             :bacnet_ip_global_address,
+             :bacnet_ip_mode,
+             :bacnet_ip_multicast_address,
+             :bacnet_ip_nat_traversal,
+             :bacnet_ip_udp_port,
+             :bacnet_ipv6_mode,
+             :bacnet_ipv6_multicast_address,
+             :bacnet_ipv6_udp_port,
+             :bbmd_accept_fd_registrations,
+             :bbmd_broadcast_distribution_table,
+             :fd_bbmd_address,
+             :fd_subscription_lifetime,
+             :ip_address,
+             :ip_default_gateway,
+             :ip_dhcp_enable,
+             :ip_dns_server,
+             :ip_subnet_mask,
+             :ipv6_address,
+             :ipv6_auto_addressing_enable,
+             :ipv6_default_gateway,
+             :ipv6_dns_server,
+             :ipv6_prefix_length,
+             :link_speed,
+             :link_speed_autonegotiate,
+             :mac_address,
+             :max_info_frames,
+             :network_interface_name,
+             :network_number,
+             :reference_port,
+             :virtual_mac_address_table
+           ] do
+          %{obj | changes_pending: true}
+        else
+          obj
+        end
+
+      {:ok, obj}
+    end
   end
 
   # Override property_writable?/2, to be able to override behaviour
