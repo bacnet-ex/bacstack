@@ -1,4 +1,5 @@
 defmodule BACnet.Test.Protocol.ObjectTypes.AccumulatorTest do
+  alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.ObjectsUtility
   # alias BACnet.Protocol.ObjectTypes.Accumulator
@@ -17,7 +18,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AccumulatorTest do
              ObjectsUtility.cast_property_to_value(
                %ObjectIdentifier{type: :accumulator, instance: 0},
                :scale,
-               %BACnet.Protocol.ApplicationTags.Encoding{
+               %Encoding{
                  encoding: :tagged,
                  extras: [tag_number: 0],
                  type: nil,
@@ -31,7 +32,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AccumulatorTest do
              ObjectsUtility.cast_property_to_value(
                %ObjectIdentifier{type: :accumulator, instance: 0},
                :scale,
-               %BACnet.Protocol.ApplicationTags.Encoding{
+               %Encoding{
                  encoding: :tagged,
                  extras: [tag_number: 1],
                  type: nil,
@@ -41,11 +42,11 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AccumulatorTest do
   end
 
   test "verify accumulator scale decoding failing" do
-    assert {:error, :invalid_value} =
+    assert {:error, {:invalid_tags, {:scale, %Encoding{}}}} =
              ObjectsUtility.cast_property_to_value(
                %ObjectIdentifier{type: :accumulator, instance: 0},
                :scale,
-               %BACnet.Protocol.ApplicationTags.Encoding{
+               %Encoding{
                  encoding: :tagged,
                  extras: [tag_number: 2],
                  type: nil,
@@ -56,7 +57,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AccumulatorTest do
 
   test "verify accumulator scale real encoding" do
     assert {:ok,
-            %BACnet.Protocol.ApplicationTags.Encoding{
+            %Encoding{
               encoding: :tagged,
               extras: [tag_number: 0],
               type: nil,
@@ -71,7 +72,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AccumulatorTest do
 
   test "verify accumulator scale int encoding" do
     assert {:ok,
-            %BACnet.Protocol.ApplicationTags.Encoding{
+            %Encoding{
               encoding: :tagged,
               extras: [tag_number: 1],
               type: nil,
@@ -85,7 +86,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AccumulatorTest do
   end
 
   test "verify accumulator scale encoding failing" do
-    assert {:error, :invalid_value} =
+    assert {:error, {:invalid_property_value, {:scale, :hello}}} =
              ObjectsUtility.cast_value_to_property(
                %ObjectIdentifier{type: :accumulator, instance: 0},
                :scale,

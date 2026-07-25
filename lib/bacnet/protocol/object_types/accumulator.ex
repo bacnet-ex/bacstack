@@ -306,7 +306,7 @@ defmodule BACnet.Protocol.ObjectTypes.Accumulator do
               end
 
             _other ->
-              {:error, :invalid_value}
+              {:error, :invalid_tags}
           end
         end,
         encoder: fn
@@ -320,8 +320,8 @@ defmodule BACnet.Protocol.ObjectTypes.Accumulator do
               Encoding.create({:tagged, {1, raw, byte_size(raw)}})
             end
 
-          _other ->
-            {:error, :invalid_value}
+          other ->
+            {:error, {:invalid_property_value, {:scale, other}}}
         end
       ]
     )

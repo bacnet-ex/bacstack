@@ -650,7 +650,8 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
     {:ok, {:octet_string, <<ip_a, ip_b, ip_c, ip_d, port::size(16)>>}}
   end
 
-  defp encode_ipv4_address(_property, _data), do: {:error, :invalid_data}
+  defp encode_ipv4_address(property, data),
+    do: {:error, {:invalid_property_value, {property, data}}}
 
   # defp ipv4_address?({ip_a, ip_b, ip_c, ip_d})
   #      when is_integer(ip_a) and ip_a in 0..255//1 and
@@ -694,7 +695,8 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
         ip_f::size(16), ip_g::size(16), ip_h::size(16), port::size(16)>>}}
   end
 
-  defp encode_ipv6_address(_property, _data), do: {:error, :invalid_data}
+  defp encode_ipv6_address(property, data),
+    do: {:error, {:invalid_property_value, {property, data}}}
 
   defp ipv6_address?({ip_a, ip_b, ip_c, ip_d, ip_e, ip_f, ip_g, ip_h})
        when is_integer(ip_a) and ip_a in 0..65_535//1 and
