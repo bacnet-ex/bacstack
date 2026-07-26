@@ -1605,12 +1605,10 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
         field(:location, boolean(), annotation: [required_when: {:opts, :physical_input}])
         field(:device_type, boolean(), annotation: [required_when: {:opts, :abc}])
 
-        field(:max_master, boolean(), annotation: [required_when: {:opts, :remote_object, 1}])
+        field(:max_master, boolean(), annotation: [required_when: {:opts, :rem_phase, 1}])
         field(:deadband, boolean(), annotation: [required_when: {:opts, :def, 1}])
 
-        field(:program_state, boolean(),
-          annotation: [required_when: {:opts, :remote_object, :<, 0}]
-        )
+        field(:program_state, boolean(), annotation: [required_when: {:opts, :rem_phase, :<, 0}])
 
         field(:file_type, boolean(), annotation: [required_when: {:opts, :ghi, :>, 2}])
 
@@ -1734,17 +1732,15 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
     assert {:ok, %{max_master: nil}} = mod_name.create(1, "TEST")
 
     assert {:ok, %{max_master: nil}} =
-             mod_name.create(1, "TEST", %{present_value: false}, remote_object: 0)
+             mod_name.create(1, "TEST", %{present_value: false}, rem_phase: 0)
 
     assert {:ok, %{max_master: true}} = mod_name.create(1, "TEST", %{max_master: true})
 
     assert {:error, {:missing_required_property, :max_master}} =
-             mod_name.create(1, "TEST", %{present_value: false}, remote_object: 1)
+             mod_name.create(1, "TEST", %{present_value: false}, rem_phase: 1)
 
     assert {:ok, %{max_master: false}} =
-             mod_name.create(1, "TEST", %{max_master: false, present_value: false},
-               remote_object: 1
-             )
+             mod_name.create(1, "TEST", %{max_master: false, present_value: false}, rem_phase: 1)
   end
 
   test "verify create/4 optionally required_when property {:opts, property, value} with other" do
@@ -1767,16 +1763,16 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
     assert {:ok, %{program_state: nil}} = mod_name.create(1, "TEST")
 
     assert {:ok, %{program_state: nil}} =
-             mod_name.create(1, "TEST", %{present_value: false}, remote_object: 0)
+             mod_name.create(1, "TEST", %{present_value: false}, rem_phase: 0)
 
     assert {:ok, %{program_state: true}} = mod_name.create(1, "TEST", %{program_state: true})
 
     assert {:error, {:missing_required_property, :program_state}} =
-             mod_name.create(1, "TEST", %{present_value: false}, remote_object: -1)
+             mod_name.create(1, "TEST", %{present_value: false}, rem_phase: -1)
 
     assert {:ok, %{program_state: false}} =
              mod_name.create(1, "TEST", %{program_state: false, present_value: false},
-               remote_object: -1
+               rem_phase: -1
              )
   end
 
@@ -1806,6 +1802,16 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
     assert {:ok, %{file_size: false}} = mod_name.create(1, "TEST", %{}, ghi: -1)
 
     assert {:ok, %{file_size: true}} = mod_name.create(1, "TEST", %{file_size: true}, ghi: -1)
+  end
+
+  test "verify create/4 optionally required_when property skipped for remote object" do
+    mod_name = unquote(mod_name_opt_required_stub)
+
+    assert {:error, {:missing_required_property, :file_type}} =
+             mod_name.create(1, "TEST", %{}, ghi: 3)
+
+    assert {:ok, %{file_type: nil}} =
+             mod_name.create(1, "TEST", %{present_value: false}, ghi: 3, remote_object: 1)
   end
 
   # Our stub with optionally required properties using only_when for the tests below
@@ -1841,10 +1847,10 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
         field(:location, boolean(), annotation: [only_when: {:opts, :physical_input}])
         field(:device_type, boolean(), annotation: [only_when: {:opts, :abc}])
 
-        field(:max_master, boolean(), annotation: [only_when: {:opts, :remote_object, 1}])
+        field(:max_master, boolean(), annotation: [only_when: {:opts, :rem_phase, 1}])
         field(:deadband, boolean(), annotation: [only_when: {:opts, :def, 1}])
 
-        field(:program_state, boolean(), annotation: [only_when: {:opts, :remote_object, :<, 0}])
+        field(:program_state, boolean(), annotation: [only_when: {:opts, :rem_phase, :<, 0}])
         field(:file_type, boolean(), annotation: [only_when: {:opts, :ghi, :>, 2}])
 
         field(:file_size, boolean(),
@@ -1995,18 +2001,16 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
     assert {:ok, %{max_master: nil}} = mod_name.create(1, "TEST")
 
     assert {:ok, %{max_master: nil}} =
-             mod_name.create(1, "TEST", %{present_value: false}, remote_object: 0)
+             mod_name.create(1, "TEST", %{present_value: false}, rem_phase: 0)
 
     assert {:error, {:property_not_allowed, :max_master}} =
              mod_name.create(1, "TEST", %{max_master: true})
 
     assert {:error, {:missing_required_property, :max_master}} =
-             mod_name.create(1, "TEST", %{present_value: false}, remote_object: 1)
+             mod_name.create(1, "TEST", %{present_value: false}, rem_phase: 1)
 
     assert {:ok, %{max_master: false}} =
-             mod_name.create(1, "TEST", %{max_master: false, present_value: false},
-               remote_object: 1
-             )
+             mod_name.create(1, "TEST", %{max_master: false, present_value: false}, rem_phase: 1)
   end
 
   test "verify create/4 optionally only_when property {:opts, property, value} with other" do
@@ -2030,17 +2034,17 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
     assert {:ok, %{program_state: nil}} = mod_name.create(1, "TEST")
 
     assert {:ok, %{program_state: nil}} =
-             mod_name.create(1, "TEST", %{present_value: false}, remote_object: 0)
+             mod_name.create(1, "TEST", %{present_value: false}, rem_phase: 0)
 
     assert {:error, {:property_not_allowed, :program_state}} =
              mod_name.create(1, "TEST", %{program_state: true})
 
     assert {:error, {:missing_required_property, :program_state}} =
-             mod_name.create(1, "TEST", %{present_value: false}, remote_object: -1)
+             mod_name.create(1, "TEST", %{present_value: false}, rem_phase: -1)
 
     assert {:ok, %{program_state: false}} =
              mod_name.create(1, "TEST", %{program_state: false, present_value: false},
-               remote_object: -1
+               rem_phase: -1
              )
   end
 
@@ -2096,6 +2100,19 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
 
     assert {:error, {:property_not_allowed, :bacnet_ip_mode}} =
              mod_name.create(1, "TEST", %{bacnet_ip_mode: true}, hello: :denied)
+  end
+
+  test "verify create/4 optionally only_when property skipped for remote object" do
+    mod_name = unquote(mod_name_opt_only_stub)
+
+    assert {:error, {:missing_required_property, :location}} =
+             mod_name.create(1, "TEST", %{}, physical_input: true)
+
+    assert {:ok, %{location: nil}} =
+             mod_name.create(1, "TEST", %{present_value: false},
+               physical_input: true,
+               remote_object: 1
+             )
   end
 
   test "verify get_required_properties/0 only lists properties that actually exist" do

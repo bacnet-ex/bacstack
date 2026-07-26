@@ -36,37 +36,7 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
   @type_mapping %{
     {:struct, BACnetDate} => BACnetDate.utc_today(),
     {:struct, BACnetDateTime} => BACnetDateTime.utc_now(),
-    {:struct, BACnetTime} => BACnetTime.utc_now(),
-    {:struct, DeviceObjectRef} =>
-      struct(DeviceObjectRef, Map.from_struct(ObjectsMacro.get_default_dev_object_ref())),
-    {:struct, DeviceObjectPropertyRef} => ObjectsMacro.get_default_dev_object_ref(),
-    {:struct, EventMessageTexts} => ObjectsMacro.get_default_event_message_texts(),
-    {:struct, EventTimestamps} => %EventTimestamps{
-      to_offnormal: ObjectsMacro.get_default_bacnet_timestamp(),
-      to_fault: ObjectsMacro.get_default_bacnet_timestamp(),
-      to_normal: ObjectsMacro.get_default_bacnet_timestamp()
-    },
-    {:struct, EventTransitionBits} => ObjectsMacro.get_default_event_transbits(),
-    {:struct, LimitEnable} => %LimitEnable{
-      low_limit_enable: true,
-      high_limit_enable: false
-    },
-    {:struct, NotificationClassPriority} => %NotificationClassPriority{
-      to_offnormal: Enum.random(0..255),
-      to_fault: Enum.random(0..255),
-      to_normal: Enum.random(0..255)
-    },
-    {:struct, ObjectPropertyRef} => ObjectsMacro.get_default_object_ref(),
-    bitstring: {true, true, false, true},
-    boolean: true,
-    enumerated: 1,
-    signed_integer: 5,
-    unsigned_integer: 7,
-    real: 5.0,
-    double: 3.141,
-    string: "Hello World",
-    character_string: "Hello World",
-    octet_string: <<0, 2, 5>>
+    {:struct, BACnetTime} => BACnetTime.utc_now()
   }
 
   @type_transform %{
@@ -74,6 +44,19 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
     {:struct, BACnetTime} => :time,
     string: :character_string
   }
+
+  @primitive_types [
+    :null,
+    :boolean,
+    :unsigned_integer,
+    :signed_integer,
+    :real,
+    :double,
+    :octet_string,
+    :character_string,
+    :bitstring,
+    :enumerated
+  ]
 
   @env __ENV__
 
@@ -854,38 +837,27 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
       ) do
     pv_prop_type = property_types_map[:present_value]
 
-    case is_atom(pv_prop_type) && Map.fetch(@type_mapping, pv_prop_type) do
-      {:ok, partial_raw_value} ->
+    case generate_cast_values_for_type(obj_type, property, pv_prop_type, [:enumerated]) do
+      {encoding_type, value, wrong_raw_value, _wrong_struct_value, wrong_type_pattern} ->
         pv_encoding_type = @type_transform[pv_prop_type] || pv_prop_type
 
         # Boolean present value is actually enumerated
-        {pv_encoding_type, pv_encoding_value} =
+        {encoding_type, wire_value} =
           if pv_prop_type == :boolean do
-            {:enumerated, Process.get(:unknown_key_elixir, if(partial_raw_value, do: 1, else: 0))}
+            {:enumerated, Process.get(:unknown_key_elixir, if(value, do: 1, else: 0))}
           else
-            {pv_encoding_type, partial_raw_value}
+            {encoding_type, value}
           end
 
-        partial_wrong_type =
-          Enum.find(@type_mapping, fn
-            {:string, _value} -> nil
-            {^pv_encoding_type, _value} -> nil
-            {^pv_prop_type, _value} -> nil
-            {_type, _value} -> true
-          end)
-
-        {_key, partial_wrong_value} = partial_wrong_type
-        partial_wrong_raw_value = Encoding.create!(partial_wrong_type)
-
-        value = %PriorityArray{priority_1: partial_raw_value}
+        pa_value = %PriorityArray{priority_1: value}
         raw_nil_value = Encoding.create!({:null, nil})
 
         multi_value = %PriorityArray{
-          priority_1: partial_raw_value,
-          priority_4: partial_raw_value
+          priority_1: value,
+          priority_4: value
         }
 
-        partial_encoding = Encoding.create!({pv_encoding_type, pv_encoding_value})
+        partial_encoding = Encoding.create!({encoding_type, wire_value})
         arr_succ_cast = [partial_encoding | List.duplicate(raw_nil_value, 15)]
 
         arr_m_succ_cast = [
@@ -896,34 +868,31 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
           | List.duplicate(raw_nil_value, 12)
         ]
 
-        arr_wrong_cast = [partial_wrong_raw_value | List.duplicate(raw_nil_value, 15)]
+        arr_wrong_cast = [wrong_raw_value | List.duplicate(raw_nil_value, 15)]
         arr_wrong_cast2 = [partial_encoding | List.duplicate(raw_nil_value, 14)]
         arr_wrong_cast3 = [partial_encoding | List.duplicate(raw_nil_value, 16)]
 
         [
           {"#{obj_type} #{property} successful cast (s_pa)", obj_type, property, arr_succ_cast,
-           value, {:ok, value}, []},
+           pa_value, {:ok, pa_value}, []},
           {"#{obj_type} #{property} successful cast multi (s_pa)", obj_type, property,
            arr_m_succ_cast, multi_value, {:ok, multi_value}, []},
           {"#{obj_type} #{property} wrong type (s_pa)", obj_type, property, arr_wrong_cast,
-           partial_wrong_raw_value,
-           {:error, {:invalid_property_value, {property, arr_wrong_cast}}}, []},
+           wrong_raw_value, {:error, {:invalid_property_value, {property, arr_wrong_cast}}}, []},
           {"#{obj_type} #{property} not enough elements (s_pa)", obj_type, property,
-           arr_wrong_cast2, partial_wrong_raw_value,
+           arr_wrong_cast2, wrong_raw_value,
            {:error, {:invalid_property_value, {property, arr_wrong_cast2}}}, []},
           {"#{obj_type} #{property} too many elements (s_pa)", obj_type, property,
-           arr_wrong_cast3, partial_wrong_raw_value,
+           arr_wrong_cast3, wrong_raw_value,
            {:error, {:invalid_property_value, {property, arr_wrong_cast3}}}, []},
           {"#{obj_type} #{property} successful partial cast (s_pa)", obj_type, property,
-           Encoding.create!({pv_encoding_type, partial_raw_value}), partial_raw_value,
-           {:ok, partial_raw_value}, [allow_partial: true]},
+           Encoding.create!({pv_encoding_type, value}), value, {:ok, value},
+           [allow_partial: true]},
           {"#{obj_type} #{property} wrong partial type (s_pa)", obj_type, property,
-           partial_wrong_raw_value, partial_wrong_value,
-           {:error, {:invalid_property_value, {property, partial_wrong_value}}},
-           [allow_partial: true]}
+           wrong_raw_value, wrong_raw_value, wrong_type_pattern, [allow_partial: true]}
         ]
 
-      _else ->
+      nil ->
         []
     end
   end
@@ -1024,16 +993,8 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
       )
       when mod in [ObjectTypes.BinaryInput, ObjectTypes.BinaryOutput, ObjectTypes.BinaryValue] and
              property in [:alarm_value, :feedback_value, :present_value, :relinquish_default] do
-    wrong_type =
-      Enum.find(@type_mapping, fn
-        {:boolean, _value} -> nil
-        {:enumerated, _value} -> nil
-        {:string, _value} -> nil
-        {_type, _value} -> true
-      end)
-
-    {_key, wrong_value} = wrong_type
-    wrong_raw_value = Encoding.create!(wrong_type)
+    wrong_value = nil
+    wrong_raw_value = Encoding.create!({:null, nil})
 
     [
       {"#{obj_type} #{property} successful cast (fb)", obj_type, property,
@@ -1045,40 +1006,178 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
     ]
   end
 
+  # Catch-all for properties with no type (for some complex typespecs, term() is then used)
+  def generate_cast_tests(
+        _obj_type,
+        _mod,
+        _property_types_map,
+        {_property, {:term, _meta, _args}}
+      ) do
+    []
+  end
+
   # Fallback
-  def generate_cast_tests(obj_type, _mod, _property_types_map, {property, prop_type}) do
-    case Map.fetch(@type_mapping, prop_type) do
-      {:ok, value} ->
-        encoding_type = @type_transform[prop_type] || prop_type
+  def generate_cast_tests(obj_type, mod, _property_types_map, {property, prop_type}) do
+    # Check if there are encoder/decoder, if so, we need to use them
 
-        wrong_type =
-          Enum.find(@type_mapping, fn
-            {:string, _value} -> nil
-            {^prop_type, _value} -> nil
-            {_type, _value} -> true
-          end)
+    annotation = mod.get_annotation(property)
+    decoder = annotation[:decoder]
+    encoder = annotation[:encoder]
 
-        {_key, wrong_value} = wrong_type
-        wrong_raw_value = Encoding.create!(wrong_type)
+    cond do
+      decoder == nil and encoder == nil ->
+        generate_cast_tests_fallback_easy(obj_type, {property, prop_type})
 
-        # For structs, they will use {:error, :invalid_tags}, which gets transformed to the Encoding
-        {wrong_type_pattern, wrong_struct_value} =
-          if match?({:struct, _mod}, prop_type) do
-            {{:error, {:invalid_tags, {property, wrong_raw_value}}}, wrong_raw_value}
-          else
-            {{:error, {:invalid_property_value, {property, wrong_value}}}, wrong_value}
-          end
+      # If one of those are missing... we can't reliably generate tests
+      decoder == nil or encoder == nil ->
+        []
 
+      # We need to use the decoder and encoder
+      true ->
+        []
+
+        # I dont think we're able to automatically generate those test cases
+        # We should test these manually with a dedicated test
+
+        # generator = get_generator_for_type(property, prop_type)
+        # value = generator.()
+
+        # case encoder.(value) do
+        #   {:ok, enc_value} ->
+        #     encoding_type = case enc_value do
+        #       %Encoding{type: type} when type != nil -> type
+        #       [%Encoding{type: type} | _tl] when type != nil -> type
+        #       _other -> nil
+        #     end
+
+        #     wrong_type =
+        #       Enum.find(@primitive_types, fn
+        #         ^encoding_type ->
+        #           nil
+
+        #         ^prop_type ->
+        #           nil
+
+        #         :null ->
+        #           nil
+
+        #         type ->
+        #           case prop_type do
+        #             {:type_list, list} -> type not in list
+        #             _other -> true
+        #           end
+        #       end)
+
+        #     wrong_gen = get_generator_for_type(nil, wrong_type)
+        #     wrong_value = wrong_gen.()
+
+        #     wrong_tuple = {wrong_type, wrong_value}
+        #     wrong_raw_value = Encoding.create!(wrong_tuple)
+
+        #     # For structs, they will use {:error, :invalid_tags}, which gets transformed to the Encoding
+        #     {wrong_type_pattern, wrong_struct_value} =
+        #       if match?({:struct, _mod}, prop_type) do
+        #         {{:error, {:invalid_tags, {property, wrong_raw_value}}}, wrong_value}
+        #       else
+        #         {{:error, {:invalid_property_value, {property, wrong_value}}}, wrong_value}
+        #       end
+
+        #     [
+        #       {"#{obj_type} #{property} successful cast (fb_encoder)", obj_type, property,
+        #         enc_value, value, {:ok, value}, []},
+        #       {"#{obj_type} #{property} wrong type (fb_encoder)", obj_type, property, wrong_raw_value,
+        #         wrong_struct_value, wrong_type_pattern, []}
+        #     ]
+
+        #   {:error, err} ->
+        #     IO.puts("\r\nError using encoder for property #{property} and type #{inspect(prop_type)}, error: " <> inspect(err))
+        #     []
+        # end
+    end
+  end
+
+  defp generate_cast_tests_fallback_easy(obj_type, {property, prop_type}) do
+    case generate_cast_values_for_type(obj_type, property, prop_type, []) do
+      {encoding_type, value, wrong_raw_value, wrong_struct_value, wrong_type_pattern} ->
         [
-          {"#{obj_type} #{property} successful cast (fb)", obj_type, property,
+          {"#{obj_type} #{property} successful cast (fallback)", obj_type, property,
            Encoding.create!({encoding_type, value}), value, {:ok, value}, []},
-          {"#{obj_type} #{property} wrong type (fb)", obj_type, property, wrong_raw_value,
+          {"#{obj_type} #{property} wrong type (fallback)", obj_type, property, wrong_raw_value,
            wrong_struct_value, wrong_type_pattern, []}
         ]
 
-      :error ->
-        # IO.puts("\r\nMissing type_mapping for property #{property} and type #{inspect(prop_type)}")
+      nil ->
         []
+    end
+  end
+
+  @spec generate_cast_values_for_type(atom(), atom(), BeamTypes.typechecker_types(), list()) ::
+          {encoding_type :: BeamTypes.typechecker_types(), value :: term(),
+           wrong_raw_value :: term(), wrong_struct_value :: term(), wrong_type_pattern :: tuple()}
+          | nil
+  defp generate_cast_values_for_type(obj_type, property, prop_type, skip_types) do
+    encoding_type = @type_transform[prop_type] || prop_type
+
+    # For a type list, deliberately pick one by random
+    encoding_type =
+      case encoding_type do
+        {:type_list, list} -> Enum.random(list)
+        _other -> encoding_type
+      end
+
+    # We can only handle the simple encodings, nothing special
+    if encoding_type in @primitive_types do
+      try do
+        get_generator_for_type(property, encoding_type)
+      rescue
+        _err ->
+          _type = obj_type
+          _prop = property
+
+          # IO.puts("\r\nMissing type_mapping for property #{property} and type #{inspect(prop_type)}")
+          nil
+      else
+        generator ->
+          value = generator.()
+
+          wrong_type =
+            Enum.find(@primitive_types, fn
+              ^encoding_type ->
+                nil
+
+              ^prop_type ->
+                nil
+
+              :null ->
+                nil
+
+              type ->
+                type not in skip_types and
+                  case prop_type do
+                    {:type_list, list} -> type not in list
+                    _other -> true
+                  end
+            end)
+
+          wrong_gen = get_generator_for_type(nil, wrong_type)
+          wrong_value = wrong_gen.()
+
+          wrong_tuple = {wrong_type, wrong_value}
+          wrong_raw_value = Encoding.create!(wrong_tuple)
+
+          # For structs, they will use {:error, :invalid_tags}, which gets transformed to the Encoding
+          {wrong_type_pattern, wrong_struct_value} =
+            if match?({:struct, _mod}, prop_type) do
+              {{:error, {:invalid_tags, {property, wrong_raw_value}}}, wrong_value}
+            else
+              {{:error, {:invalid_property_value, {property, wrong_value}}}, wrong_value}
+            end
+
+          {encoding_type, value, wrong_raw_value, wrong_struct_value, wrong_type_pattern}
+      end
+    else
+      # IO.puts("\r\nMissing type mapping for property #{property} and type #{inspect(prop_type)}")
+      nil
     end
   end
 
@@ -1354,6 +1453,10 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
   end
 
   defp get_generator_for_type(_property, :any) do
+    fn -> nil end
+  end
+
+  defp get_generator_for_type(_property, :null) do
     fn -> nil end
   end
 

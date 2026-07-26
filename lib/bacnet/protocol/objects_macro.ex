@@ -533,6 +533,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
   `required_when` can be used to conditionally require certain properties.
   Both checks are executed after all properties have been accumulated.
   More complex checks (as in multiple conditions, either `and` or `or` chained) can be implemented using functions.
+  For remote objects, the `required_when` and `optional_when` checks are not executed.
 
   The following values are supported:
     - `{:property, Constants.property_identifier()}` - The given property must be present in the object.
@@ -1597,19 +1598,26 @@ defmodule BACnet.Protocol.ObjectsMacro do
                    true ->
                      {:halt, {:error, {:missing_required_property, req_prop}}}
                  end
-               end),
-             # Second, look through annotations and support `required_when: ...` annotations
-             # If the function returns true, the property is (optionally) required,
-             # thus we need to check if it is present or if it has a default value
-             # If neither is the case and the property is required, error out
-             {:ok, properties} <- verify_properties_with_required_when(properties, metadata) do
-          # Third, look through annotations and support `only_when: ...` annotations
-          # If the function returns true, the property is (optionally) required,
-          # thus we need to check if it is present or if it has a default value,
-          # if neither is the case and the property is required, error out
-          # If the function returns false, the property MUST NOT be present,
-          # thus we need to check if it is present and error out if so.
-          verify_properties_with_only_when(properties, metadata)
+               end) do
+          # If it is a remote object, we will skip all *_when checks
+          # Remote objects are not our responsibility, we are just representing them as data
+          if metadata.remote_object do
+            {:ok, properties}
+          else
+            # Second, look through annotations and support `required_when: ...` annotations
+            # If the function returns true, the property is (optionally) required,
+            # thus we need to check if it is present or if it has a default value
+            # If neither is the case and the property is required, error out
+            with {:ok, properties} <- verify_properties_with_required_when(properties, metadata) do
+              # Third, look through annotations and support `only_when: ...` annotations
+              # If the function returns true, the property is (optionally) required,
+              # thus we need to check if it is present or if it has a default value,
+              # if neither is the case and the property is required, error out
+              # If the function returns false, the property MUST NOT be present,
+              # thus we need to check if it is present and error out if so.
+              verify_properties_with_only_when(properties, metadata)
+            end
+          end
         end
       end
 

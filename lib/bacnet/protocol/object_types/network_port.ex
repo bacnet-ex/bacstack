@@ -397,13 +397,13 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
 
     field(:bacnet_ipv6_multicast_address, {:inet.ip6_address(), :inet.port_number()},
       bac_type:
-        {:with_validator, term(),
+        {:with_validator, :any,
          fn
            {ip, port} ->
              ipv6_address?(ip) and is_integer(port) and port >= 0 and port <= 65_535
 
-           ip ->
-             ipv6_address?(ip)
+           _ip ->
+             false
          end},
       annotation: [
         decoder: &decode_ipv6_address(:bacnet_ipv6_multicast_address, &1),
@@ -525,13 +525,12 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
     field(:auto_slave_discovery, boolean(), implicit_relationship: :slave_proxy_enable)
 
     # Virtual MAC (for certain network types that require VMAC)
+    # Required if the network represented by this object requires VMAC addressing
     field(:virtual_mac_address_table, [VmacEntry.t()],
       annotation: [
-        # Required if the network represented by this object requires VMAC addressing
-        # -> but not all devices with BACnet/SC, and revision 19+ (i.e. 23) certified, have this property
-        # required_when: fn props, _object ->
-        #   Map.get(props, :network_type) in [:ipv6, :sc, :zigbee]
-        # end
+        required_when: fn props, _object ->
+          Map.get(props, :network_type) in [:ipv6, :sc, :zigbee]
+        end
       ]
     )
 
