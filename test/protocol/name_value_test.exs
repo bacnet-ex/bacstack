@@ -1,9 +1,6 @@
 defmodule BACnet.Protocol.NameValueTest do
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.ApplicationTags.Encoding
-  alias BACnet.Protocol.BACnetDate
-  alias BACnet.Protocol.BACnetDateTime
-  alias BACnet.Protocol.BACnetTime
   alias BACnet.Protocol.NameValue
 
   use ExUnit.Case, async: true
@@ -39,19 +36,6 @@ defmodule BACnet.Protocol.NameValueTest do
     assert match?(%Encoding{encoding: :primitive, value: "hello"}, nv.value)
   end
 
-  test "parse accepts name + BACnetDateTime value" do
-    {:ok, name_tag} = ApplicationTags.create_tag_encoding(0, :character_string, "timestamp")
-
-    # These must be already-parsed %BACnetDate{} / %BACnetTime{} structs
-    # (as produced by the lower-level decoder before reaching NameValue)
-    date = %BACnetDate{year: 2025, month: 3, day: 15, weekday: 6}
-    time = %BACnetTime{hour: 14, minute: 30, second: 0, hundredth: 0}
-
-    assert {:ok, {nv, _rest}} = NameValue.parse([name_tag, {:date, date}, {:time, time}])
-    assert nv.name == "timestamp"
-    assert %BACnetDateTime{date: ^date, time: ^time} = nv.value
-  end
-
   test "parse rejects invalid structure" do
     assert {:error, :invalid_tags} = NameValue.parse([])
     assert {:error, :invalid_tags} = NameValue.parse([{:tagged, {5, <<>>, 0}}])
@@ -77,19 +61,6 @@ defmodule BACnet.Protocol.NameValueTest do
     assert {:unsigned_integer, 42} = value_tag
   end
 
-  test "encode name + BACnetDateTime value" do
-    date = %BACnetDate{year: 2025, month: 3, day: 15, weekday: 6}
-    time = %BACnetTime{hour: 14, minute: 30, second: 0, hundredth: 0}
-    dt = %BACnetDateTime{date: date, time: time}
-
-    nv = %NameValue{name: "event_time", value: dt}
-
-    assert {:ok, tags} = NameValue.encode(nv)
-    assert [name_tag | value_tags] = tags
-    assert {:tagged, {0, _, _}} = name_tag
-    assert [{:date, ^date}, {:time, ^time}] = value_tags
-  end
-
   test "encode rejects invalid name" do
     assert {:error, :invalid_name} = NameValue.encode(%NameValue{name: "", value: nil})
 
@@ -98,7 +69,7 @@ defmodule BACnet.Protocol.NameValueTest do
   end
 
   test "encode rejects invalid value type" do
-    nv = %NameValue{name: "bad", value: "not an Encoding or DateTime"}
+    nv = %NameValue{name: "bad", value: "not an Encoding"}
     assert {:error, :invalid_value} = NameValue.encode(nv)
   end
 
@@ -107,11 +78,6 @@ defmodule BACnet.Protocol.NameValueTest do
 
     {:ok, enc} = Encoding.create({:unsigned_integer, 42})
     assert NameValue.valid?(%NameValue{name: "bar", value: enc})
-
-    date = %BACnetDate{year: 2025, month: 3, day: 15, weekday: 6}
-    time = %BACnetTime{hour: 14, minute: 30, second: 0, hundredth: 0}
-    dt = %BACnetDateTime{date: date, time: time}
-    assert NameValue.valid?(%NameValue{name: "baz", value: dt})
   end
 
   test "valid? rejects invalid entries" do

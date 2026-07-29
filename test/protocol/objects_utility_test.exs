@@ -139,6 +139,7 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
         end
       end
 
+    old = ObjectsUtility.get_object_type_mappings()[:network_port]
     ObjectsUtility.put_object_type_mapping(:network_port, stub)
 
     try do
@@ -150,7 +151,9 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
                  []
                )
     after
-      ObjectsUtility.delete_object_type_mapping(:network_port)
+      if old,
+        do: ObjectsUtility.put_object_type_mapping(:network_port, old),
+        else: ObjectsUtility.delete_object_type_mapping(:network_port)
     end
   end
 
@@ -169,6 +172,7 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
         end
       end
 
+    old = ObjectsUtility.get_object_type_mappings()[:network_port]
     ObjectsUtility.put_object_type_mapping(:network_port, stub)
 
     try do
@@ -180,7 +184,9 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
                  []
                )
     after
-      ObjectsUtility.delete_object_type_mapping(:network_port)
+      if old,
+        do: ObjectsUtility.put_object_type_mapping(:network_port, old),
+        else: ObjectsUtility.delete_object_type_mapping(:network_port)
     end
   end
 
@@ -199,6 +205,7 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
         end
       end
 
+    old = ObjectsUtility.get_object_type_mappings()[:network_port]
     ObjectsUtility.put_object_type_mapping(:network_port, stub)
 
     try do
@@ -210,7 +217,9 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
                  []
                )
     after
-      ObjectsUtility.delete_object_type_mapping(:network_port)
+      if old,
+        do: ObjectsUtility.put_object_type_mapping(:network_port, old),
+        else: ObjectsUtility.delete_object_type_mapping(:network_port)
     end
   end
 
@@ -249,6 +258,106 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
                :reliability,
                %Encoding{encoding: :primitive, extras: [], type: :enumerated, value: 65_536},
                allow_numeric_constants: true
+             )
+  end
+
+  test "cast property to value accepts allow_unknown_properties as false and rejects" do
+    assert {:error, {:unknown_property, :fault_high_limit}} =
+             ObjectsUtility.cast_property_to_value(
+               %ObjectIdentifier{type: :binary_input, instance: 1},
+               :fault_high_limit,
+               %Encoding{encoding: :primitive, extras: [], type: :enumerated, value: 65_536},
+               allow_unknown_properties: false
+             )
+  end
+
+  test "cast property to value accepts allow_unknown_properties as true" do
+    assert {:ok, 65_536} =
+             ObjectsUtility.cast_property_to_value(
+               %ObjectIdentifier{type: :binary_input, instance: 1},
+               :fault_high_limit,
+               %Encoding{encoding: :primitive, extras: [], type: :enumerated, value: 65_536},
+               allow_unknown_properties: true
+             )
+  end
+
+  test "cast property to value accepts allow_unknown_properties as no_unpack" do
+    assert {:ok, %Encoding{value: 65_536}} =
+             ObjectsUtility.cast_property_to_value(
+               %ObjectIdentifier{type: :binary_input, instance: 1},
+               :fault_high_limit,
+               %Encoding{encoding: :primitive, extras: [], type: :enumerated, value: 65_536},
+               allow_unknown_properties: :no_unpack
+             )
+  end
+
+  test "cast property to value accepts numeric identfier and casts it to atom" do
+    assert {:error, {:invalid_property_value, {:present_value, 65536}}} =
+             ObjectsUtility.cast_property_to_value(
+               %ObjectIdentifier{type: :binary_input, instance: 1},
+               85,
+               %Encoding{encoding: :primitive, extras: [], type: :enumerated, value: 65_536},
+               allow_unknown_properties: true
+             )
+  end
+
+  test "cast property to value rejects unknown numeric identfier if not allowed" do
+    assert {:error, {:unknown_property, 123_432_585}} =
+             ObjectsUtility.cast_property_to_value(
+               %ObjectIdentifier{type: :binary_input, instance: 1},
+               123_432_585,
+               %Encoding{encoding: :primitive, extras: [], type: :enumerated, value: 65_536}
+             )
+  end
+
+  test "cast property to value accepts unknown numeric identfier if allowed" do
+    assert {:ok, 65_536} =
+             ObjectsUtility.cast_property_to_value(
+               %ObjectIdentifier{type: :binary_input, instance: 1},
+               123_432_585,
+               %Encoding{encoding: :primitive, extras: [], type: :enumerated, value: 65_536},
+               allow_unknown_properties: true
+             )
+  end
+
+  test "cast property to value struct simple error atom transforms" do
+    assert {:error, {:invalid_tags, {:status_flags, %Encoding{}}}} =
+             ObjectsUtility.cast_property_to_value(
+               %ObjectIdentifier{type: :binary_input, instance: 1},
+               :status_flags,
+               %Encoding{encoding: :primitive, extras: [], type: :enumerated, value: 65_536}
+             )
+  end
+
+  test "cast property to value struct simple error atom transforms 2" do
+    assert {:error, {:invalid_tags, {:tags, _value}}} =
+             ObjectsUtility.cast_property_to_value(
+               %ObjectIdentifier{type: :binary_input, instance: 1},
+               :tags,
+               [
+                 %Encoding{
+                   encoding: :primitive,
+                   extras: [],
+                   type: :character_string,
+                   value: "test"
+                 },
+                 %Encoding{
+                   encoding: :constructed,
+                   extras: [tag_number: 1],
+                   type: nil,
+                   value: {:tagged, {0, <<>>, 0}}
+                 }
+               ]
+             )
+  end
+
+  test "cast value to property struct simple error atom transforms" do
+    assert {:error, {:invalid_value, {:ip_address, <<0>>}}} =
+             ObjectsUtility.cast_value_to_property(
+               %ObjectIdentifier{type: :network_port, instance: 1},
+               :ip_address,
+               <<0>>,
+               []
              )
   end
 

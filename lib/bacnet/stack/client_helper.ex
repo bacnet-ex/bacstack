@@ -190,6 +190,7 @@ defmodule BACnet.Stack.ClientHelper do
   - All options from `BACnet.Stack.Client.send/4`.
   - All options from `BACnet.Protocol.Services.ReadProperty.to_apdu/2`.
   - `allow_numeric_constants: boolean()` for `BACnet.Protocol.ObjectsUtility.cast_property_to_value/4`.
+  - `allow_unknown_properties: boolean() | :no_unpack` for `BACnet.Protocol.ObjectsUtility.cast_property_to_value/4`.
   - `raw: boolean()` - Optional. Returns the `t:Encoding.t/0` (or list of) instead of trying to transform the value.
   """
   @spec read_property(
@@ -257,6 +258,12 @@ defmodule BACnet.Stack.ClientHelper do
                     |> then(fn kw ->
                       case Keyword.fetch(opts, :allow_numeric_constants) do
                         {:ok, allow} -> Keyword.put(kw, :allow_numeric_constants, allow)
+                        :error -> kw
+                      end
+                    end)
+                    |> then(fn kw ->
+                      case Keyword.fetch(opts, :allow_unknown_properties) do
+                        {:ok, allow} -> Keyword.put(kw, :allow_unknown_properties, allow)
                         :error -> kw
                       end
                     end)

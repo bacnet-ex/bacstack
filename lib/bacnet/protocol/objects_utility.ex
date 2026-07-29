@@ -104,7 +104,9 @@ defmodule BACnet.Protocol.ObjectsUtility do
   Valid options for `cast_property_to_value/4`.
   """
   @type cast_property_to_value_option ::
-          {:allow_numeric_constants, boolean()} | {:allow_partial, boolean()}
+          {:allow_numeric_constants, boolean()}
+          | {:allow_unknown_properties, boolean() | :no_unpack}
+          | {:allow_partial, boolean()}
 
   @typedoc """
   Valid options for `cast_properties_to_object/3`.
@@ -628,10 +630,11 @@ defmodule BACnet.Protocol.ObjectsUtility do
   The following options are available:
   - `allow_numeric_constants: boolean()` - Optional. Allows numeric (unknown or vendor extension) constants (enumerated).
   - `allow_partial: boolean()` - Optional. Allows partial values of array or list properties (a single value).
+  - `allow_unknown_properties: boolean() | :no_unpack` - Optional. Allows unknown property identifiers - which means we have no validation (defaults to `false`).
   """
   @spec cast_property_to_value(
           ObjectIdentifier.t(),
-          Constants.property_identifier(),
+          Constants.property_identifier() | non_neg_integer(),
           Encoding.t() | [Encoding.t()],
           [cast_property_to_value_option()]
         ) :: {:ok, term()} | {:error, {atom(), term()}} | {:error, term()}
@@ -660,8 +663,39 @@ defmodule BACnet.Protocol.ObjectsUtility do
         process_make_property(object_mod, property_identifier, value,
           allow_numeric_constants:
             get_bool_opts(opts, :allow_numeric_constants, get_fa_str(), false),
-          allow_partial: get_bool_opts(opts, :allow_partial, get_fa_str(), false)
+          allow_partial: get_bool_opts(opts, :allow_partial, get_fa_str(), false),
+          allow_unknown_properties: Keyword.get(opts, :allow_unknown_properties, false)
         )
+    end
+  end
+
+  def cast_property_to_value(
+        %ObjectIdentifier{} = object_id,
+        property_identifier,
+        value,
+        opts
+      )
+      when is_integer(property_identifier) and property_identifier >= 0 and
+             (is_struct(value, Encoding) or is_list(value)) and
+             is_list(opts) do
+    unless Keyword.keyword?(opts) do
+      raise ArgumentError,
+            "cast_property_to_value/4 expected a keyword list, got: #{inspect(opts)}"
+    end
+
+    # If numeric identifier, try to resolve it
+    # If an atom, call the function again with the atom for proper casting
+    # Otherwise return it if allowed
+    case Constants.by_value(:property_identifier, property_identifier) do
+      {:ok, atomp} ->
+        cast_property_to_value(object_id, atomp, value, opts)
+
+      _other ->
+        if allow = opts[:allow_unknown_properties] do
+          {:ok, unpack_unknown_properties_if_primitive(value, allow)}
+        else
+          {:error, {:unknown_property, property_identifier}}
+        end
     end
   end
 
@@ -761,8 +795,8 @@ defmodule BACnet.Protocol.ObjectsUtility do
   Note: In prod environment, required modules are not explicitely loaded.
 
   The following options are available:
-  - `allow_unknown_properties: boolean() | :no_unpack` - Optional. Allows unknown property identifiers - which means we have no validation (defaults to `false`).
   - `allow_numeric_constants: boolean()` - Optional. Allows numeric (unknown or vendor extension) constants (enumerated).
+  - `allow_unknown_properties: boolean() | :no_unpack` - Optional. Allows unknown property identifiers - which means we have no validation (defaults to `false`).
   - `ignore_array_indexes: boolean()` - Optional. Ignores property array indexes as they are currently not supported (defaults to `false`).
   - `ignore_invalid_properties: boolean()` - Optional. Ignores invalid properties (defaults to `false`).
   - `ignore_object_identifier_mismatch: boolean()` - Optional. Ignores mismatches between object identifiers (defaults to `false`).
@@ -1294,8 +1328,8 @@ defmodule BACnet.Protocol.ObjectsUtility do
                 {:error, {:invalid_property_value, {property_identifier, decoder_value}}}
               end
 
-            {:error, :invalid_tags} ->
-              {:error, {:invalid_tags, {property_identifier, value}}}
+            {:error, reason} when is_atom(reason) ->
+              {:error, {reason, {property_identifier, value}}}
 
             {:error, _err} = err ->
               err
@@ -1401,42 +1435,49 @@ defmodule BACnet.Protocol.ObjectsUtility do
 
     # Assert the resulting item is an Encoding struct (or a list of),
     # so we do post-processing here
-    with {:ok, result} <- encoder_result do
-      cond do
-        is_list(result) ->
-          with {:ok, list} <-
-                 Enum.reduce_while(result, {:ok, []}, fn
-                   %Encoding{} = item, {:ok, acc} ->
-                     {:cont, {:ok, [item | acc]}}
+    case encoder_result do
+      {:ok, result} ->
+        cond do
+          is_list(result) ->
+            with {:ok, list} <-
+                   Enum.reduce_while(result, {:ok, []}, fn
+                     %Encoding{} = item, {:ok, acc} ->
+                       {:cont, {:ok, [item | acc]}}
 
-                   # List of list of "raw" encodings (i.e. BACnetArray)
-                   items, {:ok, acc} when is_list(items) ->
-                     Enum.reduce_while(items, {:cont, {:ok, acc}}, fn
-                       %Encoding{} = item, {:cont, {:ok, acc2}} ->
-                         {:cont, {:cont, {:ok, [item | acc2]}}}
+                     # List of list of "raw" encodings (i.e. BACnetArray)
+                     items, {:ok, acc} when is_list(items) ->
+                       Enum.reduce_while(items, {:cont, {:ok, acc}}, fn
+                         %Encoding{} = item, {:cont, {:ok, acc2}} ->
+                           {:cont, {:cont, {:ok, [item | acc2]}}}
 
-                       item, {:cont, {:ok, acc2}} ->
-                         case Encoding.create(item) do
-                           {:ok, enc} -> {:cont, {:cont, {:ok, [enc | acc2]}}}
-                           term -> {:halt, {:halt, term}}
-                         end
-                     end)
+                         item, {:cont, {:ok, acc2}} ->
+                           case Encoding.create(item) do
+                             {:ok, enc} -> {:cont, {:cont, {:ok, [enc | acc2]}}}
+                             term -> {:halt, {:halt, term}}
+                           end
+                       end)
 
-                   item, {:ok, acc} ->
-                     case Encoding.create(item) do
-                       {:ok, enc} -> {:cont, {:ok, [enc | acc]}}
-                       term -> {:halt, term}
-                     end
-                 end) do
-            {:ok, Enum.reverse(list)}
-          end
+                     item, {:ok, acc} ->
+                       case Encoding.create(item) do
+                         {:ok, enc} -> {:cont, {:ok, [enc | acc]}}
+                         term -> {:halt, term}
+                       end
+                   end) do
+              {:ok, Enum.reverse(list)}
+            end
 
-        is_struct(result, Encoding) ->
-          encoder_result
+          is_struct(result, Encoding) ->
+            encoder_result
 
-        true ->
-          Encoding.create(result)
-      end
+          true ->
+            Encoding.create(result)
+        end
+
+      {:error, reason} when is_atom(reason) ->
+        {:error, {reason, {property_identifier, value}}}
+
+      other ->
+        other
     end
   end
 

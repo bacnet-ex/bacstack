@@ -15,21 +15,19 @@ defmodule BACnet.Protocol.NameValue do
   1) A reversed registered DNS name, followed by a period character.  e.g., `com.example.`, or
   2) A BACnet vendor identifier in decimal, followed by a dash character. e.g., `555-`
 
-  The value, when present, is limited to any primitive BACnet datatype
-  or `BACnet.Protocol.BACnetDateTime`.
+  The value, when present, is limited to any primitive BACnet datatype.
 
   ### ASN.1 (ASHRAE 135-2016)
 
       BACnetNameValue ::= SEQUENCE {
         name  [0] CharacterString,
         value ABSTRACT-SYNTAX.&Type OPTIONAL
-          -- value is limited to primitive datatypes and BACnetDateTime
+          -- value is limited to primitive datatypes
       }
   """
 
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.ApplicationTags.Encoding
-  alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.Utility
 
   import Utility, only: [pattern_extract_tags: 4]
@@ -37,11 +35,12 @@ defmodule BACnet.Protocol.NameValue do
   @typedoc """
   A single BACnetNameValue entry.
 
-  Only primitive `Encoding` or `BACnetDateTime` are allowed as value.
+  Only primitive `Encoding` is allowed as value,
+  otherwise the value is absent (`nil`).
   """
   @type t :: %__MODULE__{
           name: String.t(),
-          value: Encoding.t() | BACnetDateTime.t() | nil
+          value: Encoding.t() | nil
         }
 
   @fields [:name, :value]
@@ -58,9 +57,6 @@ defmodule BACnet.Protocol.NameValue do
            pattern_extract_tags(tags, {:tagged, {0, _val, _len}}, :character_string, false),
          {:ok, {value, rest}} <-
            (case rest do
-              [{:date, _date}, {:time, _time} | _rest] ->
-                BACnetDateTime.parse(rest)
-
               [value | rest] ->
                 case Encoding.create(value) do
                   {:ok, %Encoding{encoding: :primitive} = enc} -> {:ok, {enc, rest}}
@@ -91,11 +87,6 @@ defmodule BACnet.Protocol.NameValue do
         nil ->
           {:ok, [name_tag]}
 
-        %BACnetDateTime{} ->
-          with {:ok, value_tag} <- BACnetDateTime.encode(value) do
-            {:ok, [name_tag | value_tag]}
-          end
-
         %Encoding{encoding: :primitive} ->
           with {:ok, value_tag} <- Encoding.to_encoding(value) do
             {:ok, [name_tag, value_tag]}
@@ -122,7 +113,6 @@ defmodule BACnet.Protocol.NameValue do
     not String.contains?(name, ";") and
       case value do
         nil -> true
-        %BACnetDateTime{} -> true
         %Encoding{encoding: :primitive} -> true
         _other -> false
       end
