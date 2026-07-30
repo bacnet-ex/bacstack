@@ -1328,6 +1328,10 @@ defmodule BACnet.Protocol.ObjectsUtility do
                 {:error, {:invalid_property_value, {property_identifier, decoder_value}}}
               end
 
+            # Transform invalid_value to invalid_property_value for consistency
+            {:error, :invalid_value} ->
+              {:error, {:invalid_property_value, {property_identifier, value}}}
+
             {:error, reason} when is_atom(reason) ->
               {:error, {reason, {property_identifier, value}}}
 
@@ -1472,6 +1476,10 @@ defmodule BACnet.Protocol.ObjectsUtility do
           true ->
             Encoding.create(result)
         end
+
+      # Transform invalid_value to invalid_property_value for consistency
+      {:error, :invalid_value} ->
+        {:error, {:invalid_property_value, {property_identifier, value}}}
 
       {:error, reason} when is_atom(reason) ->
         {:error, {reason, {property_identifier, value}}}

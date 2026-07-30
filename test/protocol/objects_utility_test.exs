@@ -241,6 +241,15 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
              )
   end
 
+  test "cast property to value struct with invalid fails" do
+    assert {:error, {:invalid_property_value, {:tags, 65_536}}} =
+             ObjectsUtility.cast_property_to_value(
+               %ObjectIdentifier{type: :binary_input, instance: 1},
+               :tags,
+               %Encoding{encoding: :primitive, extras: [], type: :enumerated, value: 65_536}
+             )
+  end
+
   test "cast property to value constants with allow_numeric_constants and known succeeds as atom" do
     assert {:ok, :no_fault_detected} =
              ObjectsUtility.cast_property_to_value(
@@ -352,7 +361,7 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
   end
 
   test "cast value to property struct simple error atom transforms" do
-    assert {:error, {:invalid_value, {:ip_address, <<0>>}}} =
+    assert {:error, {:invalid_property_value, {:ip_address, <<0>>}}} =
              ObjectsUtility.cast_value_to_property(
                %ObjectIdentifier{type: :network_port, instance: 1},
                :ip_address,
