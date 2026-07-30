@@ -17,6 +17,16 @@ defmodule BACnet.Protocol.NameValueTest do
              NameValue.parse([name_tag])
   end
 
+  test "parse accepts (invalid) tag 1 value encoding" do
+    encoding = Encoding.create!({:null, nil})
+
+    assert {:ok, {%NameValue{name: "room", value: ^encoding}, []}} =
+             NameValue.parse(
+               tagged: {0, "\0room", 5},
+               constructed: {1, {:null, nil}, 0}
+             )
+  end
+
   test "parse accepts name + primitive Encoding value (unsigned)" do
     {:ok, name_tag} = ApplicationTags.create_tag_encoding(0, :character_string, "count")
     val_tag = {:unsigned_integer, 42}

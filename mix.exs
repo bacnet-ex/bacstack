@@ -49,12 +49,19 @@ defmodule BACstack.MixProject do
   end
 
   def cli() do
-    [preferred_envs: []]
+    [preferred_envs: [precommit: :test]]
   end
 
   defp aliases() do
     [
-      build_docs: ["bacnet.build_docs_extras --clean-generated-extras", "docs"]
+      build_docs: ["bacnet.build_docs_extras --clean-generated-extras", "docs"],
+      precommit: [
+        "format --force",
+        "compile --force",
+        "credo --all --strict --ignore todo",
+        "doctor --failed",
+        "test"
+      ]
     ]
   end
 

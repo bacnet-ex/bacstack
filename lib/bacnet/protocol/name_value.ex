@@ -58,7 +58,16 @@ defmodule BACnet.Protocol.NameValue do
          {:ok, {value, rest}} <-
            (case rest do
               [value | rest] ->
-                case Encoding.create(value) do
+                # Some BACnet devices (i.e. Delta Controls) put the value into encoding tag 1,
+                # despite the BACnet spec being clear that there's no tag,
+                # even since the introduction in 135-2016 - so we'll be permissive
+                value0 =
+                  case value do
+                    {:constructed, {1, tag, 0}} -> tag
+                    _other -> value
+                  end
+
+                case Encoding.create(value0) do
                   {:ok, %Encoding{encoding: :primitive} = enc} -> {:ok, {enc, rest}}
                   {:ok, _other} -> {:error, :invalid_value}
                   other -> other
