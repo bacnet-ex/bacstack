@@ -16,13 +16,12 @@ defmodule BACnet.Protocol.FaultParameters do
 
   ```elixir
   # Fault out of range (common)
-  iex> %FaultParameters.OutOfRange{
-  ...>   min_normal_value: 0.0,
-  ...>   max_normal_value: 100.0
+  iex> %FaultParameters.FaultCharacterString{
+  ...>   fault_values: ["hello"]
   ...> }
 
   # Fault extended (vendor specific)
-  iex> %FaultParameters.Extended{
+  iex> %FaultParameters.FaultExtended{
   ...>   vendor_id: 42,
   ...>   extended_fault_type: 1,
   ...>   parameters: []
@@ -165,6 +164,9 @@ defmodule BACnet.Protocol.FaultParameters do
          [
            constructed: {0, flags, 0}
          ], 0}}}
+    else
+      false -> {:error, :invalid_params}
+      {:error, _err} = err -> err
     end
   end
 
@@ -193,10 +195,9 @@ defmodule BACnet.Protocol.FaultParameters do
     case List.wrap(fault_values_tags) do
       [
         constructed: {0, strings, _length2}
-      ]
-      when is_list(strings) ->
+      ] ->
         new_strings =
-          Enum.reduce_while(strings, [], fn
+          Enum.reduce_while(List.wrap(strings), [], fn
             {:character_string, str}, acc -> {:cont, [str | acc]}
             _other, _acc -> {:halt, {:error, :invalid_fault_values}}
           end)
@@ -225,7 +226,7 @@ defmodule BACnet.Protocol.FaultParameters do
         tagged: {0, vendor_id_raw, _length},
         tagged: {1, ext_fault_raw, _length2},
         # TODO: May be not constructed (tagged)
-        constructed: {_con, 2, parameters, _length3}
+        constructed: {2, parameters, _length3}
       ] ->
         with {:ok, {:unsigned_integer, vendor_id}} <-
                ApplicationTags.unfold_to_type(:unsigned_integer, vendor_id_raw),
@@ -263,13 +264,13 @@ defmodule BACnet.Protocol.FaultParameters do
                Enum.reduce_while(fault_values_raw, {:ok, []}, fn pack, {:ok, acc} ->
                  case ApplicationTags.unfold_to_type(:enumerated, pack) do
                    {:ok, {:enumerated, value}} ->
-                     with {:ok, value_c} <-
-                            Constants.by_value_with_reason(
-                              :life_safety_state,
-                              value,
-                              {:unknown_life_safety_fault_value, value}
-                            ) do
-                       {:cont, {:ok, [value_c | acc]}}
+                     case Constants.by_value_with_reason(
+                            :life_safety_state,
+                            value,
+                            {:unknown_life_safety_fault_value, value}
+                          ) do
+                       {:ok, value_c} -> {:cont, {:ok, [value_c | acc]}}
+                       {:error, _err} = err -> {:halt, err}
                      end
 
                    term ->
@@ -298,10 +299,10 @@ defmodule BACnet.Protocol.FaultParameters do
       [
         constructed: {0, seq_propstates, _length2}
       ] ->
-        case Enum.reduce_while(seq_propstates, {:ok, []}, fn
-               term, acc ->
+        case Enum.reduce_while(List.wrap(seq_propstates), {:ok, []}, fn
+               term, {:ok, acc} ->
                  case BACnet.Protocol.PropertyState.parse(List.wrap(term)) do
-                   {:ok, {state, _rest}} -> {:ok, [state | acc]}
+                   {:ok, {state, _rest}} -> {:cont, {:ok, [state | acc]}}
                    _term -> {:halt, {:error, :invalid_fault_values_parameter}}
                  end
              end) do

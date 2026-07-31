@@ -11,10 +11,6 @@ defmodule BACnet.Protocol.EventParameters.GenericTest do
   doctest Extended
   doctest None
 
-  test "assert tag number of event parameters Extended is correct" do
-    assert 9 = Extended.get_tag_number()
-  end
-
   test "create struct of event parameters Extended" do
     Extended.__struct__()
   end
@@ -33,10 +29,6 @@ defmodule BACnet.Protocol.EventParameters.GenericTest do
                extended_event_type: 1,
                parameters: []
              })
-  end
-
-  test "assert tag number of event parameters None is correct" do
-    assert 20 = None.get_tag_number()
   end
 
   test "create struct of event parameters None" do

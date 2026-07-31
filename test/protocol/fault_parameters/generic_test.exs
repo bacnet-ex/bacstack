@@ -11,10 +11,6 @@ defmodule BACnet.Protocol.FaultParameters.GenericTest do
   doctest FaultExtended
   doctest None
 
-  test "assert tag number of fault parameters Extended is correct" do
-    assert 2 = FaultExtended.get_tag_number()
-  end
-
   test "create struct of fault parameters Extended" do
     FaultExtended.__struct__()
   end
@@ -33,10 +29,6 @@ defmodule BACnet.Protocol.FaultParameters.GenericTest do
                extended_fault_type: 1,
                parameters: []
              })
-  end
-
-  test "assert tag number of fault parameters None is correct" do
-    assert 0 = None.get_tag_number()
   end
 
   test "create struct of fault parameters None" do

@@ -37,8 +37,8 @@ defmodule BACnet.Protocol.EventParameters do
 
   # BufferReady (for trend logs)
   iex> %EventParameters.BufferReady{
-  ...>   notification_threshold: 100,
-  ...>   previous_notification_count: 0
+  ...>   threshold: 100,
+  ...>   previous_count: 0
   ...> }
   ```
 
@@ -48,7 +48,6 @@ defmodule BACnet.Protocol.EventParameters do
   # TODO: Throw argument error in encode if not valid
 
   alias BACnet.Protocol.ApplicationTags
-  alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.DeviceObjectPropertyRef
   alias BACnet.Protocol.EventParameters.BufferReady
@@ -190,10 +189,10 @@ defmodule BACnet.Protocol.EventParameters do
 
   def encode(%CommandFailure{} = params, opts) do
     with true <- is_integer(params.time_delay) and params.time_delay >= 0,
-         true <- is_struct(params.feedback_value, Encoding),
+         true <- is_struct(params.feedback_value, DeviceObjectPropertyRef),
          {:ok, time_delay, _header} <-
            ApplicationTags.encode_value({:unsigned_integer, params.time_delay}, opts),
-         {:ok, feedback} <- Encoding.to_encoding(params.feedback_value) do
+         {:ok, feedback} <- DeviceObjectPropertyRef.encode(params.feedback_value) do
       {:ok,
        {:constructed,
         {3,
@@ -499,6 +498,9 @@ defmodule BACnet.Protocol.EventParameters do
            tagged: {0, time_delay, byte_size(time_delay)},
            tagged: {1, flags, byte_size(flags)}
          ], 0}}}
+    else
+      false -> {:error, :invalid_params}
+      {:error, _err} = err -> err
     end
   end
 
@@ -526,7 +528,7 @@ defmodule BACnet.Protocol.EventParameters do
              {:ok, {:bitstring, bitmask}} <-
                ApplicationTags.unfold_to_type(:bitstring, bitmask_raw),
              {:ok, alarm_values} <-
-               Enum.reduce_while(seq_bitstrings, {:ok, []}, fn
+               Enum.reduce_while(List.wrap(seq_bitstrings), {:ok, []}, fn
                  {:bitstring, bits}, {:ok, acc} -> {:cont, {:ok, [bits | acc]}}
                  _term, _acc -> {:halt, {:error, :invalid_alarm_values_parameter}}
                end) do
@@ -558,9 +560,9 @@ defmodule BACnet.Protocol.EventParameters do
                ApplicationTags.unfold_to_type(:unsigned_integer, time_delay_raw),
              {:ok, alarm_values} <-
                Enum.reduce_while(seq_propstates, {:ok, []}, fn
-                 term, acc ->
+                 term, {:ok, acc} ->
                    case BACnet.Protocol.PropertyState.parse(List.wrap(term)) do
-                     {:ok, {state, _rest}} -> {:ok, [state | acc]}
+                     {:ok, {state, _rest}} -> {:cont, {:ok, [state | acc]}}
                      _term -> {:halt, {:error, :invalid_alarm_values_parameter}}
                    end
                end) do
@@ -626,7 +628,7 @@ defmodule BACnet.Protocol.EventParameters do
     case List.wrap(event_values) do
       [
         tagged: {0, time_delay_raw, _length},
-        constructed: {_context2, 1, feedback_value, _length3}
+        constructed: {1, feedback_value, _length3}
       ] ->
         with {:ok, {:unsigned_integer, time_delay}} <-
                ApplicationTags.unfold_to_type(:unsigned_integer, time_delay_raw),
@@ -735,13 +737,13 @@ defmodule BACnet.Protocol.EventParameters do
                Enum.reduce_while(life_safety_state_raw, {:ok, []}, fn pack, {:ok, acc} ->
                  case ApplicationTags.unfold_to_type(:enumerated, pack) do
                    {:ok, {:enumerated, value}} ->
-                     with {:ok, value_c} <-
-                            Constants.by_value_with_reason(
-                              :life_safety_state,
-                              value,
-                              {:unknown_life_safety_alarm_value, pack}
-                            ) do
-                       {:cont, {:ok, [value_c | acc]}}
+                     case Constants.by_value_with_reason(
+                            :life_safety_state,
+                            value,
+                            {:unknown_life_safety_alarm_value, pack}
+                          ) do
+                       {:ok, value_c} -> {:cont, {:ok, [value_c | acc]}}
+                       {:error, _err} = err -> {:halt, err}
                      end
 
                    term ->
@@ -752,13 +754,13 @@ defmodule BACnet.Protocol.EventParameters do
                Enum.reduce_while(alarm_values_raw, {:ok, []}, fn pack, {:ok, acc} ->
                  case ApplicationTags.unfold_to_type(:enumerated, pack) do
                    {:ok, {:enumerated, value}} ->
-                     with {:ok, value_c} <-
-                            Constants.by_value_with_reason(
-                              :life_safety_state,
-                              value,
-                              {:unknown_alarm_value, pack}
-                            ) do
-                       {:cont, {:ok, [value_c | acc]}}
+                     case Constants.by_value_with_reason(
+                            :life_safety_state,
+                            value,
+                            {:unknown_alarm_value, pack}
+                          ) do
+                       {:ok, value_c} -> {:cont, {:ok, [value_c | acc]}}
+                       {:error, _err} = err -> {:halt, err}
                      end
 
                    term ->
@@ -791,7 +793,7 @@ defmodule BACnet.Protocol.EventParameters do
         tagged: {0, vendor_id_raw, _length},
         tagged: {1, ext_event_raw, _length2},
         # TODO: May be not constructed (tagged)
-        constructed: {_con, 2, parameters, _length3}
+        constructed: {2, parameters, _length3}
       ] ->
         with {:ok, {:unsigned_integer, vendor_id}} <-
                ApplicationTags.unfold_to_type(:unsigned_integer, vendor_id_raw),
