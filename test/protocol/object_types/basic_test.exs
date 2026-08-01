@@ -9,13 +9,13 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BasicTest do
   @moduletag :bacnet_object
   @moduletag :bacnet_object_basic
 
-  # If we run cover tests, skip all generation (none are tagged :cover)
+  # If we run no_cover tests, skip all generation (none are tagged :no_cover)
   # Also dont run generation or partial generation if test is excluded
   config = ExUnit.configuration()
   included = Keyword.fetch!(config, :include)
   excluded = Keyword.fetch!(config, :exclude)
 
-  if :cover in included or Enum.any?(excluded, &(&1 in @moduletag)) do
+  if :no_cover in included or Enum.any?(excluded, &(&1 in @moduletag)) do
     # Just so we wont get any "no tests defined" warnings
     test "assert true is truthy" do
       assert true

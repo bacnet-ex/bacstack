@@ -14,14 +14,14 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
 
   doctest ObjectsUtility
 
-  # If we run cover tests, skip all generation (none are tagged :cover)
+  # If we run no_cover tests, skip all generation (none are tagged :no_cover)
   # Also dont run generation or partial generation if test is excluded
   config = ExUnit.configuration()
   included = Keyword.fetch!(config, :include)
   excluded = Keyword.fetch!(config, :exclude)
 
   properties_tests =
-    if :cover in included or Enum.any?(excluded, &(&1 in @moduletag)) do
+    if :no_cover in included or Enum.any?(excluded, &(&1 in @moduletag)) do
       []
     else
       ObjectsUtility.get_object_type_mappings()
