@@ -10,35 +10,47 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
 
   @moduletag :object_utility
   @moduletag :bacnet_object
+  @moduletag :bacnet_object_property
 
   doctest ObjectsUtility
 
+  # If we run cover tests, skip all generation (none are tagged :cover)
+  # Also dont run generation or partial generation if test is excluded
+  config = ExUnit.configuration()
+  included = Keyword.fetch!(config, :include)
+  excluded = Keyword.fetch!(config, :exclude)
+
   properties_tests =
-    ObjectsUtility.get_object_type_mappings()
-    |> Task.async_stream(
-      fn {obj_type, mod} ->
-        property_types_map = mod.get_properties_type_map()
+    if :cover in included or Enum.any?(excluded, &Enum.member?(@moduletag, &1)) do
+      []
+    else
+      ObjectsUtility.get_object_type_mappings()
+      |> Task.async_stream(
+        fn {obj_type, mod} ->
+          property_types_map = mod.get_properties_type_map()
 
-        test_list =
-          property_types_map
-          |> Enum.map(&generate_cast_tests(obj_type, mod, property_types_map, &1))
-          |> List.flatten()
+          test_list =
+            property_types_map
+            |> Enum.map(&generate_cast_tests(obj_type, mod, property_types_map, &1))
+            |> List.flatten()
 
-        mod_atom =
-          mod
-          |> Atom.to_string()
-          |> String.split(".")
-          |> List.last()
-          |> String.to_atom()
+          mod_atom =
+            mod
+            |> Atom.to_string()
+            |> String.split(".")
+            |> List.last()
+            |> String.to_atom()
 
-        {obj_type, mod_atom, test_list}
-      end,
-      ordered: false,
-      timeout: 10_000
-    )
-    |> Enum.map(fn {:ok, res} -> res end)
+          {obj_type, mod_atom, test_list}
+        end,
+        ordered: false,
+        timeout: 10_000
+      )
+      |> Enum.map(fn {:ok, res} -> res end)
+    end
 
-  for {obj_type, mod_type, test_list} <- properties_tests do
+  for {obj_type, mod_type, test_list} <- properties_tests,
+      not Enum.any?(excluded, String.to_atom("bacnet_object_#{obj_type}")) do
     mod_name =
       Module.concat([__MODULE__, String.to_atom(Macro.camelize("#{mod_type}")), :Properties])
 

@@ -7,40 +7,57 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BasicTest do
 
   @moduletag :object_test
   @moduletag :bacnet_object
+  @moduletag :bacnet_object_basic
 
-  for {obj_type, module} <- ObjectsUtility.get_object_type_mappings() do
-    test_list = generate_object_tests(obj_type, module)
-    mod_name = Module.concat([__MODULE__, String.to_atom(Macro.camelize("#{obj_type}")), :Basic])
+  # If we run cover tests, skip all generation (none are tagged :cover)
+  # Also dont run generation or partial generation if test is excluded
+  config = ExUnit.configuration()
+  included = Keyword.fetch!(config, :include)
+  excluded = Keyword.fetch!(config, :exclude)
 
-    defmodule mod_name do
-      use ExUnit.Case, async: true
+  if :cover in included or Enum.any?(excluded, &Enum.member?(@moduletag, &1)) do
+    # Just so we wont get any "no tests defined" warnings
+    test "assert true is truthy" do
+      assert true
+    end
+  else
+    for {obj_type, module} <- ObjectsUtility.get_object_type_mappings(),
+        not Enum.any?(excluded, String.to_atom("bacnet_object_#{obj_type}")) do
+      test_list = generate_object_tests(obj_type, module)
 
-      @moduletag :object_utility
-      @moduletag String.to_atom("bacnet_object")
-      @moduletag String.to_atom("bacnet_object_basic")
-      @moduletag String.to_atom("bacnet_object_#{obj_type}")
+      mod_name =
+        Module.concat([__MODULE__, String.to_atom(Macro.camelize("#{obj_type}")), :Basic])
 
-      doctest module
+      defmodule mod_name do
+        use ExUnit.Case, async: true
 
-      for {description, code_call, pattern_match, appendum_code} <- test_list do
-        test "basic object test #{obj_type} #{description}" do
-          # assert nil = nil will result in failure due to falsey value
-          if unquote(pattern_match) do
-            assert unquote(pattern_match) = unquote(code_call)
-          else
-            assert unquote(pattern_match) == unquote(code_call)
+        @moduletag :object_utility
+        @moduletag String.to_atom("bacnet_object")
+        @moduletag String.to_atom("bacnet_object_basic")
+        @moduletag String.to_atom("bacnet_object_#{obj_type}")
+
+        doctest module
+
+        for {description, code_call, pattern_match, appendum_code} <- test_list do
+          test "basic object test #{obj_type} #{description}" do
+            # assert nil = nil will result in failure due to falsey value
+            if unquote(pattern_match) do
+              assert unquote(pattern_match) = unquote(code_call)
+            else
+              assert unquote(pattern_match) == unquote(code_call)
+            end
+
+            unquote(appendum_code)
           end
-
-          unquote(appendum_code)
         end
-      end
 
-      test "basic object test assert all optional common properties exist" do
-        properties = unquote(module).get_all_properties()
+        test "basic object test assert all optional common properties exist" do
+          properties = unquote(module).get_all_properties()
 
-        assert :profile_name in properties
-        assert :profile_location in properties
-        assert :tags in properties
+          assert :profile_name in properties
+          assert :profile_location in properties
+          assert :tags in properties
+        end
       end
     end
   end

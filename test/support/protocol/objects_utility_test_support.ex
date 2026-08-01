@@ -32,6 +32,7 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
   alias BACnet.Protocol.ObjectTypes.Program
   alias BACnet.Protocol.ObjectTypes.TrendLog
   alias BACnet.Protocol.ObjectTypes.TrendLogMultiple
+  alias BACnet.Protocol.VmacEntry
 
   @type_mapping %{
     {:struct, BACnetDate} => BACnetDate.utc_today(),
@@ -60,6 +61,17 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
 
   @env __ENV__
 
+  # For test generator logger (which stops the ERTS if encoding a struct fails for longer than a second)
+  # --> infinite recursion occurs if the generator keeps generating invalid structs that fail encoding
+  defp get_log_env(), do: Process.get({__MODULE__, :logger_env}, false)
+
+  defp put_log_env() do
+    Process.put(
+      {__MODULE__, :logger_env},
+      System.get_env("BACSTACK_OBJUTIL_TEST_GENERATOR_LOG", "") in ~w(1 true yes)
+    )
+  end
+
   # Test tuple format for generate_object_tests:
   # {description, code_call, pattern_match, appendum_code}
 
@@ -68,6 +80,8 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
           module()
         ) :: list()
   def generate_object_tests(obj_type, mod) do
+    put_log_env()
+
     {create_tests, object} = repeated_generate_object_test_creation(obj_type, mod)
 
     pa_tests =
@@ -1283,24 +1297,21 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
         end
 
       if function_exported?(mod, :encode, 1) or function_exported?(mod, :to_app_encoding, 1) do
-        # logger =
-        #   if String.starts_with?(Atom.to_string(mod), "Elixir.BACnet.Protocol.EventParameters.") or
-        #        String.starts_with?(
-        #          Atom.to_string(mod),
-        #          "Elixir.BACnet.Protocol.FaultParameters."
-        #        ) do
-        #     spawn(fn ->
-        #       receive do
-        #         :stop -> :ok
-        #       after
-        #         10_000 ->
-        #           IO.puts("\nModule trying to encode!")
-        #           IO.inspect(mod, label: "module")
-        #           IO.inspect(struct_value, label: "struct_value")
-        #           System.stop()
-        #       end
-        #     end)
-        #   end
+        logger =
+          if get_log_env() do
+            spawn(fn ->
+              receive do
+                :stop -> :ok
+              after
+                1_000 ->
+                  IO.puts("\n=== Module trying to encode, but keeps failing ===")
+                  IO.inspect(mod, label: "module")
+                  IO.inspect(struct_value, label: "struct_value")
+                  IO.puts("")
+                  System.stop()
+              end
+            end)
+          end
 
         res =
           if function_exported?(mod, :to_app_encoding, 1) do
@@ -1311,7 +1322,7 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
 
         case res do
           {:ok, raw_value} ->
-            # if logger, do: send(logger, :stop)
+            if logger, do: send(logger, :stop)
 
             # Process only list returns - some modules produce binaries
             # Those need to be tested separately
@@ -1479,11 +1490,27 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
   end
 
   defp get_generator_for_type(_property, :real) do
-    fn -> Enum.random(-255..255//1) * 1.0 end
+    fn ->
+      rand = Enum.random(-255..255//1) * 1.0
+
+      if rand == 0.0 do
+        +0.0
+      else
+        rand
+      end
+    end
   end
 
   defp get_generator_for_type(_property, :double) do
-    fn -> Enum.random(-255..255//1) * 1.0 end
+    fn ->
+      rand = Enum.random(-255..255//1) * 1.0
+
+      if rand == 0.0 do
+        +0.0
+      else
+        rand
+      end
+    end
   end
 
   defp get_generator_for_type(_property, :signed_integer) do
@@ -1681,6 +1708,11 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
   # out_of_service of Program object is automatically updated depending on the program state
   defp amend_struct_spec_for_cause(%Program{} = struct, _cause) do
     %{struct | out_of_service: struct.program_state == :idle}
+  end
+
+  # vmac length is limited to 6 bytes
+  defp amend_struct_spec_for_cause(%VmacEntry{} = struct, _cause) do
+    %{struct | virtual_mac_address: binary_part(struct.virtual_mac_address, 0, 6)}
   end
 
   defp amend_struct_spec_for_cause(struct, _cause) do
