@@ -15,14 +15,14 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BasicTest do
   included = Keyword.fetch!(config, :include)
   excluded = Keyword.fetch!(config, :exclude)
 
-  if :cover in included or Enum.any?(excluded, &Enum.member?(@moduletag, &1)) do
+  if :cover in included or Enum.any?(excluded, &(&1 in @moduletag)) do
     # Just so we wont get any "no tests defined" warnings
     test "assert true is truthy" do
       assert true
     end
   else
     for {obj_type, module} <- ObjectsUtility.get_object_type_mappings(),
-        not Enum.any?(excluded, String.to_atom("bacnet_object_#{obj_type}")) do
+        not Enum.any?(excluded, &(&1 == String.to_atom("bacnet_object_#{obj_type}"))) do
       test_list = generate_object_tests(obj_type, module)
 
       mod_name =

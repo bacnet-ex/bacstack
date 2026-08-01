@@ -21,7 +21,7 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
   excluded = Keyword.fetch!(config, :exclude)
 
   properties_tests =
-    if :cover in included or Enum.any?(excluded, &Enum.member?(@moduletag, &1)) do
+    if :cover in included or Enum.any?(excluded, &(&1 in @moduletag)) do
       []
     else
       ObjectsUtility.get_object_type_mappings()
@@ -50,7 +50,7 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
     end
 
   for {obj_type, mod_type, test_list} <- properties_tests,
-      not Enum.any?(excluded, String.to_atom("bacnet_object_#{obj_type}")) do
+      not Enum.any?(excluded, &(&1 == String.to_atom("bacnet_object_#{obj_type}"))) do
     mod_name =
       Module.concat([__MODULE__, String.to_atom(Macro.camelize("#{mod_type}")), :Properties])
 

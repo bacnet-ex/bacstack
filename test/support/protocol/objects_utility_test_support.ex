@@ -1711,8 +1711,12 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
   end
 
   # vmac length is limited to 6 bytes
-  defp amend_struct_spec_for_cause(%VmacEntry{} = struct, _cause) do
-    %{struct | virtual_mac_address: binary_part(struct.virtual_mac_address, 0, 6)}
+  defp amend_struct_spec_for_cause(%VmacEntry{} = struct, _cause)
+       when byte_size(struct.virtual_mac_address) > 6 do
+    %{
+      struct
+      | virtual_mac_address: binary_part(struct.virtual_mac_address, 0, Enum.random(1..6//1))
+    }
   end
 
   defp amend_struct_spec_for_cause(struct, _cause) do
