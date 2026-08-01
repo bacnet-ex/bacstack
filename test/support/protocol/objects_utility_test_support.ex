@@ -1308,7 +1308,7 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
                   IO.inspect(mod, label: "module")
                   IO.inspect(struct_value, label: "struct_value")
                   IO.puts("")
-                  System.stop()
+                  System.stop(1)
               end
             end)
           end
