@@ -1564,6 +1564,14 @@ defmodule BACnet.Protocol.ObjectsUtility do
     end
   end
 
+  # For lists or arrays, the ApplicationTags decoder or ASN.1
+  # do not really have any representation to wrap a BACnet Array (or list)
+  # with only a single element into a list, so we end up with a bare Encoding
+  # instead of a list of Encoding.
+  # This is not a bug or a compliance issue - it's simply that there's no
+  # ASN.1 representation, nor does the ApplicationTags decoder know that
+  # it's an array. Multiple elements automatically end up in a list,
+  # but single items don't, so we need to to handle this instead of erroring.
   @spec cast_value_to_type(
           BeamTypes.typechecker_types(),
           Constants.property_identifier(),
@@ -1575,11 +1583,8 @@ defmodule BACnet.Protocol.ObjectsUtility do
 
   defp cast_value_to_type(:any, _property, value, _opts), do: {:ok, value}
 
-  defp cast_value_to_type({:list, :any}, _property, value, _opts) when is_list(value),
-    do: {:ok, value}
-
-  defp cast_value_to_type({:list, :any}, property, value, _opts),
-    do: {:error, {:invalid_property_value, {property, value}}}
+  defp cast_value_to_type({:list, :any}, _property, value, _opts),
+    do: {:ok, List.wrap(value)}
 
   # Handle these properties in a special way, so it works
   # This is because the property_value response contains multiple entries (a list),
@@ -1753,6 +1758,16 @@ defmodule BACnet.Protocol.ObjectsUtility do
   defp cast_value_to_type({:array, _subtype, _size}, _property, value, _opts)
        when is_list(value) do
     {:ok, BACnetArray.from_list(Enum.map(value, & &1.value), true)}
+  end
+
+  # Handle single element arrays by wrapping it in a list and continue
+  defp cast_value_to_type({:array, _subtype} = type, property, %Encoding{} = value, opts) when not is_list(value) do
+    cast_value_to_type(type, property, [value], opts)
+  end
+
+  # Fixed size arrays with more than 1 element size should be a list, so we only "convert" fixed size 1-arrays
+  defp cast_value_to_type({:array, _subtype, 1} = type, property, %Encoding{} = value, opts) when not is_list(value) do
+    cast_value_to_type(type, property, [value], opts)
   end
 
   # Handle boolean casts if value == 0 or == 1 directly (i.e. boolean properties are ENUMERATED)

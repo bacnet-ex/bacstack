@@ -1,5 +1,6 @@
 defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
   alias BACnet.Protocol.ApplicationTags.Encoding
+  alias BACnet.Protocol.BACnetArray
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.ObjectTypes.BinaryInput
   alias BACnet.Protocol.ObjectsUtility
@@ -202,7 +203,7 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
     end
   end
 
-  test "cast property to value with list any type invalid input" do
+  test "cast property to value with list any type valid input" do
     {:module, stub, _bytecode, _more} =
       defmodule BacObjectMinimalTestStubForCastPropertyToValueListInvalid do
         use BACnet.Protocol.ObjectsMacro
@@ -221,7 +222,7 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
     ObjectsUtility.put_object_type_mapping(:network_port, stub)
 
     try do
-      assert {:error, {:invalid_property_value, {:device_type, %Encoding{}}}} =
+      assert {:ok, [%Encoding{}]} =
                ObjectsUtility.cast_property_to_value(
                  %ObjectIdentifier{type: :network_port, instance: 1},
                  :device_type,
@@ -254,7 +255,7 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
   end
 
   test "cast property to value struct with invalid fails" do
-    assert {:error, {:invalid_property_value, {:tags, 65_536}}} =
+    assert {:error, {:invalid_tags, {:tags, %Encoding{}}}} =
              ObjectsUtility.cast_property_to_value(
                %ObjectIdentifier{type: :binary_input, instance: 1},
                :tags,
@@ -380,6 +381,83 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
                <<0>>,
                []
              )
+  end
+
+  test "cast property to value array single element succeeds" do
+    assert {:ok, %BACnetArray{size: 1}} =
+             ObjectsUtility.cast_property_to_value(
+               %ObjectIdentifier{type: :bitstring_value, instance: 1},
+               :bit_text,
+               %Encoding{encoding: :primitive, extras: [], type: :character_string, value: "Low"}
+             )
+  end
+
+  test "cast property to value fixed size 1-array single element succeeds" do
+    {:module, stub, _bytecode, _more} =
+      defmodule BacObjectMinimalTestStubForCastPropertyToValueSingleArrayElement do
+        use BACnet.Protocol.ObjectsMacro
+
+        @type object_opts :: nil
+
+        bac_object :network_port do
+          services(intrinsic: false)
+
+          field(:description, String.t())
+          field(:device_type, term())
+          field(:bit_text, BACnetArray.t(String.t(), 1))
+        end
+      end
+
+    old = ObjectsUtility.get_object_type_mappings()[:network_port]
+    ObjectsUtility.put_object_type_mapping(:network_port, stub)
+
+    try do
+      assert {:ok, %BACnetArray{size: 1}} =
+               ObjectsUtility.cast_property_to_value(
+                 %ObjectIdentifier{type: :network_port, instance: 1},
+                 :bit_text,
+                 %Encoding{encoding: :primitive, extras: [], type: :character_string, value: "Hello"},
+                 []
+               )
+    after
+      if old,
+        do: ObjectsUtility.put_object_type_mapping(:network_port, old),
+        else: ObjectsUtility.delete_object_type_mapping(:network_port)
+    end
+  end
+
+  test "cast property to value fixed size non 1-array single element fails" do
+    {:module, stub, _bytecode, _more} =
+      defmodule BacObjectMinimalTestStubForCastPropertyToValueSingleArrayElementFails do
+        use BACnet.Protocol.ObjectsMacro
+
+        @type object_opts :: nil
+
+        bac_object :network_port do
+          services(intrinsic: false)
+
+          field(:description, String.t())
+          field(:device_type, term())
+          field(:bit_text, BACnetArray.t(String.t(), 2))
+        end
+      end
+
+    old = ObjectsUtility.get_object_type_mappings()[:network_port]
+    ObjectsUtility.put_object_type_mapping(:network_port, stub)
+
+    try do
+      assert {:error, {:invalid_property_value, {:bit_text, "Hello"}}} =
+               ObjectsUtility.cast_property_to_value(
+                 %ObjectIdentifier{type: :network_port, instance: 1},
+                 :bit_text,
+                 %Encoding{encoding: :primitive, extras: [], type: :character_string, value: "Hello"},
+                 []
+               )
+    after
+      if old,
+        do: ObjectsUtility.put_object_type_mapping(:network_port, old),
+        else: ObjectsUtility.delete_object_type_mapping(:network_port)
+    end
   end
 
   test "validate float range with empty object succeeds" do
