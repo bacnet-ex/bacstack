@@ -60,6 +60,7 @@ defmodule BACstack.MixProject do
         "compile --force",
         "credo --all --strict --ignore todo",
         "doctor --failed",
+        "dialyzer",
         "test"
       ]
     ]

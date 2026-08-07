@@ -1761,12 +1761,12 @@ defmodule BACnet.Protocol.ObjectsUtility do
   end
 
   # Handle single element arrays by wrapping it in a list and continue
-  defp cast_value_to_type({:array, _subtype} = type, property, %Encoding{} = value, opts) when not is_list(value) do
+  defp cast_value_to_type({:array, _subtype} = type, property, %Encoding{} = value, opts) do
     cast_value_to_type(type, property, [value], opts)
   end
 
   # Fixed size arrays with more than 1 element size should be a list, so we only "convert" fixed size 1-arrays
-  defp cast_value_to_type({:array, _subtype, 1} = type, property, %Encoding{} = value, opts) when not is_list(value) do
+  defp cast_value_to_type({:array, _subtype, 1} = type, property, %Encoding{} = value, opts) do
     cast_value_to_type(type, property, [value], opts)
   end
 

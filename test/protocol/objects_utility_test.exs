@@ -416,7 +416,12 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
                ObjectsUtility.cast_property_to_value(
                  %ObjectIdentifier{type: :network_port, instance: 1},
                  :bit_text,
-                 %Encoding{encoding: :primitive, extras: [], type: :character_string, value: "Hello"},
+                 %Encoding{
+                   encoding: :primitive,
+                   extras: [],
+                   type: :character_string,
+                   value: "Hello"
+                 },
                  []
                )
     after
@@ -450,7 +455,12 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
                ObjectsUtility.cast_property_to_value(
                  %ObjectIdentifier{type: :network_port, instance: 1},
                  :bit_text,
-                 %Encoding{encoding: :primitive, extras: [], type: :character_string, value: "Hello"},
+                 %Encoding{
+                   encoding: :primitive,
+                   extras: [],
+                   type: :character_string,
+                   value: "Hello"
+                 },
                  []
                )
     after
