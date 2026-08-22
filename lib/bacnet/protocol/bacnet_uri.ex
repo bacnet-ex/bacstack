@@ -210,7 +210,10 @@ defmodule BACnet.Protocol.BACnetURI do
     end
   end
 
-  @spec parse_device(binary()) :: {:ok, ObjectIdentifier.t() | nil} | {:error, term()}
+  @spec parse_device(binary() | nil) :: {:ok, ObjectIdentifier.t() | nil} | {:error, term()}
+  defp parse_device(device)
+
+  defp parse_device(nil), do: {:error, :invalid_bacnet_uri}
   defp parse_device(".this"), do: {:ok, nil}
 
   defp parse_device(host) when is_binary(host) do

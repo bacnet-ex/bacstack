@@ -135,6 +135,11 @@ defmodule BACnet.Protocol.BACnetURITest do
     test "handles URI.new error" do
       assert {:error, _} = BACnetURI.parse(":::not a uri")
     end
+
+    test "incomplete invalid uri should not crash" do
+      assert {:error, :invalid_bacnet_uri} = BACnetURI.parse("bacnet:")
+      assert {:error, :invalid_device} = BACnetURI.parse("bacnet://")
+    end
   end
 
   describe "encode/1" do
