@@ -157,10 +157,10 @@ defmodule BACnet.Protocol.BACnetURI do
 
     path =
       if omit_property?(prop, object) do
-        "/" <> obj_str
+        obj_str
       else
         prop_str = identifier_to_string(:property_identifier, prop)
-        pstr = "/" <> obj_str <> "/" <> prop_str
+        pstr = obj_str <> prop_str
 
         if idx do
           pstr <> "/" <> Integer.to_string(idx)
@@ -356,11 +356,11 @@ defmodule BACnet.Protocol.BACnetURI do
   defp identifier_to_string(_category, nil), do: ""
 
   defp identifier_to_string(category, val) when is_atom(val) do
-    Integer.to_string(Constants.by_name!(category, val))
+    "/" <> Integer.to_string(Constants.by_name!(category, val))
   end
 
   defp identifier_to_string(_category, val) when is_integer(val) do
-    Integer.to_string(val)
+    "/" <> Integer.to_string(val)
   end
 
   defp identifier_to_string(_category, _val), do: ""

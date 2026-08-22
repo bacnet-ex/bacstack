@@ -231,6 +231,17 @@ defmodule BACnet.Protocol.BACnetURITest do
       assert {:ok, "bacnet://1/685,122/36485"} = BACnetURI.encode(struct)
     end
 
+    test "encodes basic struct without property" do
+      struct = %BACnetURI{
+        device_identifier: %ObjectIdentifier{type: :device, instance: 42},
+        object_identifier: %ObjectIdentifier{type: 0, instance: 1},
+        property_identifier: nil,
+        property_array_index: nil
+      }
+
+      assert {:ok, "bacnet://42/0,1"} = BACnetURI.encode(struct)
+    end
+
     test "returns error for invalid struct (bad device)" do
       bad = %BACnetURI{
         device_identifier: "not a struct",
