@@ -99,6 +99,14 @@ defmodule BACnet.Protocol.BACnetURITest do
       assert {:error, :missing_object} = BACnetURI.parse("bacnet://123")
     end
 
+    test "returns error for negative device" do
+      assert {:error, :invalid_device} = BACnetURI.parse("bacnet://-123")
+    end
+
+    test "returns error for too large device" do
+      assert {:error, :invalid_device} = BACnetURI.parse("bacnet://4194304")
+    end
+
     test "returns error for too many path segments" do
       assert {:error, :invalid_path_segments} = BACnetURI.parse("bacnet://123/a,1/b/c/d")
     end

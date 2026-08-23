@@ -218,8 +218,12 @@ defmodule BACnet.Protocol.BACnetURI do
 
   defp parse_device(host) when is_binary(host) do
     case Integer.parse(host) do
-      {int, ""} -> {:ok, %ObjectIdentifier{type: :device, instance: int}}
-      _other -> {:error, :invalid_device}
+      {num, ""}
+      when num >= 0 and num <= Constants.macro_by_name(:asn1, :max_instance_and_property_id) ->
+        {:ok, %ObjectIdentifier{type: :device, instance: num}}
+
+      _other ->
+        {:error, :invalid_device}
     end
   end
 
