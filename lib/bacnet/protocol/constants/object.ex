@@ -4,6 +4,11 @@ defmodule BACnet.Protocol.Constants.Object do
 
   use ConstEnum, exception: BACnet.Protocol.Constants.ConstantError
 
+  # The name usually matches the clause 21 definition and `-` translated to `_`.
+  # Some exceptions were done for better readability (inserting `_`).
+  #
+  # When new object types are added that don't match with the clause 21,
+  # with - translated to _, these need to be added to the `clause21_translation` map below.
   defconst(:object_type, :analog_input, 0x00)
   defconst(:object_type, :analog_output, 0x01)
   defconst(:object_type, :analog_value, 0x02)
@@ -71,4 +76,53 @@ defmodule BACnet.Protocol.Constants.Object do
     :additional_object_type,
     &(&1 != nil and is_integer(&2) and &2 >= 0)
   )
+
+  @doc """
+  Any object type names that dont match the Clause 21 definition,
+  are to be listed here.
+
+  Note that if the difference is only `-` translated to `_`, they are not listed here.
+  """
+  @spec clause21_translation() :: %{optional(atom()) => String.t()}
+  def clause21_translation() do
+    # Listed in order of the object type number
+    %{
+      character_string_value: "characterstring-value",
+      date_pattern_value: "datepattern-value",
+      datetime_pattern_value: "datetimepattern-value",
+      octet_string_value: "octetstring-value",
+      time_pattern_value: "timepattern-value"
+    }
+  end
+
+  @doc """
+  Translates a object type to the Clause 21 string.
+
+  If the input is a number, it will be resolved to the atom and then translated.
+  If the number can't be resolved, `nil` will be returned.
+  """
+  @spec translate_to_clause21(atom() | non_neg_integer()) ::
+          String.t() | nil
+  def translate_to_clause21(object_type)
+
+  def translate_to_clause21(object_type)
+      when is_atom(object_type) and object_type not in [true, false, nil] do
+    case Map.fetch(clause21_translation(), object_type) do
+      {:ok, str} ->
+        str
+
+      :error ->
+        object_type
+        |> Atom.to_string()
+        |> String.replace("_", "-")
+    end
+  end
+
+  def translate_to_clause21(object_type)
+      when is_integer(object_type) and object_type >= 0 do
+    case by_value(:object_type, object_type) do
+      {:ok, id} -> translate_to_clause21(id)
+      :error -> nil
+    end
+  end
 end

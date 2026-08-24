@@ -29,9 +29,21 @@ defmodule BACnet.Protocol.BACnetURI do
   """
 
   alias BACnet.Protocol.Constants
+  alias BACnet.Protocol.Constants.Object
+  alias BACnet.Protocol.Constants.PropertyIdentifier
   alias BACnet.Protocol.ObjectIdentifier
 
   require Constants
+
+  @typedoc """
+  Available options for `encode/2`.
+
+  The `always_decimal` option will force the function to
+  always use decimal numbers in the URI output for better compatibility.
+  Otherwise it will by default try to use the Clause 21 definition text,
+  where possible.
+  """
+  @type encode_opt :: {:always_decimal, boolean()}
 
   @typedoc """
   Represents a BACnet URI.
@@ -115,8 +127,11 @@ defmodule BACnet.Protocol.BACnetURI do
   When the property is `nil` (for File objects), the property segment is omitted.
   Otherwise the property is always included.
 
-  This function will never use Clause 21 text for the URI encoding and
-  always use the decimal number for better compatibility.
+  This function will use Clause 21 text for the URI encoding where possible and
+  fallback to use the decimal number where necessary. It can be configured to always
+  use the decimal number for better compability.
+  If the object type or property identifier is a number, it will also be encoded as a number.
+  It will not be converted to text.
 
   ### Examples
 
@@ -127,6 +142,11 @@ defmodule BACnet.Protocol.BACnetURI do
       ...>   device_identifier: nil, object_identifier: object,
       ...>   property_identifier: :present_value, property_array_index: nil
       ...> })
+      {:ok, "bacnet://.this/analog-output,5/present-value"}
+      iex> BACnetURI.encode(%BACnetURI{
+      ...>   device_identifier: nil, object_identifier: object,
+      ...>   property_identifier: :present_value, property_array_index: nil
+      ...> }, always_decimal: true)
       {:ok, "bacnet://.this/1,5/85"}
 
   Remote object with array index:
@@ -136,30 +156,35 @@ defmodule BACnet.Protocol.BACnetURI do
       iex> BACnetURI.encode(%BACnetURI{
       ...>   device_identifier: device, object_identifier: object,
       ...>   property_identifier: :priority_array, property_array_index: 16
-      ...> })
+      ...> }, always_decimal: true)
       {:ok, "bacnet://114705/4,15555/87/16"}
   """
-  @spec encode(t()) :: {:ok, String.t()} | {:error, term()}
-  def encode(uri)
+  @spec encode(t(), [encode_opt()]) :: {:ok, String.t()} | {:error, term()}
+  def encode(uri, opts \\ [])
 
-  def encode(%__MODULE__{
-        device_identifier: device,
-        object_identifier: %ObjectIdentifier{type: obj_type, instance: obj_inst} = object,
-        property_identifier: prop,
-        property_array_index: idx
-      })
+  def encode(
+        %__MODULE__{
+          device_identifier: device,
+          object_identifier: %ObjectIdentifier{type: obj_type, instance: obj_inst} = object,
+          property_identifier: prop,
+          property_array_index: idx
+        },
+        opts
+      )
       when (is_nil(device) or (is_struct(device, ObjectIdentifier) and device.type == :device)) and
-             (is_nil(idx) or (is_integer(idx) and idx >= 0)) do
+             (is_nil(idx) or (is_integer(idx) and idx >= 0)) and is_list(opts) do
+    always_decimal = !!opts[:always_decimal]
+
     device_str = if device, do: Integer.to_string(device.instance), else: ".this"
 
-    obj_type_str = identifier_to_string(:object_type, obj_type)
+    obj_type_str = identifier_to_string(:object_type, obj_type, always_decimal)
     obj_str = "#{obj_type_str},#{obj_inst}"
 
     path =
       if omit_property?(prop, object) do
         obj_str
       else
-        prop_str = identifier_to_string(:property_identifier, prop)
+        prop_str = identifier_to_string(:property_identifier, prop, always_decimal)
         pstr = obj_str <> prop_str
 
         if idx do
@@ -173,7 +198,7 @@ defmodule BACnet.Protocol.BACnetURI do
     {:ok, uri}
   end
 
-  def encode(%__MODULE__{} = _uri), do: {:error, :invalid_data}
+  def encode(%__MODULE__{} = _uri, _opts), do: {:error, :invalid_data}
 
   @doc """
   Returns `true` if the `BACnetURI` struct contains valid data according to
@@ -354,18 +379,34 @@ defmodule BACnet.Protocol.BACnetURI do
   defp omit_property?(nil, %ObjectIdentifier{type: :file}), do: true
   defp omit_property?(_prop, _object), do: false
 
-  @spec identifier_to_string(atom(), atom() | non_neg_integer() | nil) :: binary()
-  defp identifier_to_string(category, value)
+  @spec identifier_to_string(atom(), atom() | non_neg_integer() | nil, boolean()) :: binary()
+  defp identifier_to_string(category, value, always_decimal)
 
-  defp identifier_to_string(_category, nil), do: ""
+  defp identifier_to_string(_category, nil, _always_decimal), do: ""
 
-  defp identifier_to_string(category, val) when is_atom(val) do
+  defp identifier_to_string(:object_type, val, false) when is_atom(val) do
+    id =
+      Object.translate_to_clause21(val) ||
+        Integer.to_string(Constants.by_name!(:object_type, val))
+
+    "/" <> id
+  end
+
+  defp identifier_to_string(:property_identifier, val, false) when is_atom(val) do
+    id =
+      PropertyIdentifier.translate_to_clause21(val) ||
+        Integer.to_string(Constants.by_name!(:property_identifier, val))
+
+    "/" <> id
+  end
+
+  defp identifier_to_string(category, val, _always_decimal) when is_atom(val) do
     "/" <> Integer.to_string(Constants.by_name!(category, val))
   end
 
-  defp identifier_to_string(_category, val) when is_integer(val) do
+  defp identifier_to_string(_category, val, _always_decimal) when is_integer(val) do
     "/" <> Integer.to_string(val)
   end
 
-  defp identifier_to_string(_category, _val), do: ""
+  defp identifier_to_string(_category, _val, _always_decimal), do: ""
 end

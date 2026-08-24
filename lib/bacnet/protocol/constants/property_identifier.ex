@@ -4,6 +4,12 @@ defmodule BACnet.Protocol.Constants.PropertyIdentifier do
 
   use ConstEnum, exception: BACnet.Protocol.Constants.ConstantError
 
+  # The name usually matches the clause 21 definition and `-` translated to `_`,
+  # with the expection of `maximum` and `minimum` short form and expanding `pres` to `present`.
+  # And `event-time-stamps` has been changed to remove one hyphen.
+  #
+  # When new property identifiers are added that don't match with the clause 21,
+  # with - translated to _, these need to be added to the `clause21_translation` map below.
   defconst(:property_identifier, :acked_transitions, 0x00)
   defconst(:property_identifier, :ack_required, 0x01)
   defconst(:property_identifier, :action, 0x02)
@@ -296,6 +302,7 @@ defmodule BACnet.Protocol.Constants.PropertyIdentifier do
   defconst(:property_identifier, :access_event_tag, 0x142)
   defconst(:property_identifier, :global_identifier, 0x143)
   defconst(:property_identifier, :verification_time, 0x146)
+  defconst(:property_identifier, :base_device_security_policy, 0x147)
   defconst(:property_identifier, :distribution_key_revision, 0x148)
   defconst(:property_identifier, :do_not_hide, 0x149)
   defconst(:property_identifier, :key_sets, 0x14A)
@@ -466,4 +473,59 @@ defmodule BACnet.Protocol.Constants.PropertyIdentifier do
     :additional_property_identifiers,
     &(&1 != nil and is_integer(&2) and &2 >= 0)
   )
+
+  @doc """
+  Any property identifier names that dont match the Clause 21 definition,
+  are to be listed here.
+
+  Note that if the difference is only `-` translated to `_`, they are not listed here.
+  """
+  @spec clause21_translation() :: %{optional(atom()) => String.t()}
+  def clause21_translation() do
+    # Listed in order of the property identifier number
+    %{
+      max_output: "maximum-output",
+      max_present_value: "max-pres-value",
+      min_off_time: "minimum-off-time",
+      min_on_time: "minimum-on-time",
+      min_output: "minimum-output",
+      min_present_value: "min-pres-value",
+      event_timestamps: "event-time-stamps",
+      max_value: "maximum-value",
+      min_value: "minimum-value",
+      max_value_timestamp: "maximum-value-timestamp",
+      min_value_timestamp: "minimum-value-timestamp"
+    }
+  end
+
+  @doc """
+  Translates a property identifier to the Clause 21 string.
+
+  If the input is a number, it will be resolved to the atom and then translated.
+  If the number can't be resolved, `nil` will be returned.
+  """
+  @spec translate_to_clause21(atom() | non_neg_integer()) ::
+          String.t() | nil
+  def translate_to_clause21(property_identifier)
+
+  def translate_to_clause21(property_identifier)
+      when is_atom(property_identifier) and property_identifier not in [true, false, nil] do
+    case Map.fetch(clause21_translation(), property_identifier) do
+      {:ok, str} ->
+        str
+
+      :error ->
+        property_identifier
+        |> Atom.to_string()
+        |> String.replace("_", "-")
+    end
+  end
+
+  def translate_to_clause21(property_identifier)
+      when is_integer(property_identifier) and property_identifier >= 0 do
+    case by_value(:property_identifier, property_identifier) do
+      {:ok, id} -> translate_to_clause21(id)
+      :error -> nil
+    end
+  end
 end

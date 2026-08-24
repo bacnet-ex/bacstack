@@ -188,6 +188,8 @@ It can be done to provide forward compatibility for new revisions at early stage
 
 Simply configure the key `:additional_object_type` of the application `:bacstack`
 to be a keyword or map and use the name as key and the integer protocol value as value.
+The name should be the Clause 21 definition with `-` translated to `_`, no other changes should be done.
+Other changes to the atom name can only be done if the object type is added to the library directly. 
 
 You'll also want to extend object types supported through `:additional_object_types_supported`.
 The struct `BACnet.Protocol.Device.ObjectTypesSupported` is automatically adjusted and up-to-date at compile time.
@@ -199,6 +201,8 @@ This can be done to add new properties or even proprietary property identifiers.
 
 Simply configure the key `:additional_property_identifiers` of the application `:bacstack`
 to be a keyword or map and use the name as key and the integer protocol value as value.
+The name should be the Clause 21 definition with `-` translated to `_`, no other changes should be done.
+Other changes to the atom name can only be done if the object type is added to the library directly. 
 
 For example:
 

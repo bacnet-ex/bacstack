@@ -170,7 +170,7 @@ defmodule BACnet.Protocol.BACnetURITest do
         property_array_index: nil
       }
 
-      assert {:ok, "bacnet://.this/2,5/85"} = BACnetURI.encode(struct)
+      assert {:ok, "bacnet://.this/analog-value,5/present-value"} = BACnetURI.encode(struct)
     end
 
     test "encodes File with nil property (omits property segment)" do
@@ -181,7 +181,7 @@ defmodule BACnet.Protocol.BACnetURITest do
         property_array_index: nil
       }
 
-      assert {:ok, "bacnet://7/10,99"} = BACnetURI.encode(struct)
+      assert {:ok, "bacnet://7/file,99"} = BACnetURI.encode(struct)
     end
 
     test "encodes File with property" do
@@ -192,7 +192,7 @@ defmodule BACnet.Protocol.BACnetURITest do
         property_array_index: nil
       }
 
-      assert {:ok, "bacnet://7/10,99/42"} = BACnetURI.encode(struct)
+      assert {:ok, "bacnet://7/file,99/file-size"} = BACnetURI.encode(struct)
     end
 
     test "encodes with array index" do
@@ -203,7 +203,7 @@ defmodule BACnet.Protocol.BACnetURITest do
         property_array_index: 0
       }
 
-      assert {:ok, "bacnet://123/2,1/85/0"} = BACnetURI.encode(struct)
+      assert {:ok, "bacnet://123/analog-value,1/present-value/0"} = BACnetURI.encode(struct)
     end
 
     test "encodes using atom identifiers" do
@@ -214,7 +214,7 @@ defmodule BACnet.Protocol.BACnetURITest do
         property_array_index: nil
       }
 
-      assert {:ok, "bacnet://1/5,2/85"} = BACnetURI.encode(struct)
+      assert {:ok, "bacnet://1/binary-value,2/present-value"} = BACnetURI.encode(struct)
     end
 
     test "encodes using integer" do
@@ -276,6 +276,118 @@ defmodule BACnet.Protocol.BACnetURITest do
       assert_raise FunctionClauseError, fn ->
         BACnetURI.encode(Process.get({__MODULE__, __ENV__}, "not a struct"))
       end
+    end
+  end
+
+  describe "encode/1 with always decimal" do
+    test "encodes basic struct with numeric identifiers" do
+      struct = %BACnetURI{
+        device_identifier: %ObjectIdentifier{type: :device, instance: 42},
+        object_identifier: %ObjectIdentifier{type: 0, instance: 1},
+        property_identifier: 85,
+        property_array_index: nil
+      }
+
+      assert {:ok, "bacnet://42/0,1/85"} = BACnetURI.encode(struct, always_decimal: true)
+    end
+
+    test "encodes with .this device and omits default present_value" do
+      struct = %BACnetURI{
+        device_identifier: nil,
+        object_identifier: %ObjectIdentifier{type: :analog_value, instance: 5},
+        property_identifier: :present_value,
+        property_array_index: nil
+      }
+
+      assert {:ok, "bacnet://.this/2,5/85"} = BACnetURI.encode(struct, always_decimal: true)
+    end
+
+    test "encodes File with nil property (omits property segment)" do
+      struct = %BACnetURI{
+        device_identifier: %ObjectIdentifier{type: :device, instance: 7},
+        object_identifier: %ObjectIdentifier{type: :file, instance: 99},
+        property_identifier: nil,
+        property_array_index: nil
+      }
+
+      assert {:ok, "bacnet://7/10,99"} = BACnetURI.encode(struct, always_decimal: true)
+    end
+
+    test "encodes File with property" do
+      struct = %BACnetURI{
+        device_identifier: %ObjectIdentifier{type: :device, instance: 7},
+        object_identifier: %ObjectIdentifier{type: :file, instance: 99},
+        property_identifier: :file_size,
+        property_array_index: nil
+      }
+
+      assert {:ok, "bacnet://7/10,99/42"} = BACnetURI.encode(struct, always_decimal: true)
+    end
+
+    test "encodes with array index" do
+      struct = %BACnetURI{
+        device_identifier: %ObjectIdentifier{type: :device, instance: 123},
+        object_identifier: %ObjectIdentifier{type: :analog_value, instance: 1},
+        property_identifier: :present_value,
+        property_array_index: 0
+      }
+
+      assert {:ok, "bacnet://123/2,1/85/0"} = BACnetURI.encode(struct, always_decimal: true)
+    end
+
+    test "encodes using atom identifiers" do
+      struct = %BACnetURI{
+        device_identifier: %ObjectIdentifier{type: :device, instance: 1},
+        object_identifier: %ObjectIdentifier{type: :binary_value, instance: 2},
+        property_identifier: :present_value,
+        property_array_index: nil
+      }
+
+      assert {:ok, "bacnet://1/5,2/85"} = BACnetURI.encode(struct, always_decimal: true)
+    end
+
+    test "encodes using integer" do
+      struct = %BACnetURI{
+        device_identifier: %ObjectIdentifier{type: :device, instance: 1},
+        object_identifier: %ObjectIdentifier{type: 5, instance: 2},
+        property_identifier: 85,
+        property_array_index: nil
+      }
+
+      assert {:ok, "bacnet://1/5,2/85"} = BACnetURI.encode(struct, always_decimal: true)
+    end
+
+    test "encodes using integer vendor prorietary" do
+      struct = %BACnetURI{
+        device_identifier: %ObjectIdentifier{type: :device, instance: 1},
+        object_identifier: %ObjectIdentifier{type: 685, instance: 122},
+        property_identifier: 36485,
+        property_array_index: nil
+      }
+
+      assert {:ok, "bacnet://1/685,122/36485"} = BACnetURI.encode(struct, always_decimal: true)
+    end
+
+    test "encodes basic struct without property" do
+      struct = %BACnetURI{
+        device_identifier: %ObjectIdentifier{type: :device, instance: 42},
+        object_identifier: %ObjectIdentifier{type: 0, instance: 1},
+        property_identifier: nil,
+        property_array_index: nil
+      }
+
+      assert {:ok, "bacnet://42/0,1"} = BACnetURI.encode(struct, always_decimal: true)
+    end
+
+    test "returns error for invalid struct (bad device)" do
+      bad = %BACnetURI{
+        device_identifier: "not a struct",
+        object_identifier: %ObjectIdentifier{type: :analog_value, instance: 1},
+        property_identifier: :present_value,
+        property_array_index: nil
+      }
+
+      assert {:error, :invalid_data} = BACnetURI.encode(bad, always_decimal: true)
     end
   end
 
