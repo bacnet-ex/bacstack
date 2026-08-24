@@ -299,14 +299,16 @@ defmodule BACnet.Protocol.BACnetURI do
     # We are more permissive than the BACnet specification
     # "exactly equal to the Clause 21 identifier text of BACnetObjectType"
     # -> analog-value (valid), Analog_Value (invalid), analog_value (invalid)
-
-    cleaned =
-      type_str
-      |> String.replace("-", "_")
-      |> String.downcase()
+    type = parse_object_type1(type_str) || parse_object_type2(type_str)
 
     try do
-      atom = String.to_existing_atom(cleaned)
+      atom =
+        if is_atom(type) do
+          type
+        else
+          String.to_existing_atom(type)
+        end
+
       Constants.assert_name!(:object_type, atom)
       {:ok, atom}
     rescue
@@ -319,6 +321,29 @@ defmodule BACnet.Protocol.BACnetURI do
             {:error, :invalid_object_type}
         end
     end
+  end
+
+  @spec parse_object_type1(String.t()) :: atom() | nil
+  defp parse_object_type1(type_str) do
+    atom = String.to_existing_atom(type_str)
+    Constants.assert_name!(:object_type, atom)
+
+    atom
+  rescue
+    _exc ->
+      translation = Object.clause21_translation()
+
+      Enum.find_value(translation, fn
+        {key, ^type_str} -> key
+        _other -> nil
+      end)
+  end
+
+  @spec parse_object_type2(String.t()) :: String.t() | nil
+  defp parse_object_type2(type_str) do
+    type_str
+    |> String.replace("-", "_")
+    |> String.downcase()
   end
 
   @spec parse_instance(binary()) :: {:ok, non_neg_integer()} | {:error, term()}
@@ -343,13 +368,16 @@ defmodule BACnet.Protocol.BACnetURI do
   defp parse_property(nil, _object), do: {:ok, :present_value}
 
   defp parse_property(prop_str, _object) when is_binary(prop_str) do
-    cleaned =
-      prop_str
-      |> String.replace("-", "_")
-      |> String.downcase()
+    prop = parse_property1(prop_str) || parse_property2(prop_str)
 
     try do
-      atom = String.to_existing_atom(cleaned)
+      atom =
+        if is_atom(prop) do
+          prop
+        else
+          String.to_existing_atom(prop)
+        end
+
       Constants.assert_name!(:property_identifier, atom)
       {:ok, atom}
     rescue
@@ -359,6 +387,29 @@ defmodule BACnet.Protocol.BACnetURI do
           _other -> {:error, :invalid_property}
         end
     end
+  end
+
+  @spec parse_property1(String.t()) :: atom() | nil
+  defp parse_property1(prop_str) do
+    atom = String.to_existing_atom(prop_str)
+    Constants.assert_name!(:property_identifier, atom)
+
+    atom
+  rescue
+    _exc ->
+      translation = PropertyIdentifier.clause21_translation()
+
+      Enum.find_value(translation, fn
+        {key, ^prop_str} -> key
+        _other -> nil
+      end)
+  end
+
+  @spec parse_property2(String.t()) :: String.t() | nil
+  defp parse_property2(prop_str) do
+    prop_str
+    |> String.replace("-", "_")
+    |> String.downcase()
   end
 
   @spec parse_index(binary() | nil) :: {:ok, non_neg_integer() | nil} | {:error, term()}

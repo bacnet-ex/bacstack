@@ -68,7 +68,7 @@ defmodule BACnet.Protocol.BACnetURITest do
       assert uri.property_identifier == :file_size
     end
 
-    test "parses vendor propietary object with propietary property" do
+    test "parses vendor proprietary object with proprietary property" do
       assert {:ok, uri} = BACnetURI.parse("bacnet://5/685,10/35920")
       assert uri.object_identifier.type == 685
       assert uri.property_identifier == 35920
@@ -77,6 +77,16 @@ defmodule BACnet.Protocol.BACnetURITest do
     test "parses with array index" do
       assert {:ok, uri} = BACnetURI.parse("bacnet://123/analog-value,1/present-value/0")
       assert uri.property_array_index == 0
+    end
+
+    test "parses with different clause21 object type" do
+      assert {:ok, uri} = BACnetURI.parse("bacnet://123/characterstring-value,1/present-value")
+      assert uri.object_identifier.type == :character_string_value
+    end
+
+    test "parses with different clause21 property identifier" do
+      assert {:ok, uri} = BACnetURI.parse("bacnet://123/analog-value,1/min-pres-value")
+      assert uri.property_identifier == :min_present_value
     end
 
     test "returns error for non-bacnet scheme" do
