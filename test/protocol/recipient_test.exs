@@ -31,8 +31,7 @@ defmodule BACnet.Protocol.RecipientTest do
                  address: "FABDCDAEBAC0"
                },
                device: nil
-             },
-             []}} =
+             }, []}} =
              Recipient.parse(
                constructed: {1, [unsigned_integer: 1, octet_string: "FABDCDAEBAC0"], 0}
              )
@@ -47,8 +46,7 @@ defmodule BACnet.Protocol.RecipientTest do
                  address: :broadcast
                },
                device: nil
-             },
-             []}} =
+             }, []}} =
              Recipient.parse(constructed: {1, [unsigned_integer: 1, octet_string: ""], 0})
   end
 

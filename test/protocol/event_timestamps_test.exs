@@ -32,8 +32,7 @@ defmodule BACnet.Protocol.EventTimestampsTest do
                  sequence_number: nil,
                  datetime: %BACnetDateTime{}
                }
-             },
-             []}} =
+             }, []}} =
              EventTimestamps.parse(
                constructed:
                  {2,

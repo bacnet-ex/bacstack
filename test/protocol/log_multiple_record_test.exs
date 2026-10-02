@@ -45,8 +45,7 @@ defmodule BACnet.Protocol.LogMultipleRecordTest do
                  buffer_purged: false,
                  log_interrupted: false
                }
-             },
-             []}} =
+             }, []}} =
              LogMultipleRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed: {1, {:tagged, {0, <<5, 0>>, 2}}, 0}
@@ -86,8 +85,7 @@ defmodule BACnet.Protocol.LogMultipleRecordTest do
             {%LogMultipleRecord{
                timestamp: %BACnetDateTime{},
                log_data: ^data
-             },
-             []}} =
+             }, []}} =
              LogMultipleRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed:
@@ -121,8 +119,7 @@ defmodule BACnet.Protocol.LogMultipleRecordTest do
             {%LogMultipleRecord{
                timestamp: %BACnetDateTime{},
                log_data: {:time_change, +0.0}
-             },
-             []}} =
+             }, []}} =
              LogMultipleRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed: {1, {:tagged, {2, <<0, 0, 0, 0>>, 4}}, 0}

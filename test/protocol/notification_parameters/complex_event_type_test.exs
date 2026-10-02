@@ -42,8 +42,7 @@ defmodule BACnet.Protocol.NotificationParameters.ComplexEventTypeTest do
               [
                 {:tagged, {0, "U", 1}},
                 {:constructed, {2, {:real, 5.0}, 0}}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%ComplexEventType{
                property_values: [
                  %PropertyValue{
@@ -64,8 +63,7 @@ defmodule BACnet.Protocol.NotificationParameters.ComplexEventTypeTest do
                 {:tagged, {0, "U", 1}},
                 {:tagged, {1, <<52>>, 1}},
                 {:constructed, {2, {:double, 1.0}, 0}}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%ComplexEventType{
                property_values: [
                  %PropertyValue{

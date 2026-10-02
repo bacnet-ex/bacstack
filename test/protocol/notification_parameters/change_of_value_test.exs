@@ -45,8 +45,7 @@ defmodule BACnet.Protocol.NotificationParameters.ChangeOfValueTest do
               [
                 constructed: {0, {:tagged, {0, <<6, 192>>, 2}}, 0},
                 tagged: {1, <<4, 0>>, 2}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%ChangeOfValue{
                changed_bits: {true, true},
                changed_value: nil,
@@ -61,8 +60,7 @@ defmodule BACnet.Protocol.NotificationParameters.ChangeOfValueTest do
               [
                 constructed: {0, {:tagged, {1, <<64, 160, 0, 0>>, 4}}, 0},
                 tagged: {1, <<4, 0>>, 2}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%ChangeOfValue{
                changed_bits: nil,
                changed_value: 5.0,

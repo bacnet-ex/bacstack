@@ -30,8 +30,7 @@ defmodule BACnet.Protocol.ActionListTest do
                    write_successful: false
                  }
                ]
-             },
-             []}} =
+             }, []}} =
              ActionList.parse(
                constructed:
                  {0,
@@ -98,8 +97,7 @@ defmodule BACnet.Protocol.ActionListTest do
                    write_successful: false
                  }
                ]
-             },
-             []}} =
+             }, []}} =
              ActionList.parse(
                constructed:
                  {0,

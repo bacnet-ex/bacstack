@@ -37,8 +37,7 @@ defmodule BACnet.Protocol.NotificationParameters.ChangeOfBitstringTest do
               [
                 tagged: {0, <<6, 128>>, 2},
                 tagged: {1, <<4, 0>>, 2}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%ChangeOfBitstring{
                referenced_bitstring: {true, false},
                status_flags: StatusFlags.from_bitstring({false, false, false, false})

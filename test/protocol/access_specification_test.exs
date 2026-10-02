@@ -24,8 +24,7 @@ defmodule BACnet.Protocol.AccessSpecificationTest do
                    property_value: nil
                  }
                ]
-             },
-             []}} =
+             }, []}} =
              AccessSpecification.parse(
                tagged: {0, <<0, 0, 0, 24>>, 4},
                constructed: {1, [tagged: {0, <<1>>, 1}, tagged: {0, <<25>>, 1}], 0}

@@ -12,8 +12,7 @@ defmodule BACnet.Protocol.BvlcForwardedNpduTest do
             {%BvlcForwardedNPDU{
                originating_ip: {192, 168, 1, 1},
                originating_port: 47_808
-             },
-             <<1, 32, 255, 255, 0, 255, 32, 1, 12>>}} ==
+             }, <<1, 32, 255, 255, 0, 255, 32, 1, 12>>}} ==
              BvlcForwardedNPDU.decode(
                <<192, 168, 1, 1, 186, 192, 1, 32, 255, 255, 0, 255, 32, 1, 12>>
              )

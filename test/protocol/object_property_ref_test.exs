@@ -14,8 +14,7 @@ defmodule BACnet.Protocol.ObjectPropertyRefTest do
                object_identifier: %ObjectIdentifier{type: :analog_input, instance: 24},
                property_identifier: :acked_transitions,
                property_array_index: nil
-             },
-             []}} =
+             }, []}} =
              ObjectPropertyRef.parse(
                tagged: {0, <<0, 0, 0, 24>>, 4},
                tagged: {1, <<0>>, 1}
@@ -28,8 +27,7 @@ defmodule BACnet.Protocol.ObjectPropertyRefTest do
                object_identifier: %ObjectIdentifier{type: :analog_input, instance: 24},
                property_identifier: :acked_transitions,
                property_array_index: 250
-             },
-             []}} =
+             }, []}} =
              ObjectPropertyRef.parse(
                tagged: {0, <<0, 0, 0, 24>>, 4},
                tagged: {1, <<0>>, 1},
@@ -43,8 +41,7 @@ defmodule BACnet.Protocol.ObjectPropertyRefTest do
                object_identifier: %ObjectIdentifier{type: :analog_input, instance: 24},
                property_identifier: 520,
                property_array_index: nil
-             },
-             []}} =
+             }, []}} =
              ObjectPropertyRef.parse(
                tagged: {0, <<0, 0, 0, 24>>, 4},
                tagged: {1, <<520::size(16)>>, 2}

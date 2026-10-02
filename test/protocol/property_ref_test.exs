@@ -20,8 +20,7 @@ defmodule BACnet.Protocol.PropertyRefTest do
             {%PropertyRef{
                property_identifier: :acked_transitions,
                property_array_index: 250
-             },
-             []}} =
+             }, []}} =
              PropertyRef.parse(
                tagged: {0, <<0>>, 1},
                tagged: {1, <<250>>, 1}

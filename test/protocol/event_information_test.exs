@@ -67,8 +67,7 @@ defmodule BACnet.Protocol.EventInformationTest do
                  to_normal: true
                },
                event_priorities: {15, 15, 20}
-             },
-             []}} =
+             }, []}} =
              EventInformation.parse(
                tagged: {0, <<0, 0, 0, 2>>, 4},
                tagged: {1, <<3>>, 1},

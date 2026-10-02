@@ -41,8 +41,7 @@ defmodule BACnet.Protocol.NotificationParameters.UnsignedOutOfRangeTest do
                 tagged: {1, <<4, 0>>, 2},
                 tagged: {2, <<1>>, 1},
                 tagged: {3, <<11>>, 1}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%UnsignedOutOfRange{
                exceeding_value: 15,
                deadband: 1,

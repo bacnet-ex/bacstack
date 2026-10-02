@@ -30,8 +30,7 @@ defmodule BACnet.Protocol.DaysOfWeekTest do
                friday: true,
                saturday: false,
                sunday: false
-             },
-             []}} =
+             }, []}} =
              DaysOfWeek.parse(bitstring: {false, true, false, false, true, false, false})
   end
 
@@ -45,8 +44,7 @@ defmodule BACnet.Protocol.DaysOfWeekTest do
                friday: false,
                saturday: true,
                sunday: false
-             },
-             []}} =
+             }, []}} =
              DaysOfWeek.parse(bitstring: {false, false, true, false, false, true, false})
   end
 

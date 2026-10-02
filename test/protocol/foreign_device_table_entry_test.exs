@@ -16,8 +16,7 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntryTest do
                port: 47808,
                time_to_live: 49320,
                remaining_time: 712
-             },
-             <<0xBA, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF>>}} =
+             }, <<0xBA, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF>>}} =
              ForeignDeviceTableEntry.decode(
                <<0xC0, 0xA8, 0x01, 0x64, 0xBA, 0xC0, 0xC0, 0xA8, 0x02, 0xC8, 0xBA, 0xC0, 0xFF,
                  0xFF, 0xFF, 0xFF>>
@@ -68,8 +67,7 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntryTest do
                port: 47808,
                time_to_live: 49320,
                remaining_time: 712
-             },
-             [real: 1.0]}} =
+             }, [real: 1.0]}} =
              ForeignDeviceTableEntry.from_app_encoding(
                tagged: {0, <<0xC0, 0xA8, 0x01, 0x64, 0xBA, 0xC0>>, 6},
                tagged: {1, <<0xC0, 0xA8>>, 2},

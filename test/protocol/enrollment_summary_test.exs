@@ -19,8 +19,7 @@ defmodule BACnet.Protocol.EnrollmentSummaryTest do
                event_state: :normal,
                priority: 8,
                notification_class: nil
-             },
-             []}} =
+             }, []}} =
              EnrollmentSummary.parse(
                object_identifier: %ObjectIdentifier{
                  type: :analog_input,
@@ -43,8 +42,7 @@ defmodule BACnet.Protocol.EnrollmentSummaryTest do
                event_state: :normal,
                priority: 8,
                notification_class: 4
-             },
-             []}} =
+             }, []}} =
              EnrollmentSummary.parse(
                object_identifier: %ObjectIdentifier{
                  type: :analog_input,

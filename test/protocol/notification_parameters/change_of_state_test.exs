@@ -38,8 +38,7 @@ defmodule BACnet.Protocol.NotificationParameters.ChangeOfStateTest do
               [
                 constructed: {0, {:tagged, {0, <<0>>, 1}}, 0},
                 tagged: {1, <<4, 0>>, 2}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%ChangeOfState{
                new_state: %PropertyState{type: :boolean_value, value: false},
                status_flags: StatusFlags.from_bitstring({false, false, false, false})

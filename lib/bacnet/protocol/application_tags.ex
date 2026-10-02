@@ -1169,11 +1169,16 @@ defmodule BACnet.Protocol.ApplicationTags do
   defp decode_tag_value_internal(bytes, initial_octet, tag_number, length)
 
   defp decode_tag_value_internal(bytes, initial_octet, tag_number, length)
-       when is_context_specific(initial_octet) do
+       when is_context_specific(initial_octet) and byte_size(bytes) >= length do
     data = binary_part(bytes, 0, length)
     rest = binary_part(bytes, length, byte_size(bytes) - length)
 
     {:ok, {:tagged, {tag_number, data, length}}, rest}
+  end
+
+  defp decode_tag_value_internal(_bytes, initial_octet, _tag_number, _length)
+       when is_context_specific(initial_octet) do
+    {:error, :invalid_tag_data_length}
   end
 
   defp decode_tag_value_internal(

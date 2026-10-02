@@ -45,8 +45,7 @@ defmodule BACnet.Protocol.CalendarEntryTest do
                  }
                },
                week_n_day: nil
-             },
-             []}} =
+             }, []}} =
              CalendarEntry.parse(
                constructed:
                  {1,

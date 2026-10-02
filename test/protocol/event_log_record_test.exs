@@ -57,8 +57,7 @@ defmodule BACnet.Protocol.EventLogRecordTest do
                  buffer_purged: false,
                  log_interrupted: false
                }
-             },
-             []}} =
+             }, []}} =
              EventLogRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed: {1, {:tagged, {0, <<5, 0>>, 2}}, 0}
@@ -83,8 +82,7 @@ defmodule BACnet.Protocol.EventLogRecordTest do
                  priority: 200,
                  event_type: :complex_event_type
                }
-             },
-             []}} =
+             }, []}} =
              EventLogRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed:
@@ -129,8 +127,7 @@ defmodule BACnet.Protocol.EventLogRecordTest do
             {%EventLogRecord{
                timestamp: %BACnetDateTime{},
                log_datum: {:time_change, +0.0}
-             },
-             []}} =
+             }, []}} =
              EventLogRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed: {1, {:tagged, {2, <<0, 0, 0, 0>>, 4}}, 0}

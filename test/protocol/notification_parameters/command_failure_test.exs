@@ -40,8 +40,7 @@ defmodule BACnet.Protocol.NotificationParameters.CommandFailureTest do
                 constructed: {0, {:boolean, true}, 0},
                 tagged: {1, <<4, 192>>, 2},
                 constructed: {2, {:boolean, true}, 0}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%CommandFailure{
                command_value: Encoding.create!({:boolean, true}),
                feedback_value: Encoding.create!({:boolean, true}),

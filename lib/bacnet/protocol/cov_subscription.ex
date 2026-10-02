@@ -117,8 +117,7 @@ defmodule BACnet.Protocol.CovSubscription do
             [
               constructed: {0, recipient_raw, _len},
               tagged: {1, process_identifier_raw, _len2}
-            ], _len3}},
-          rest} <-
+            ], _len3}}, rest} <-
            pattern_extract_tags(tags, {:constructed, {0, _c, _l}}, nil, false),
          {:ok, {recipient, _rest}} <- Recipient.parse([recipient_raw]),
          {:ok, {:unsigned_integer, process_id}} <-

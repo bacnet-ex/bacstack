@@ -14,8 +14,7 @@ defmodule BACnet.Protocol.AddressBindingTest do
                device_identifier: %ObjectIdentifier{type: :device, instance: 1},
                network: 1,
                address: "ABCDEFG"
-             },
-             []}} =
+             }, []}} =
              AddressBinding.parse(
                object_identifier: %ObjectIdentifier{type: :device, instance: 1},
                unsigned_integer: 1,

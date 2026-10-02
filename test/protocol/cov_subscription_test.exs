@@ -31,8 +31,7 @@ defmodule BACnet.Protocol.CovSubscriptionTest do
                issue_confirmed_notifications: false,
                time_remaining: 3474,
                cov_increment: nil
-             },
-             []}} =
+             }, []}} =
              CovSubscription.parse(
                constructed:
                  {0,
@@ -70,8 +69,7 @@ defmodule BACnet.Protocol.CovSubscriptionTest do
                issue_confirmed_notifications: false,
                time_remaining: 3474,
                cov_increment: 0.5
-             },
-             []}} =
+             }, []}} =
              CovSubscription.parse(
                constructed:
                  {0,

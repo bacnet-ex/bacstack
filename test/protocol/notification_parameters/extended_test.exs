@@ -39,8 +39,7 @@ defmodule BACnet.Protocol.NotificationParameters.ExtendedTest do
                 tagged: {0, <<5>>, 1},
                 tagged: {1, <<9>>, 1},
                 constructed: {2, [real: 6.9, boolean: false], 0}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%Extended{
                vendor_id: 5,
                extended_notification_type: 9,

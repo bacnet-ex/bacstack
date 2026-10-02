@@ -38,8 +38,7 @@ defmodule BACnet.Protocol.NotificationParameters.ChangeOfStatusFlagsTest do
               [
                 constructed: {0, {:signed_integer, -127}, 0},
                 tagged: {1, <<4, 0>>, 2}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%ChangeOfStatusFlags{
                present_value: Encoding.create!({:signed_integer, -127}),
                referenced_flags: StatusFlags.from_bitstring({false, false, false, false})
@@ -52,8 +51,7 @@ defmodule BACnet.Protocol.NotificationParameters.ChangeOfStatusFlagsTest do
              {18,
               [
                 tagged: {1, <<4, 0>>, 2}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%ChangeOfStatusFlags{
                present_value: nil,
                referenced_flags: StatusFlags.from_bitstring({false, false, false, false})

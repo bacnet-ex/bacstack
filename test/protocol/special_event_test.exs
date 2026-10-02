@@ -27,8 +27,7 @@ defmodule BACnet.Protocol.SpecialEventTest do
                },
                list: [],
                priority: 16
-             },
-             []}} =
+             }, []}} =
              SpecialEvent.parse(
                constructed: {0, {:tagged, {0, <<123, 5, 11, 4>>, 4}}, 0},
                constructed: {2, [], 0},
@@ -45,8 +44,7 @@ defmodule BACnet.Protocol.SpecialEventTest do
                },
                list: [],
                priority: 1
-             },
-             []}} =
+             }, []}} =
              SpecialEvent.parse(
                tagged: {1, <<1, 128, 0, 0>>, 4},
                constructed: {2, [], 0},
@@ -83,8 +81,7 @@ defmodule BACnet.Protocol.SpecialEventTest do
                  }
                ],
                priority: 16
-             },
-             []}} =
+             }, []}} =
              SpecialEvent.parse(
                constructed: {0, {:tagged, {0, <<123, 5, 11, 4>>, 4}}, 0},
                constructed:
@@ -126,8 +123,7 @@ defmodule BACnet.Protocol.SpecialEventTest do
                  }
                ],
                priority: 1
-             },
-             []}} =
+             }, []}} =
              SpecialEvent.parse(
                tagged: {1, <<1, 128, 0, 0>>, 4},
                constructed:
@@ -211,8 +207,7 @@ defmodule BACnet.Protocol.SpecialEventTest do
                  }
                ],
                priority: 1
-             },
-             []}} =
+             }, []}} =
              SpecialEvent.parse(
                tagged: {1, <<1, 128, 0, 0>>, 4},
                constructed:

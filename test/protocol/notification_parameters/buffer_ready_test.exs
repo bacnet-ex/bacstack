@@ -37,8 +37,7 @@ defmodule BACnet.Protocol.NotificationParameters.BufferReadyTest do
                 constructed: {0, [tagged: {0, <<0, 0, 0, 0>>, 4}, tagged: {1, "U", 1}], 0},
                 tagged: {1, <<0>>, 1},
                 tagged: {2, <<100>>, 1}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%BufferReady{
                buffer_property: %DeviceObjectPropertyRef{
                  object_identifier: %ObjectIdentifier{type: :analog_input, instance: 0},

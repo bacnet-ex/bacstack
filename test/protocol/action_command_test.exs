@@ -25,8 +25,7 @@ defmodule BACnet.Protocol.ActionCommandTest do
                post_delay: nil,
                quit_on_failure: true,
                write_successful: false
-             },
-             []}} =
+             }, []}} =
              ActionCommand.parse(
                tagged: {1, <<0, 0, 0, 24>>, 4},
                tagged: {2, <<Constants.macro_by_name(:property_identifier, :present_value)>>, 1},
@@ -50,8 +49,7 @@ defmodule BACnet.Protocol.ActionCommandTest do
                post_delay: nil,
                quit_on_failure: true,
                write_successful: false
-             },
-             []}} =
+             }, []}} =
              ActionCommand.parse(
                tagged: {1, <<0, 0, 0, 24>>, 4},
                tagged: {2, <<526::size(16)>>, 2},
@@ -75,8 +73,7 @@ defmodule BACnet.Protocol.ActionCommandTest do
                post_delay: nil,
                quit_on_failure: true,
                write_successful: false
-             },
-             []}} =
+             }, []}} =
              ActionCommand.parse(
                tagged: {1, <<0, 0, 0, 24>>, 4},
                tagged: {2, <<Constants.macro_by_name(:property_identifier, :present_value)>>, 1},
@@ -101,8 +98,7 @@ defmodule BACnet.Protocol.ActionCommandTest do
                post_delay: nil,
                quit_on_failure: true,
                write_successful: false
-             },
-             []}} =
+             }, []}} =
              ActionCommand.parse(
                tagged: {1, <<0, 0, 0, 24>>, 4},
                tagged: {2, <<Constants.macro_by_name(:property_identifier, :present_value)>>, 1},
@@ -127,8 +123,7 @@ defmodule BACnet.Protocol.ActionCommandTest do
                post_delay: 120,
                quit_on_failure: true,
                write_successful: false
-             },
-             []}} =
+             }, []}} =
              ActionCommand.parse(
                tagged: {1, <<0, 0, 0, 24>>, 4},
                tagged: {2, <<Constants.macro_by_name(:property_identifier, :present_value)>>, 1},
@@ -153,8 +148,7 @@ defmodule BACnet.Protocol.ActionCommandTest do
                post_delay: nil,
                quit_on_failure: true,
                write_successful: false
-             },
-             []}} =
+             }, []}} =
              ActionCommand.parse(
                tagged: {0, <<8::size(10), 1::size(22)>>, 4},
                tagged: {1, <<0, 0, 0, 24>>, 4},
@@ -179,8 +173,7 @@ defmodule BACnet.Protocol.ActionCommandTest do
                post_delay: 120,
                quit_on_failure: true,
                write_successful: false
-             },
-             []}} =
+             }, []}} =
              ActionCommand.parse(
                tagged: {0, <<8::size(10), 1::size(22)>>, 4},
                tagged: {1, <<0, 0, 0, 24>>, 4},

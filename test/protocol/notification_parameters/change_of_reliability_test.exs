@@ -41,8 +41,7 @@ defmodule BACnet.Protocol.NotificationParameters.ChangeOfReliabilityTest do
                 tagged: {0, <<0>>, 1},
                 tagged: {1, <<4, 0>>, 2},
                 constructed: {2, [], 0}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%ChangeOfReliability{
                reliability: :no_fault_detected,
                status_flags: StatusFlags.from_bitstring({false, false, false, false}),
@@ -61,8 +60,7 @@ defmodule BACnet.Protocol.NotificationParameters.ChangeOfReliabilityTest do
                      {:tagged, {0, "U", 1}},
                      {:constructed, {2, {:real, 5.0}, 0}}
                    ], 0}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%ChangeOfReliability{
                reliability: :no_fault_detected,
                status_flags: StatusFlags.from_bitstring({false, false, false, false}),

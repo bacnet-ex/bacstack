@@ -47,8 +47,7 @@ defmodule BACnet.Protocol.LogRecordTest do
                  log_interrupted: false
                },
                status_flags: nil
-             },
-             []}} =
+             }, []}} =
              LogRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed: {1, {:tagged, {0, <<5, 0>>, 2}}, 0}
@@ -65,8 +64,7 @@ defmodule BACnet.Protocol.LogRecordTest do
                  log_interrupted: false
                },
                status_flags: nil
-             },
-             []}} =
+             }, []}} =
              LogRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed: {1, [{:tagged, {0, <<5, 0>>, 2}}], 0}
@@ -88,8 +86,7 @@ defmodule BACnet.Protocol.LogRecordTest do
                  overridden: false,
                  out_of_service: false
                }
-             },
-             []}} =
+             }, []}} =
              LogRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed: {1, {:tagged, {0, <<5, 0>>, 2}}, 0},
@@ -116,8 +113,7 @@ defmodule BACnet.Protocol.LogRecordTest do
                  value: false
                },
                status_flags: nil
-             },
-             []}} =
+             }, []}} =
              LogRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed: {1, {:tagged, {1, <<0>>, 1}}, 0}
@@ -135,8 +131,7 @@ defmodule BACnet.Protocol.LogRecordTest do
                  value: 6.0
                },
                status_flags: nil
-             },
-             []}} =
+             }, []}} =
              LogRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed: {1, {:tagged, {2, <<64, 192, 0, 0>>, 4}}, 0}
@@ -154,8 +149,7 @@ defmodule BACnet.Protocol.LogRecordTest do
                  value: 1
                },
                status_flags: nil
-             },
-             []}} =
+             }, []}} =
              LogRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed: {1, {:tagged, {3, <<1>>, 1}}, 0}
@@ -173,8 +167,7 @@ defmodule BACnet.Protocol.LogRecordTest do
                  value: 1
                },
                status_flags: nil
-             },
-             []}} =
+             }, []}} =
              LogRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed: {1, {:tagged, {4, <<1>>, 1}}, 0}
@@ -192,8 +185,7 @@ defmodule BACnet.Protocol.LogRecordTest do
                  value: -6
                },
                status_flags: nil
-             },
-             []}} =
+             }, []}} =
              LogRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed: {1, {:tagged, {5, <<250>>, 1}}, 0}
@@ -211,8 +203,7 @@ defmodule BACnet.Protocol.LogRecordTest do
                  value: {false, false}
                },
                status_flags: nil
-             },
-             []}} =
+             }, []}} =
              LogRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed: {1, {:tagged, {6, <<6, 0>>, 2}}, 0}
@@ -225,8 +216,7 @@ defmodule BACnet.Protocol.LogRecordTest do
                timestamp: %BACnetDateTime{},
                log_datum: nil,
                status_flags: nil
-             },
-             []}} =
+             }, []}} =
              LogRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed: {1, {:tagged, {7, <<0>>, 1}}, 0}
@@ -242,8 +232,7 @@ defmodule BACnet.Protocol.LogRecordTest do
                  code: 512
                },
                status_flags: nil
-             },
-             []}} =
+             }, []}} =
              LogRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed: {1, {:constructed, {8, [enumerated: 512, enumerated: 512], 0}}, 0}
@@ -261,8 +250,7 @@ defmodule BACnet.Protocol.LogRecordTest do
                  value: nil
                },
                status_flags: nil
-             },
-             []}} =
+             }, []}} =
              LogRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed: {1, {:constructed, {10, {:null, nil}, 0}}, 0}
@@ -283,8 +271,7 @@ defmodule BACnet.Protocol.LogRecordTest do
                timestamp: %BACnetDateTime{},
                log_datum: {:time_change, +0.0},
                status_flags: nil
-             },
-             []}} =
+             }, []}} =
              LogRecord.parse(
                constructed: {0, [date: BACnetDate.utc_today(), time: BACnetTime.utc_now()], 0},
                constructed: {1, {:tagged, {9, <<0, 0, 0, 0>>, 4}}, 0}

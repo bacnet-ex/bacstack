@@ -49,8 +49,7 @@ defmodule BACnet.Protocol.DestinationTest do
                  second: 59,
                  hundredth: 99
                }
-             },
-             []}} =
+             }, []}} =
              Destination.parse(
                bitstring: {true, true, true, true, true, true, true},
                time: %BACnetTime{hour: 0, minute: 0, second: 0, hundredth: 0},
@@ -106,8 +105,7 @@ defmodule BACnet.Protocol.DestinationTest do
                  second: 59,
                  hundredth: 99
                }
-             },
-             []}} =
+             }, []}} =
              Destination.parse(
                bitstring: {true, true, true, true, true, true, true},
                time: %BACnetTime{hour: 0, minute: 0, second: 0, hundredth: 0},

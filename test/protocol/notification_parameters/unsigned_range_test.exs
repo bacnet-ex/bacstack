@@ -39,8 +39,7 @@ defmodule BACnet.Protocol.NotificationParameters.UnsignedRangeTest do
                 tagged: {0, <<5>>, 1},
                 tagged: {1, <<4, 0>>, 2},
                 tagged: {2, <<4>>, 1}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%UnsignedRange{
                exceeding_value: 5,
                exceeded_limit: 4,

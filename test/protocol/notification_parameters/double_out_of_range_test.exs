@@ -41,8 +41,7 @@ defmodule BACnet.Protocol.NotificationParameters.DoubleOutOfRangeTest do
                 tagged: {1, <<4, 0>>, 2},
                 tagged: {2, <<63, 240, 0, 0, 0, 0, 0, 0>>, 8},
                 tagged: {3, <<64, 16, 0, 0, 0, 0, 0, 0>>, 8}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%DoubleOutOfRange{
                exceeding_value: 5.0,
                deadband: 1.0,

@@ -15,8 +15,7 @@ defmodule BACnet.Protocol.DeviceObjectPropertyRefTest do
                property_identifier: :acked_transitions,
                property_array_index: nil,
                device_identifier: nil
-             },
-             []}} =
+             }, []}} =
              DeviceObjectPropertyRef.parse(
                tagged: {0, <<0, 0, 0, 24>>, 4},
                tagged: {1, <<0>>, 1}
@@ -30,8 +29,7 @@ defmodule BACnet.Protocol.DeviceObjectPropertyRefTest do
                property_identifier: :acked_transitions,
                property_array_index: 250,
                device_identifier: nil
-             },
-             []}} =
+             }, []}} =
              DeviceObjectPropertyRef.parse(
                tagged: {0, <<0, 0, 0, 24>>, 4},
                tagged: {1, <<0>>, 1},
@@ -46,8 +44,7 @@ defmodule BACnet.Protocol.DeviceObjectPropertyRefTest do
                property_identifier: :acked_transitions,
                property_array_index: nil,
                device_identifier: %ObjectIdentifier{type: :device, instance: 21}
-             },
-             []}} =
+             }, []}} =
              DeviceObjectPropertyRef.parse(
                tagged: {0, <<0, 0, 0, 24>>, 4},
                tagged: {1, <<0>>, 1},
@@ -62,8 +59,7 @@ defmodule BACnet.Protocol.DeviceObjectPropertyRefTest do
                property_identifier: 520,
                property_array_index: nil,
                device_identifier: nil
-             },
-             []}} =
+             }, []}} =
              DeviceObjectPropertyRef.parse(
                tagged: {0, <<0, 0, 0, 24>>, 4},
                tagged: {1, <<520::size(16)>>, 2}

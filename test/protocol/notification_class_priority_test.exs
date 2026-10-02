@@ -13,8 +13,7 @@ defmodule BACnet.Protocol.NotificationClassPriorityTest do
                to_offnormal: 5,
                to_fault: 6,
                to_normal: 7
-             },
-             []}} =
+             }, []}} =
              NotificationClassPriority.parse(
                unsigned_integer: 5,
                unsigned_integer: 6,

@@ -22,8 +22,7 @@ defmodule BACnet.Protocol.AccumulatorRecordTest do
                present_value: 15,
                status: :starting,
                timestamp: %BACnetDateTime{date: ^date, time: ^time}
-             },
-             []}} =
+             }, []}} =
              AccumulatorRecord.parse(
                constructed: {0, [date: date, time: time], 0},
                tagged: {1, <<15>>, 1},

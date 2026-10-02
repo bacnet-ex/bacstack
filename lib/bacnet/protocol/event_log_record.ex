@@ -77,8 +77,7 @@ defmodule BACnet.Protocol.EventLogRecord do
             [
               date: date,
               time: time
-            ], _l}},
-          rest} <-
+            ], _l}}, rest} <-
            pattern_extract_tags(tags, {:constructed, {0, _t, _l}}, nil, false),
          {:ok, {:constructed, {1, log_datum_raw, _l}}, rest} <-
            pattern_extract_tags(rest, {:constructed, {1, _t, _l}}, nil, false),

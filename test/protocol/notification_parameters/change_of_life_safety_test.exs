@@ -41,8 +41,7 @@ defmodule BACnet.Protocol.NotificationParameters.ChangeOfLifeSafetyTest do
                 tagged: {1, <<1>>, 1},
                 tagged: {2, <<4, 0>>, 2},
                 tagged: {3, <<0>>, 1}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%ChangeOfLifeSafety{
                operation_expected: :none,
                new_state: :active,

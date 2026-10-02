@@ -15,8 +15,7 @@ defmodule BACnet.Protocol.BroadcastDistributionTableEntryTest do
                ip: {192, 168, 1, 100},
                port: 47808,
                mask: {255, 255, 255, 255}
-             },
-             <<0xC0, 0xA8, 0x02, 0xC8, 0xBA, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF>>}} =
+             }, <<0xC0, 0xA8, 0x02, 0xC8, 0xBA, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF>>}} =
              BroadcastDistributionTableEntry.decode(
                <<0xC0, 0xA8, 0x01, 0x64, 0xBA, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF, 0xC0, 0xA8, 0x02,
                  0xC8, 0xBA, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF>>
@@ -54,8 +53,7 @@ defmodule BACnet.Protocol.BroadcastDistributionTableEntryTest do
                ip: {192, 168, 1, 100},
                port: 47808,
                mask: {255, 255, 255, 255}
-             },
-             [real: 1.0]}} =
+             }, [real: 1.0]}} =
              BroadcastDistributionTableEntry.from_app_encoding([
                {:constructed,
                 {0,

@@ -76,8 +76,7 @@ defmodule BACnet.Protocol.AccumulatorRecord do
             [
               date: date,
               time: time
-            ], _l}},
-          rest} <-
+            ], _l}}, rest} <-
            pattern_extract_tags(tags, {:constructed, {0, _t, _l}}, nil, false),
          {:ok, present_value, rest} <-
            pattern_extract_tags(rest, {:tagged, {1, _t, _l}}, :unsigned_integer, false),

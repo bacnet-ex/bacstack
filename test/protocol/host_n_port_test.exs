@@ -21,8 +21,7 @@ defmodule BACnet.Protocol.HostNPortTest do
             {%HostNPort{
                host: {:ip_address, {192, 168, 1, 105}},
                port: 47808
-             },
-             []}} =
+             }, []}} =
              HostNPort.parse([
                {:constructed, {0, {:tagged, {1, <<192, 168, 1, 105>>, 4}}, 0}},
                {:tagged, {1, <<186, 192>>, 2}}
@@ -36,8 +35,7 @@ defmodule BACnet.Protocol.HostNPortTest do
             {%HostNPort{
                host: {:name, ^dns},
                port: 0xBAC0
-             },
-             []}} =
+             }, []}} =
              HostNPort.parse([
                {:constructed, {0, {:tagged, {2, <<0, dns::binary>>, byte_size(dns) + 1}}, 0}},
                {:tagged, {1, <<186, 192>>, 2}}
@@ -49,8 +47,7 @@ defmodule BACnet.Protocol.HostNPortTest do
             {%HostNPort{
                host: :none,
                port: 0
-             },
-             []}} =
+             }, []}} =
              HostNPort.parse([
                {:constructed, {0, {:tagged, {2, <<0>>, 1}}, 0}},
                {:tagged, {1, <<0>>, 1}}

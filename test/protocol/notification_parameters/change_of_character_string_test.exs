@@ -39,8 +39,7 @@ defmodule BACnet.Protocol.NotificationParameters.ChangeOfCharacterStringTest do
                 tagged: {0, <<0, 104, 101, 108, 108, 111>>, 6},
                 tagged: {1, <<4, 0>>, 2},
                 tagged: {2, <<0, 104, 105>>, 3}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%ChangeOfCharacterString{
                alarm_value: "hi",
                changed_value: "hello",

@@ -65,8 +65,7 @@ defmodule BACnet.ProtocolTest do
              %BvlcForwardedNPDU{
                originating_ip: {192, 168, 1, 1},
                originating_port: 47_808
-             },
-             <<1, 32, 255, 255, 0, 255, 32, 1, 12>>}} ==
+             }, <<1, 32, 255, 255, 0, 255, 32, 1, 12>>}} ==
              Protocol.decode_bvll(
                Constants.macro_by_name(:bvll, :type_bacnet_ipv4),
                4,
@@ -255,8 +254,7 @@ defmodule BACnet.ProtocolTest do
                source: nil,
                hopcount: nil,
                is_network_message: true
-             },
-             <<1, 0, 44, 0, 85, 0, 99, 48, 57, 255, 254>>}} =
+             }, <<1, 0, 44, 0, 85, 0, 99, 48, 57, 255, 254>>}} =
              Protocol.decode_npci(<<1, 128, 1, 0, 44, 0, 85, 0, 99, 48, 57, 255, 254>>)
   end
 

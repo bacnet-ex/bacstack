@@ -19,8 +19,7 @@ defmodule BACnet.Protocol.AlarmSummaryTest do
                  to_fault: true,
                  to_normal: false
                }
-             },
-             []}} =
+             }, []}} =
              AlarmSummary.parse([
                {:object_identifier, %ObjectIdentifier{type: :analog_input, instance: 1}},
                {:enumerated, 0},
@@ -38,8 +37,7 @@ defmodule BACnet.Protocol.AlarmSummaryTest do
                  to_fault: false,
                  to_normal: false
                }
-             },
-             []}} =
+             }, []}} =
              AlarmSummary.parse([
                {:object_identifier, %ObjectIdentifier{type: :analog_input, instance: 1}},
                {:enumerated, 1},
@@ -57,8 +55,7 @@ defmodule BACnet.Protocol.AlarmSummaryTest do
                  to_fault: false,
                  to_normal: true
                }
-             },
-             []}} =
+             }, []}} =
              AlarmSummary.parse([
                {:object_identifier, %ObjectIdentifier{type: :analog_input, instance: 1}},
                {:enumerated, 0},

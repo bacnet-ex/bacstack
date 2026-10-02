@@ -21,8 +21,7 @@ defmodule BACnet.Protocol.DeviceObjectRefTest do
             {%DeviceObjectRef{
                object_identifier: %ObjectIdentifier{type: :analog_input, instance: 24},
                device_identifier: %ObjectIdentifier{type: :device, instance: 21}
-             },
-             []}} =
+             }, []}} =
              DeviceObjectRef.parse(
                tagged: {0, <<8::size(10), 21::size(22)>>, 4},
                tagged: {1, <<0, 0, 0, 24>>, 4}

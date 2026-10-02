@@ -18,8 +18,7 @@ defmodule BACnet.Protocol.ReadAccessResultTest do
                  instance: 1
                },
                results: [%ReadAccessResult.ReadResult{}]
-             },
-             []}} =
+             }, []}} =
              ReadAccessResult.parse(
                tagged: {0, <<0::size(10), 1::size(22)>>, 4},
                constructed:
@@ -39,8 +38,7 @@ defmodule BACnet.Protocol.ReadAccessResultTest do
                  instance: 1
                },
                results: [%ReadAccessResult.ReadResult{}, %ReadAccessResult.ReadResult{}]
-             },
-             []}} =
+             }, []}} =
              ReadAccessResult.parse(
                tagged: {0, <<0::size(10), 1::size(22)>>, 4},
                constructed:

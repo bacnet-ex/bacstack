@@ -19,8 +19,7 @@ defmodule BACnet.Protocol.GroupChannelValueTest do
                  type: :unsigned_integer,
                  value: 1111
                }
-             },
-             []}} =
+             }, []}} =
              GroupChannelValue.parse(
                tagged: {0, <<1, 12>>, 2},
                unsigned_integer: 1111
@@ -38,8 +37,7 @@ defmodule BACnet.Protocol.GroupChannelValueTest do
                  type: :unsigned_integer,
                  value: 1111
                }
-             },
-             []}} =
+             }, []}} =
              GroupChannelValue.parse(
                tagged: {0, <<1, 12>>, 2},
                tagged: {1, <<15>>, 1},
@@ -60,8 +58,7 @@ defmodule BACnet.Protocol.GroupChannelValueTest do
                    value: 1.0
                  }
                ]
-             },
-             []}} =
+             }, []}} =
              GroupChannelValue.parse(
                tagged: {0, <<1, 12>>, 2},
                constructed: {0, [real: 1.0], 0}

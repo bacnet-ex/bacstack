@@ -138,8 +138,7 @@ defmodule BACnet.Protocol.EventInformation do
               unsigned_integer: prio1,
               unsigned_integer: prio2,
               unsigned_integer: prio3
-            ], _len}},
-          rest} <-
+            ], _len}}, rest} <-
            pattern_extract_tags(rest, {:constructed, {6, _c, _l}}, nil, false) do
       info = %__MODULE__{
         object_identifier: obj,

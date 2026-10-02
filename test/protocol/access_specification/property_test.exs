@@ -16,8 +16,7 @@ defmodule PropertyTest do
                property_identifier: :present_value,
                property_array_index: nil,
                property_value: nil
-             },
-             []}} =
+             }, []}} =
              Property.parse(
                tagged: {0, <<Constants.macro_by_name(:property_identifier, :present_value)>>, 1}
              )
@@ -38,8 +37,7 @@ defmodule PropertyTest do
                property_identifier: :present_value,
                property_array_index: 1,
                property_value: nil
-             },
-             []}} =
+             }, []}} =
              Property.parse(
                tagged: {0, <<Constants.macro_by_name(:property_identifier, :present_value)>>, 1},
                tagged: {1, <<1>>, 1}
@@ -75,8 +73,7 @@ defmodule PropertyTest do
                property_identifier: :present_value,
                property_array_index: 1,
                property_value: ^value
-             },
-             []}} =
+             }, []}} =
              Property.parse(
                tagged: {0, <<Constants.macro_by_name(:property_identifier, :present_value)>>, 1},
                tagged: {1, <<1>>, 1},

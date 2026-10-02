@@ -41,8 +41,7 @@ defmodule BACnet.Protocol.NotificationParameters.FloatingLimitTest do
                 tagged: {1, <<4, 0>>, 2},
                 tagged: {2, <<63, 128, 0, 0>>, 4},
                 tagged: {3, <<64, 128, 0, 0>>, 4}
-              ],
-              0}}} =
+              ], 0}}} =
              NotificationParameters.encode(%FloatingLimit{
                reference_value: 5.0,
                setpoint_value: 1.0,

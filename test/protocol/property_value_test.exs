@@ -23,8 +23,7 @@ defmodule BACnet.Protocol.PropertyValueTest do
                property_array_index: nil,
                property_value: inline_call(Encoding.create!({:enumerated, 0})),
                priority: nil
-             },
-             []}} =
+             }, []}} =
              PropertyValue.parse(
                tagged: {0, "U", 1},
                constructed: {2, {:enumerated, 0}, 0}
@@ -38,8 +37,7 @@ defmodule BACnet.Protocol.PropertyValueTest do
                property_array_index: nil,
                property_value: inline_call(Encoding.create!({:enumerated, 0})),
                priority: nil
-             },
-             []}} =
+             }, []}} =
              PropertyValue.parse(
                tagged: {0, <<512::size(16)>>, 2},
                constructed: {2, {:enumerated, 0}, 0}
@@ -53,8 +51,7 @@ defmodule BACnet.Protocol.PropertyValueTest do
                property_array_index: 20,
                property_value: inline_call(Encoding.create!({:enumerated, 0})),
                priority: nil
-             },
-             []}} =
+             }, []}} =
              PropertyValue.parse(
                tagged: {0, "U", 1},
                tagged: {1, <<20>>, 1},
@@ -69,8 +66,7 @@ defmodule BACnet.Protocol.PropertyValueTest do
                property_array_index: nil,
                property_value: inline_call(Encoding.create!({:enumerated, 0})),
                priority: 5
-             },
-             []}} =
+             }, []}} =
              PropertyValue.parse(
                tagged: {0, "U", 1},
                constructed: {2, {:enumerated, 0}, 0},
@@ -108,8 +104,7 @@ defmodule BACnet.Protocol.PropertyValueTest do
                    }
                  }
                ]
-             },
-             []}} =
+             }, []}} =
              PropertyValue.parse(
                tagged: {0, "r", 1},
                constructed:
@@ -138,8 +133,7 @@ defmodule BACnet.Protocol.PropertyValueTest do
                property_array_index: 20,
                property_value: inline_call(Encoding.create!({:enumerated, 0})),
                priority: 5
-             },
-             []}} =
+             }, []}} =
              PropertyValue.parse(
                tagged: {0, "U", 1},
                tagged: {1, <<20>>, 1},

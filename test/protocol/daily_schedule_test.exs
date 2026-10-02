@@ -29,8 +29,7 @@ defmodule BACnet.Protocol.DailyScheduleTest do
                    }
                  }
                ]
-             },
-             []}} =
+             }, []}} =
              DailySchedule.parse(
                constructed:
                  {0,
@@ -79,8 +78,7 @@ defmodule BACnet.Protocol.DailyScheduleTest do
                    }
                  }
                ]
-             },
-             []}} =
+             }, []}} =
              DailySchedule.parse(
                constructed:
                  {0,

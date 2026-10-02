@@ -13,8 +13,7 @@ defmodule BACnet.Protocol.EventMessageTextsTest do
                to_offnormal: "OffNormal",
                to_fault: "Fault",
                to_normal: "Normal"
-             },
-             []}} =
+             }, []}} =
              EventMessageTexts.parse(
                character_string: "OffNormal",
                character_string: "Fault",

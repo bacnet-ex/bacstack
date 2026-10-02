@@ -24,8 +24,7 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResultTest do
                property_array_index: nil,
                property_value: inline_call(Encoding.create!({:enumerated, 1})),
                error: nil
-             },
-             []}} =
+             }, []}} =
              ReadResult.parse(
                tagged: {2, "U", 1},
                constructed: {4, {:enumerated, 1}, 0}
@@ -46,8 +45,7 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResultTest do
                  ^real_val
                ],
                error: nil
-             },
-             []}} =
+             }, []}} =
              ReadResult.parse(
                tagged: {2, "U", 1},
                constructed: {4, [{:enumerated, 1}, {:real, 0.0}], 0}
@@ -61,8 +59,7 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResultTest do
                property_array_index: 2,
                property_value: inline_call(Encoding.create!({:enumerated, 1})),
                error: nil
-             },
-             []}} =
+             }, []}} =
              ReadResult.parse(
                tagged: {2, "U", 1},
                tagged: {3, <<2>>, 1},
@@ -80,8 +77,7 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResultTest do
                  class: :property,
                  code: 65535
                }
-             },
-             []}} =
+             }, []}} =
              ReadResult.parse(
                tagged: {2, "U", 1},
                constructed: {5, [enumerated: 2, enumerated: 65535], 0}
@@ -98,8 +94,7 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResultTest do
                  class: :property,
                  code: 65535
                }
-             },
-             []}} =
+             }, []}} =
              ReadResult.parse(
                tagged: {2, "U", 1},
                tagged: {3, <<2>>, 1},

@@ -329,8 +329,7 @@ defmodule BACnet.Protocol.DateRangeTest do
                  day: 20,
                  weekday: 6
                }
-             },
-             []}} =
+             }, []}} =
              DateRange.parse(
                date: %BACnetDate{year: 2023, month: 5, day: 5, weekday: 5},
                date: %BACnetDate{

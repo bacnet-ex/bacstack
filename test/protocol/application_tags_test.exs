@@ -277,6 +277,11 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
     assert {:error, :invalid_tag_data_length} = ApplicationTags.decode(<<0x25>>)
   end
 
+  test "decode context specific with truncated length" do
+    assert {:error, :invalid_tag_data_length} =
+             ApplicationTags.decode(<<255, 0, 128, 0, 5, 25, 102>>)
+  end
+
   test "decode tag number normal boolean" do
     assert {:ok, {:normal, 1}, <<>>} = ApplicationTags.decode_tag_number(<<0x11>>)
   end
