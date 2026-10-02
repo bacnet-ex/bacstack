@@ -20,9 +20,13 @@ Currently implemented transport layers:
 
 ## Installation
 
-While v0.0.1 has been released to [Hex](https://hex.pm/packages/bacstack) to provide a minimal BACnet client featureset,
+While v0.0.x has been released to [Hex](https://hex.pm/packages/bacstack) to provide a minimal BACnet client featureset,
 it is recommended to install it through GitHub (you can also pin it to a commit hash).
 New changes, bugfixes and features are not released to Hex until bacstack has reached a more stable and complete featureset.
+
+Development releases may be released on request and are considered highly experimental.
+These should never be matched with `~>` or `>=`, only with `==` in your `mix.exs`.
+Breaking changes across development releases may occur without prior notice.
 
 The package can be installed by adding `bacstack` to your list of dependencies in `mix.exs`:
 

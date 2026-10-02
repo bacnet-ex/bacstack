@@ -6,7 +6,7 @@ defmodule BACstack.MixProject do
   def project() do
     [
       app: :bacstack,
-      version: "0.1.0",
+      version: "0.1.0-dev.2",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: [tracers: add_compilation_tracer()],

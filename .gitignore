@@ -34,6 +34,7 @@ npm-debug.log
 /priv/gettext/
 /priv/static/
 
+/.codex/
 /.elixir_ls/
 /.expert/
 /.lexical/
