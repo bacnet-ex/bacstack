@@ -118,7 +118,7 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
   @typedoc """
   The destination and source address is a tuple of IPv4 address and UDP port.
   """
-  @type iplink_address :: {:inet.ip4_address(), :inet.port_number()}
+  @type iplink_address :: {:inet.ip4_address(), 1..65_535}
 
   @doc """
   Returns a map of network interfaces with their address, subnet and broadcast address.
