@@ -88,7 +88,7 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
   Valid open options. For a description of each, see `open/2`.
   """
   @type open_option ::
-          {:bacnet_port, 47_808..65_535}
+          {:bacnet_port, 1..65_535}
           | {:inet_backend, :inet | :socket}
           | {:local_ip, :inet.ip4_address() | binary() | :none}
           | {:recbuffer_size, pos_integer()}
@@ -267,7 +267,12 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
   We internally filter broadcast packets on the non-broadcast socket in such cases, where two sockets will be opened.
 
   This transport takes the following options, in addition to `t:GenServer.options/0`:
-  - `bacnet_port: 47808..65535` - Optional. The port number to use for BACnet. Defaults to `0xBAC0` (47808).
+  - `bacnet_port: 1..65535` - Optional. The port number to use for BACnet. Defaults to `0xBAC0` (47808).
+    The defined port range by the BACnet specification that must be supported is: 47_808..47_823 and 49_152..65_535.
+    Unexpected situations may arise if you're operating outside of this range,
+    as such a Logger warning will be emitted if the given port is below `47_808`.
+    There will be no warnings for sending BACnet frames to a destination outside of the defined port range,
+    while the transport is started using the defined port range.
   - `inet_backend: :inet | :socket` - Optional. Allows to switch the inet (gen_udp) backend.
   - `local_ip: :inet.ip4_address() | binary() | :none` - Optional. The local IP address to bind to. If not specified,
     the first private IP address will be discovered. As private IP addresses count the IANA private IP range -
@@ -389,7 +394,7 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
     case destination do
       {{ip_a, ip_b, ip_c, ip_d}, port}
       when ip_a in 1..255 and ip_b in 0..255 and ip_c in 0..255 and
-             ip_d in 1..255 and port in 47_808..65_535 ->
+             ip_d in 1..255 and port in 1..65_535 ->
         true
 
       _else ->
@@ -429,7 +434,7 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
            (case destination do
               {{ip_a, ip_b, ip_c, ip_d} = dest_addr, port}
               when ip_a in 1..255 and ip_b in 0..255 and ip_c in 0..255 and
-                     ip_d in 1..255 and port in 47_808..65_535 ->
+                     ip_d in 1..255 and port in 1..65_535 ->
                 # Also make sure the UDP broadcast address all 255 is considered
                 is_broadcast =
                   {255, 255, 255, 255} == dest_addr or
@@ -1052,7 +1057,15 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
       nil ->
         :ok
 
-      term when is_integer(term) and term in 47_808..65_535 ->
+      term when is_integer(term) and term in 1..65_535 ->
+        if term < 47_808 do
+          Logger.warning(
+            "The given BACnet port #{term} is outside of the port range defined by the specification " <>
+              "(simplified: 47_808..65_535), " <>
+              "you may encounter unexpected situations or compatibility issues"
+          )
+        end
+
         :ok
 
       term ->
