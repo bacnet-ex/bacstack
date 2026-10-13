@@ -249,6 +249,8 @@ defmodule BACstack.MixProject do
         Stack: [~r"Stack\.[^.]+$", ~r"Stack\.Transport\.[^.]+$"],
         "BACstack Internals": [
           BACnet.BeamTypes,
+          BACnet.Protocol.ObjectOperations,
+          BACnet.Protocol.ObjectsContract,
           BACnet.Protocol.ObjectsMacro,
           BACnet.Protocol.Services.Behaviour,
           BACnet.Protocol.Services.Common,

@@ -1,13 +1,10 @@
 %Doctor.Config{
   ignore_modules: [
     ~r"^Mix\.Tasks\.",
-    # ObjectsMacro defines a large number of methods inside `quote do` blocks
-    # that get injected into generated object modules. Doctor has a known
-    # limitation (bug) correctly associating @spec on functions defined inside
-    # such quote blocks for coverage calculation. We have manually ensured
-    # proper @spec on all public and private functions where feasible.
+    # ObjectsMacro still injects object-module functions inside `quote do`.
+    # Doctor cannot associate @spec/@doc on functions defined in those quotes
+    # and reports them as missing coverage on this module.
     # https://github.com/akoutmos/doctor/issues/69
-    # TODO: Remove once bug fixed
     BACnet.Protocol.ObjectsMacro
   ],
   ignore_paths: [~r/test\//],

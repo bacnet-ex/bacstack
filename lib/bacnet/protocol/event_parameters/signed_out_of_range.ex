@@ -21,7 +21,7 @@ defmodule BACnet.Protocol.EventParameters.SignedOutOfRange do
   typedstruct do
     field :low_limit, integer(), enforce: true
     field :high_limit, integer(), enforce: true
-    field :deadband, integer(), enforce: true
+    field :deadband, non_neg_integer(), enforce: true
     field :time_delay, non_neg_integer(), enforce: true
     field :time_delay_normal, non_neg_integer()
   end

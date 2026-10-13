@@ -18,6 +18,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
   alias BACnet.Protocol.BACnetArray
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.ObjectIdentifier
+  alias BACnet.Protocol.ObjectOperations
   alias BACnet.Protocol.ObjectTypes
   alias BACnet.Protocol.PriorityArray
   alias BACnet.Protocol.ReadAccessResult
@@ -367,34 +368,14 @@ defmodule BACnet.Protocol.ObjectsUtility do
   @spec property_writable?(bacnet_object(), Constants.property_identifier()) :: boolean()
   def property_writable?(%bac{} = object, property) when is_atom(property) do
     if has_property?(object, property) do
-      case property do
-        :event_algorithm_inhibit ->
-          case object do
-            %{event_algorithm_inhibit_ref: ref, event_detection_enable: true}
-            when not is_nil(ref) ->
-              ref.object_identifier.instance ==
-                Constants.macro_by_name(:asn1, :max_instance_and_property_id)
+      readonly =
+        if function_exported?(bac, :get_readonly_properties, 0) do
+          bac.get_readonly_properties()
+        else
+          []
+        end
 
-            %{event_algorithm_inhibit_ref: nil, event_detection_enable: true} ->
-              true
-
-            _term ->
-              false
-          end
-
-        :present_value ->
-          case object do
-            %{priority_array: pa} when not is_nil(pa) -> !!Map.get(object, :out_of_service)
-            _term -> true
-          end
-
-        _term ->
-          if function_exported?(bac, :get_readonly_properties, 0) do
-            not Enum.member?(bac.get_readonly_properties(), property)
-          else
-            true
-          end
-      end
+      ObjectOperations.property_writable?(object, property, readonly)
     else
       false
     end
