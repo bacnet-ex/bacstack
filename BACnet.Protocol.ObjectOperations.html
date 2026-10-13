@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.4">
+    <meta name="project" content="bacstack v0.1.0-dev.2">
+
+
+    <title>BACnet.Protocol.ObjectOperations — bacstack v0.1.0-dev.2</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-RXHHCTJW.css" />
+
+    <script defer src="dist/sidebar_items-79535D26.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-MI33G4N7.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0-dev.2
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr />Protocol.<wbr />ObjectOperations</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0-dev.2)</small>
+
+    </h1>
+
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>Shared operations for BACnet object structs.</p><p><a href="BACnet.Protocol.ObjectsMacro.html"><code class="inline">BACnet.Protocol.ObjectsMacro</code></a> used to copy these functions into every object
+module. Object modules now delegate here and pass an <a href="BACnet.Protocol.ObjectsContract.html"><code class="inline">BACnet.Protocol.ObjectsContract</code></a>
+plus hook functions for the overridable steps (<code class="inline">add_defaults/2</code>,
+<code class="inline">check_implicit_relationships/2</code>, <code class="inline">inhibit_object_check/1</code>).</p><p>Nothing in this module runs as a process. The functions are pure aside from
+the hooks the caller supplies.</p><p><a href="#create/6"><code class="inline">create/6</code></a> calls the hooks. <a href="#add_defaults/3"><code class="inline">add_defaults/3</code></a> and <a href="#check_implicit_relationships/3"><code class="inline">check_implicit_relationships/3</code></a>
+do not, so an object module can call them from <code class="inline">super</code> without looping.</p>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-types summary">
+  <h3>
+    <a href="#types">Types</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:metadata/0" data-no-tooltip="" translate="no">metadata()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Object metadata stored under <code class="inline">_metadata</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:operation_hooks/0" data-no-tooltip="" translate="no">operation_hooks()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Overridable steps. Object modules pass captures of their own functions.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:update_result/0" data-no-tooltip="" translate="no">update_result()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Result of a mutating object operation.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#add_defaults/3" data-no-tooltip="" translate="no">add_defaults(contract, properties, metadata)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Merges compile-time defaults into <code class="inline">properties</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#add_property/5" data-no-tooltip="" translate="no">add_property(contract, object, property, value, hooks)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Adds an optional property.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#check_implicit_relationships/3" data-no-tooltip="" translate="no">check_implicit_relationships(contract, object, operation)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Adds or removes the partner of an implicit relationship.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#check_property_exists/2" data-no-tooltip="" translate="no">check_property_exists(map, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Returns <code class="inline">:ok</code> when <code class="inline">property</code> is in the object's properties list.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#check_property_intrinsic/5" data-no-tooltip="" translate="no">check_property_intrinsic(contract, intrinsic?, property, value, allow_nil)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Rejects intrinsic properties when intrinsic reporting is off, and rejects
+<code class="inline">nil</code> intrinsic values when <code class="inline">allow_prop_nil</code> is false.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#check_property_value/6" data-no-tooltip="" translate="no">check_property_value(contract, object, property, value, check_protected, skip_property_validator)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Type-checks <code class="inline">value</code> for <code class="inline">property</code> and runs validators unless skipped.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#create/6" data-no-tooltip="" translate="no">create(contract, instance_number, object_name, properties, opts, hooks)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Creates an object struct from an instance number, name, properties, and options.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#create_metadata_from_opts/2" data-no-tooltip="" translate="no">create_metadata_from_opts(contract, opts)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Builds <code class="inline">_metadata</code> from create options.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_property/2" data-no-tooltip="" translate="no">get_property(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Reads a property. Numeric keys are read from <code class="inline">_unknown_properties</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#inspect_object/2" data-no-tooltip="" translate="no">inspect_object(object, opts)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Inspects an object the way object modules do.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#prevent_commandable_objects_write_pv/2" data-no-tooltip="" translate="no">prevent_commandable_objects_write_pv(arg1, arg2)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Rejects writes of <code class="inline">present_value</code> while a priority array is present.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#propagate_properties/2" data-no-tooltip="" translate="no">propagate_properties(contract, object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Updates present value, feedback, and status flags from related properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#property_writable?/3" data-no-tooltip="" translate="no">property_writable?(object, property, readonly)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Returns whether <code class="inline">property</code> is writable for the default object policy.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#remove_property/4" data-no-tooltip="" translate="no">remove_property(contract, object, property, hooks)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Removes an optional property. Removing a property that is not present succeeds.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#set_priority/4" data-no-tooltip="" translate="no">set_priority(contract, object, priority, value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Writes one slot of the priority array and refreshes <code class="inline">present_value</code>.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#update_property/5" data-no-tooltip="" translate="no">update_property(contract, object, property, value, hooks)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Updates a property that is already present.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#verify_properties/3" data-no-tooltip="" translate="no">verify_properties(contract, properties, metadata)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks required properties, <code class="inline">required_when</code>, and <code class="inline">only_when</code>.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h2>
+
+    <div class="types-list">
+<section class="detail" id="t:metadata/0">
+
+  <div class="detail-header">
+    <a href="#t:metadata/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">metadata()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L27" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> metadata() :: %{
+  properties_list: [<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>()],
+  revision: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>(),
+  intrinsic_reporting: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>(),
+  remote_object: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>() | true | nil,
+  physical_input: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | nil,
+  other: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>()
+}</pre>
+
+      </div>
+
+<p>Object metadata stored under <code class="inline">_metadata</code>.</p>
+  </section>
+</section>
+<section class="detail" id="t:operation_hooks/0">
+
+  <div class="detail-header">
+    <a href="#t:operation_hooks/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">operation_hooks()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L39" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> operation_hooks() :: %{
+  add_defaults: (<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>(), <a href="#t:metadata/0">metadata</a>() -&gt; <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>() | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}),
+  check_implicit_relationships:
+    (<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>(), :add | :remove -&gt; {:ok, <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}),
+  inhibit_object_check: (<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>() -&gt; {:ok, <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()})
+}</pre>
+
+      </div>
+
+<p>Overridable steps. Object modules pass captures of their own functions.</p>
+  </section>
+</section>
+<section class="detail" id="t:update_result/0">
+
+  <div class="detail-header">
+    <a href="#t:update_result/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">update_result()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L49" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> update_result() :: {:ok, <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Result of a mutating object operation.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="add_defaults/3">
+
+  <div class="detail-header">
+    <a href="#add_defaults/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">add_defaults(contract, properties, metadata)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L354" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> add_defaults(<a href="BACnet.Protocol.ObjectsContract.html#t:t/0">BACnet.Protocol.ObjectsContract.t</a>(), <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>(), <a href="#t:metadata/0">metadata</a>()) :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>()</pre>
+
+      </div>
+
+<p>Merges compile-time defaults into <code class="inline">properties</code>.</p><p>Local objects receive required defaults, intrinsic defaults, <code class="inline">cov_increment</code>,
+and <code class="inline">init_fun</code> properties. Remote objects receive only <code class="inline">remote_defaults</code>.
+This function does not call hooks.</p>
+  </section>
+</section>
+<section class="detail" id="add_property/5">
+
+  <div class="detail-header">
+    <a href="#add_property/5" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">add_property(contract, object, property, value, hooks)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L109" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> add_property(
+  <a href="BACnet.Protocol.ObjectsContract.html#t:t/0">BACnet.Protocol.ObjectsContract.t</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>(),
+  <a href="#t:operation_hooks/0">operation_hooks</a>()
+) ::
+  <a href="#t:update_result/0">update_result</a>()</pre>
+
+      </div>
+
+<p>Adds an optional property.</p><p>Remote objects are rejected. Intrinsic properties cannot be added.
+On success, runs implicit relationships, propagation, and the inhibit hook.</p>
+  </section>
+</section>
+<section class="detail" id="check_implicit_relationships/3">
+
+  <div class="detail-header">
+    <a href="#check_implicit_relationships/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">check_implicit_relationships(contract, object, operation)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L376" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> check_implicit_relationships(
+  <a href="BACnet.Protocol.ObjectsContract.html#t:t/0">BACnet.Protocol.ObjectsContract.t</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>(),
+  :add | :remove
+) ::
+  <a href="#t:update_result/0">update_result</a>()</pre>
+
+      </div>
+
+<p>Adds or removes the partner of an implicit relationship.</p><p>Does not call hooks.</p>
+  </section>
+</section>
+<section class="detail" id="check_property_exists/2">
+
+  <div class="detail-header">
+    <a href="#check_property_exists/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">check_property_exists(map, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L324" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> check_property_exists(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>(), <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>()) ::
+  :ok | {:error, {:unknown_property, <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>()}}</pre>
+
+      </div>
+
+<p>Returns <code class="inline">:ok</code> when <code class="inline">property</code> is in the object's properties list.</p>
+  </section>
+</section>
+<section class="detail" id="check_property_intrinsic/5">
+
+  <div class="detail-header">
+    <a href="#check_property_intrinsic/5" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">check_property_intrinsic(contract, intrinsic?, property, value, allow_nil)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L508" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> check_property_intrinsic(
+  <a href="BACnet.Protocol.ObjectsContract.html#t:t/0">BACnet.Protocol.ObjectsContract.t</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()
+) :: :ok | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Rejects intrinsic properties when intrinsic reporting is off, and rejects
+<code class="inline">nil</code> intrinsic values when <code class="inline">allow_prop_nil</code> is false.</p>
+  </section>
+</section>
+<section class="detail" id="check_property_value/6">
+
+  <div class="detail-header">
+    <a href="#check_property_value/6" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">check_property_value(contract, object, property, value, check_protected, skip_property_validator)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L433" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> check_property_value(
+  <a href="BACnet.Protocol.ObjectsContract.html#t:t/0">BACnet.Protocol.ObjectsContract.t</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | :value
+) :: :ok | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Type-checks <code class="inline">value</code> for <code class="inline">property</code> and runs validators unless skipped.</p><p><code class="inline">skip_property_validator</code> is <code class="inline">true</code> (skip type and validators), <code class="inline">:value</code>
+(type only), or <code class="inline">false</code>.</p>
+  </section>
+</section>
+<section class="detail" id="create/6">
+
+  <div class="detail-header">
+    <a href="#create/6" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">create(contract, instance_number, object_name, properties, opts, hooks)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L66" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> create(
+  <a href="BACnet.Protocol.ObjectsContract.html#t:t/0">BACnet.Protocol.ObjectsContract.t</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>(),
+  <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">keyword</a>(),
+  <a href="#t:operation_hooks/0">operation_hooks</a>()
+) :: <a href="#t:update_result/0">update_result</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">no_return</a>()</pre>
+
+      </div>
+
+<p>Creates an object struct from an instance number, name, properties, and options.</p><p><code class="inline">hooks.add_defaults/2</code> runs instead of <a href="#add_defaults/3"><code class="inline">add_defaults/3</code></a> directly.
+For a local object, <code class="inline">hooks.inhibit_object_check/1</code> runs after property propagation.
+Remote objects skip propagation and the inhibit hook.</p>
+  </section>
+</section>
+<section class="detail" id="create_metadata_from_opts/2">
+
+  <div class="detail-header">
+    <a href="#create_metadata_from_opts/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">create_metadata_from_opts(contract, opts)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L534" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> create_metadata_from_opts(<a href="BACnet.Protocol.ObjectsContract.html#t:t/0">BACnet.Protocol.ObjectsContract.t</a>(), <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">keyword</a>()) ::
+  <a href="#t:metadata/0">metadata</a>()</pre>
+
+      </div>
+
+<p>Builds <code class="inline">_metadata</code> from create options.</p><p>Raises <a href="https://elixir.hexdocs.pm/ArgumentError.html"><code class="inline">ArgumentError</code></a> when intrinsic reporting is requested for a type
+that does not support it.</p>
+  </section>
+</section>
+<section class="detail" id="get_property/2">
+
+  <div class="detail-header">
+    <a href="#get_property/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_property(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L300" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_property(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>(), <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()) ::
+  {:ok, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Reads a property. Numeric keys are read from <code class="inline">_unknown_properties</code>.</p>
+  </section>
+</section>
+<section class="detail" id="inspect_object/2">
+
+  <div class="detail-header">
+    <a href="#inspect_object/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">inspect_object(object, opts)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L578" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> inspect_object(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>(), <a href="https://elixir.hexdocs.pm/Inspect.Opts.html#t:t/0">Inspect.Opts.t</a>()) :: <a href="https://elixir.hexdocs.pm/Inspect.Algebra.html#t:t/0">Inspect.Algebra.t</a>()</pre>
+
+      </div>
+
+<p>Inspects an object the way object modules do.</p><p>An empty properties list prints the whole struct. Otherwise only the
+properties list and <code class="inline">_unknown_properties</code> are printed.</p>
+  </section>
+</section>
+<section class="detail" id="prevent_commandable_objects_write_pv/2">
+
+  <div class="detail-header">
+    <a href="#prevent_commandable_objects_write_pv/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">prevent_commandable_objects_write_pv(arg1, arg2)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L337" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> prevent_commandable_objects_write_pv(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>(), <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>()) ::
+  :ok | {:error, {:protected_property, :present_value}}</pre>
+
+      </div>
+
+<p>Rejects writes of <code class="inline">present_value</code> while a priority array is present.</p>
+  </section>
+</section>
+<section class="detail" id="propagate_properties/2">
+
+  <div class="detail-header">
+    <a href="#propagate_properties/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">propagate_properties(contract, object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L390" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> propagate_properties(<a href="BACnet.Protocol.ObjectsContract.html#t:t/0">BACnet.Protocol.ObjectsContract.t</a>(), <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>()) :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>()</pre>
+
+      </div>
+
+<p>Updates present value, feedback, and status flags from related properties.</p><p>Which updates run depends on the contract's capability flags.</p>
+  </section>
+</section>
+<section class="detail" id="property_writable?/3">
+
+  <div class="detail-header">
+    <a href="#property_writable?/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">property_writable?(object, property, readonly)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L278" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> property_writable?(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>(), <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>(), [<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>()]) :: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Returns whether <code class="inline">property</code> is writable for the default object policy.</p><p><code class="inline">readonly</code> is the object type's readonly property list. Object-specific
+overrides stay on the object module and are not consulted here.</p>
+  </section>
+</section>
+<section class="detail" id="remove_property/4">
+
+  <div class="detail-header">
+    <a href="#remove_property/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">remove_property(contract, object, property, hooks)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L157" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> remove_property(
+  <a href="BACnet.Protocol.ObjectsContract.html#t:t/0">BACnet.Protocol.ObjectsContract.t</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>(),
+  <a href="#t:operation_hooks/0">operation_hooks</a>()
+) :: <a href="#t:update_result/0">update_result</a>()</pre>
+
+      </div>
+
+<p>Removes an optional property. Removing a property that is not present succeeds.</p><p>Remote objects are rejected. Unknown numeric keys are dropped from
+<code class="inline">_unknown_properties</code> and do not run hooks.</p>
+  </section>
+</section>
+<section class="detail" id="set_priority/4">
+
+  <div class="detail-header">
+    <a href="#set_priority/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">set_priority(contract, object, priority, value)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L226" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> set_priority(<a href="BACnet.Protocol.ObjectsContract.html#t:t/0">BACnet.Protocol.ObjectsContract.t</a>(), <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>(), 1..16, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()) ::
+  <a href="#t:update_result/0">update_result</a>()</pre>
+
+      </div>
+
+<p>Writes one slot of the priority array and refreshes <code class="inline">present_value</code>.</p><p>A <code class="inline">nil</code> value clears the slot and is not type-checked. Feedback is copied
+from the present value when <code class="inline">auto_write_feedback</code> is set. This does not run
+the inhibit hook.</p>
+  </section>
+</section>
+<section class="detail" id="update_property/5">
+
+  <div class="detail-header">
+    <a href="#update_property/5" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">update_property(contract, object, property, value, hooks)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L205" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> update_property(
+  <a href="BACnet.Protocol.ObjectsContract.html#t:t/0">BACnet.Protocol.ObjectsContract.t</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>(),
+  <a href="#t:operation_hooks/0">operation_hooks</a>()
+) ::
+  <a href="#t:update_result/0">update_result</a>()</pre>
+
+      </div>
+
+<p>Updates a property that is already present.</p><p>Remote objects skip the intrinsic-property check. Propagation and the inhibit
+hook still run. Commandable <code class="inline">present_value</code> writes are rejected.</p>
+  </section>
+</section>
+<section class="detail" id="verify_properties/3">
+
+  <div class="detail-header">
+    <a href="#verify_properties/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">verify_properties(contract, properties, metadata)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_operations.ex#L406" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> verify_properties(<a href="BACnet.Protocol.ObjectsContract.html#t:t/0">BACnet.Protocol.ObjectsContract.t</a>(), <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>(), <a href="#t:metadata/0">metadata</a>()) ::
+  {:ok, <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Checks required properties, <code class="inline">required_when</code>, and <code class="inline">only_when</code>.</p><p>Remote objects only check required properties and their protocol revision.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0-dev.2">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0-dev.2">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.4) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>
