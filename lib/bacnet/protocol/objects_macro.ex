@@ -978,6 +978,9 @@ defmodule BACnet.Protocol.ObjectsMacro do
       )
 
       alias BACnet.Protocol.Constants
+      alias BACnet.Protocol.ObjectOperations
+      alias BACnet.Protocol.ObjectsContract
+      alias BACnet.Protocol.ObjectsUtility
       require Constants
 
       # Implement Access Behaviour function fetch/2 for convenience
@@ -986,12 +989,9 @@ defmodule BACnet.Protocol.ObjectsMacro do
 
       # unquote(pv_mapper_ast)
 
-      # Fully qualified calls are required: this quote is injected into object
-      # modules, which do not share this module's aliases.
-      # credo:disable-for-lines:460 Credo.Check.Design.AliasUsage
       defguardp is_remote(object) when object._metadata.remote_object != nil
 
-      @object_tables %BACnet.Protocol.ObjectsContract{
+      @object_tables %ObjectsContract{
         object_module: __MODULE__,
         object_type: unquote(object_type),
         properties: unquote(cleaned_fields),
@@ -1031,7 +1031,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
         has_physical_input: unquote(:physical_input in struct_deffields)
       }
 
-      @spec object_contract() :: BACnet.Protocol.ObjectsContract.t()
+      @spec object_contract() :: ObjectsContract.t()
       defp object_contract() do
         %{
           @object_tables
@@ -1096,13 +1096,13 @@ defmodule BACnet.Protocol.ObjectsMacro do
 
       @spec add_defaults(map(), internal_metadata()) :: map() | {:error, term()}
       defp add_defaults(properties, metadata) do
-        BACnet.Protocol.ObjectOperations.add_defaults(object_contract(), properties, metadata)
+        ObjectOperations.add_defaults(object_contract(), properties, metadata)
       end
 
       @spec check_implicit_relationships(t(), :add | :remove) ::
               {:ok, t()} | property_update_error()
       defp check_implicit_relationships(object, operation) do
-        BACnet.Protocol.ObjectOperations.check_implicit_relationships(
+        ObjectOperations.check_implicit_relationships(
           object_contract(),
           object,
           operation
@@ -1115,14 +1115,14 @@ defmodule BACnet.Protocol.ObjectsMacro do
       @spec check_property_exists(map(), Constants.property_identifier()) ::
               :ok | property_update_error()
       defp check_property_exists(object, property) do
-        BACnet.Protocol.ObjectOperations.check_property_exists(object, property)
+        ObjectOperations.check_property_exists(object, property)
       end
 
       defoverridable add_defaults: 2,
                      check_implicit_relationships: 2,
                      inhibit_object_check: 1
 
-      @spec operation_hooks() :: BACnet.Protocol.ObjectOperations.operation_hooks()
+      @spec operation_hooks() :: ObjectOperations.operation_hooks()
       defp operation_hooks() do
         %{
           add_defaults: &add_defaults/2,
@@ -1153,7 +1153,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
         """
         @spec intrinsic_reporting?(t()) :: boolean()
         def intrinsic_reporting?(%__MODULE__{} = object) do
-          BACnet.Protocol.ObjectsUtility.intrinsic_reporting?(object)
+          ObjectsUtility.intrinsic_reporting?(object)
         end
       end
 
@@ -1162,7 +1162,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
       """
       @spec get_object_identifier(t()) :: BACnet.Protocol.ObjectIdentifier.t()
       def get_object_identifier(%__MODULE__{} = object) do
-        BACnet.Protocol.ObjectsUtility.get_object_identifier(object)
+        ObjectsUtility.get_object_identifier(object)
       end
 
       @doc """
@@ -1170,7 +1170,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
       """
       @spec get_properties(t()) :: [Constants.property_identifier()]
       def get_properties(%__MODULE__{} = object) do
-        BACnet.Protocol.ObjectsUtility.get_properties(object)
+        ObjectsUtility.get_properties(object)
       end
 
       @doc """
@@ -1180,7 +1180,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
       """
       @spec has_property?(t(), Constants.property_identifier()) :: boolean()
       def has_property?(%__MODULE__{} = object, property) when is_atom(property) do
-        BACnet.Protocol.ObjectsUtility.has_property?(object, property)
+        ObjectsUtility.has_property?(object, property)
       end
 
       @doc """
@@ -1190,7 +1190,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
       """
       @spec property_writable?(t(), Constants.property_identifier()) :: boolean()
       def property_writable?(%__MODULE__{} = object, property) when is_atom(property) do
-        BACnet.Protocol.ObjectOperations.property_writable?(
+        ObjectOperations.property_writable?(
           object,
           property,
           @object_tables.readonly
@@ -1224,7 +1224,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
           when is_integer(instance_number) and is_binary(object_name) and is_map(properties) and
                  instance_number >= 0 and
                  instance_number < Constants.macro_by_name(:asn1, :max_instance_and_property_id) do
-        BACnet.Protocol.ObjectOperations.create(
+        ObjectOperations.create(
           object_contract(),
           instance_number,
           object_name,
@@ -1250,7 +1250,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
       end
 
       def add_property(%__MODULE__{} = object, property, value) when is_atom(property) do
-        BACnet.Protocol.ObjectOperations.add_property(
+        ObjectOperations.add_property(
           object_contract(),
           object,
           property,
@@ -1266,7 +1266,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
               {:ok, term()} | property_update_error()
       def get_property(%__MODULE__{} = object, property)
           when is_atom(property) or (is_integer(property) and property >= 0) do
-        BACnet.Protocol.ObjectOperations.get_property(object, property)
+        ObjectOperations.get_property(object, property)
       end
 
       @doc """
@@ -1286,7 +1286,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
 
       def remove_property(%__MODULE__{} = object, property)
           when is_atom(property) or (is_integer(property) and property >= 0) do
-        BACnet.Protocol.ObjectOperations.remove_property(
+        ObjectOperations.remove_property(
           object_contract(),
           object,
           property,
@@ -1302,7 +1302,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
       @spec update_property(t(), Constants.property_identifier(), term()) ::
               {:ok, t()} | property_update_error()
       def update_property(%__MODULE__{} = object, property, value) when is_atom(property) do
-        BACnet.Protocol.ObjectOperations.update_property(
+        ObjectOperations.update_property(
           object_contract(),
           object,
           property,
@@ -1320,7 +1320,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
         """
         @spec has_priority_array?(t()) :: boolean()
         def has_priority_array?(%__MODULE__{} = object) do
-          BACnet.Protocol.ObjectsUtility.has_priority_array?(object)
+          ObjectsUtility.has_priority_array?(object)
         end
       end
 
@@ -1331,7 +1331,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
         @spec get_priority_value(t()) ::
                 {priority :: 1..16, value :: unquote(pv_typespec)} | nil
         def get_priority_value(%__MODULE__{} = object) do
-          BACnet.Protocol.ObjectsUtility.get_priority_value(object)
+          ObjectsUtility.get_priority_value(object)
         end
 
         @doc """
@@ -1350,7 +1350,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
               value
             )
             when priority in 1..16 do
-          BACnet.Protocol.ObjectOperations.set_priority(
+          ObjectOperations.set_priority(
             object_contract(),
             object,
             priority,
@@ -1435,7 +1435,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
 
       defimpl Inspect do
         def inspect(object, opts) do
-          BACnet.Protocol.ObjectOperations.inspect_object(object, opts)
+          ObjectOperations.inspect_object(object, opts)
         end
       end
     end
