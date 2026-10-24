@@ -280,7 +280,15 @@ defmodule BACnet.Stack.TrendLogger do
     end
 
     {opts2, genserver_opts} =
-      Keyword.split(opts, [:cov_cb, :log_buffer_module, :lookup_cb, :state, :timezone])
+      Keyword.split(opts, [
+        :cov_cb,
+        :log_buffer_module,
+        :lookup_cb,
+        :notification_receiver,
+        :state,
+        :supervisor,
+        :timezone
+      ])
 
     validate_start_link_opts(opts2)
 
