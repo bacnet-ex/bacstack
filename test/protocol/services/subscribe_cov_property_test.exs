@@ -383,6 +383,26 @@ defmodule BACnet.Test.Protocol.Services.SubscribeCovPropertyTest do
              )
   end
 
+  test "encoding SubscribeCovProperty preserves segmented_response_accepted=false" do
+    service = %SubscribeCovProperty{
+      process_identifier: 1,
+      monitored_object: %ObjectIdentifier{type: :analog_input, instance: 1},
+      issue_confirmed_notifications: true,
+      lifetime: 60,
+      cov_increment: nil,
+      monitored_property: %PropertyRef{
+        property_identifier: :present_value,
+        property_array_index: nil
+      }
+    }
+
+    assert {:ok, %ConfirmedServiceRequest{segmented_response_accepted: false} = apdu} =
+             SubscribeCovProperty.to_apdu(service, segmented_response_accepted: false)
+
+    assert {:ok, ^apdu} =
+             ServicesProtocol.to_apdu(service, segmented_response_accepted: false)
+  end
+
   test "protocol implementation get name" do
     assert :subscribe_cov_property ==
              ServicesProtocol.get_name(%SubscribeCovProperty{

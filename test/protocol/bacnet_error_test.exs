@@ -18,8 +18,8 @@ defmodule BACnet.Protocol.BACnetErrorTest do
   end
 
   test "decode error with numeric code" do
-    assert {:ok, {%BACnetError{class: :property, code: 65535}, []}} =
-             BACnetError.parse(enumerated: 2, enumerated: 65535)
+    assert {:ok, {%BACnetError{class: :property, code: 65_535}, []}} =
+             BACnetError.parse(enumerated: 2, enumerated: 65_535)
   end
 
   test "decode invalid error" do
@@ -37,8 +37,8 @@ defmodule BACnet.Protocol.BACnetErrorTest do
   end
 
   test "encode error with numeric code" do
-    assert {:ok, [enumerated: 2, enumerated: 65535]} =
-             BACnetError.encode(%BACnetError{class: :property, code: 65535})
+    assert {:ok, [enumerated: 2, enumerated: 65_535]} =
+             BACnetError.encode(%BACnetError{class: :property, code: 65_535})
   end
 
   test "valid error" do

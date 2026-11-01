@@ -11,27 +11,28 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
   alias BACnet.Protocol.BACnetError
   alias BACnet.Protocol.BACnetTime
   alias BACnet.Protocol.Constants
-  alias BACnet.Protocol.DeviceObjectRef
   alias BACnet.Protocol.DeviceObjectPropertyRef
+  alias BACnet.Protocol.DeviceObjectRef
   alias BACnet.Protocol.EventMessageTexts
   alias BACnet.Protocol.EventTimestamps
   alias BACnet.Protocol.EventTransitionBits
   alias BACnet.Protocol.LimitEnable
   alias BACnet.Protocol.NotificationClassPriority
+  alias BACnet.Protocol.NotificationParameters.ChangeOfValue
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.ObjectPropertyRef
   alias BACnet.Protocol.ObjectsMacro
   alias BACnet.Protocol.ObjectTypes
+  alias BACnet.Protocol.ObjectTypes.EventEnrollment
+  alias BACnet.Protocol.ObjectTypes.Program
+  alias BACnet.Protocol.ObjectTypes.TrendLog
+  alias BACnet.Protocol.ObjectTypes.TrendLogMultiple
   alias BACnet.Protocol.PriorityArray
   alias BACnet.Protocol.PropertyState
   alias BACnet.Protocol.ReadAccessResult.ReadResult
   alias BACnet.Protocol.Recipient
   alias BACnet.Protocol.SetpointReference
   alias BACnet.Protocol.StatusFlags
-  alias BACnet.Protocol.ObjectTypes.EventEnrollment
-  alias BACnet.Protocol.ObjectTypes.Program
-  alias BACnet.Protocol.ObjectTypes.TrendLog
-  alias BACnet.Protocol.ObjectTypes.TrendLogMultiple
   alias BACnet.Protocol.VmacEntry
 
   @type_mapping %{
@@ -127,7 +128,8 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
 
       # Amend Multistate objects and make sure the PV and RQ properties aren't higher than the number of states
       # We overwrite the present_value because if PV is actually lower than RQ the test will fail,
-      # and that is because PV is overwritten during object creation with the correct value (which is RQ + PA, but PA is "empty")
+      # and that is because PV is overwritten during object creation with the correct value
+      # (which is RQ + PA, but PA is "empty")
       %{number_of_states: ns, relinquish_default: rq} = obj when not is_nil(rq) ->
         %{
           obj
@@ -1593,6 +1595,18 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
 
   defp amend_struct_spec_for_cause(%AddressBinding{} = struct, _cause) do
     %{struct | address: generate_ascii_string(12)}
+  end
+
+  defp amend_struct_spec_for_cause(
+         %ChangeOfValue{changed_bits: bits, changed_value: val} = struct,
+         _cause
+       )
+       when bits != nil and val != nil do
+    if Enum.random(0..1//1) == 0 do
+      %{struct | changed_bits: nil}
+    else
+      %{struct | changed_value: nil}
+    end
   end
 
   defp amend_struct_spec_for_cause(%ObjectIdentifier{} = struct, {:struct, AddressBinding}) do

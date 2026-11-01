@@ -27,6 +27,7 @@ npm-debug.log
 
 # The directory NPM downloads your dependencies sources to.
 /assets/node_modules/
+/assets/package-lock.json
 
 # Since we are building assets from assets/,
 # we ignore priv/static. You may want to comment
@@ -34,12 +35,16 @@ npm-debug.log
 /priv/gettext/
 /priv/static/
 
+# Assistants, LSPs, etc.
 /.codex/
+/.dexter/
 /.elixir_ls/
 /.expert/
 /.lexical/
 /.vscode/
-/assets/package-lock.json
+/experiments/
+
+# Generated assets
 /extras/gen_*
 
 /.mix/

@@ -193,8 +193,8 @@ defmodule BACnet.Stack.Transport.EthernetTransport do
   Since the broadcast address is static,
   you can also use `nil` as `transport` argument.
   """
-  @spec get_broadcast_address(GenServer.server()) :: mac_address()
-  def get_broadcast_address(transport) when is_server(transport) do
+  @spec get_broadcast_address(GenServer.server() | nil) :: mac_address()
+  def get_broadcast_address(transport) when is_server(transport) or is_nil(transport) do
     @broadcast_addr
   end
 

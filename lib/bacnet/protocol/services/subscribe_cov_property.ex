@@ -234,7 +234,8 @@ defmodule BACnet.Protocol.Services.SubscribeCovProperty do
       ]
 
       req = %Protocol.APDU.ConfirmedServiceRequest{
-        segmented_response_accepted: request_data[:segmented_response_accepted] || true,
+        segmented_response_accepted:
+          Keyword.get(request_data, :segmented_response_accepted, true),
         max_segments: request_data[:max_segments] || :more_than_64,
         max_apdu:
           request_data[:max_apdu] ||

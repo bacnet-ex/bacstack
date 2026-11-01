@@ -126,9 +126,9 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
         second: :unspecified,
         hundredth: :unspecified
       }}, <<0xB4, 255, 255, 255, 255>>, []},
-    {"primitive time 23:59:59",
-     {:time, %BACnetTime{hour: 23, minute: 59, second: 59, hundredth: 245}},
-     <<0xB4, 23, 59, 59, 245>>, []},
+    {"primitive time 23:59:59.99",
+     {:time, %BACnetTime{hour: 23, minute: 59, second: 59, hundredth: 99}},
+     <<0xB4, 23, 59, 59, 99>>, []},
     {"primitive time 19:25:36 without hundredth",
      {:time, %BACnetTime{hour: 19, minute: 25, second: 36, hundredth: :unspecified}},
      <<0xB4, 19, 25, 36, 255>>, []},
@@ -194,6 +194,126 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
                  ApplicationTags.encode(unquote(Macro.escape(encode_data)), unquote(encode_opts))
       end
     end
+  end
+
+  test "time decoding rejects invalid hundredth 100" do
+    assert {:error, :invalid_data} = ApplicationTags.decode(<<0xB4, 12, 0, 0, 100>>)
+    assert {:error, :invalid_data} = ApplicationTags.decode_value(0xB, <<12, 0, 0, 100>>)
+  end
+
+  test "time decoding rejects invalid hundredth 200" do
+    assert {:error, :invalid_data} = ApplicationTags.decode(<<0xB4, 12, 0, 0, 200>>)
+    assert {:error, :invalid_data} = ApplicationTags.decode_value(0xB, <<12, 0, 0, 200>>)
+  end
+
+  test "time decoding rejects invalid hundredth 254" do
+    assert {:error, :invalid_data} = ApplicationTags.decode(<<0xB4, 12, 0, 0, 254>>)
+    assert {:error, :invalid_data} = ApplicationTags.decode_value(0xB, <<12, 0, 0, 254>>)
+  end
+
+  test "time decoding keeps hundredth 99" do
+    assert {:ok, {:time, time}, ""} = ApplicationTags.decode(<<0xB4, 12, 0, 0, 99>>)
+    assert BACnetTime.valid?(time)
+    assert time.hundredth == 99
+    assert {:ok, ~T[12:00:00.990000]} = BACnetTime.to_time(time)
+    assert {:ok, <<0xB4, 12, 0, 0, 99>>} = ApplicationTags.encode({:time, time})
+  end
+
+  test "time decoding keeps unspecified hundredth 255" do
+    assert {:ok, {:time, time}, ""} = ApplicationTags.decode(<<0xB4, 12, 0, 0, 255>>)
+    assert BACnetTime.valid?(time)
+    assert time.hundredth == :unspecified
+    assert {:ok, <<0xB4, 12, 0, 0, 255>>} = ApplicationTags.encode({:time, time})
+  end
+
+  test "bitstring decoding rejects unused-bit count 8" do
+    assert {:error, :invalid_data} = ApplicationTags.decode(<<0x82, 8, 0>>)
+    assert {:error, :invalid_data} = ApplicationTags.decode_value(0x8, <<8, 0>>)
+  end
+
+  test "bitstring decoding rejects unused-bit count 9" do
+    assert {:error, :invalid_data} = ApplicationTags.decode(<<0x82, 9, 0xFF>>)
+    assert {:error, :invalid_data} = ApplicationTags.decode_value(0x8, <<9, 0xFF>>)
+  end
+
+  test "bitstring decoding rejects unused-bit count 255" do
+    assert {:error, :invalid_data} = ApplicationTags.decode(<<0x82, 255, 0>>)
+    assert {:error, :invalid_data} = ApplicationTags.decode_value(0x8, <<255, 0>>)
+  end
+
+  test "an empty bitstring cannot contain unused bits" do
+    assert {:error, :invalid_data} = ApplicationTags.decode(<<0x81, 1>>)
+    assert {:error, :invalid_data} = ApplicationTags.decode_value(0x8, <<1>>)
+    assert {:ok, {:bitstring, {}}, ""} = ApplicationTags.decode(<<0x81, 0>>)
+    assert {:ok, {}} = ApplicationTags.decode_value(0x8, <<0>>)
+  end
+
+  test "bitstring decoding accepts legal unused-bit count 0" do
+    assert {:ok, {:bitstring, {false, false, false, false, false, false, false, false}}, ""} =
+             ApplicationTags.decode(<<0x82, 0, 0>>)
+
+    assert {:ok, {false, false, false, false, false, false, false, false}} =
+             ApplicationTags.decode_value(0x8, <<0, 0>>)
+  end
+
+  test "bitstring decoding accepts legal unused-bit count 1" do
+    assert {:ok, {:bitstring, {false, false, false, false, false, false, false}}, ""} =
+             ApplicationTags.decode(<<0x82, 1, 0>>)
+
+    assert {:ok, {false, false, false, false, false, false, false}} =
+             ApplicationTags.decode_value(0x8, <<1, 0>>)
+  end
+
+  test "bitstring decoding accepts legal unused-bit count 2" do
+    assert {:ok, {:bitstring, {false, false, false, false, false, false}}, ""} =
+             ApplicationTags.decode(<<0x82, 2, 0>>)
+
+    assert {:ok, {false, false, false, false, false, false}} =
+             ApplicationTags.decode_value(0x8, <<2, 0>>)
+  end
+
+  test "bitstring decoding accepts legal unused-bit count 3" do
+    assert {:ok, {:bitstring, {false, false, false, false, false}}, ""} =
+             ApplicationTags.decode(<<0x82, 3, 0>>)
+
+    assert {:ok, {false, false, false, false, false}} =
+             ApplicationTags.decode_value(0x8, <<3, 0>>)
+  end
+
+  test "bitstring decoding accepts legal unused-bit count 4" do
+    assert {:ok, {:bitstring, {false, false, false, false}}, ""} =
+             ApplicationTags.decode(<<0x82, 4, 0>>)
+
+    assert {:ok, {false, false, false, false}} = ApplicationTags.decode_value(0x8, <<4, 0>>)
+  end
+
+  test "bitstring decoding accepts legal unused-bit count 5" do
+    assert {:ok, {:bitstring, {false, false, false}}, ""} = ApplicationTags.decode(<<0x82, 5, 0>>)
+    assert {:ok, {false, false, false}} = ApplicationTags.decode_value(0x8, <<5, 0>>)
+  end
+
+  test "bitstring decoding accepts legal unused-bit count 6" do
+    assert {:ok, {:bitstring, {false, false}}, ""} = ApplicationTags.decode(<<0x82, 6, 0>>)
+    assert {:ok, {false, false}} = ApplicationTags.decode_value(0x8, <<6, 0>>)
+  end
+
+  test "bitstring decoding accepts legal unused-bit count 7" do
+    assert {:ok, {:bitstring, {false}}, ""} = ApplicationTags.decode(<<0x82, 7, 0>>)
+    assert {:ok, {false}} = ApplicationTags.decode_value(0x8, <<7, 0>>)
+  end
+
+  test "bitstring decoding requires an unused-bit-count byte" do
+    assert {:error, :invalid_data} = ApplicationTags.decode(<<0x80>>)
+    assert {:error, :invalid_data} = ApplicationTags.decode_value(0x8, <<>>)
+  end
+
+  test "bitstring decoding removes only the unused bits in the final byte" do
+    bits = {true, false, true, false, true, false, true, false, true}
+
+    assert {:ok, {:bitstring, ^bits}, <<0x11>>} =
+             ApplicationTags.decode(<<0x83, 7, 0xAA, 0x80, 0x11>>)
+
+    assert {:ok, ^bits} = ApplicationTags.decode_value(0x8, <<7, 0xAA, 0x80>>)
   end
 
   test "decode empty data failure" do
@@ -264,6 +384,111 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
              ApplicationTags.decode(<<14, 68, 0, 0, 0, 0, 68>>)
   end
 
+  test "constructed value rejects a missing close after no children" do
+    assert {:error, _reason} = ApplicationTags.decode(<<0x0E>>)
+  end
+
+  test "constructed value rejects a missing close after one child" do
+    assert {:error, _reason} = ApplicationTags.decode(<<0x0E, 0>>)
+  end
+
+  test "constructed value rejects a missing close after two children" do
+    assert {:error, _reason} = ApplicationTags.decode(<<0x0E, 0, 0>>)
+  end
+
+  test "constructed value rejects a missing close after an extended opening tag" do
+    assert {:error, _reason} = ApplicationTags.decode(<<0xFE, 32, 0>>)
+  end
+
+  test "constructed value rejects nested missing outer close" do
+    assert {:error, _reason} = ApplicationTags.decode(<<0x0E, 0x1E, 0, 0x1F>>)
+  end
+
+  test "constructed value rejects wrong closing tag" do
+    assert {:error, _reason} = ApplicationTags.decode(<<0x0E, 0, 0x1F>>)
+  end
+
+  test "a wrong normal closing tag is rejected even when enough data follows" do
+    data = <<0, 0, 0, 0, 0, 0, 0>>
+    assert {:error, _reason} = ApplicationTags.decode(<<0x0E, 0x1F, data::binary, 0x0F>>)
+    assert {:error, _reason} = ApplicationTags.decode(<<0x0E, 0, 0x1F, data::binary, 0x0F>>)
+  end
+
+  test "a wrong extended closing tag is rejected even when enough data follows" do
+    data = <<0, 0, 0, 0, 0, 0, 0>>
+
+    assert {:error, _reason} =
+             ApplicationTags.decode(<<0xFE, 32, 0xFF, 33, data::binary, 0xFF, 32>>)
+
+    assert {:error, _reason} =
+             ApplicationTags.decode(<<0xFE, 32, 0, 0xFF, 33, data::binary, 0xFF, 32>>)
+  end
+
+  test "decode rejects a closing tag without an opening tag" do
+    assert {:error, _reason} = ApplicationTags.decode(<<0x0F, 0, 0, 0, 0, 0, 0, 0>>)
+    assert {:error, _reason} = ApplicationTags.decode(<<0xFF, 32, 0, 0, 0, 0, 0, 0, 0>>)
+  end
+
+  test "constructed value rejects truncated extended close" do
+    assert {:error, _reason} = ApplicationTags.decode(<<0xFE, 32, 0, 0xFF>>)
+  end
+
+  test "constructed value rejects an empty value with a truncated extended close" do
+    assert {:error, _reason} = ApplicationTags.decode(<<0xFE, 32, 0xFF>>)
+  end
+
+  test "constructed value rejects an empty value with the wrong extended closing tag" do
+    assert {:error, _reason} = ApplicationTags.decode(<<0xFE, 32, 0xFF, 33>>)
+  end
+
+  test "constructed value rejects one child with the wrong extended closing tag" do
+    assert {:error, _reason} = ApplicationTags.decode(<<0xFE, 32, 0, 0xFF, 33>>)
+  end
+
+  test "constructed value rejects two children with the wrong extended closing tag" do
+    assert {:error, _reason} = ApplicationTags.decode(<<0xFE, 32, 0, 0, 0xFF, 33>>)
+  end
+
+  test "constructed value rejects closing nested tags in the wrong order" do
+    assert {:error, _reason} = ApplicationTags.decode(<<0x0E, 0x1E, 0, 0x0F, 0x1F>>)
+  end
+
+  test "an empty constructed value preserves following bytes" do
+    assert {:ok, {:constructed, {0, [], 0}}, <<0x11>>} =
+             ApplicationTags.decode(<<0x0E, 0x0F, 0x11>>)
+
+    assert {:ok, {:constructed, {32, [], 0}}, <<0x11>>} =
+             ApplicationTags.decode(<<0xFE, 32, 0xFF, 32, 0x11>>)
+  end
+
+  test "a single constructed child preserves following bytes" do
+    assert {:ok, {:constructed, {0, {:null, nil}, 0}}, <<0x11>>} =
+             ApplicationTags.decode(<<0x0E, 0, 0x0F, 0x11>>)
+
+    assert {:ok, {:constructed, {32, {:null, nil}, 0}}, <<0x11>>} =
+             ApplicationTags.decode(<<0xFE, 32, 0, 0xFF, 32, 0x11>>)
+  end
+
+  test "multiple constructed children preserve following bytes" do
+    assert {:ok, {:constructed, {0, [null: nil, null: nil], 0}}, <<0x11>>} =
+             ApplicationTags.decode(<<0x0E, 0, 0, 0x0F, 0x11>>)
+
+    assert {:ok, {:constructed, {32, [null: nil, null: nil], 0}}, <<0x11>>} =
+             ApplicationTags.decode(<<0xFE, 32, 0, 0, 0xFF, 32, 0x11>>)
+  end
+
+  test "properly closed nested constructed values preserve following bytes" do
+    assert {:ok, {:constructed, {0, {:constructed, {1, {:null, nil}, 0}}, 0}}, <<0x11>>} =
+             ApplicationTags.decode(<<0x0E, 0x1E, 0, 0x1F, 0x0F, 0x11>>)
+  end
+
+  test "a closing-tag byte inside a primitive payload does not close a constructed value" do
+    assert {:error, _reason} = ApplicationTags.decode(<<0x0E, 0x61, 0x0F>>)
+
+    assert {:ok, {:constructed, {0, {:octet_string, <<0x0F>>}, 0}}, <<0x11>>} =
+             ApplicationTags.decode(<<0x0E, 0x61, 0x0F, 0x0F, 0x11>>)
+  end
+
   test "decode unsigned integer with 16bit length" do
     assert {:ok, {:unsigned_integer, 5}, <<>>} = ApplicationTags.decode(<<0x25, 254, 0, 1, 5>>)
   end
@@ -279,7 +504,7 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
 
   test "decode context specific with truncated length" do
     assert {:error, :invalid_tag_data_length} =
-             ApplicationTags.decode(<<255, 0, 128, 0, 5, 25, 102>>)
+             ApplicationTags.decode(<<0xFD, 0, 128, 0, 5, 25, 102>>)
   end
 
   test "decode tag number normal boolean" do
@@ -369,6 +594,27 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
   test "encode elixir time 19:35:49.500_000" do
     assert {:ok, <<0xB4, 19, 35, 49, 50>>} =
              ApplicationTags.encode({:time, Time.new!(19, 35, 49, {500_000, 6})})
+  end
+
+  test "time encoding rejects invalid hundredth 100" do
+    time = %BACnetTime{hour: 12, minute: 0, second: 0, hundredth: 100}
+    refute BACnetTime.valid?(time)
+    assert {:error, :invalid_value} = ApplicationTags.encode({:time, time})
+    assert {:error, :invalid_value} = ApplicationTags.encode_value({:time, time})
+  end
+
+  test "time encoding rejects invalid hundredth 200" do
+    time = %BACnetTime{hour: 12, minute: 0, second: 0, hundredth: 200}
+    refute BACnetTime.valid?(time)
+    assert {:error, :invalid_value} = ApplicationTags.encode({:time, time})
+    assert {:error, :invalid_value} = ApplicationTags.encode_value({:time, time})
+  end
+
+  test "time encoding rejects invalid hundredth 254" do
+    time = %BACnetTime{hour: 12, minute: 0, second: 0, hundredth: 254}
+    refute BACnetTime.valid?(time)
+    assert {:error, :invalid_value} = ApplicationTags.encode({:time, time})
+    assert {:error, :invalid_value} = ApplicationTags.encode_value({:time, time})
   end
 
   test "encode object identifier invalid negative instance" do
@@ -536,6 +782,16 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
   test "unfold tagged invalid" do
     assert {:error, :invalid_data} =
              ApplicationTags.unfold_to_type(:real, {:tagged, {0, <<0, 0, 0>>, 3}})
+  end
+
+  test "unfold tagged time rejects an invalid hundredth" do
+    assert {:error, :invalid_data} =
+             ApplicationTags.unfold_to_type(:time, {:tagged, {0, <<12, 0, 0, 200>>, 4}})
+  end
+
+  test "unfold tagged bitstring rejects an invalid unused-bit count" do
+    assert {:error, :invalid_data} =
+             ApplicationTags.unfold_to_type(:bitstring, {:tagged, {0, <<9, 0xFF>>, 2}})
   end
 
   test "unfold binary data to real" do

@@ -59,6 +59,11 @@ defmodule BACnet.Stack.LogBufferBehaviour do
   @callback from_list(source :: list(), max_size :: pos_integer() | nil) :: t()
 
   @doc """
+  Get the maximum size of the log buffer.
+  """
+  @callback get_max_size(buffer :: t()) :: non_neg_integer() | nil
+
+  @doc """
   Get the size of the log buffer.
   """
   @callback get_size(buffer :: t()) :: non_neg_integer()

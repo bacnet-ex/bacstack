@@ -1,6 +1,6 @@
 defmodule BACnet.Test.Protocol.Services.WriteGroupTest do
-  alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.APDU.UnconfirmedServiceRequest
+  alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.GroupChannelValue
   alias BACnet.Protocol.Services.Protocol, as: ServicesProtocol
   alias BACnet.Protocol.Services.WriteGroup

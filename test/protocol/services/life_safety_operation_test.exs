@@ -251,6 +251,21 @@ defmodule BACnet.Test.Protocol.Services.LifeSafetyOperationTest do
              )
   end
 
+  test "encoding LifeSafetyOperation preserves segmented_response_accepted=false" do
+    service = %LifeSafetyOperation{
+      requesting_process_identifier: 1,
+      requesting_source: "Test",
+      request: :reset,
+      object_identifier: %ObjectIdentifier{type: :analog_input, instance: 1}
+    }
+
+    assert {:ok, %ConfirmedServiceRequest{segmented_response_accepted: false} = apdu} =
+             LifeSafetyOperation.to_apdu(service, segmented_response_accepted: false)
+
+    assert {:ok, ^apdu} =
+             ServicesProtocol.to_apdu(service, segmented_response_accepted: false)
+  end
+
   test "protocol implementation get name" do
     assert :life_safety_operation ==
              ServicesProtocol.get_name(%LifeSafetyOperation{

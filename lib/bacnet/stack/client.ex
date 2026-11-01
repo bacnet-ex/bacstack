@@ -53,7 +53,7 @@ defmodule BACnet.Stack.Client do
   automatically, if no response arrives in the APDU timeout timeframe. If the maximum APDU retries
   is reached, the request will be deleted and the application will get an APDU timeout response.
 
-  Invoke IDs are automatically managed on a per destination (with device ID, if given) basis to avoid
+  Invoke IDs are automatically managed per destination and optional routed NPCI target to avoid
   duplicated invoke IDs being sent to the same destination.
   This mechanism can be disabled on startup and allows external management (or usage with care) if desired.
 
@@ -148,7 +148,7 @@ defmodule BACnet.Stack.Client do
     @type t :: %__MODULE__{
             portal: TransportBehaviour.portal(),
             destination: term(),
-            device_id: non_neg_integer() | nil,
+            npci_id: NpciTarget.t() | nil,
             apdu: Protocol.apdu(),
             send_opts: Keyword.t(),
             call_ref: term(),
@@ -160,7 +160,7 @@ defmodule BACnet.Stack.Client do
     @fields [
       :portal,
       :destination,
-      :device_id,
+      :npci_id,
       :apdu,
       :send_opts,
       :call_ref,
@@ -192,7 +192,7 @@ defmodule BACnet.Stack.Client do
             portal: TransportBehaviour.portal(),
             service_req: Protocol.apdu(),
             source_addr: term(),
-            device_id: non_neg_integer() | nil,
+            npci_id: NpciTarget.t() | nil,
             ref: reference(),
             monotonic_time: integer(),
             has_retried: boolean(),
@@ -205,7 +205,7 @@ defmodule BACnet.Stack.Client do
       :portal,
       :service_req,
       :source_addr,
-      :device_id,
+      :npci_id,
       :ref,
       :monotonic_time,
       :has_retried,
@@ -226,7 +226,7 @@ defmodule BACnet.Stack.Client do
     Key for the application reply timer.
     """
     @type app_timer_key ::
-            {address :: term(), device_id :: non_neg_integer() | nil, invoke_id :: byte()}
+            {address :: term(), npci_id :: NpciTarget.t() | nil, invoke_id :: byte()}
 
     @typedoc """
     Representative type for its purpose.
@@ -241,9 +241,10 @@ defmodule BACnet.Stack.Client do
               optional(app_timer_key()) => BACnet.Stack.Client.ReplyTimer.t()
             },
             free_invoke_ids: %{
-              optional({term(), non_neg_integer() | nil}) => :queue.queue(byte())
+              optional({term(), NpciTarget.t() | nil}) => :queue.queue(byte())
             },
             notification_receiver: [Process.dest()],
+            notification_recv_monitors: %{optional(pid()) => reference()},
             segmentator: Segmentator.server(),
             segments_store: SegmentsStore.server(),
             transport_broadcast_addr: term(),
@@ -267,6 +268,7 @@ defmodule BACnet.Stack.Client do
       :app_reply_timers,
       :free_invoke_ids,
       :notification_receiver,
+      :notification_recv_monitors,
       :segmentator,
       :segments_store,
       :transport_broadcast_addr,
@@ -307,11 +309,11 @@ defmodule BACnet.Stack.Client do
   @typedoc """
   Per-source APDU timeouts.
 
-  Device ID is only known, if the source transmits it with the APDU,
-  as such, most of the time it can be nil.
+  The optional NPCI target is the complete source network/address pair, not a
+  BACnet Device object instance. A nil target is the fallback for that transport source.
   """
   @type apdu_timeouts :: %{
-          optional({source_address :: term(), device_id :: non_neg_integer() | nil}) =>
+          optional({source_address :: term(), npci_id :: NpciTarget.t() | nil}) =>
             apdu_timeout :: non_neg_integer()
         }
 
@@ -352,6 +354,8 @@ defmodule BACnet.Stack.Client do
     - `disable_app_timeout: boolean()` - Optional. Disables the application timeout mechanism.
     - `disable_invoke_id_management: boolean()` - Optional. Disables `invoke_id` management and override in request payloads.
     - `notification_receiver: Process.dest() | [Process.dest()]` - Optional. The destination to send messages to.
+      Duplicate destinations are ignored. PID receivers are monitored and automatically removed on exit,
+      just like receivers added through `subscribe/2`.
     - `npci_source: NpciTarget.t()` - Optional. The NPCI target to use as source for outgoing APDUs.
     - `segmentator: Segmentator.server()` - Required. The segmentator server to use.
     - `segments_store: SegmentsStore.server()` - Required. The segments store server to use.
@@ -436,22 +440,24 @@ defmodule BACnet.Stack.Client do
   @doc """
   Add a source to the per-source APDU timeouts map. This is only used for receiving.
 
-  Each source is identified by source address and device ID (device ID
-  is only known if the source transmit it in the BACnet NPCI).
+  Each source is identified by its transport address and optional complete NPCI
+  source target (`NpciTarget`, including network and address). A nil target is
+  used as the fallback when no exact target entry exists.
   """
-  @spec add_apdu_timeout(server(), term(), non_neg_integer() | nil, non_neg_integer()) :: :ok
-  def add_apdu_timeout(server, source_address, device_id, timeout)
+  @spec add_apdu_timeout(server(), term(), NpciTarget.t() | nil, pos_integer()) :: :ok
+  def add_apdu_timeout(server, source_address, npci_id, timeout)
       when is_server(server) and
-             ((is_integer(device_id) and device_id in 1..4_194_302) or is_nil(device_id)) and
+             (is_struct(npci_id, NpciTarget) or is_nil(npci_id)) and
              is_integer(timeout) and timeout > 0 do
-    GenServer.call(server, {:add_apdu_timeout, source_address, device_id, timeout})
+    GenServer.call(server, {:add_apdu_timeout, source_address, npci_id, timeout})
   end
 
   @doc """
   Get the per-source APDU timeouts map. This is only used for receiving.
 
-  Each source is identified by source address and device ID (device ID
-  is only known if the source transmit it in the BACnet NPCI).
+  Each source is identified by its transport address and optional complete NPCI
+  source target (`NpciTarget`, including network and address). A nil target is
+  used as the fallback when no exact target entry exists.
   """
   @spec get_apdu_timeouts(server()) :: {:ok, apdu_timeouts()}
   def get_apdu_timeouts(server) when is_server(server) do
@@ -509,14 +515,14 @@ defmodule BACnet.Stack.Client do
   @doc """
   Remove a source from the per-source APDU timeouts map. This is only used for receiving.
 
-  Each source is identified by source address and device ID (device ID
-  is only known if the source transmit it in the BACnet NPCI).
+  Each source is identified by its transport address and optional complete NPCI
+  source target (`NpciTarget`, including network and address).
   """
-  @spec remove_apdu_timeout(server(), term(), non_neg_integer() | nil) :: :ok
-  def remove_apdu_timeout(server, source_address, device_id)
+  @spec remove_apdu_timeout(server(), term(), NpciTarget.t() | nil) :: :ok
+  def remove_apdu_timeout(server, source_address, npci_id)
       when is_server(server) and
-             ((is_integer(device_id) and device_id in 1..4_194_302) or is_nil(device_id)) do
-    GenServer.call(server, {:remove_apdu_timeout, source_address, device_id})
+             (is_struct(npci_id, NpciTarget) or is_nil(npci_id)) do
+    GenServer.call(server, {:remove_apdu_timeout, source_address, npci_id})
   end
 
   @doc """
@@ -550,10 +556,12 @@ defmodule BACnet.Stack.Client do
 
   See the `c:BACnet.Stack.TransportBehaviour.send/4` documentation for what `opts` can be.
   In addition the following are available:
-    - `device_id: pos_integer()` - Optional. The remote BACnet device ID.
-      Only used for invoke ID management together with the destination address.
-      Specifying it allows invoke IDs to be used on a per device ID basis,
-      if multiple devices run on the same destination address (i.e. MS/TP to IP gateway).
+    - `npci_id: NpciTarget.t()` - Optional. The remote network/address pair
+      used to scope invoke ID allocation together with the transport destination.
+      Set it to the same complete target used in `:destination` or `:npci.destination`
+      when allocating invoke IDs independently for devices behind a router.
+      This option does not configure routing; omit it to share one invoke ID pool
+      for the transport destination. It is not a BACnet Device object instance.
       Please note, if wrongfully used, this may lead to collisions and invalid data -
       including  replies sent to requests that were never meant for that request.
     - `max_apdu_length: pos_integer()` - Optional. The maximum APDU length
@@ -596,8 +604,9 @@ defmodule BACnet.Stack.Client do
   @doc """
   Set the per-source APDU timeouts map. This is only used for receiving.
 
-  Each source is identified by source address and device ID (device ID
-  is only known if the source transmit it in the BACnet NPCI).
+  Each source is identified by its transport address and optional complete NPCI
+  source target (`NpciTarget`, including network and address). A nil target is
+  used as the fallback when no exact target entry exists.
   """
   @spec set_apdu_timeouts(server(), apdu_timeouts()) :: :ok
   def set_apdu_timeouts(server, %{} = timeouts) when is_server(server) do
@@ -625,6 +634,8 @@ defmodule BACnet.Stack.Client do
 
   After this function returns, the subscriber will stop receiving
   process messages as lined out by the module documentation.
+  Its PID monitor, if present, is removed and
+  queued `:DOWN` messages for that monitor are flushed.
   """
   @spec unsubscribe(server(), pid() | Process.dest() | GenServer.server()) :: :ok
   def unsubscribe(server, subscriber) when is_server(server) and is_server(subscriber) do
@@ -655,13 +666,19 @@ defmodule BACnet.Stack.Client do
       |> Map.put_new(:npci_source, nil)
       |> Map.put_new(:segmented_rcv_window_overwrite, false)
 
+    receivers = opts |> Map.get(:notification_receiver, []) |> List.wrap() |> Enum.uniq()
+
+    receiver_monitors =
+      Map.new(for pid <- receivers, is_pid(pid), do: {pid, Process.monitor(pid)})
+
     state = %State{
       apdu_timers: %{},
       apdu_timeouts: %{},
       app_reply_mapping: %{},
       app_reply_timers: %{},
       free_invoke_ids: %{},
-      notification_receiver: List.wrap(Map.get(opts, :notification_receiver, [])),
+      notification_receiver: receivers,
+      notification_recv_monitors: receiver_monitors,
       segmentator: opts.segmentator,
       segments_store: opts.segments_store,
       transport_broadcast_addr: transport_mod.get_broadcast_address(transport_pid),
@@ -683,7 +700,7 @@ defmodule BACnet.Stack.Client do
   end
 
   def handle_call(
-        {:add_apdu_timeout, source_address, device_id, timeout},
+        {:add_apdu_timeout, source_address, npci_id, timeout},
         _from,
         %State{apdu_timeouts: apdu_timeouts} = state
       ) do
@@ -691,7 +708,7 @@ defmodule BACnet.Stack.Client do
 
     new_state = %{
       state
-      | apdu_timeouts: Map.put(apdu_timeouts, {source_address, device_id}, timeout)
+      | apdu_timeouts: Map.put(apdu_timeouts, {source_address, npci_id}, timeout)
     }
 
     {:reply, :ok, new_state}
@@ -703,13 +720,13 @@ defmodule BACnet.Stack.Client do
   end
 
   def handle_call(
-        {:remove_apdu_timeout, source_address, device_id},
+        {:remove_apdu_timeout, source_address, npci_id},
         _from,
         %State{apdu_timeouts: apdu_timeouts} = state
       ) do
     log_debug(fn -> "Client: Received remove_apdu_timeout request" end)
 
-    new_state = %{state | apdu_timeouts: Map.delete(apdu_timeouts, {source_address, device_id})}
+    new_state = %{state | apdu_timeouts: Map.delete(apdu_timeouts, {source_address, npci_id})}
     {:reply, :ok, new_state}
   end
 
@@ -765,17 +782,21 @@ defmodule BACnet.Stack.Client do
     log_debug(fn -> "Client: Received subscribe request" end)
 
     new_state =
-      Map.update!(state, :notification_receiver, fn list ->
+      state
+      |> Map.update!(:notification_receiver, fn list ->
         if Enum.member?(list, pid) do
           list
         else
+          [pid | list]
+        end
+      end)
+      |> Map.update!(:notification_recv_monitors, fn monitors ->
+        if is_pid(pid) and not Map.has_key?(monitors, pid) do
           # Monitor PIDs, because they should be removed
           # once the subscribing process dies
-          if is_pid(pid) do
-            Process.monitor(pid)
-          end
-
-          [pid | list]
+          Map.put(monitors, pid, Process.monitor(pid))
+        else
+          monitors
         end
       end)
 
@@ -786,8 +807,20 @@ defmodule BACnet.Stack.Client do
     log_debug(fn -> "Client: Received unsubscribe request" end)
 
     new_state =
-      Map.update!(state, :notification_receiver, fn list ->
+      state
+      |> Map.update!(:notification_receiver, fn list ->
         List.delete(list, pid)
+      end)
+      |> Map.update!(:notification_recv_monitors, fn monitors ->
+        # Demonitor the PID
+        case Map.pop(monitors, pid) do
+          {nil, mon} ->
+            mon
+
+          {ref, mon} ->
+            Process.demonitor(ref, [:flush])
+            mon
+        end
       end)
 
     {:reply, :ok, new_state}
@@ -807,25 +840,18 @@ defmodule BACnet.Stack.Client do
     else
       is_valid_dest ->
         if is_valid_dest do
+          # Match the effective routing target: an explicit NPCI overrides :destination
+          routed_target =
+            case Keyword.get(opts, :npci) do
+              %NPCI{destination: target} -> target
+              nil -> opts[:destination]
+              _other -> nil
+            end
+
           apdu_timer_id =
-            case Keyword.fetch(opts, :destination) do
-              {:ok, %NpciTarget{address: addr}} when not is_nil(addr) ->
-                addr
-
-              _other ->
-                case Keyword.fetch(opts, :npci) do
-                  {:ok, %NPCI{} = target} ->
-                    case target.destination do
-                      %NpciTarget{address: addr} when not is_nil(addr) ->
-                        addr
-
-                      _other ->
-                        nil
-                    end
-
-                  _other ->
-                    nil
-                end
+            case routed_target do
+              %NpciTarget{address: addr} = target when not is_nil(addr) -> target
+              _other -> nil
             end
 
           if state.opts.disable_invoke_id_management and
@@ -843,7 +869,7 @@ defmodule BACnet.Stack.Client do
                    opts,
                    destination,
                    state.transport_portal,
-                   opts[:device_id],
+                   opts[:npci_id],
                    apdu_timer_id,
                    needs_tracking,
                    from,
@@ -892,6 +918,7 @@ defmodule BACnet.Stack.Client do
 
           new_opts =
             opts
+            |> kw_put_new(:destination, get_reply_opts_destination(reply.npci))
             |> Keyword.put_new(:max_apdu_length, reply.service_req.max_apdu)
             |> Keyword.put_new_lazy(:max_segments, fn ->
               case reply.service_req.max_segments do
@@ -913,8 +940,8 @@ defmodule BACnet.Stack.Client do
                  new_opts,
                  destination,
                  reply.portal,
-                 reply.device_id,
-                 reply.device_id,
+                 reply.npci_id,
+                 reply.npci_id,
                  false,
                  nil,
                  state,
@@ -926,7 +953,7 @@ defmodule BACnet.Stack.Client do
               new_state2 =
                 new_state
                 |> Map.update!(:app_reply_mapping, fn mapping ->
-                  Map.delete(mapping, reply_key)
+                  Map.delete(mapping, ref)
                 end)
                 |> Map.update!(:app_reply_timers, fn timers ->
                   Map.delete(timers, reply_key)
@@ -1082,7 +1109,18 @@ defmodule BACnet.Stack.Client do
           Telemetry.execute_client_request_apdu_timer(self(), timer, state)
 
           GenServer.reply(timer.call_ref, {:error, :apdu_timeout})
-          %{state | apdu_timers: Map.delete(state.apdu_timers, key)}
+
+          # Update state
+          new_state = %{state | apdu_timers: Map.delete(state.apdu_timers, key)}
+
+          # Return invoke ID to map
+          case key do
+            {_dest, _dev, invoke_id} when not is_nil(invoke_id) ->
+              update_free_invoke_ids(timer.destination, timer.npci_id, invoke_id, new_state)
+
+            _other ->
+              new_state
+          end
 
         {:ok, %ApduTimer{} = timer} ->
           case send_data(
@@ -1090,7 +1128,7 @@ defmodule BACnet.Stack.Client do
                  timer.send_opts,
                  timer.destination,
                  timer.portal,
-                 timer.device_id,
+                 timer.npci_id,
                  nil,
                  # No tracking because we update the timer "inline"
                  false,
@@ -1122,6 +1160,19 @@ defmodule BACnet.Stack.Client do
                 "Client: Error on trying to re-send APDU on APDU timeout, error: #{inspect(err)}"
               end)
 
+              # Try again a tiny bit later, store timer reference in state
+              %{
+                state
+                | apdu_timers:
+                    Map.update!(state.apdu_timers, key, fn timer ->
+                      %{
+                        timer
+                        | timer:
+                            Process.send_after(self(), {:apdu_timer, key}, @apdu_timer_offset)
+                      }
+                    end)
+              }
+
               state
           end
 
@@ -1152,8 +1203,8 @@ defmodule BACnet.Stack.Client do
                  get_reply_opts_for_npci(apdu, :original_unicast, reply.npci, state),
                  reply.source_addr,
                  reply.portal,
-                 reply.device_id,
-                 reply.device_id,
+                 reply.npci_id,
+                 reply.npci_id,
                  false,
                  nil,
                  state,
@@ -1199,12 +1250,22 @@ defmodule BACnet.Stack.Client do
     {:noreply, new_state}
   end
 
-  def handle_info({:DOWN, _ref, :process, pid, _reason}, %State{} = state) do
-    # Remove dead processes from our notification receiver list
+  def handle_info({:DOWN, ref, :process, pid, _reason}, %State{} = state) do
+    # Only remove the subscription that owns this monitor
+    # A stale DOWN from a previous subscription must not
+    # remove a newer subscription for the same PID
     new_state =
-      Map.update!(state, :notification_receiver, fn list ->
-        List.delete(list, pid)
-      end)
+      case Map.fetch(state.notification_recv_monitors, pid) do
+        {:ok, ^ref} ->
+          %{
+            state
+            | notification_receiver: List.delete(state.notification_receiver, pid),
+              notification_recv_monitors: Map.delete(state.notification_recv_monitors, pid)
+          }
+
+        _other ->
+          state
+      end
 
     {:noreply, new_state}
   end
@@ -1247,14 +1308,10 @@ defmodule BACnet.Stack.Client do
             "more_follows: #{inspect(incomplete.more_follows)}"
         end)
 
-        # Get the BACnet device ID, if available from NPCI source
-        device_id =
-          case npci.source do
-            %NpciTarget{address: adr} when adr != nil -> adr
-            _else -> nil
-          end
+        # Derive NPCI ID from NPCI source
+        npci_id = npci.source
 
-        reply_key = {source_address, device_id, incomplete.invoke_id}
+        reply_key = {source_address, npci_id, incomplete.invoke_id}
 
         # When we receive a segmented response, we need to reset the APDU timer,
         # because with many segments, the single timeout (default 3s) is too short
@@ -1423,12 +1480,8 @@ defmodule BACnet.Stack.Client do
         "sending Reject APDU to source"
     end)
 
-    # Get the BACnet device ID, if available from NPCI source
-    device_id =
-      case npci.source do
-        %NpciTarget{address: adr} when adr != nil -> adr
-        _else -> nil
-      end
+    # Derive NPCI ID from NPCI source
+    npci_id = npci.source
 
     reject = %APDU.Reject{
       invoke_id: invoke_id,
@@ -1450,8 +1503,8 @@ defmodule BACnet.Stack.Client do
            get_reply_opts_for_npci(reject, bvlc, npci, state),
            source_address,
            portal,
-           device_id,
-           device_id,
+           npci_id,
+           npci_id,
            false,
            nil,
            state,
@@ -1486,22 +1539,18 @@ defmodule BACnet.Stack.Client do
 
   # Handle APDU since we have a listener
   defp handle_apdu(source_address, bvlc, %NPCI{} = npci, apdu, portal, %State{} = state) do
-    # Get the BACnet device ID, if available from NPCI source
-    device_id =
-      case npci.source do
-        %NpciTarget{address: adr} when adr != nil -> adr
-        _else -> nil
-      end
+    # Derive NPCI ID from NPCI source
+    npci_id = npci.source
 
     # Get the invoke_id from the APDU (only relevant for confirmed requests)
     invoke_id = Map.get(apdu, :invoke_id)
-    reply_key = {source_address, device_id, invoke_id}
+    reply_key = {source_address, npci_id, invoke_id}
 
     # If confirmed service request, look up and see if it already exists, if it does, ignore it
     # If it does not exist yet, create an app reply timer to send Abort APDU to client on timeout
     {handle, ref, new_state} =
       check_for_duplicated_requests(
-        device_id,
+        npci_id,
         source_address,
         bvlc,
         npci,
@@ -1517,16 +1566,16 @@ defmodule BACnet.Stack.Client do
     # end
 
     log_debug(fn ->
-      dev_id = if device_id, do: ":DEV-#{inspect(device_id)}"
+      npci_info = if npci_id, do: ":NPCI-#{format_npci_target(npci_id)}"
       keyword = if handle, do: "handled", else: "ignored"
 
-      "Client: Received APDU #{inspect(apdu.__struct__)} from #{inspect(source_address)}#{dev_id} to be #{keyword}"
+      "Client: Received APDU #{inspect(apdu.__struct__)} from #{inspect(source_address)}#{npci_info} to be #{keyword}"
     end)
 
     if handle do
       Telemetry.execute_client_inc_apdu_handled(self(), source_address, bvlc, npci, apdu, state)
 
-      do_handle_apdu(ref, source_address, bvlc, npci, apdu, portal, device_id, new_state)
+      do_handle_apdu(ref, source_address, bvlc, npci, apdu, portal, npci_id, new_state)
     else
       Telemetry.execute_client_inc_apdu_duplicated(
         self(),
@@ -1544,7 +1593,7 @@ defmodule BACnet.Stack.Client do
   # If confirmed service request, look up and see if it already exists, if it does, ignore it
   # If it does not exist yet, create an app reply timer to send abort APDU to client on timeout
   @spec check_for_duplicated_requests(
-          non_neg_integer() | nil,
+          NpciTarget.t() | nil,
           term(),
           Protocol.bvlc(),
           NPCI.t(),
@@ -1554,7 +1603,7 @@ defmodule BACnet.Stack.Client do
           State.t()
         ) :: {should_handle :: boolean(), reply_id :: reference() | nil, new_state :: State.t()}
   defp check_for_duplicated_requests(
-         device_id,
+         npci_id,
          source_address,
          bvlc,
          npci,
@@ -1565,7 +1614,7 @@ defmodule BACnet.Stack.Client do
        )
 
   defp check_for_duplicated_requests(
-         device_id,
+         npci_id,
          source_address,
          bvlc,
          %NPCI{} = npci,
@@ -1575,13 +1624,13 @@ defmodule BACnet.Stack.Client do
          %State{} = state
        ) do
     case Map.fetch(state.app_reply_timers, reply_key) do
-      # Duplicated request (same request by source_address, device_id, invoke_id)
+      # Duplicated request (same request by source_address, npci_id, invoke_id)
       {:ok, _reply} ->
         log_debug(fn ->
-          dev_id = if device_id, do: ":DEV-#{inspect(device_id)}"
+          npci_info = if npci_id, do: ":NPCI-#{format_npci_target(npci_id)}"
 
           "Client: Received duplicated request from " <>
-            inspect(source_address) <> "#{dev_id} with invoke ID #{apdu.invoke_id}"
+            inspect(source_address) <> "#{npci_info} with invoke ID #{apdu.invoke_id}"
         end)
 
         {false, nil, state}
@@ -1590,11 +1639,11 @@ defmodule BACnet.Stack.Client do
         # Get timeout or use default APDU timeout, and multiply with factor - the rest is our reserve to reply
         timeout =
           trunc(
-            Enum.find_value(state.apdu_timeouts, state.opts.apdu_timeout, fn
-              {{^source_address, ^device_id}, value} -> value
-              {{^source_address, nil}, value} -> value
-              _else -> nil
-            end) * @apdu_timeout_multiplicator
+            Map.get(
+              state.apdu_timeouts,
+              {source_address, npci_id},
+              Map.get(state.apdu_timeouts, {source_address, nil}, state.opts.apdu_timeout)
+            ) * @apdu_timeout_multiplicator
           )
 
         put_app_reply_timer(
@@ -1605,7 +1654,7 @@ defmodule BACnet.Stack.Client do
             portal: portal,
             service_req: apdu,
             source_addr: source_address,
-            device_id: device_id,
+            npci_id: npci_id,
             ref: make_ref(),
             has_retried: false,
             monotonic_time: System.monotonic_time(),
@@ -1620,7 +1669,7 @@ defmodule BACnet.Stack.Client do
   end
 
   defp check_for_duplicated_requests(
-         _device_id,
+         _npci_id,
          _source_address,
          _bvlc,
          _npci,
@@ -1652,10 +1701,10 @@ defmodule BACnet.Stack.Client do
           NPCI.t(),
           Protocol.apdu(),
           TransportBehaviour.portal(),
-          non_neg_integer() | nil,
+          NpciTarget.t() | nil,
           State.t()
         ) :: State.t()
-  defp do_handle_apdu(ref, source_address, bvlc, npci, apdu, portal, device_id, state)
+  defp do_handle_apdu(ref, source_address, bvlc, npci, apdu, portal, npci_id, state)
 
   defp do_handle_apdu(
          ref,
@@ -1664,7 +1713,7 @@ defmodule BACnet.Stack.Client do
          %NPCI{} = npci,
          %ConfirmedServiceRequest{} = apdu,
          portal,
-         device_id,
+         npci_id,
          %State{} = state
        ) do
     send_notification_apdu(
@@ -1674,7 +1723,7 @@ defmodule BACnet.Stack.Client do
       npci,
       apdu,
       portal,
-      device_id,
+      npci_id,
       state
     )
   end
@@ -1686,7 +1735,7 @@ defmodule BACnet.Stack.Client do
          %NPCI{} = npci,
          %APDU.UnconfirmedServiceRequest{} = apdu,
          portal,
-         device_id,
+         npci_id,
          %State{} = state
        ) do
     send_notification_apdu(
@@ -1696,7 +1745,7 @@ defmodule BACnet.Stack.Client do
       npci,
       apdu,
       portal,
-      device_id,
+      npci_id,
       state
     )
   end
@@ -1708,11 +1757,11 @@ defmodule BACnet.Stack.Client do
          %NPCI{} = npci,
          %type{} = apdu,
          portal,
-         device_id,
+         npci_id,
          %State{} = state
        )
        when type in [APDU.ComplexACK, APDU.SimpleACK] do
-    case remove_apdu_timer_for_response(source_address, apdu, device_id, state) do
+    case remove_apdu_timer_for_response(source_address, apdu, npci_id, state) do
       {nil, new_state} ->
         send_notification_apdu(
           ref,
@@ -1721,7 +1770,7 @@ defmodule BACnet.Stack.Client do
           npci,
           apdu,
           portal,
-          device_id,
+          npci_id,
           new_state
         )
 
@@ -1748,7 +1797,7 @@ defmodule BACnet.Stack.Client do
          %NPCI{} = _npci,
          %APDU.SegmentACK{} = apdu,
          _portal,
-         _device_id,
+         _npci_id,
          %State{} = state
        ) do
     # Send SegmentACK to Segmentator for processing
@@ -1781,7 +1830,7 @@ defmodule BACnet.Stack.Client do
          %NPCI{} = npci,
          %type{} = apdu,
          portal,
-         device_id,
+         npci_id,
          %State{} = state
        )
        when type in [APDU.Abort, APDU.Error, APDU.Reject] do
@@ -1789,7 +1838,7 @@ defmodule BACnet.Stack.Client do
     Segmentator.handle_apdu(state.segmentator, source_address, apdu)
     SegmentsStore.cancel(state.segments_store, source_address, apdu)
 
-    case remove_apdu_timer_for_response(source_address, apdu, device_id, state) do
+    case remove_apdu_timer_for_response(source_address, apdu, npci_id, state) do
       {nil, new_state} ->
         send_notification_apdu(
           ref,
@@ -1798,7 +1847,7 @@ defmodule BACnet.Stack.Client do
           npci,
           apdu,
           portal,
-          device_id,
+          npci_id,
           new_state
         )
 
@@ -1818,9 +1867,9 @@ defmodule BACnet.Stack.Client do
     end
   end
 
-  @spec update_free_invoke_ids(term(), non_neg_integer() | nil, byte(), State.t()) :: State.t()
-  defp update_free_invoke_ids(destination, device_id, invoke_id, state) do
-    key = {destination, device_id}
+  @spec update_free_invoke_ids(term(), NpciTarget.t() | nil, byte(), State.t()) :: State.t()
+  defp update_free_invoke_ids(destination, npci_id, invoke_id, state) do
+    key = {destination, npci_id}
 
     case Map.fetch(state.free_invoke_ids, key) do
       {:ok, queue} ->
@@ -1843,29 +1892,29 @@ defmodule BACnet.Stack.Client do
   @spec remove_apdu_timer_for_response(
           term(),
           Protocol.apdu(),
-          non_neg_integer() | nil,
+          NpciTarget.t() | nil,
           State.t()
         ) ::
           {ApduTimer.t() | nil, State.t()}
   defp remove_apdu_timer_for_response(
          source_address,
          %{invoke_id: invoke_id} = _apdu,
-         device_id,
+         npci_id,
          state
        ) do
-    reply_key = {source_address, device_id, invoke_id}
+    reply_key = {source_address, npci_id, invoke_id}
 
     case Map.fetch(state.apdu_timers, reply_key) do
       {:ok, %ApduTimer{} = timer} ->
         if timer.timer, do: Process.cancel_timer(timer.timer)
 
-        new_state = update_free_invoke_ids(timer.destination, timer.device_id, invoke_id, state)
+        new_state = update_free_invoke_ids(timer.destination, timer.npci_id, invoke_id, state)
         {timer, %{new_state | apdu_timers: Map.delete(state.apdu_timers, reply_key)}}
 
       _else ->
-        # If device_id is not nil and we didn't find a APDU timer,
+        # If npci_id is not nil and we didn't find a APDU timer,
         # try to find a generic one (with explicit nil)
-        if device_id do
+        if npci_id do
           reply_key2 = {source_address, nil, invoke_id}
 
           case Map.fetch(state.apdu_timers, reply_key2) do
@@ -1873,7 +1922,7 @@ defmodule BACnet.Stack.Client do
               if timer.timer, do: Process.cancel_timer(timer.timer)
 
               new_state =
-                update_free_invoke_ids(timer.destination, timer.device_id, invoke_id, state)
+                update_free_invoke_ids(timer.destination, nil, invoke_id, state)
 
               {timer, %{new_state | apdu_timers: Map.delete(state.apdu_timers, reply_key2)}}
 
@@ -1893,7 +1942,7 @@ defmodule BACnet.Stack.Client do
           NPCI.t(),
           Protocol.apdu(),
           TransportBehaviour.portal(),
-          non_neg_integer() | nil,
+          NpciTarget.t() | nil,
           State.t()
         ) :: State.t()
   defp send_notification_apdu(
@@ -1903,7 +1952,7 @@ defmodule BACnet.Stack.Client do
          %NPCI{} = npci,
          apdu,
          _portal,
-         _device_id,
+         _npci_id,
          %State{notification_receiver: dest} = state
        ) do
     send_process_dest(dest, {:bacnet_client, ref, apdu, {source_address, bvlc, npci}, self()})
@@ -1925,10 +1974,10 @@ defmodule BACnet.Stack.Client do
 
   defp new_invoke_id_queue(), do: :queue.from_list(Enum.to_list(0..255//1))
 
-  @spec find_free_invoke_id(term(), non_neg_integer() | nil, State.t()) ::
+  @spec find_free_invoke_id(term(), NpciTarget.t() | nil, State.t()) ::
           {:ok, byte(), State.t()} | :error
-  defp find_free_invoke_id(destination, device_id, %State{free_invoke_ids: free} = state) do
-    key = {destination, device_id}
+  defp find_free_invoke_id(destination, npci_id, %State{free_invoke_ids: free} = state) do
+    key = {destination, npci_id}
 
     case Map.fetch(free, key) do
       {:ok, queue} ->
@@ -1952,8 +2001,8 @@ defmodule BACnet.Stack.Client do
           Keyword.t(),
           term(),
           TransportBehaviour.portal(),
-          non_neg_integer() | nil,
-          non_neg_integer() | nil,
+          NpciTarget.t() | nil,
+          NpciTarget.t() | nil,
           boolean(),
           term() | nil,
           State.t(),
@@ -1964,8 +2013,8 @@ defmodule BACnet.Stack.Client do
          opts,
          destination,
          portal,
-         device_id,
-         apdu_timer_device_key,
+         npci_id,
+         apdu_timer_npci_key,
          needs_tracking,
          call_ref,
          state,
@@ -1977,24 +2026,24 @@ defmodule BACnet.Stack.Client do
          opts,
          destination,
          portal,
-         device_id,
-         apdu_timer_device_key,
+         npci_id,
+         apdu_timer_npci_key,
          needs_tracking,
          call_ref,
          %State{opts: %{disable_invoke_id_management: false}} = state,
          false
        )
-       when is_integer(device_id) or is_nil(device_id) or
-              (is_integer(apdu_timer_device_key) or is_nil(apdu_timer_device_key)) do
-    case find_free_invoke_id(destination, device_id, state) do
+       when (is_struct(npci_id, NpciTarget) or is_nil(npci_id)) and
+              (is_struct(apdu_timer_npci_key, NpciTarget) or is_nil(apdu_timer_npci_key)) do
+    case find_free_invoke_id(destination, npci_id, state) do
       {:ok, new_invoke_id, new_state} ->
         send_data(
           %{apdu | invoke_id: new_invoke_id},
           opts,
           destination,
           portal,
-          device_id,
-          apdu_timer_device_key,
+          npci_id,
+          apdu_timer_npci_key,
           needs_tracking,
           call_ref,
           new_state,
@@ -2011,40 +2060,30 @@ defmodule BACnet.Stack.Client do
          opts,
          destination,
          portal,
-         device_id,
-         apdu_timer_device_key,
+         npci_id,
+         apdu_timer_npci_key,
          needs_tracking,
          call_ref,
          %State{transport_mod: trans_mod} = state,
          _skip_invoke_id_check
        )
-       when is_integer(device_id) or is_nil(device_id) or
-              (is_integer(apdu_timer_device_key) or is_nil(apdu_timer_device_key)) do
+       when (is_struct(npci_id, NpciTarget) or is_nil(npci_id)) and
+              (is_struct(apdu_timer_npci_key, NpciTarget) or is_nil(apdu_timer_npci_key)) do
     sys_mono_time = System.monotonic_time()
-    key = {destination, apdu_timer_device_key, Map.get(apdu, :invoke_id)}
+    key = {destination, apdu_timer_npci_key, Map.get(apdu, :invoke_id)}
 
     try do
       # Catch any errors when trying to encode the APDU
       bin = EncoderProtocol.encode(apdu)
 
-      max_apdu_len =
-        case Keyword.fetch(opts, :max_apdu_length) do
-          {:ok, val} ->
-            max_npdu =
-              if function_exported?(trans_mod, :max_ext_npdu_length, 0) do
-                trans_mod.max_ext_npdu_length()
-              else
-                trans_mod.max_npdu_length()
-              end
-
-            # 50 is the minimum APDU size each device needs to support
-            min(max(val, 50), max_npdu)
-
-          _error ->
-            trans_mod.max_npdu_length()
+      max_npdu_len =
+        if function_exported?(trans_mod, :max_ext_npdu_length, 0) do
+          trans_mod.max_ext_npdu_length()
+        else
+          trans_mod.max_npdu_length()
         end
 
-      {bin, max_apdu_len}
+      {bin, max_npdu_len}
     catch
       kind, e ->
         Telemetry.execute_client_exception(
@@ -2058,10 +2097,9 @@ defmodule BACnet.Stack.Client do
 
         {:error, {e, __STACKTRACE__}}
     else
-      {apdu_data, max_apdu_len0} ->
+      {apdu_data, max_npdu_len} ->
         send_opts =
           opts
-          |> Keyword.drop([:max_apdu_length, :max_segments, :segmentation_supported])
           |> kw_put_new(:source, state.opts.npci_source)
           |> Keyword.put_new(:is_broadcast, state.transport_broadcast_addr == destination)
 
@@ -2071,10 +2109,10 @@ defmodule BACnet.Stack.Client do
             send_opts,
             destination,
             portal,
-            device_id,
-            apdu_timer_device_key,
+            npci_id,
+            apdu_timer_npci_key,
             state,
-            {apdu_data, max_apdu_len0}
+            {apdu_data, max_npdu_len}
           )
 
         if needs_tracking do
@@ -2083,7 +2121,7 @@ defmodule BACnet.Stack.Client do
               timer = %ApduTimer{
                 portal: portal,
                 destination: destination,
-                device_id: device_id,
+                npci_id: npci_id,
                 apdu: apdu,
                 send_opts: opts,
                 call_ref: call_ref,
@@ -2134,8 +2172,8 @@ defmodule BACnet.Stack.Client do
           Keyword.t(),
           term(),
           TransportBehaviour.portal(),
-          non_neg_integer() | nil,
-          non_neg_integer() | nil,
+          NpciTarget.t() | nil,
+          NpciTarget.t() | nil,
           State.t(),
           {iodata(), non_neg_integer()}
         ) :: {result :: :ok | {:error, term()}, apdu_too_long :: boolean()}
@@ -2144,20 +2182,26 @@ defmodule BACnet.Stack.Client do
          send_opts,
          destination,
          portal,
-         device_id,
-         apdu_timer_device_key,
+         npci_id,
+         apdu_timer_npci_key,
          %State{transport_mod: trans_mod} = state,
-         {apdu_data, max_apdu_len0}
+         {apdu_data, max_npdu_len}
        )
-       when is_integer(device_id) or is_nil(device_id) or
-              (is_integer(apdu_timer_device_key) or is_nil(apdu_timer_device_key)) do
-    key = {destination, apdu_timer_device_key, Map.get(apdu, :invoke_id)}
+       when (is_struct(npci_id, NpciTarget) or is_nil(npci_id)) and
+              (is_struct(apdu_timer_npci_key, NpciTarget) or is_nil(apdu_timer_npci_key)) do
+    key = {destination, apdu_timer_npci_key, Map.get(apdu, :invoke_id)}
 
-    # Do basic NPCI size calculation and subtract it from the max APDU size
-    # 6 = APCI header, 2 = NPCI header
-    max_apdu_len =
-      max_apdu_len0 - 6 - 2 - if(send_opts[:source], do: 9, else: 0) -
+    # Reserve NPCI space in the transport's NPDU budget before applying the
+    # peer's complete APDU limit. The encoder reserves each segment's APCI.
+    transport_apdu_len =
+      max_npdu_len - 2 - if(send_opts[:source], do: 9, else: 0) -
         if(send_opts[:destination], do: 10, else: 0)
+
+    max_apdu_len =
+      min(
+        max(Keyword.get(send_opts, :max_apdu_length, transport_apdu_len), 50),
+        transport_apdu_len
+      )
 
     apdu_length = IO.iodata_length(apdu_data)
     max_segments = send_opts[:max_segments] || 2
@@ -2190,7 +2234,7 @@ defmodule BACnet.Stack.Client do
                 state
               )
 
-              trans_mod.send(portal, destination, abort, send_opts)
+              trans_mod.send(portal, destination, abort, transport_send_opts(send_opts))
             else
               :ok
             end
@@ -2223,7 +2267,7 @@ defmodule BACnet.Stack.Client do
                 state
               )
 
-              trans_mod.send(portal, destination, abort, send_opts)
+              trans_mod.send(portal, destination, abort, transport_send_opts(send_opts))
             else
               :ok
             end
@@ -2245,6 +2289,7 @@ defmodule BACnet.Stack.Client do
 
           seg_opts =
             send_opts
+            |> transport_send_opts()
             |> Keyword.put(:callback_to, self())
             |> Keyword.put(:callback_msg, {:apdu_timer_setup, key})
 
@@ -2272,7 +2317,7 @@ defmodule BACnet.Stack.Client do
             state
           )
 
-          trans_mod.send(portal, destination, apdu_data, send_opts)
+          trans_mod.send(portal, destination, apdu_data, transport_send_opts(send_opts))
       end
 
     {result, apdu_too_long}
@@ -2296,11 +2341,7 @@ defmodule BACnet.Stack.Client do
        ) do
     case APDU.get_invoke_id_from_raw_apdu(raw_apdu) do
       {:ok, invoke_id} ->
-        device_id =
-          case npci.source do
-            %NpciTarget{address: adr} when adr != nil -> adr
-            _else -> nil
-          end
+        npci_id = npci.source
 
         reject = %APDU.Reject{
           invoke_id: invoke_id,
@@ -2312,8 +2353,8 @@ defmodule BACnet.Stack.Client do
                get_reply_opts_for_npci(reject, bvlc, npci, state),
                source_address,
                portal,
-               device_id,
-               device_id,
+               npci_id,
+               npci_id,
                false,
                nil,
                state,
@@ -2361,6 +2402,13 @@ defmodule BACnet.Stack.Client do
 
   defp get_reply_opts_destination(%NPCI{} = _npci) do
     nil
+  end
+
+  # These options drive segmentation inside the client. The transport send
+  # does not understand them.
+  @spec transport_send_opts(Keyword.t()) :: Keyword.t()
+  defp transport_send_opts(opts) do
+    Keyword.drop(opts, [:max_apdu_length, :max_segments, :segmentation_supported])
   end
 
   @spec kw_put_lazy(Keyword.t(), atom(), term()) :: Keyword.t()
@@ -2588,12 +2636,12 @@ defmodule BACnet.Stack.Client do
   defp validate_send_opts(opts, function) when is_list(opts) and is_binary(function) do
     # Validate send options
     Enum.each(opts, fn
-      {:device_id, device_id} ->
-        unless (is_integer(device_id) and device_id in 1..4_194_302) or is_nil(device_id) do
+      {:npci_id, npci_id} ->
+        unless is_struct(npci_id, NpciTarget) or is_nil(npci_id) do
           raise ArgumentError,
             message:
-              "#{function} expected device_id in opts to be nil " <>
-                " or an integer in the range 1 - 4_194_302 inclusive, got: " <> inspect(device_id)
+              "#{function} expected npci_id in opts to be nil " <>
+                " or a NpciTarget struct, got: " <> inspect(npci_id)
         end
 
       {:max_apdu_length, max_apdu_length} ->
@@ -2624,5 +2672,9 @@ defmodule BACnet.Stack.Client do
       _else ->
         nil
     end)
+  end
+
+  defp format_npci_target(%NpciTarget{} = target) do
+    "#{target.net}.#{target.address}"
   end
 end

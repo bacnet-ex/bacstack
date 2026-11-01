@@ -267,6 +267,30 @@ defmodule BACnet.Test.Protocol.Services.AcknowledgeAlarmTest do
              )
   end
 
+  test "encoding AcknowledgeAlarm preserves segmented_response_accepted=false" do
+    timestamp = %BACnet.Protocol.BACnetTimestamp{
+      type: :sequence_number,
+      sequence_number: 1,
+      time: nil,
+      datetime: nil
+    }
+
+    service = %AcknowledgeAlarm{
+      process_identifier: 1,
+      event_object: %BACnet.Protocol.ObjectIdentifier{type: :analog_input, instance: 1},
+      event_state_acknowledged: :normal,
+      event_timestamp: timestamp,
+      acknowledge_source: "Test",
+      time_of_ack: timestamp
+    }
+
+    assert {:ok, %ConfirmedServiceRequest{segmented_response_accepted: false} = apdu} =
+             AcknowledgeAlarm.to_apdu(service, segmented_response_accepted: false)
+
+    assert {:ok, ^apdu} =
+             ServicesProtocol.to_apdu(service, segmented_response_accepted: false)
+  end
+
   test "protocol implementation get name" do
     assert :acknowledge_alarm ==
              ServicesProtocol.get_name(%AcknowledgeAlarm{

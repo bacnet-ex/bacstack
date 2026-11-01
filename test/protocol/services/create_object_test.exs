@@ -267,6 +267,19 @@ defmodule BACnet.Test.Protocol.Services.CreateObjectTest do
              )
   end
 
+  test "encoding CreateObject preserves segmented_response_accepted=false" do
+    service = %CreateObject{
+      object_specifier: %ObjectIdentifier{type: :analog_input, instance: 1},
+      initial_values: []
+    }
+
+    assert {:ok, %ConfirmedServiceRequest{segmented_response_accepted: false} = apdu} =
+             CreateObject.to_apdu(service, segmented_response_accepted: false)
+
+    assert {:ok, ^apdu} =
+             ServicesProtocol.to_apdu(service, segmented_response_accepted: false)
+  end
+
   test "protocol implementation get name" do
     assert :create_object ==
              ServicesProtocol.get_name(%CreateObject{

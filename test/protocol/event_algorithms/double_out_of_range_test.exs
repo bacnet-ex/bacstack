@@ -992,4 +992,88 @@ defmodule BACnet.Protocol.EventAlgorithms.DoubleOutOfRangeTest do
 
     assert_raise ArgumentError, fn -> DoubleOutOfRange.update(state, status_flags: nil) end
   end
+
+  test "starts a fresh off-normal delay after the condition clears" do
+    {algorithm, state, normal, high} = interrupted_delay_fixture(60)
+    assert {:delayed_event, pending} = algorithm.execute(state)
+    assert {:delayed_event, ^pending} = algorithm.execute(pending)
+
+    # Model a deadline which has elapsed between evaluations without changing
+    # the system clock or waiting for a real 60-second delay
+    expired = %{pending | dt_offnormal: DateTime.add(DateTime.utc_now(), -60)}
+
+    assert {:no_event, %{dt_offnormal: nil, dt_normal: nil} = cleared} =
+             expired |> algorithm.update(monitored_value: normal) |> algorithm.execute()
+
+    result = cleared |> algorithm.update(monitored_value: high) |> algorithm.execute()
+
+    assert {:delayed_event, %{current_state: :normal}} = result
+  end
+
+  test "starts a fresh normal delay after recovery is interrupted" do
+    {algorithm, state, normal, high} = interrupted_delay_fixture(0)
+    assert {:event, alarm, _notification} = algorithm.execute(state)
+    parameters = %{alarm.parameters | time_delay_normal: 60}
+
+    assert {:delayed_event, pending} =
+             alarm
+             |> algorithm.update(parameters: parameters, monitored_value: normal)
+             |> algorithm.execute()
+
+    expired = %{pending | dt_normal: DateTime.add(DateTime.utc_now(), -60)}
+
+    assert {:no_event, %{dt_normal: nil} = interrupted} =
+             expired |> algorithm.update(monitored_value: high) |> algorithm.execute()
+
+    result = interrupted |> algorithm.update(monitored_value: normal) |> algorithm.execute()
+
+    assert {:delayed_event, %{current_state: :high_limit}} = result
+  end
+
+  test "setting a pending offnormal delay to zero takes effect immediately" do
+    {algorithm, state, _normal, _high} = interrupted_delay_fixture(60)
+    assert {:delayed_event, pending} = algorithm.execute(state)
+    parameters = %{pending.parameters | time_delay: 0}
+
+    assert {:event, finished, _notification} =
+             pending |> algorithm.update(parameters: parameters) |> algorithm.execute()
+
+    assert finished.current_state == :high_limit
+    assert finished.dt_offnormal == nil
+    assert finished.dt_normal == nil
+  end
+
+  test "setting a pending normal delay to zero takes effect immediately" do
+    {algorithm, state, normal, _high} = interrupted_delay_fixture(0)
+    assert {:event, alarm, _notification} = algorithm.execute(state)
+
+    assert {:delayed_event, pending} =
+             alarm |> algorithm.update(monitored_value: normal) |> algorithm.execute()
+
+    parameters = %{pending.parameters | time_delay_normal: 0}
+
+    assert {:event, finished, _notification} =
+             pending |> algorithm.update(parameters: parameters) |> algorithm.execute()
+
+    assert finished.current_state == :normal
+    assert finished.dt_offnormal == nil
+    assert finished.dt_normal == nil
+  end
+
+  defp interrupted_delay_fixture(delay) do
+    state =
+      DoubleOutOfRange.new(
+        11.0,
+        %LimitEnable{low_limit_enable: true, high_limit_enable: true},
+        %Params{
+          low_limit: 0.0,
+          high_limit: 10.0,
+          deadband: 1.0,
+          time_delay: delay,
+          time_delay_normal: 60
+        }
+      )
+
+    {DoubleOutOfRange, state, 5.0, 11.0}
+  end
 end

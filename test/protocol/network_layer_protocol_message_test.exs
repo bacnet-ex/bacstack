@@ -31,7 +31,7 @@ defmodule BACnet.Protocol.NetworkLayerProtocolMessageTest do
              NetworkLayerProtocolMessage.encode(%NetworkLayerProtocolMessage{
                network_message_type: :i_am_router_to_network,
                msg_type: nil,
-               data: [44, 85, 99, 12345, 65_534]
+               data: [44, 85, 99, 12_345, 65_534]
              })
   end
 
@@ -125,7 +125,7 @@ defmodule BACnet.Protocol.NetworkLayerProtocolMessageTest do
              NetworkLayerProtocolMessage.encode(%NetworkLayerProtocolMessage{
                network_message_type: :router_busy_to_network,
                msg_type: nil,
-               data: [44, 85, 99, 12345, 65_534]
+               data: [44, 85, 99, 12_345, 65_534]
              })
   end
 
@@ -143,7 +143,7 @@ defmodule BACnet.Protocol.NetworkLayerProtocolMessageTest do
              NetworkLayerProtocolMessage.encode(%NetworkLayerProtocolMessage{
                network_message_type: :router_available_to_network,
                msg_type: nil,
-               data: [44, 85, 99, 12345, 65_534]
+               data: [44, 85, 99, 12_345, 65_534]
              })
   end
 

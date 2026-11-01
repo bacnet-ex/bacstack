@@ -504,7 +504,7 @@ if Code.ensure_loaded?(Circuits.UART) do
 
         state_data.data_length == 0 ->
           log_debug_comm(state_data, fn ->
-            "BacMstpTransport_ReceiveFSM: Received valid frame of type #{state_data.frame_type} with no data"
+            "BacMstpTransport_ReceiveFSM: Received valid frame of type #{inspect(state_data.frame_type)} with no data"
           end)
 
           handle_mstp_frame(
@@ -650,7 +650,7 @@ if Code.ensure_loaded?(Circuits.UART) do
       cond do
         state_data.data_crc == 0xF0B8 ->
           log_debug_comm(state_data, fn ->
-            "BacMstpTransport_ReceiveFSM: Received valid frame of type #{state_data.frame_type} " <>
+            "BacMstpTransport_ReceiveFSM: Received valid frame of type #{inspect(state_data.frame_type)} " <>
               "with data length #{state_data.data_length}"
           end)
 
@@ -667,7 +667,7 @@ if Code.ensure_loaded?(Circuits.UART) do
 
         state_data.frame_type == :test_request ->
           log_debug_comm(state_data, fn ->
-            "BacMstpTransport_ReceiveFSM: Received frame of type #{state_data.frame_type} " <>
+            "BacMstpTransport_ReceiveFSM: Received frame of type #{inspect(state_data.frame_type)} " <>
               "with data length #{state_data.data_length}, but data CRC does not match, " <>
               "data will be dropped and frame will propagate without data"
           end)
@@ -736,7 +736,7 @@ if Code.ensure_loaded?(Circuits.UART) do
           decoded_bin_data = IO.iodata_to_binary(decoded_data)
 
           log_debug_comm(state_data, fn ->
-            "BacMstpTransport_ReceiveFSM: Received valid COBS-encoded frame of type #{state_data.frame_type} " <>
+            "BacMstpTransport_ReceiveFSM: Received valid COBS-encoded frame of type #{inspect(state_data.frame_type)} " <>
               "with data length #{byte_size(decoded_bin_data)}"
           end)
 

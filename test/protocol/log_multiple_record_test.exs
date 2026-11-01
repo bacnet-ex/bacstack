@@ -2,8 +2,8 @@ defmodule BACnet.Protocol.LogMultipleRecordTest do
   alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.BACnetDate
   alias BACnet.Protocol.BACnetDateTime
-  alias BACnet.Protocol.BACnetTime
   alias BACnet.Protocol.BACnetError
+  alias BACnet.Protocol.BACnetTime
   alias BACnet.Protocol.LogMultipleRecord
   alias BACnet.Protocol.LogStatus
 

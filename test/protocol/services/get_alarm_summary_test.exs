@@ -65,6 +65,16 @@ defmodule BACnet.Test.Protocol.Services.GetAlarmSummaryTest do
              )
   end
 
+  test "encoding GetAlarmSummary preserves segmented_response_accepted=false" do
+    service = %GetAlarmSummary{}
+
+    assert {:ok, %ConfirmedServiceRequest{segmented_response_accepted: false} = apdu} =
+             GetAlarmSummary.to_apdu(service, segmented_response_accepted: false)
+
+    assert {:ok, ^apdu} =
+             ServicesProtocol.to_apdu(service, segmented_response_accepted: false)
+  end
+
   test "protocol implementation get name" do
     assert :get_alarm_summary == ServicesProtocol.get_name(%GetAlarmSummary{})
   end
@@ -90,5 +100,20 @@ defmodule BACnet.Test.Protocol.Services.GetAlarmSummaryTest do
                invoke_id: 1,
                max_segments: 4
              )
+  end
+
+  test "the service protocol preserves an explicit false flag through wire encoding" do
+    service = %GetAlarmSummary{}
+
+    assert {:ok, apdu} =
+             ServicesProtocol.to_apdu(service, segmented_response_accepted: false)
+
+    assert {:ok, bytes} = ConfirmedServiceRequest.encode(apdu)
+
+    assert {:ok,
+            %ConfirmedServiceRequest{
+              service: :get_alarm_summary,
+              segmented_response_accepted: false
+            }} = BACnet.Protocol.APDU.decode(IO.iodata_to_binary(bytes))
   end
 end

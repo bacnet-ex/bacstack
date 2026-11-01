@@ -2,8 +2,8 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
   alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.BACnetArray
   alias BACnet.Protocol.ObjectIdentifier
-  alias BACnet.Protocol.ObjectTypes.BinaryInput
   alias BACnet.Protocol.ObjectsUtility
+  alias BACnet.Protocol.ObjectTypes.BinaryInput
 
   import BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper
 
@@ -81,8 +81,6 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
           #       IO.inspect([description: unquote(description), object_type: unquote(object_type), prop_identifier: unquote(prop_identifier), raw_value: unquote(Macro.escape(raw_value))])
           #       reraise(e, __STACKTRACE__)
         end
-
-        _ = parsed_value
 
         unless !!Keyword.get(cast_opts, :allow_partial) or
                  (String.contains?(description, "priority_array") and
@@ -314,7 +312,7 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
   end
 
   test "cast property to value accepts numeric identfier and casts it to atom" do
-    assert {:error, {:invalid_property_value, {:present_value, 65536}}} =
+    assert {:error, {:invalid_property_value, {:present_value, 65_536}}} =
              ObjectsUtility.cast_property_to_value(
                %ObjectIdentifier{type: :binary_input, instance: 1},
                85,
@@ -723,7 +721,8 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
                ignore_unknown_properties: true
              )
 
-    # Due to map keys ordering being unguaranteed, the properties list is UNSORTED, thus we need to sort it for assertion
+    # Due to map keys ordering being unguaranteed, the properties list is UNSORTED,
+    # thus we need to sort it for assertion
     assert dev_expected == %{
              dev
              | _metadata: %{

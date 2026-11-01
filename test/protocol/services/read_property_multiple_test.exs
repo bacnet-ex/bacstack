@@ -313,6 +313,29 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyMultipleTest do
              )
   end
 
+  test "encoding ReadPropertyMultiple preserves segmented_response_accepted=false" do
+    service = %ReadPropertyMultiple{
+      list: [
+        %AccessSpecification{
+          object_identifier: %ObjectIdentifier{type: :analog_input, instance: 1},
+          properties: [
+            %AccessSpecification.Property{
+              property_identifier: :present_value,
+              property_array_index: nil,
+              property_value: nil
+            }
+          ]
+        }
+      ]
+    }
+
+    assert {:ok, %ConfirmedServiceRequest{segmented_response_accepted: false} = apdu} =
+             ReadPropertyMultiple.to_apdu(service, segmented_response_accepted: false)
+
+    assert {:ok, ^apdu} =
+             ServicesProtocol.to_apdu(service, segmented_response_accepted: false)
+  end
+
   test "protocol implementation get name" do
     assert :read_property_multiple ==
              ServicesProtocol.get_name(%ReadPropertyMultiple{

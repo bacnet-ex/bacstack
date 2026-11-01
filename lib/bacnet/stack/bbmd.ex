@@ -332,8 +332,7 @@ defmodule BACnet.Stack.BBMD do
       log_debug(fn -> "BBMD: Started on #{inspect(self())}" end)
       {:ok, state}
     else
-      err ->
-        {:stop, err, %{}}
+      {:error, err} -> {:stop, err}
     end
   end
 
@@ -384,8 +383,18 @@ defmodule BACnet.Stack.BBMD do
   def handle_call({:remove_fd_device, %ForeignDeviceTableEntry{} = fd}, _from, %State{} = state) do
     log_debug(fn -> "BBMD: Received remove_fd_device request" end)
 
+    reg_key = {fd.ip, fd.port}
+
     new_state =
-      update_in(state, [Access.key(:registrations)], fn regs -> Map.delete(regs, fd) end)
+      case Map.fetch(state.registrations, reg_key) do
+        {:ok, %Registration{} = reg} ->
+          Telemetry.execute_bbmd_del_fd_registration(self(), nil, reg, state)
+          Process.cancel_timer(reg.timer)
+          %State{state | registrations: Map.delete(state.registrations, reg_key)}
+
+        :error ->
+          state
+      end
 
     {:reply, :ok, new_state}
   end

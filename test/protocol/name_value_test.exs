@@ -60,14 +60,14 @@ defmodule BACnet.Protocol.NameValueTest do
     nv = %NameValue{name: "semantic-tag", value: nil}
 
     assert {:ok, [name_tag]} = NameValue.encode(nv)
-    assert {:tagged, {0, _, _}} = name_tag
+    assert {:tagged, {0, _encoded_name, _name_length}} = name_tag
   end
 
   test "encode name + primitive Encoding value" do
     nv = %NameValue{name: "count", value: Encoding.create!({:unsigned_integer, 42})}
 
     assert {:ok, [name_tag, value_tag]} = NameValue.encode(nv)
-    assert {:tagged, {0, _, _}} = name_tag
+    assert {:tagged, {0, _encoded_name, _name_length}} = name_tag
     assert {:unsigned_integer, 42} = value_tag
   end
 

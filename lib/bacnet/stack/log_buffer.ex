@@ -19,8 +19,7 @@ defmodule BACnet.Stack.LogBuffer do
   @type item :: EventLogRecord.t() | LogRecord.t() | LogMultipleRecord.t()
 
   @typedoc """
-  Implementation detail and thus private API. Changes to it do not count
-  towards Semantic Versioning.
+  Private storage representation.
   """
   @opaque items :: :queue.queue(item())
 
@@ -138,12 +137,16 @@ defmodule BACnet.Stack.LogBuffer do
   end
 
   @doc """
+  Get the maximum size of the log buffer.
+  """
+  @spec get_max_size(t()) :: non_neg_integer() | nil
+  def get_max_size(%__MODULE__{max_size: size}), do: size
+
+  @doc """
   Get the size of the log buffer.
   """
   @spec get_size(t()) :: non_neg_integer()
-  def get_size(%__MODULE__{size: size} = _buffer) do
-    size
-  end
+  def get_size(%__MODULE__{size: size} = _buffer), do: size
 
   @doc """
   Peeks into the log buffer and returns the oldest item without removing it.
@@ -173,7 +176,21 @@ defmodule BACnet.Stack.LogBuffer do
   @spec read_range(t(), non_neg_integer(), pos_integer()) :: [item()]
   def read_range(%__MODULE__{} = buffer, offset \\ 0, count)
       when is_integer(offset) and offset >= 0 and is_integer(count) and count >= 1 do
-    Enum.slice(:queue.to_list(buffer.items), offset, count)
+    cond do
+      offset >= buffer.size ->
+        []
+
+      offset == 0 and count == 1 ->
+        {:ok, item} = peek(buffer)
+        [item]
+
+      offset == buffer.size - 1 ->
+        {:ok, item} = peek_r(buffer)
+        [item]
+
+      true ->
+        Enum.slice(:queue.to_list(buffer.items), offset, count)
+    end
   end
 
   @doc """

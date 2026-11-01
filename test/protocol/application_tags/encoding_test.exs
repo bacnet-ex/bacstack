@@ -23,7 +23,7 @@ defmodule BACnet.Test.Protocol.ApplicationTags.EncodingTest do
     {:primitive, :bitstring, {false, true}, [], []},
     {:primitive, :enumerated, 1, [], []},
     {:primitive, :date, %BACnetDate{year: 2022, month: 12, day: :even, weekday: 5}, [], []},
-    {:primitive, :time, %BACnetTime{hour: 23, minute: 59, second: 59, hundredth: 245}, [], []},
+    {:primitive, :time, %BACnetTime{hour: 23, minute: 59, second: 59, hundredth: 99}, [], []},
     {:primitive, :object_identifier, %ObjectIdentifier{type: :device, instance: 259_509}, [], []},
     {:tagged, nil, {2, <<0>>, 1}, <<0>>, [tag_number: 2], []},
     {:tagged, :boolean, {2, <<1>>, 1}, true, [context: :hello, tag_number: 2],

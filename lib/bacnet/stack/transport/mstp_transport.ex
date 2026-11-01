@@ -1574,7 +1574,7 @@ if Code.ensure_loaded?(Circuits.UART) do
               ReceiveFSM.configure(state.receive_fsm, %{
                 autobaud: false,
                 baudrate: baudrate,
-                log_communication: new_opts.log_communication_rcv
+                log_communication: !!new_opts[:log_communication_rcv]
               })
             end
 
@@ -3841,6 +3841,12 @@ if Code.ensure_loaded?(Circuits.UART) do
       defp update_state_statistics({type, reply, %State{transport_state: now} = state, cont})
            when is_atom(type) do
         {type, reply, update_state_statistics_map(state, now), cont}
+      end
+
+      # handle_call close is {:stop, reason, reply, state}. The reply sits
+      # where the other four-tuples keep the state.
+      defp update_state_statistics({:stop, reason, reply, %State{} = state}) do
+        {:stop, reason, reply, update_state_statistics_map(state, state.transport_state)}
       end
 
       # defp update_state_statistics(value), do: value

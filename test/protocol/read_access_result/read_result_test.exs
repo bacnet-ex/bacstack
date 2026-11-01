@@ -75,12 +75,12 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResultTest do
                property_value: nil,
                error: %BACnetError{
                  class: :property,
-                 code: 65535
+                 code: 65_535
                }
              }, []}} =
              ReadResult.parse(
                tagged: {2, "U", 1},
-               constructed: {5, [enumerated: 2, enumerated: 65535], 0}
+               constructed: {5, [enumerated: 2, enumerated: 65_535], 0}
              )
   end
 
@@ -92,13 +92,13 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResultTest do
                property_value: nil,
                error: %BACnetError{
                  class: :property,
-                 code: 65535
+                 code: 65_535
                }
              }, []}} =
              ReadResult.parse(
                tagged: {2, "U", 1},
                tagged: {3, <<2>>, 1},
-               constructed: {5, [enumerated: 2, enumerated: 65535], 0}
+               constructed: {5, [enumerated: 2, enumerated: 65_535], 0}
              )
   end
 
@@ -184,7 +184,7 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResultTest do
     assert {:ok,
             [
               tagged: {2, "U", 1},
-              constructed: {5, [enumerated: 2, enumerated: 65535], 0}
+              constructed: {5, [enumerated: 2, enumerated: 65_535], 0}
             ]} =
              ReadResult.encode(%ReadResult{
                property_identifier: :present_value,
@@ -192,7 +192,7 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResultTest do
                property_value: nil,
                error: %BACnetError{
                  class: :property,
-                 code: 65535
+                 code: 65_535
                }
              })
   end
@@ -202,7 +202,7 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResultTest do
             [
               tagged: {2, "U", 1},
               tagged: {3, <<2>>, 1},
-              constructed: {5, [enumerated: 2, enumerated: 65535], 0}
+              constructed: {5, [enumerated: 2, enumerated: 65_535], 0}
             ]} =
              ReadResult.encode(%ReadResult{
                property_identifier: :present_value,
@@ -210,7 +210,7 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResultTest do
                property_value: nil,
                error: %BACnetError{
                  class: :property,
-                 code: 65535
+                 code: 65_535
                }
              })
   end
@@ -255,7 +255,7 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResultTest do
                property_identifier: :present_value,
                property_array_index: nil,
                property_value: nil,
-               error: %BACnetError{class: :property, code: 65535}
+               error: %BACnetError{class: :property, code: 65_535}
              })
 
     assert true ==
@@ -263,7 +263,7 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResultTest do
                property_identifier: :present_value,
                property_array_index: 5,
                property_value: nil,
-               error: %BACnetError{class: :property, code: 65535}
+               error: %BACnetError{class: :property, code: 65_535}
              })
 
     assert true ==
@@ -287,7 +287,7 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResultTest do
                property_identifier: 512,
                property_array_index: nil,
                property_value: nil,
-               error: %BACnetError{class: :property, code: 65535}
+               error: %BACnetError{class: :property, code: 65_535}
              })
   end
 
@@ -353,7 +353,7 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResultTest do
                property_identifier: :present_value,
                property_array_index: nil,
                property_value: nil,
-               error: %BACnetError{class: :hello_there, code: 65535}
+               error: %BACnetError{class: :hello_there, code: 65_535}
              })
   end
 end

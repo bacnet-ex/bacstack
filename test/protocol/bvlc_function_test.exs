@@ -17,12 +17,12 @@ defmodule BACnet.Protocol.BvlcFunctionTest do
               data: [
                 %BroadcastDistributionTableEntry{
                   ip: {192, 168, 1, 100},
-                  port: 47808,
+                  port: 47_808,
                   mask: {255, 255, 255, 255}
                 },
                 %BroadcastDistributionTableEntry{
                   ip: {192, 168, 2, 200},
-                  port: 47808,
+                  port: 47_808,
                   mask: {255, 255, 255, 255}
                 }
               ]
@@ -68,12 +68,12 @@ defmodule BACnet.Protocol.BvlcFunctionTest do
               data: [
                 %BroadcastDistributionTableEntry{
                   ip: {192, 168, 1, 100},
-                  port: 47808,
+                  port: 47_808,
                   mask: {255, 255, 255, 255}
                 },
                 %BroadcastDistributionTableEntry{
                   ip: {192, 168, 2, 200},
-                  port: 47808,
+                  port: 47_808,
                   mask: {255, 255, 255, 255}
                 }
               ]
@@ -129,14 +129,14 @@ defmodule BACnet.Protocol.BvlcFunctionTest do
               data: [
                 %ForeignDeviceTableEntry{
                   ip: {192, 168, 1, 100},
-                  port: 47808,
-                  time_to_live: 49320,
+                  port: 47_808,
+                  time_to_live: 49_320,
                   remaining_time: 712
                 },
                 %ForeignDeviceTableEntry{
                   ip: {192, 168, 2, 100},
-                  port: 47808,
-                  time_to_live: 51880,
+                  port: 47_808,
+                  time_to_live: 51_880,
                   remaining_time: 4808
                 }
               ]
@@ -158,7 +158,7 @@ defmodule BACnet.Protocol.BvlcFunctionTest do
               function: :bvlc_delete_foreign_device_table_entry,
               data: %ForeignDeviceTableEntry{
                 ip: {192, 168, 1, 100},
-                port: 47808,
+                port: 47_808,
                 time_to_live: nil,
                 remaining_time: nil
               }
@@ -188,12 +188,12 @@ defmodule BACnet.Protocol.BvlcFunctionTest do
                data: [
                  %BroadcastDistributionTableEntry{
                    ip: {192, 168, 1, 100},
-                   port: 47808,
+                   port: 47_808,
                    mask: {255, 255, 255, 255}
                  },
                  %BroadcastDistributionTableEntry{
                    ip: {192, 168, 2, 200},
-                   port: 47808,
+                   port: 47_808,
                    mask: {255, 255, 255, 255}
                  }
                ]
@@ -256,12 +256,12 @@ defmodule BACnet.Protocol.BvlcFunctionTest do
                data: [
                  %BroadcastDistributionTableEntry{
                    ip: {192, 168, 1, 100},
-                   port: 47808,
+                   port: 47_808,
                    mask: {255, 255, 255, 255}
                  },
                  %BroadcastDistributionTableEntry{
                    ip: {192, 168, 2, 200},
-                   port: 47808,
+                   port: 47_808,
                    mask: {255, 255, 255, 255}
                  }
                ]
@@ -338,14 +338,14 @@ defmodule BACnet.Protocol.BvlcFunctionTest do
                data: [
                  %ForeignDeviceTableEntry{
                    ip: {192, 168, 1, 100},
-                   port: 47808,
-                   time_to_live: 49320,
+                   port: 47_808,
+                   time_to_live: 49_320,
                    remaining_time: 712
                  },
                  %ForeignDeviceTableEntry{
                    ip: {192, 168, 2, 100},
-                   port: 47808,
-                   time_to_live: 51880,
+                   port: 47_808,
+                   time_to_live: 51_880,
                    remaining_time: 4808
                  }
                ]
@@ -365,8 +365,8 @@ defmodule BACnet.Protocol.BvlcFunctionTest do
                data: [
                  %ForeignDeviceTableEntry{
                    ip: {192, 168, 1, 100},
-                   port: 47808,
-                   time_to_live: 49320,
+                   port: 47_808,
+                   time_to_live: 49_320,
                    remaining_time: nil
                  }
                ]
@@ -387,7 +387,7 @@ defmodule BACnet.Protocol.BvlcFunctionTest do
                function: :bvlc_delete_foreign_device_table_entry,
                data: %ForeignDeviceTableEntry{
                  ip: {192, 168, 1, 100},
-                 port: 47808,
+                 port: 47_808,
                  time_to_live: nil,
                  remaining_time: nil
                }

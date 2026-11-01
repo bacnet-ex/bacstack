@@ -13,8 +13,8 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntryTest do
     assert {:ok,
             {%ForeignDeviceTableEntry{
                ip: {192, 168, 1, 100},
-               port: 47808,
-               time_to_live: 49320,
+               port: 47_808,
+               time_to_live: 49_320,
                remaining_time: 712
              }, <<0xBA, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF>>}} =
              ForeignDeviceTableEntry.decode(
@@ -34,8 +34,8 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntryTest do
     assert {:ok, <<0xC0, 0xA8, 0x01, 0x64, 0xBA, 0xC0, 0xC0, 0xA8, 0x02, 0xC8>>} =
              ForeignDeviceTableEntry.encode(%ForeignDeviceTableEntry{
                ip: {192, 168, 1, 100},
-               port: 47808,
-               time_to_live: 49320,
+               port: 47_808,
+               time_to_live: 49_320,
                remaining_time: 712
              })
   end
@@ -44,7 +44,7 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntryTest do
     assert {:ok, <<0xC0, 0xA8, 0x01, 0x64, 0xBA, 0xC0>>} =
              ForeignDeviceTableEntry.encode(%ForeignDeviceTableEntry{
                ip: {192, 168, 1, 100},
-               port: 47808,
+               port: 47_808,
                time_to_live: nil,
                remaining_time: nil
              })
@@ -54,7 +54,7 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntryTest do
     assert {:error, :invalid_data} =
              ForeignDeviceTableEntry.encode(%ForeignDeviceTableEntry{
                ip: 1_244_222,
-               port: 47808,
+               port: 47_808,
                time_to_live: nil,
                remaining_time: nil
              })
@@ -64,8 +64,8 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntryTest do
     assert {:ok,
             {%ForeignDeviceTableEntry{
                ip: {192, 168, 1, 100},
-               port: 47808,
-               time_to_live: 49320,
+               port: 47_808,
+               time_to_live: 49_320,
                remaining_time: 712
              }, [real: 1.0]}} =
              ForeignDeviceTableEntry.from_app_encoding(
@@ -113,8 +113,8 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntryTest do
             ]} =
              ForeignDeviceTableEntry.to_app_encoding(%ForeignDeviceTableEntry{
                ip: {192, 168, 1, 100},
-               port: 47808,
-               time_to_live: 49320,
+               port: 47_808,
+               time_to_live: 49_320,
                remaining_time: 712
              })
   end
@@ -128,7 +128,7 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntryTest do
             ]} =
              ForeignDeviceTableEntry.to_app_encoding(%ForeignDeviceTableEntry{
                ip: {192, 168, 1, 100},
-               port: 47808,
+               port: 47_808,
                time_to_live: nil,
                remaining_time: nil
              })
@@ -138,7 +138,7 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntryTest do
     assert {:error, :invalid_data} =
              ForeignDeviceTableEntry.to_app_encoding(%ForeignDeviceTableEntry{
                ip: 1_244_222,
-               port: 47808,
+               port: 47_808,
                time_to_live: nil,
                remaining_time: nil
              })

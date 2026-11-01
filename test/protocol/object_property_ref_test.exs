@@ -1,6 +1,6 @@
 defmodule BACnet.Protocol.ObjectPropertyRefTest do
-  alias BACnet.Protocol.ObjectPropertyRef
   alias BACnet.Protocol.ObjectIdentifier
+  alias BACnet.Protocol.ObjectPropertyRef
 
   use ExUnit.Case, async: true
 

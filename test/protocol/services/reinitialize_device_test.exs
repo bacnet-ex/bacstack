@@ -182,6 +182,19 @@ defmodule BACnet.Test.Protocol.Services.ReinitializeDeviceTest do
     )
   end
 
+  test "encoding ReinitializeDevice preserves segmented_response_accepted=false" do
+    service = %ReinitializeDevice{
+      reinitialized_state: :warmstart,
+      password: nil
+    }
+
+    assert {:ok, %ConfirmedServiceRequest{segmented_response_accepted: false} = apdu} =
+             ReinitializeDevice.to_apdu(service, segmented_response_accepted: false)
+
+    assert {:ok, ^apdu} =
+             ServicesProtocol.to_apdu(service, segmented_response_accepted: false)
+  end
+
   test "protocol implementation get name" do
     assert :reinitialize_device ==
              ServicesProtocol.get_name(%ReinitializeDevice{

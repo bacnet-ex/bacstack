@@ -149,6 +149,20 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyTest do
              )
   end
 
+  test "encoding ReadProperty preserves segmented_response_accepted=false" do
+    service = %ReadProperty{
+      object_identifier: %ObjectIdentifier{type: :analog_input, instance: 1},
+      property_identifier: :present_value,
+      property_array_index: nil
+    }
+
+    assert {:ok, %ConfirmedServiceRequest{segmented_response_accepted: false} = apdu} =
+             ReadProperty.to_apdu(service, segmented_response_accepted: false)
+
+    assert {:ok, ^apdu} =
+             ServicesProtocol.to_apdu(service, segmented_response_accepted: false)
+  end
+
   test "protocol implementation get name" do
     assert :read_property ==
              ServicesProtocol.get_name(%ReadProperty{

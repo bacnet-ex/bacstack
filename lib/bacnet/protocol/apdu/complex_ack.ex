@@ -163,18 +163,26 @@ defmodule BACnet.Protocol.APDU.ComplexACK do
       seg_header = <<pdu_type::size(4), 1::size(1), 1::size(1), rest1::bitstring>>
       last_header = <<pdu_type::size(4), 1::size(1), 0::size(1), rest1::bitstring>>
 
+      # Segmentation adds the sequence number and window size to the header
+      payload_size = apdu_size - byte_size(header) - 2
+
+      if payload_size <= 0 do
+        raise ArgumentError,
+              "Maximum APDU size must exceed the segmented header size of #{byte_size(header) + 2} bytes"
+      end
+
       0..255//1
       |> Enum.reduce_while({data, []}, fn
         _index, {<<>>, segments} ->
           {:halt, segments}
 
         index, {data, segments} ->
-          start = binary_part(data, 0, min(byte_size(data), apdu_size))
+          start = binary_part(data, 0, min(byte_size(data), payload_size))
 
           rest =
             case max(0, byte_size(data) - byte_size(start)) do
               0 -> ""
-              len -> binary_part(data, apdu_size, len)
+              len -> binary_part(data, payload_size, len)
             end
 
           this_header =

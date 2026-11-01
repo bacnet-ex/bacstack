@@ -16,4 +16,6 @@ end
 Code.put_compiler_option(:ignore_module_conflict, false)
 # -------------------
 
-ExUnit.start()
+# Crash reports and debug logs from the stack are expected in tests
+# Capture them so they stay off the console unless a test fails
+ExUnit.start(capture_log: true)

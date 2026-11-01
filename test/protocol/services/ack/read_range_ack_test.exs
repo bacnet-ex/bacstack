@@ -1,9 +1,12 @@
 defmodule BACnet.Test.Protocol.Services.ReadRangeAckTest do
+  alias BACnet.Protocol.APDU
   alias BACnet.Protocol.APDU.ComplexACK
   alias BACnet.Protocol.APDU.SimpleACK
   alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.BACnetDate
+  alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.BACnetTime
+  alias BACnet.Protocol.LogRecord
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.ResultFlags
   alias BACnet.Protocol.Services.Ack.ReadRangeAck
@@ -95,7 +98,7 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeAckTest do
                   value: <<4, 0>>
                 }
               ],
-              first_sequence_number: 79201
+              first_sequence_number: 79_201
             }} =
              ReadRangeAck.from_apdu(%ComplexACK{
                invoke_id: 0,
@@ -168,7 +171,7 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeAckTest do
               },
               item_count: 0,
               item_data: [],
-              first_sequence_number: 79201
+              first_sequence_number: 79_201
             }} =
              ReadRangeAck.from_apdu(%ComplexACK{
                invoke_id: 0,
@@ -414,7 +417,7 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeAckTest do
                      value: <<4, 0>>
                    }
                  ],
-                 first_sequence_number: 79201
+                 first_sequence_number: 79_201
                },
                55
              )
@@ -452,7 +455,7 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeAckTest do
                  },
                  item_count: 0,
                  item_data: [],
-                 first_sequence_number: 79201
+                 first_sequence_number: 79_201
                },
                55
              )
@@ -590,7 +593,7 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeAckTest do
                    value: <<4, 0>>
                  }
                ],
-               first_sequence_number: 79201
+               first_sequence_number: 79_201
              })
   end
 
@@ -617,7 +620,7 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeAckTest do
                    value: {:tagged, {2, <<65, 144, 0, 0>>, 4}}
                  }
                ],
-               first_sequence_number: 79201
+               first_sequence_number: 79_201
              })
   end
 
@@ -645,7 +648,7 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeAckTest do
                      value: <<4, 0>>
                    }
                  ],
-                 first_sequence_number: 79201
+                 first_sequence_number: 79_201
                },
                256
              )
@@ -672,5 +675,93 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeAckTest do
                },
                55
              )
+  end
+
+  test "ReadRangeAck with 0 primitive items survives a wire round trip" do
+    items = []
+
+    ack = %ReadRangeAck{
+      object_identifier: %ObjectIdentifier{type: :trend_log, instance: 1},
+      property_identifier: :log_buffer,
+      property_array_index: nil,
+      result_flags: %ResultFlags{first_item: true, last_item: true, more_items: false},
+      item_count: 0,
+      item_data: items,
+      first_sequence_number: nil
+    }
+
+    assert {:ok, apdu} = ReadRangeAck.to_apdu(ack, 42)
+    assert {:ok, bytes} = APDU.ComplexACK.encode(apdu)
+    assert {:ok, decoded} = APDU.decode(IO.iodata_to_binary(bytes))
+    assert {:ok, ^ack} = ReadRangeAck.from_apdu(decoded)
+  end
+
+  test "ReadRangeAck with 1 primitive item survives a wire round trip" do
+    items = [Encoding.create!({:unsigned_integer, 7})]
+
+    ack = %ReadRangeAck{
+      object_identifier: %ObjectIdentifier{type: :trend_log, instance: 1},
+      property_identifier: :log_buffer,
+      property_array_index: nil,
+      result_flags: %ResultFlags{first_item: true, last_item: true, more_items: false},
+      item_count: 1,
+      item_data: items,
+      first_sequence_number: nil
+    }
+
+    assert {:ok, apdu} = ReadRangeAck.to_apdu(ack, 42)
+    assert {:ok, bytes} = APDU.ComplexACK.encode(apdu)
+    assert {:ok, decoded} = APDU.decode(IO.iodata_to_binary(bytes))
+    assert {:ok, ^ack} = ReadRangeAck.from_apdu(decoded)
+  end
+
+  test "ReadRangeAck with 2 primitive items survives a wire round trip" do
+    items = [Encoding.create!({:unsigned_integer, 7}), Encoding.create!({:unsigned_integer, 8})]
+
+    ack = %ReadRangeAck{
+      object_identifier: %ObjectIdentifier{type: :trend_log, instance: 1},
+      property_identifier: :log_buffer,
+      property_array_index: nil,
+      result_flags: %ResultFlags{first_item: true, last_item: true, more_items: false},
+      item_count: 2,
+      item_data: items,
+      first_sequence_number: nil
+    }
+
+    assert {:ok, apdu} = ReadRangeAck.to_apdu(ack, 42)
+    assert {:ok, bytes} = APDU.ComplexACK.encode(apdu)
+    assert {:ok, decoded} = APDU.decode(IO.iodata_to_binary(bytes))
+    assert {:ok, ^ack} = ReadRangeAck.from_apdu(decoded)
+  end
+
+  test "ReadRangeAck with one log record survives a wire round trip" do
+    record = %LogRecord{
+      timestamp: BACnetDateTime.from_datetime(~U[2026-01-01 12:34:56Z]),
+      log_datum: Encoding.create!({:unsigned_integer, 7}),
+      status_flags: nil
+    }
+
+    assert {:ok, tags} = LogRecord.encode(record)
+
+    ack = %ReadRangeAck{
+      object_identifier: %ObjectIdentifier{type: :trend_log, instance: 1},
+      property_identifier: :log_buffer,
+      property_array_index: nil,
+      result_flags: %ResultFlags{first_item: true, last_item: true, more_items: false},
+      item_count: 1,
+      item_data: Enum.map(tags, &Encoding.create!/1),
+      first_sequence_number: 101
+    }
+
+    assert {:ok, apdu} = ReadRangeAck.to_apdu(ack, 42)
+    assert {:ok, bytes} = APDU.ComplexACK.encode(apdu)
+    assert {:ok, decoded} = APDU.decode(IO.iodata_to_binary(bytes))
+    assert {:ok, decoded_ack} = ReadRangeAck.from_apdu(decoded)
+    assert decoded_ack == ack
+    decoded_tags = Enum.map(decoded_ack.item_data, &Encoding.to_encoding!/1)
+    assert {:ok, {decoded_record, []}} = LogRecord.parse(decoded_tags)
+    assert decoded_record.timestamp == record.timestamp
+    assert decoded_record.status_flags == nil
+    assert %Encoding{type: :unsigned_integer, value: 7} = decoded_record.log_datum
   end
 end

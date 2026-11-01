@@ -108,9 +108,9 @@ defmodule BACnet.Protocol.RouterEntryTest do
     assert {:ok, tags} = RouterEntry.encode(entry)
 
     assert [
-             {:tagged, {0, net_bin, _}},
+             {:tagged, {0, net_bin, _network_length}},
              {:tagged, {1, <<0xC0, 0xA8, 0x01, 0x01, 0xBA, 0xC0>>, 6}},
-             {:tagged, {2, status_bin, _}}
+             {:tagged, {2, status_bin, _status_length}}
            ] = tags
 
     assert {:ok, {:unsigned_integer, 42}} =
@@ -131,10 +131,10 @@ defmodule BACnet.Protocol.RouterEntryTest do
     assert {:ok, tags} = RouterEntry.encode(entry)
 
     assert [
-             {:tagged, {0, _, _}},
+             {:tagged, {0, _encoded_network, _network_length}},
              {:tagged, {1, <<0x01, 0x02>>, 2}},
-             {:tagged, {2, status_bin, _}},
-             {:tagged, {3, perf_bin, _}}
+             {:tagged, {2, status_bin, _status_length}},
+             {:tagged, {3, perf_bin, _performance_length}}
            ] = tags
 
     assert {:ok, {:enumerated, 1}} =
@@ -154,7 +154,7 @@ defmodule BACnet.Protocol.RouterEntryTest do
       }
 
       assert {:ok, tags} = RouterEntry.encode(entry)
-      assert {:tagged, {2, status_bin, _}} = Enum.at(tags, 2)
+      assert {:tagged, {2, status_bin, _status_length}} = Enum.at(tags, 2)
 
       assert {:ok, {:enumerated, ^expected_int}} =
                ApplicationTags.unfold_to_type(:enumerated, status_bin)

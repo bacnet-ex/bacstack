@@ -45,6 +45,10 @@ defprotocol BACnet.Stack.EncoderProtocol do
   @doc """
   Same as `encode/1`, but respects the APDU maximum size.
 
+  The maximum includes the complete APDU header of each segment. Network and
+  transport headers are outside this limit. For a nonempty segmented body, the
+  maximum must leave room for at least one payload byte after the header.
+
   The APDU struct must have a valid window size set.
 
   It will output a list of segmented binaries, that can be sent ordered to the transport layer. Rules around segmentation
@@ -57,8 +61,11 @@ defprotocol BACnet.Stack.EncoderProtocol do
   def encode_segmented(apdu, apdu_size)
 
   @doc """
-  Turns the outpot of `encode/1` in respect to the APDU maximum size into
+  Turns the output of `encode/1` in respect to the APDU maximum size into
   segmented binaries with the correct header applied to them.
+
+  As with `encode_segmented/2`, the maximum includes the complete APDU header
+  of each segment, but excludes network and transport headers.
 
   The APDU struct must have a valid window size set.
 

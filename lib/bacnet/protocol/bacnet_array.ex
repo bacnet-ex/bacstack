@@ -35,6 +35,8 @@ defmodule BACnet.Protocol.BACnetArray do
   - `truncate/1` (not `set_item(0, ...)`) is the supported way to clear a variable array.
   - Default values are used for "unwritten" slots in fixed-size arrays and for holes
     in sparse variable arrays.
+    When using `to_list/1`, default values are not returned for variable arrays.
+    Do not use the default value for meaningful values when dealing with variable arrays.
 
   ### Examples
 
@@ -291,6 +293,8 @@ defmodule BACnet.Protocol.BACnetArray do
   Inserts an item at the specified position into the array.
 
   Position `nil` can be used to append to the end of the array.
+  Position `size + 1` can also be used to append to a variable-sized array.
+  Both append forms return `{:error, :array_full}` for a full fixed-size array.
   Positions greater than the size of the array + 1 can not be used.
   """
   @spec set_item(t(subtype), non_neg_integer() | nil, subtype) ::
@@ -298,8 +302,9 @@ defmodule BACnet.Protocol.BACnetArray do
         when subtype: var
   def set_item(array, position, item)
 
-  def set_item(%__MODULE__{fixed_size: size, size: len} = _array, nil, _item)
-      when not is_nil(size) and len >= size do
+  def set_item(%__MODULE__{fixed_size: size, size: len} = _array, position, _item)
+      when not is_nil(size) and len >= size and
+             (is_nil(position) or (is_integer(position) and position == len + 1)) do
     {:error, :array_full}
   end
 
@@ -312,11 +317,13 @@ defmodule BACnet.Protocol.BACnetArray do
     {:error, :invalid_position}
   end
 
-  def set_item(%__MODULE__{size: len} = _array, position, _item) when position - 1 > len do
+  def set_item(%__MODULE__{size: len} = _array, position, _item)
+      when is_integer(position) and position - 1 > len do
     {:error, :invalid_position}
   end
 
-  def set_item(%__MODULE__{} = array, position, item) when position > 0 do
+  def set_item(%__MODULE__{} = array, position, item)
+      when is_integer(position) and position > 0 do
     new_arr = :array.set(position - 1, item, array.items)
     {:ok, %{array | items: new_arr, size: :array.size(new_arr)}}
   end
@@ -331,6 +338,13 @@ defmodule BACnet.Protocol.BACnetArray do
 
   @doc """
   Get all items as a list.
+
+  Variable sized arrays will have their items with
+  the default value as their value ignored and
+  will not be included in the list.
+  Only items that are not the default value are returned.
+
+  Fixed sized arrays are returned as-is with default values.
   """
   @spec to_list(t(subtype)) :: list(subtype) when subtype: var
   def to_list(array)

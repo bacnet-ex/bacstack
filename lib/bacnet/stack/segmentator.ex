@@ -679,15 +679,13 @@ defmodule BACnet.Stack.Segmentator do
           Telemetry.execute_segmentator_sequence_ack(self(), sequence, apdu, state)
 
           new_sequence =
-            send_segments(
+            send_window(
               id,
               %Sequence{
                 sequence
-                | sequence_number: apdu.sequence_number + apdu.actual_window_size,
-                  window_size: apdu.actual_window_size
+                | window_size: apdu.actual_window_size
               },
               apdu.sequence_number + 1,
-              min(apdu.sequence_number + apdu.actual_window_size, map_size(sequence.segments)),
               state
             )
 
@@ -729,11 +727,10 @@ defmodule BACnet.Stack.Segmentator do
           Telemetry.execute_segmentator_sequence_ack(self(), sequence, apdu, state)
 
           new_sequence =
-            send_segments(
+            send_window(
               id,
               %Sequence{sequence | window_size: apdu.actual_window_size},
               apdu.sequence_number,
-              min(apdu.sequence_number + apdu.actual_window_size, map_size(sequence.segments)),
               state
             )
 
@@ -882,11 +879,10 @@ defmodule BACnet.Stack.Segmentator do
           )
 
           new_sequence =
-            send_segments(
+            send_window(
               id,
               sequence,
               sequence.sequence_number,
-              min(sequence.sequence_number + sequence.window_size, map_size(sequence.segments)),
               state
             )
 
@@ -930,6 +926,19 @@ defmodule BACnet.Stack.Segmentator do
       end
 
     {:noreply, new_state}
+  end
+
+  defp send_window(id, %Sequence{} = sequence, first_segment, %State{} = state) do
+    last_segment = min(first_segment + sequence.window_size - 1, map_size(sequence.segments) - 1)
+
+    # Retain the start of the outstanding window so a timeout retransmits it.
+    send_segments(
+      id,
+      %Sequence{sequence | sequence_number: first_segment},
+      first_segment,
+      last_segment,
+      state
+    )
   end
 
   defp send_segments(

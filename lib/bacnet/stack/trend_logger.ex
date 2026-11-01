@@ -115,7 +115,8 @@ defmodule BACnet.Stack.TrendLogger do
             mode: Constants.logging_type(),
             buffer: LogBufferBehaviour.t(),
             intrinsic_reporting: BufferReady.t() | nil,
-            seq_number: non_neg_integer()
+            seq_number: non_neg_integer(),
+            poll_timer: reference() | nil
           }
 
     @fields [
@@ -124,7 +125,8 @@ defmodule BACnet.Stack.TrendLogger do
       :mode,
       :buffer,
       :intrinsic_reporting,
-      :seq_number
+      :seq_number,
+      :poll_timer
     ]
     @enforce_keys @fields
     defstruct @fields
@@ -249,6 +251,7 @@ defmodule BACnet.Stack.TrendLogger do
     For local objects, the user needs to take care of notifying the trend logger of changes (COV notifications).
 
   - `log_buffer_module: module()` - Optional. Set the Log Buffer implementation to use. It needs to implement the `LogBufferBehaviour`.
+    Defaults to `LogBuffer`. `BACnet.Stack.LogBufferTree` favors range reads and ordered scans.
 
   - `lookup_cb: (DeviceObjectRef.t() -> {:ok, ObjectsUtility.bacnet_object()} | {:error, BACnetError.t()})` - Required.
 
@@ -466,19 +469,28 @@ defmodule BACnet.Stack.TrendLogger do
       case opts do
         %{state: %State{} = state} ->
           # Setup timers to poll all trend logs with logging_type == :polled
-          for {id, %Log{object: object, mode: mode} = log} <- state.logs do
-            Telemetry.execute_trend_logger_log_start(self(), log, state)
+          logs =
+            Map.new(state.logs, fn {id, %Log{} = log} ->
+              Telemetry.execute_trend_logger_log_start(self(), log, state)
 
-            if mode == @const_log_type_polled do
-              Process.send_after(
-                self(),
-                {:poll_log, id},
-                make_interval(object.log_interval)
-              )
-            end
-          end
+              log = %Log{log | poll_timer: nil}
 
-          %{state | log_buff_mod: Map.get(opts, :log_buffer_module, LogBuffer), opts: new_opts}
+              new_log =
+                if log.mode == @const_log_type_polled do
+                  apply_log_mechanism(log, log.object, id, state)
+                else
+                  log
+                end
+
+              {id, new_log}
+            end)
+
+          %{
+            state
+            | logs: logs,
+              log_buff_mod: Map.get(opts, :log_buffer_module, LogBuffer),
+              opts: new_opts
+          }
 
         %{} ->
           %State{
@@ -526,11 +538,12 @@ defmodule BACnet.Stack.TrendLogger do
                 %{notification_threshold: val} when val != nil -> create_intrinsic(object)
                 _else -> nil
               end,
-            seq_number: 0
+            seq_number: 0,
+            poll_timer: nil
           }
 
+          new_log = apply_log_mechanism(new_log, object, id, state)
           new_logs = Map.put(state.logs, id, new_log)
-          apply_log_mechanism(new_log, object, id, state)
 
           Telemetry.execute_trend_logger_log_start(self(), new_log, state)
 
@@ -562,11 +575,12 @@ defmodule BACnet.Stack.TrendLogger do
                 | enabled: log_enabled?(new_object, acc),
                   buffer:
                     log_buff_mod.checkin(log.buffer, create_record(log, new_enable, id, acc)),
+                  seq_number: increment_seq_number(log.seq_number),
                   object: new_object
               }
 
+              new_log = handle_change_enabled_state(new_log, id, log, acc)
               new_state = %State{acc | logs: Map.put(acc.logs, id, new_log)}
-              handle_change_enabled_state(new_log, id, log, new_state)
 
               Telemetry.execute_trend_logger_log_update(self(), new_log, :state, state)
 
@@ -584,11 +598,12 @@ defmodule BACnet.Stack.TrendLogger do
             log
             | enabled: log_enabled?(new_object, state),
               buffer: log_buff_mod.checkin(log.buffer, create_record(log, new_enable, id, state)),
+              seq_number: increment_seq_number(log.seq_number),
               object: new_object
           }
 
+          new_log = handle_change_enabled_state(new_log, id, log, state)
           new_state = %State{state | logs: Map.put(state.logs, id, new_log)}
-          handle_change_enabled_state(new_log, id, log, new_state)
 
           Telemetry.execute_trend_logger_log_update(self(), new_log, :state, state)
 
@@ -621,20 +636,23 @@ defmodule BACnet.Stack.TrendLogger do
 
     new_state =
       Enum.reduce(state.logs, state, fn
-        {id, %Log{} = log}, %State{} = acc ->
+        {id, %Log{enabled: true} = log}, %State{} = acc ->
           with {:cont, log_datum} <- find_log_datum_from_notify(log, log.object, notif, 0, acc),
                {:ok, log_encoding} <- create_encoding_for_notify(log_datum, acc) do
             new_log =
               log_encoding
-              |> then(&create_record(log, &1, id, state))
+              |> then(&create_record(log, &1, id, acc))
               |> then(&log_buff_mod.checkin(log.buffer, &1))
-              |> then(&%Log{log | buffer: &1})
+              |> then(&%Log{log | buffer: &1, seq_number: increment_seq_number(log.seq_number)})
 
-            Telemetry.execute_trend_logger_log_update(self(), new_log, :buffer, state)
+            Telemetry.execute_trend_logger_log_update(self(), new_log, :buffer, acc)
 
             send(self(), {:maybe_notify_receiver, id})
-            %State{state | logs: Map.put(state.logs, id, new_log)}
+            %State{acc | logs: Map.put(acc.logs, id, new_log)}
           end
+
+        {_id, %Log{}}, %State{} = acc ->
+          acc
       end)
 
     {:reply, :ok, new_state}
@@ -731,6 +749,8 @@ defmodule BACnet.Stack.TrendLogger do
     {reply, new_state} =
       case Map.pop(state.logs, id) do
         {%Log{} = log, new_logs} ->
+          cancel_poll_timer(log)
+
           # Remove COV subscription if remote object and COV logging
           if log.mode == @const_log_type_cov and
                Map.get(log.object, :cov_resubscription_interval, 0) > 0 do
@@ -814,7 +834,7 @@ defmodule BACnet.Stack.TrendLogger do
               object: object
           }
 
-          handle_change_enabled_state(new_log, id, old_log, state)
+          new_log = handle_change_enabled_state(new_log, id, old_log, state)
 
           {new_buffer, seq_number} =
             if new_log.enabled != old_log.enabled do
@@ -832,7 +852,7 @@ defmodule BACnet.Stack.TrendLogger do
             send(self(), {:maybe_notify_receiver, id})
           end
 
-          new_log = %Log{new_log | buffer: new_buffer, seq_number: seq_number}
+          new_log = %{new_log | buffer: new_buffer, seq_number: seq_number}
 
           Telemetry.execute_trend_logger_log_update(self(), new_log, :state, state)
 
@@ -858,15 +878,16 @@ defmodule BACnet.Stack.TrendLogger do
       ) do
     new_state =
       case Map.fetch(state.logs, id) do
-        {:ok, %Log{} = log} ->
-          {overflow_action, %State{} = new_state} = handle_buffer_overflow(log, id, state)
+        {:ok, %Log{} = old_log} ->
+          {overflow_action, %State{} = new_state} = handle_buffer_overflow(old_log, id, state)
+          log = Map.fetch!(new_state.logs, id)
 
           if overflow_action do
-            Telemetry.execute_trend_logger_log_notify(self(), log, :buffer_full, state)
+            Telemetry.execute_trend_logger_log_notify(self(), old_log, :buffer_full, state)
           end
 
           if log.intrinsic_reporting != nil do
-            {_event, new_log, _notify} = update_intrinsic_reporting(log, state)
+            {_event, new_log, _notify} = update_intrinsic_reporting(log, new_state)
             %State{new_state | logs: Map.put(new_state.logs, id, new_log)}
           else
             new_state
@@ -891,7 +912,7 @@ defmodule BACnet.Stack.TrendLogger do
 
           {intrinsic_event, new_state, notify} =
             if log.intrinsic_reporting != nil do
-              {event, new_log, notify} = update_intrinsic_reporting(log, state)
+              {event, new_log, notify} = update_intrinsic_reporting(log, new_state)
 
               new_state = %State{new_state | logs: Map.put(new_state.logs, id, new_log)}
               {event, new_state, notify}
@@ -899,8 +920,10 @@ defmodule BACnet.Stack.TrendLogger do
               {:no_event, new_state, nil}
             end
 
+          bufmod = state.log_buff_mod
+
           metadata = %{
-            buffer: {state.log_buff_mod, log.buffer},
+            buffer: {bufmod, log.buffer},
             event: nil,
             intrinsic_reporting: nil
           }
@@ -908,7 +931,8 @@ defmodule BACnet.Stack.TrendLogger do
           # We separate each event, because they can occur concurrently
 
           # Send :buffer_full event
-          if overflow_action or match?(%Log{buffer: %LogBuffer{size: size, max_size: size}}, log) do
+          # get_max_size/1 may return nil, but >= will return false in that case, which works for us
+          if overflow_action or bufmod.get_size(log.buffer) >= bufmod.get_max_size(log.buffer) do
             Telemetry.execute_trend_logger_log_notify(self(), old_log, :buffer_full, state)
 
             send(
@@ -935,7 +959,11 @@ defmodule BACnet.Stack.TrendLogger do
     {:noreply, new_state}
   end
 
-  def handle_info({:poll_log, id}, %State{opts: %{lookup_cb: lookup_cb}} = state) do
+  def handle_info(
+        {:timeout, timer, {:poll_log, id}},
+        %State{opts: %{lookup_cb: lookup_cb}} = state
+      )
+      when is_reference(timer) do
     log_debug(fn -> "TrendLogger: Received poll_log message for #{inspect(id)}" end)
 
     # This is for :polled trendlogs, starts a task to gather the properties
@@ -943,27 +971,37 @@ defmodule BACnet.Stack.TrendLogger do
 
     case Map.get(state.logs, id) do
       # Ignore TrendLog reference with uninitialized IDs
-      %Log{object: %{log_device_object_property: %{object_identifier: @asn1_uninitialized_id}}} ->
+      %Log{
+        object: %{
+          log_device_object_property: %{
+            object_identifier: %ObjectIdentifier{instance: @asn1_uninitialized_id}
+          }
+        }
+      } ->
         :ok
 
-      %Log{enabled: true, object: %TrendLog{} = object} ->
+      %Log{
+        enabled: true,
+        mode: @const_log_type_polled,
+        poll_timer: ^timer,
+        object: %TrendLog{} = object
+      } ->
         server = self()
 
         spawn_task(
           fn ->
             result = run_lookup_cb(server, lookup_cb, object.log_device_object_property)
-            send(server, {:submit_poll, id, result})
-
-            Process.send_after(
-              server,
-              {:poll_log, id},
-              make_interval(object.log_interval)
-            )
+            send(server, {:submit_poll, id, timer, result})
           end,
           state
         )
 
-      %Log{enabled: true, object: %TrendLogMultiple{} = object} ->
+      %Log{
+        enabled: true,
+        mode: @const_log_type_polled,
+        poll_timer: ^timer,
+        object: %TrendLogMultiple{} = object
+      } ->
         server = self()
 
         spawn_task(
@@ -972,7 +1010,7 @@ defmodule BACnet.Stack.TrendLogger do
             |> BACnetArray.to_list()
             |> Enum.reject(fn
               # Ignore references with uninitialized IDs
-              %{object_identifier: @asn1_uninitialized_id} -> true
+              %{object_identifier: %ObjectIdentifier{instance: @asn1_uninitialized_id}} -> true
               _else -> false
             end)
             |> spawn_task_stream(
@@ -980,20 +1018,15 @@ defmodule BACnet.Stack.TrendLogger do
               &run_lookup_cb(server, lookup_cb, &1),
               on_timeout: :kill_task,
               ordered: true,
-              timeout: :infinity
+              # Let a task run for max 1min or until the next interval (minus 10ms for processing)
+              timeout: min(60_000, make_interval(object.log_interval) - 10)
             )
             |> Enum.map(fn
               {:ok, value} -> value
               {:exit, :timeout} -> create_timeout_error()
               {:exit, _reason} -> create_internal_error_error()
             end)
-            |> then(&send(server, {:submit_poll, id, &1}))
-
-            Process.send_after(
-              server,
-              {:poll_log, id},
-              make_interval(object.log_interval)
-            )
+            |> then(&send(server, {:submit_poll, id, timer, &1}))
           end,
           state
         )
@@ -1005,7 +1038,8 @@ defmodule BACnet.Stack.TrendLogger do
     {:noreply, state}
   end
 
-  def handle_info({:submit_poll, id, result}, %State{log_buff_mod: log_buff_mod} = state) do
+  def handle_info({:submit_poll, id, timer, result}, %State{log_buff_mod: log_buff_mod} = state)
+      when is_reference(timer) do
     log_debug(fn -> "TrendLogger: Received submit_poll message for #{inspect(id)}" end)
 
     # This is for :polled trendlogs and submits the result of the task
@@ -1013,7 +1047,11 @@ defmodule BACnet.Stack.TrendLogger do
 
     new_state =
       case Map.fetch(state.logs, id) do
-        {:ok, %Log{enabled: true, object: object} = log} ->
+        {:ok,
+         %Log{enabled: true, mode: @const_log_type_polled, poll_timer: ^timer, object: object} =
+             log} ->
+          log = apply_log_mechanism(log, object, id, state)
+
           size =
             if is_struct(object.log_device_object_property, BACnetArray) do
               BACnetArray.size(object.log_device_object_property)
@@ -1025,7 +1063,7 @@ defmodule BACnet.Stack.TrendLogger do
                 log_datum
                 |> then(&create_record(log, &1, id, state))
                 |> then(&log_buff_mod.checkin(log.buffer, &1))
-                |> then(&%Log{log | buffer: &1, seq_number: increment_seq_number(log.seq_number)})
+                |> then(&%{log | buffer: &1, seq_number: increment_seq_number(log.seq_number)})
 
               Telemetry.execute_trend_logger_log_update(self(), new_log, :buffer, state)
 
@@ -1033,7 +1071,7 @@ defmodule BACnet.Stack.TrendLogger do
               %State{state | logs: Map.put(state.logs, id, new_log)}
 
             _term ->
-              state
+              %State{state | logs: Map.put(state.logs, id, log)}
           end
 
         _else ->
@@ -1094,8 +1132,8 @@ defmodule BACnet.Stack.TrendLogger do
 
             send(self(), {:maybe_notify_receiver, id})
 
+            new_log = handle_change_enabled_state(new_log, id, log, acc)
             new_state = %State{acc | logs: Map.put(acc.logs, id, new_log)}
-            handle_change_enabled_state(new_log, id, log, new_state)
 
             new_state
           else
@@ -1141,7 +1179,7 @@ defmodule BACnet.Stack.TrendLogger do
     now = BACnetDateTime.from_datetime(DateTime.now!(tz))
 
     not match?(:gt, BACnetDateTime.compare(start, now)) and
-      match?(:gt, BACnetDateTime.compare(now, stop))
+      match?(:lt, BACnetDateTime.compare(now, stop))
   end
 
   defp log_enabled?(%{enable: true, start_time: nil, stop_time: nil}, _state), do: true
@@ -1153,7 +1191,7 @@ defmodule BACnet.Stack.TrendLogger do
   # Catch empty device/object/property identifiers and do nothing (they count as 'unintialized')
   # This is done in apply_cov_sub/5
   defp apply_log_mechanism(
-         %{enabled: true, mode: @const_log_type_cov} = _log,
+         %{enabled: true, mode: @const_log_type_cov} = log,
          %{cov_resubscription_interval: lifetime} = object,
          id,
          %State{opts: %{cov_cb: cov_cb}} = state
@@ -1169,31 +1207,52 @@ defmodule BACnet.Stack.TrendLogger do
       state
     )
 
-    :ok
+    log
   end
 
   defp apply_log_mechanism(
-         %{enabled: true, mode: @const_log_type_polled} = _log,
+         %{enabled: true, mode: @const_log_type_polled} = log,
          object,
          id,
          _state
        ) do
-    Process.send_after(
-      self(),
-      {:poll_log, id},
-      make_interval(object.log_interval)
-    )
+    # Keep this reference through the lookup to reject stale requests and results.
+    timer = :erlang.start_timer(make_interval(object.log_interval), self(), {:poll_log, id})
 
-    :ok
+    %{log | poll_timer: timer}
   end
 
-  defp apply_log_mechanism(_log, _term, _id, _state) do
+  defp apply_log_mechanism(log, _term, _id, _state) do
     # Catch-all for EventLog, TrendLog/TrendLogMultiple (with logging_type = triggered or cov)
-    :ok
+    log
   end
 
-  @spec handle_change_enabled_state(Log.t(), term(), Log.t(), State.t()) :: :ok
+  defp cancel_poll_timer(%Log{poll_timer: timer} = log) do
+    if timer != nil, do: Process.cancel_timer(timer)
+    %Log{log | poll_timer: nil}
+  end
+
+  @spec handle_change_enabled_state(Log.t(), term(), Log.t(), State.t()) :: Log.t()
+  defp handle_change_enabled_state(
+         %Log{
+           enabled: true,
+           mode: @const_log_type_polled,
+           object: %{log_interval: interval, log_device_object_property: reference}
+         } = log,
+         _id,
+         %Log{
+           enabled: true,
+           mode: @const_log_type_polled,
+           object: %{log_interval: interval, log_device_object_property: reference}
+         },
+         _state
+       ),
+       do: log
+
   defp handle_change_enabled_state(%Log{} = log, id, %Log{} = previous_log, %State{} = state) do
+    cancel_poll_timer(previous_log)
+    log = %Log{log | poll_timer: nil}
+
     cond do
       log.enabled ->
         apply_log_mechanism(log, log.object, id, state)
@@ -1204,11 +1263,11 @@ defmodule BACnet.Stack.TrendLogger do
           apply_cov_unsub(state.opts.cov_cb, log.object.log_device_object_property, id, state)
         end
 
-      true ->
-        :ok
-    end
+        log
 
-    :ok
+      true ->
+        log
+    end
   end
 
   @spec handle_buffer_overflow(Log.t(), term(), State.t()) :: {action :: boolean(), State.t()}
@@ -1232,7 +1291,10 @@ defmodule BACnet.Stack.TrendLogger do
       |> then(&{&1, create_record(&1, :disable, id, state)})
       |> then(&{elem(&1, 0), log_buff_mod.checkin(log.buffer, elem(&1, 1))})
       # Log
-      |> then(&%{elem(&1, 0) | buffer: elem(&1, 1)})
+      |> then(
+        &%{elem(&1, 0) | buffer: elem(&1, 1), seq_number: increment_seq_number(log.seq_number)}
+      )
+      |> cancel_poll_timer()
 
     new_state = %State{state | logs: Map.put(state.logs, id, new_log)}
     {true, new_state}
@@ -1299,7 +1361,7 @@ defmodule BACnet.Stack.TrendLogger do
 
         %UnconfirmedEventNotification{} = _term ->
           # Convert into ConfirmedEventNotification (same struct but different name)
-          struct(ConfirmedEventNotification, event)
+          struct(ConfirmedEventNotification, Map.from_struct(event))
 
         {:time_change, _time} = _term ->
           event
@@ -1468,7 +1530,7 @@ defmodule BACnet.Stack.TrendLogger do
     find_log_datum_from_notify(
       log,
       object,
-      struct(ConfirmedCovNotification, notification),
+      struct(ConfirmedCovNotification, Map.from_struct(notification)),
       size,
       state
     )
@@ -1476,8 +1538,8 @@ defmodule BACnet.Stack.TrendLogger do
 
   defp find_log_datum_from_notify(
          _log,
-         %TrendLogMultiple{log_device_object_property: objrefs} = object,
-         %ConfirmedCovNotification{initiating_device: device, monitored_object: object} =
+         %TrendLogMultiple{log_device_object_property: objrefs} = _object,
+         %ConfirmedCovNotification{initiating_device: device, monitored_object: mon_object} =
            notification,
          _size,
          state
@@ -1486,8 +1548,8 @@ defmodule BACnet.Stack.TrendLogger do
       objrefs
       |> BACnetArray.to_list()
       |> Enum.map(fn %DeviceObjectPropertyRef{} = objref ->
-        if (objref.device_identifier == nil and match?(%{object_identifier: ^object}, objref)) or
-             match?(%{device_identifier: ^device, object_identifier: ^object}, objref) do
+        if (objref.device_identifier == nil and match?(%{object_identifier: ^mon_object}, objref)) or
+             match?(%{device_identifier: ^device, object_identifier: ^mon_object}, objref) do
           property = objref.property_identifier
           array_index = objref.property_array_index
 
@@ -1522,7 +1584,7 @@ defmodule BACnet.Stack.TrendLogger do
     find_log_datum_from_notify(
       log,
       object,
-      struct(ConfirmedCovNotification, notification),
+      struct(ConfirmedCovNotification, Map.from_struct(notification)),
       size,
       state
     )
@@ -1575,7 +1637,7 @@ defmodule BACnet.Stack.TrendLogger do
          _size,
          _state
        ),
-       do: {:cont, struct(ConfirmedEventNotification, term)}
+       do: {:cont, struct(ConfirmedEventNotification, Map.from_struct(term))}
 
   defp find_log_datum_from_trigger(_log, %TrendLog{}, :interrupted = term, _size, _state),
     do: {:cont, term}
@@ -1605,16 +1667,18 @@ defmodule BACnet.Stack.TrendLogger do
          _size,
          _state
        ),
-       do: {:cont, struct(ConfirmedCovNotification, term)}
+       do: {:cont, struct(ConfirmedCovNotification, Map.from_struct(term))}
 
   defp find_log_datum_from_trigger(_log, %TrendLog{}, %Encoding{} = term, _size, _state),
     do: {:cont, term}
 
-  defp find_log_datum_from_trigger(_log, %TrendLog{} = tl, term, _size, _state)
+  defp find_log_datum_from_trigger(_log, %TrendLog{} = tl, term, _size, state)
        when ObjectsUtility.is_object(term) do
-    with {:ok, log_datum} <-
-           find_log_datum_from_bacnet_object(tl.log_device_object_property, term) do
-      {:cont, log_datum}
+    case find_log_datum_from_bacnet_object(tl.log_device_object_property, term) do
+      {:ok, log_datum} -> {:cont, log_datum}
+      %BACnetError{} = error -> {:cont, error}
+      {:error, _reason} = err -> {err, state}
+      other -> {:cont, other}
     end
   end
 
@@ -1661,7 +1725,9 @@ defmodule BACnet.Stack.TrendLogger do
   defp find_log_datum_from_bacnet_object(objref, object)
 
   defp find_log_datum_from_bacnet_object(
-         %DeviceObjectPropertyRef{object_identifier: @asn1_uninitialized_id},
+         %DeviceObjectPropertyRef{
+           object_identifier: %ObjectIdentifier{instance: @asn1_uninitialized_id}
+         },
          _object
        ) do
     create_uninitialized_error()
@@ -1782,26 +1848,34 @@ defmodule BACnet.Stack.TrendLogger do
          do: nil,
          else: objref.device_identifier.instance
 
-    ref_obj = objref.object_identifier
+    ref_obj_type = ObjectsUtility.get_object_type_mappings()[objref.object_identifier.type]
+    ref_obj = objref.object_identifier.instance
 
     log_datum_item =
       case objref do
-        %{object_identifier: @asn1_uninitialized_id} ->
+        %{object_identifier: %ObjectIdentifier{instance: @asn1_uninitialized_id}} ->
           create_uninitialized_error()
 
         _else ->
           case Enum.find(objects, fn
                  %{
+                   __struct__: ^ref_obj_type,
                    _metadata: %{remote_object: ^ref_device},
-                   object_identifier: ^ref_obj
+                   object_instance: ^ref_obj
                  } ->
                    true
 
                  _else ->
                    false
                end) do
-            nil -> nil
-            %{} = scan_obj -> find_log_datum_from_bacnet_object(objref, scan_obj)
+            nil ->
+              nil
+
+            %{} = scan_obj ->
+              case find_log_datum_from_bacnet_object(objref, scan_obj) do
+                {:ok, log_datum} -> log_datum
+                other -> other
+              end
           end
       end
 
@@ -1947,7 +2021,7 @@ defmodule BACnet.Stack.TrendLogger do
          state
        ) do
     BACnetArray.reduce_while(log_device_object_property, nil, fn element, _acc ->
-      apply_cov_sub(cov_cb, element, nil, lifetime, cov_increment, state)
+      {:cont, apply_cov_sub(cov_cb, element, nil, lifetime, cov_increment, state)}
     end)
 
     Process.send_after(self(), {:cov_resub, id}, lifetime * 1000)
@@ -1968,7 +2042,8 @@ defmodule BACnet.Stack.TrendLogger do
 
   defp apply_cov_sub(
          _cov_cb,
-         %{device_identifier: @asn1_uninitialized_id} = _log_device_object_property,
+         %{device_identifier: %ObjectIdentifier{instance: @asn1_uninitialized_id}} =
+           _log_device_object_property,
          _id,
          _lifetime,
          _cov_increment,
@@ -1980,7 +2055,8 @@ defmodule BACnet.Stack.TrendLogger do
 
   defp apply_cov_sub(
          _cov_cb,
-         %{object_identifier: @asn1_uninitialized_id} = _log_device_object_property,
+         %{object_identifier: %ObjectIdentifier{instance: @asn1_uninitialized_id}} =
+           _log_device_object_property,
          _id,
          _lifetime,
          _cov_increment,
@@ -2050,7 +2126,7 @@ defmodule BACnet.Stack.TrendLogger do
 
   defp apply_cov_unsub(cov_cb, %BACnetArray{} = log_device_object_property, _id, state) do
     BACnetArray.reduce_while(log_device_object_property, nil, fn element, _acc ->
-      apply_cov_unsub(cov_cb, element, nil, state)
+      {:cont, apply_cov_unsub(cov_cb, element, nil, state)}
     end)
 
     :ok
@@ -2197,7 +2273,10 @@ defmodule BACnet.Stack.TrendLogger do
     "(DEV)#{make_log_id(object.object_identifier)}"
   end
 
-  defp make_log_id(%DeviceObjectRef{device_identifier: @asn1_uninitialized_id} = object) do
+  defp make_log_id(
+         %DeviceObjectRef{device_identifier: %ObjectIdentifier{instance: @asn1_uninitialized_id}} =
+           object
+       ) do
     make_log_id(%{object | device_identifier: nil})
   end
 
@@ -2209,7 +2288,11 @@ defmodule BACnet.Stack.TrendLogger do
     "(DEV)#{make_log_id(object.object_identifier)}[P#{object.property_identifier}]"
   end
 
-  defp make_log_id(%DeviceObjectPropertyRef{device_identifier: @asn1_uninitialized_id} = object) do
+  defp make_log_id(
+         %DeviceObjectPropertyRef{
+           device_identifier: %ObjectIdentifier{instance: @asn1_uninitialized_id}
+         } = object
+       ) do
     make_log_id(%{object | device_identifier: nil})
   end
 

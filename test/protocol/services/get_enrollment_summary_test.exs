@@ -373,6 +373,23 @@ defmodule BACnet.Test.Protocol.Services.GetEnrollmentSummaryTest do
              )
   end
 
+  test "encoding GetEnrollmentSummary preserves segmented_response_accepted=false" do
+    service = %GetEnrollmentSummary{
+      acknowledgment_filter: :not_acked,
+      enrollment_filter: nil,
+      event_state_filter: nil,
+      event_type_filter: nil,
+      priority_filter: nil,
+      notification_class_filter: nil
+    }
+
+    assert {:ok, %ConfirmedServiceRequest{segmented_response_accepted: false} = apdu} =
+             GetEnrollmentSummary.to_apdu(service, segmented_response_accepted: false)
+
+    assert {:ok, ^apdu} =
+             ServicesProtocol.to_apdu(service, segmented_response_accepted: false)
+  end
+
   test "protocol implementation get name" do
     assert :get_enrollment_summary ==
              ServicesProtocol.get_name(%GetEnrollmentSummary{

@@ -283,7 +283,7 @@ defmodule BACnet.ProtocolTest do
             %NetworkLayerProtocolMessage{
               network_message_type: :i_am_router_to_network,
               msg_type: nil,
-              data: [44, 85, 99, 12345, 65_534]
+              data: [44, 85, 99, 12_345, 65_534]
             }} =
              Protocol.decode_nsdu(<<1, 0, 44, 0, 85, 0, 99, 48, 57, 255, 254>>)
   end
@@ -382,7 +382,7 @@ defmodule BACnet.ProtocolTest do
             %NetworkLayerProtocolMessage{
               network_message_type: :router_busy_to_network,
               msg_type: nil,
-              data: [44, 85, 99, 12345, 65_534]
+              data: [44, 85, 99, 12_345, 65_534]
             }} =
              Protocol.decode_nsdu(<<4, 0, 44, 0, 85, 0, 99, 48, 57, 255, 254>>)
   end
@@ -392,7 +392,7 @@ defmodule BACnet.ProtocolTest do
             %NetworkLayerProtocolMessage{
               network_message_type: :router_available_to_network,
               msg_type: nil,
-              data: [44, 85, 99, 12345, 65_534]
+              data: [44, 85, 99, 12_345, 65_534]
             }} =
              Protocol.decode_nsdu(<<5, 0, 44, 0, 85, 0, 99, 48, 57, 255, 254>>)
   end

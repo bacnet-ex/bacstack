@@ -13,7 +13,7 @@ defmodule BACnet.Protocol.BroadcastDistributionTableEntryTest do
     assert {:ok,
             {%BroadcastDistributionTableEntry{
                ip: {192, 168, 1, 100},
-               port: 47808,
+               port: 47_808,
                mask: {255, 255, 255, 255}
              }, <<0xC0, 0xA8, 0x02, 0xC8, 0xBA, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF>>}} =
              BroadcastDistributionTableEntry.decode(
@@ -33,7 +33,7 @@ defmodule BACnet.Protocol.BroadcastDistributionTableEntryTest do
     assert {:ok, <<0xC0, 0xA8, 0x01, 0x64, 0xBA, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF>>} =
              BroadcastDistributionTableEntry.encode(%BroadcastDistributionTableEntry{
                ip: {192, 168, 1, 100},
-               port: 47808,
+               port: 47_808,
                mask: {255, 255, 255, 255}
              })
   end
@@ -42,7 +42,7 @@ defmodule BACnet.Protocol.BroadcastDistributionTableEntryTest do
     assert {:error, :invalid_data} =
              BroadcastDistributionTableEntry.encode(%BroadcastDistributionTableEntry{
                ip: 1_244_222,
-               port: 47808,
+               port: 47_808,
                mask: 1_242_412_312
              })
   end
@@ -51,7 +51,7 @@ defmodule BACnet.Protocol.BroadcastDistributionTableEntryTest do
     assert {:ok,
             {%BroadcastDistributionTableEntry{
                ip: {192, 168, 1, 100},
-               port: 47808,
+               port: 47_808,
                mask: {255, 255, 255, 255}
              }, [real: 1.0]}} =
              BroadcastDistributionTableEntry.from_app_encoding([
@@ -59,7 +59,7 @@ defmodule BACnet.Protocol.BroadcastDistributionTableEntryTest do
                 {0,
                  [
                    constructed: {0, {:tagged, {1, <<192, 168, 1, 100>>, 4}}, 0},
-                   tagged: {1, <<47808::size(16)>>, 2}
+                   tagged: {1, <<47_808::size(16)>>, 2}
                  ], 0}},
                {:tagged, {1, <<255, 255, 255, 255>>, 4}},
                {:real, 1.0}
@@ -73,7 +73,7 @@ defmodule BACnet.Protocol.BroadcastDistributionTableEntryTest do
                 {0,
                  [
                    constructed: {0, {:tagged, {1, <<192, 168, 1, 100>>, 4}}, 0},
-                   tagged: {1, <<47808::size(16)>>, 2}
+                   tagged: {1, <<47_808::size(16)>>, 2}
                  ], 0}}
              ])
 
@@ -83,7 +83,7 @@ defmodule BACnet.Protocol.BroadcastDistributionTableEntryTest do
                 {0,
                  [
                    constructed: {0, {:tagged, {1, <<192, 168, 1>>, 3}}, 0},
-                   tagged: {1, <<47808::size(16)>>, 2},
+                   tagged: {1, <<47_808::size(16)>>, 2},
                    tagged: {1, <<255, 255, 255, 255>>, 4}
                  ], 0}}
              ])
@@ -120,13 +120,13 @@ defmodule BACnet.Protocol.BroadcastDistributionTableEntryTest do
                {0,
                 [
                   constructed: {0, {:tagged, {1, <<192, 168, 1, 100>>, 4}}, 0},
-                  tagged: {1, <<47808::size(16)>>, 2}
+                  tagged: {1, <<47_808::size(16)>>, 2}
                 ], 0}},
               {:tagged, {1, <<255, 255, 255, 255>>, 4}}
             ]} =
              BroadcastDistributionTableEntry.to_app_encoding(%BroadcastDistributionTableEntry{
                ip: {192, 168, 1, 100},
-               port: 47808,
+               port: 47_808,
                mask: {255, 255, 255, 255}
              })
   end
@@ -135,7 +135,7 @@ defmodule BACnet.Protocol.BroadcastDistributionTableEntryTest do
     assert {:error, :invalid_data} =
              BroadcastDistributionTableEntry.to_app_encoding(%BroadcastDistributionTableEntry{
                ip: 1_244_222,
-               port: 47808,
+               port: 47_808,
                mask: 1_242_412_312
              })
   end

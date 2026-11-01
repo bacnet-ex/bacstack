@@ -123,28 +123,14 @@ defmodule BACnet.Protocol.EventAlgorithms.UnsignedRange do
     normal_event = normal_event and not offnormal_event
 
     offnormal_dt =
-      cond do
-        offnormal_event and state.parameters.time_delay > 0 ->
-          state.dt_offnormal || get_dt(state.parameters.time_delay)
-
-        current_normal ->
-          state.dt_offnormal
-
-        true ->
-          nil
+      if offnormal_event and state.parameters.time_delay > 0 do
+        state.dt_offnormal || get_dt(state.parameters.time_delay)
       end
 
     normal_dt =
-      cond do
-        normal_event and (state.parameters.time_delay_normal || state.parameters.time_delay) > 0 ->
-          state.dt_normal ||
-            get_dt(state.parameters.time_delay_normal || state.parameters.time_delay)
-
-        not current_normal ->
-          state.dt_normal
-
-        true ->
-          nil
+      if normal_event and (state.parameters.time_delay_normal || state.parameters.time_delay) > 0 do
+        state.dt_normal ||
+          get_dt(state.parameters.time_delay_normal || state.parameters.time_delay)
       end
 
     current_dt = get_dt(0)

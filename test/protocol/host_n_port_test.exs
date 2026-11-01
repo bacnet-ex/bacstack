@@ -20,7 +20,7 @@ defmodule BACnet.Protocol.HostNPortTest do
     assert {:ok,
             {%HostNPort{
                host: {:ip_address, {192, 168, 1, 105}},
-               port: 47808
+               port: 47_808
              }, []}} =
              HostNPort.parse([
                {:constructed, {0, {:tagged, {1, <<192, 168, 1, 105>>, 4}}, 0}},
@@ -104,11 +104,11 @@ defmodule BACnet.Protocol.HostNPortTest do
 
     assert [
              {:constructed, {0, inner, 0}},
-             {:tagged, {1, _, _}}
+             {:tagged, {1, _encoded_port, _port_length}}
            ] = tags
 
     # inner must be the NULL choice alternative [0]
-    assert {:tagged, {0, _, _}} = inner
+    assert {:tagged, {0, _encoded_host, _host_length}} = inner
   end
 
   test "encode IPv4 host (constructed outer tag 0)" do
@@ -121,7 +121,7 @@ defmodule BACnet.Protocol.HostNPortTest do
 
     assert [
              {:constructed, {0, inner, 0}},
-             {:tagged, {1, port_bin, _}}
+             {:tagged, {1, port_bin, _port_length}}
            ] = tags
 
     # inner = CHOICE alternative [1] OCTET STRING
@@ -134,23 +134,23 @@ defmodule BACnet.Protocol.HostNPortTest do
   test "encode name host (constructed outer tag 0)" do
     hnp = %HostNPort{
       host: {:name, "bbmd.example.com"},
-      port: 47808
+      port: 47_808
     }
 
     assert {:ok, tags} = HostNPort.encode(hnp)
 
     assert [
              {:constructed, {0, inner, 0}},
-             {:tagged, {1, port_bin, _}}
+             {:tagged, {1, port_bin, _port_length}}
            ] = tags
 
     # inner = CHOICE alternative [2] CharacterString
-    assert {:tagged, {2, name_bin, _}} = inner
+    assert {:tagged, {2, name_bin, _name_length}} = inner
 
     assert {:ok, {:character_string, "bbmd.example.com"}} =
              ApplicationTags.unfold_to_type(:character_string, name_bin)
 
-    assert {:ok, {:unsigned_integer, 47808}} =
+    assert {:ok, {:unsigned_integer, 47_808}} =
              ApplicationTags.unfold_to_type(:unsigned_integer, port_bin)
   end
 
@@ -164,7 +164,7 @@ defmodule BACnet.Protocol.HostNPortTest do
 
   test "valid? with none host" do
     assert HostNPort.valid?(%HostNPort{host: :none, port: 0})
-    assert HostNPort.valid?(%HostNPort{host: :none, port: 47808})
+    assert HostNPort.valid?(%HostNPort{host: :none, port: 47_808})
     assert HostNPort.valid?(%HostNPort{host: :none, port: 65_535})
   end
 
@@ -180,19 +180,19 @@ defmodule BACnet.Protocol.HostNPortTest do
 
     assert HostNPort.valid?(%HostNPort{
              host: {:ip_address, ipv6},
-             port: 47808
+             port: 47_808
            })
   end
 
   test "valid? with host name" do
     assert HostNPort.valid?(%HostNPort{
              host: {:name, "bbmd.example.com"},
-             port: 47808
+             port: 47_808
            })
 
     assert HostNPort.valid?(%HostNPort{
              host: {:name, "192.168.1.1"},
-             port: 47808
+             port: 47_808
            })
   end
 
@@ -205,21 +205,21 @@ defmodule BACnet.Protocol.HostNPortTest do
     # bad IP length
     refute HostNPort.valid?(%HostNPort{
              host: {:ip_address, {1, 2, 3}},
-             port: 47808
+             port: 47_808
            })
 
     refute HostNPort.valid?(%HostNPort{
              host: {:ip_address, {}},
-             port: 47808
+             port: 47_808
            })
 
     # empty name
-    refute HostNPort.valid?(%HostNPort{host: {:name, ""}, port: 47808})
+    refute HostNPort.valid?(%HostNPort{host: {:name, ""}, port: 47_808})
 
     # wrong host shape
-    refute HostNPort.valid?(%HostNPort{host: :ip_address, port: 47808})
-    refute HostNPort.valid?(%HostNPort{host: {:ip_address}, port: 47808})
-    refute HostNPort.valid?(%HostNPort{host: "hello", port: 47808})
+    refute HostNPort.valid?(%HostNPort{host: :ip_address, port: 47_808})
+    refute HostNPort.valid?(%HostNPort{host: {:ip_address}, port: 47_808})
+    refute HostNPort.valid?(%HostNPort{host: "hello", port: 47_808})
   end
 
   test "round-trip none" do
@@ -232,7 +232,7 @@ defmodule BACnet.Protocol.HostNPortTest do
   test "round-trip IPv4" do
     original = %HostNPort{
       host: {:ip_address, {192, 168, 0, 50}},
-      port: 47808
+      port: 47_808
     }
 
     assert {:ok, tags} = HostNPort.encode(original)
@@ -256,7 +256,7 @@ defmodule BACnet.Protocol.HostNPortTest do
 
     original = %HostNPort{
       host: {:ip_address, ipv6},
-      port: 47808
+      port: 47_808
     }
 
     assert {:ok, tags} = HostNPort.encode(original)

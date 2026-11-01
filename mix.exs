@@ -34,7 +34,8 @@ defmodule BACstack.MixProject do
           BACnet.Stack.EncoderProtocol,
           ~r"BACnet\.Test\..+",
           # TODO: Remove me once we can test services error modules (when we have payloads)
-          ~r"BACnet\.Protocol\.Services\.Error\..+"
+          ~r"BACnet\.Protocol\.Services\.Error\..+",
+          ~r"Mix\.Tasks\..+"
         ],
         summary: true,
         tool: if(System.get_env("CI"), do: ExCoveralls, else: Mix.Tasks.Test.Coverage)
@@ -59,6 +60,7 @@ defmodule BACstack.MixProject do
         "format --force",
         "compile --force",
         "credo --all --strict --ignore todo",
+        "credo --all --strict -C test",
         "doctor --failed",
         "dialyzer",
         "test"

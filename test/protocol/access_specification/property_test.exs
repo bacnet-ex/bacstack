@@ -1,6 +1,6 @@
 defmodule PropertyTest do
-  alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.AccessSpecification.Property
+  alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.Constants
 
   require Constants

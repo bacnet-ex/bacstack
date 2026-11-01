@@ -947,6 +947,21 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeTest do
              )
   end
 
+  test "encoding ReadRange preserves segmented_response_accepted=false" do
+    service = %ReadRange{
+      object_identifier: %ObjectIdentifier{type: :analog_input, instance: 1},
+      property_identifier: :present_value,
+      property_array_index: nil,
+      range: nil
+    }
+
+    assert {:ok, %ConfirmedServiceRequest{segmented_response_accepted: false} = apdu} =
+             ReadRange.to_apdu(service, segmented_response_accepted: false)
+
+    assert {:ok, ^apdu} =
+             ServicesProtocol.to_apdu(service, segmented_response_accepted: false)
+  end
+
   test "protocol implementation get name" do
     assert :read_range ==
              ServicesProtocol.get_name(%ReadRange{

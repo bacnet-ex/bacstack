@@ -90,7 +90,7 @@ defmodule BACnet.Protocol.Services.Ack.ReadRangeAck do
           more_items: more
         },
         item_count: item_count,
-        item_data: Enum.map(item_data, &ApplicationTags.Encoding.create!/1),
+        item_data: Enum.map(List.wrap(item_data), &ApplicationTags.Encoding.create!/1),
         first_sequence_number: first_seq_num
       }
 

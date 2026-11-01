@@ -1,6 +1,6 @@
 defmodule BACnet.Test.Protocol.Services.AddListElementTest do
-  alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.APDU.ConfirmedServiceRequest
+  alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.Services.AddListElement
   alias BACnet.Protocol.Services.Protocol, as: ServicesProtocol
@@ -253,6 +253,21 @@ defmodule BACnet.Test.Protocol.Services.AddListElementTest do
                invoke_id: 1,
                max_segments: 4
              )
+  end
+
+  test "encoding AddListElement preserves segmented_response_accepted=false" do
+    service = %AddListElement{
+      object_identifier: %ObjectIdentifier{type: :analog_input, instance: 1},
+      property_identifier: :present_value,
+      property_array_index: nil,
+      elements: [Encoding.create!({:real, 1.0})]
+    }
+
+    assert {:ok, %ConfirmedServiceRequest{segmented_response_accepted: false} = apdu} =
+             AddListElement.to_apdu(service, segmented_response_accepted: false)
+
+    assert {:ok, ^apdu} =
+             ServicesProtocol.to_apdu(service, segmented_response_accepted: false)
   end
 
   test "protocol implementation get name" do

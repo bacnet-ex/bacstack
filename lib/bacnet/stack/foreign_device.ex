@@ -672,7 +672,7 @@ defmodule BACnet.Stack.ForeignDevice do
       log_debug(fn -> "ForeignDevice: Started on #{inspect(self())}" end)
       {:ok, state, {:continue, :bbmd_fd_reg}}
     else
-      {:stop, {:error, :invalid_local_address}, %{}}
+      {:stop, :invalid_local_address}
     end
   end
 

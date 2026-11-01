@@ -133,6 +133,18 @@ defmodule BACnet.Test.Protocol.Services.GetEventInformationTest do
              )
   end
 
+  test "encoding GetEventInformation preserves segmented_response_accepted=false" do
+    service = %GetEventInformation{
+      last_received_object_identifier: nil
+    }
+
+    assert {:ok, %ConfirmedServiceRequest{segmented_response_accepted: false} = apdu} =
+             GetEventInformation.to_apdu(service, segmented_response_accepted: false)
+
+    assert {:ok, ^apdu} =
+             ServicesProtocol.to_apdu(service, segmented_response_accepted: false)
+  end
+
   test "protocol implementation get name" do
     assert :get_event_information ==
              ServicesProtocol.get_name(%GetEventInformation{

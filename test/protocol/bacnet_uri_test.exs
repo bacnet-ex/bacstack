@@ -71,7 +71,7 @@ defmodule BACnet.Protocol.BACnetURITest do
     test "parses vendor proprietary object with proprietary property" do
       assert {:ok, uri} = BACnetURI.parse("bacnet://5/685,10/35920")
       assert uri.object_identifier.type == 685
-      assert uri.property_identifier == 35920
+      assert uri.property_identifier == 35_920
     end
 
     test "parses with array index" do
@@ -151,7 +151,7 @@ defmodule BACnet.Protocol.BACnetURITest do
     end
 
     test "handles URI.new error" do
-      assert {:error, _} = BACnetURI.parse(":::not a uri")
+      assert {:error, _reason} = BACnetURI.parse(":::not a uri")
     end
 
     test "incomplete invalid uri should not crash" do
@@ -242,7 +242,7 @@ defmodule BACnet.Protocol.BACnetURITest do
       struct = %BACnetURI{
         device_identifier: %ObjectIdentifier{type: :device, instance: 1},
         object_identifier: %ObjectIdentifier{type: 685, instance: 122},
-        property_identifier: 36485,
+        property_identifier: 36_485,
         property_array_index: nil
       }
 
@@ -371,7 +371,7 @@ defmodule BACnet.Protocol.BACnetURITest do
       struct = %BACnetURI{
         device_identifier: %ObjectIdentifier{type: :device, instance: 1},
         object_identifier: %ObjectIdentifier{type: 685, instance: 122},
-        property_identifier: 36485,
+        property_identifier: 36_485,
         property_array_index: nil
       }
 

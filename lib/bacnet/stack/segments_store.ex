@@ -62,7 +62,7 @@ defmodule BACnet.Stack.SegmentsStore do
             window_size: non_neg_integer(),
             count_segments: non_neg_integer(),
             segments: [binary()],
-            timer: term(),
+            timer: reference() | nil,
             initial_sequence_number: non_neg_integer(),
             last_sequence_number: non_neg_integer() | nil,
             last_sequence_time: integer() | nil,
@@ -437,7 +437,7 @@ defmodule BACnet.Stack.SegmentsStore do
                   module.send(portal, sequence.source_address, abort, sequence.send_opts)
                 )
 
-                {{:error, :too_many_segments}, :drop}
+                {{:error, :too_many_segments, true}, :drop}
 
               incomplete.sequence_number == (sequence.last_sequence_number || -1) + 1 ->
                 Telemetry.execute_segments_store_sequence_segment(
@@ -518,6 +518,8 @@ defmodule BACnet.Stack.SegmentsStore do
     new_state =
       case Map.pop(state.sequences, {source_addr, invoke_id}) do
         {%Sequence{} = sequence, new_map} ->
+          Process.cancel_timer(sequence.timer)
+
           Telemetry.execute_segments_store_sequence_stop(
             self(),
             sequence,
@@ -535,12 +537,11 @@ defmodule BACnet.Stack.SegmentsStore do
   end
 
   @doc false
-  def handle_info({:timer, id}, %State{} = state) do
-    # Check if timer is still relevant (sequence has not been dropped yet)
-    # Sequence is dropped on abort or completion
+  def handle_info({:timeout, timer, id}, %State{} = state) do
+    # Ignore timers replaced by a segment, a retry, or a new sequence with the same ID.
     new_state =
       case Map.fetch(state.sequences, id) do
-        {:ok, %Sequence{transport_module: module} = sequence} ->
+        {:ok, %Sequence{transport_module: module, timer: ^timer} = sequence} ->
           # Receiving segments has timed out
           new_sequence =
             if sequence.timeout_count + 1 >= state.opts.apdu_retries do
@@ -653,7 +654,7 @@ defmodule BACnet.Stack.SegmentsStore do
           window_size: incomplete.window_size,
           count_segments: 0,
           segments: [],
-          timer: Process.send_after(self(), {:timer, id}, state.opts.apdu_timeout),
+          timer: nil,
           initial_sequence_number: incomplete.sequence_number,
           last_sequence_number: nil,
           last_sequence_time: nil,
@@ -693,7 +694,8 @@ defmodule BACnet.Stack.SegmentsStore do
       | segments: [incomplete.data | sequence.segments],
         count_segments: sequence.count_segments + 1,
         last_sequence_number: incomplete.sequence_number,
-        last_sequence_time: System.monotonic_time(:millisecond)
+        last_sequence_time: System.monotonic_time(:millisecond),
+        timeout_count: 0
     }
 
     # Do not send segment ACK if it's the first segment - it has already been ACK'ed
@@ -748,7 +750,7 @@ defmodule BACnet.Stack.SegmentsStore do
           module.send(sequence.portal, sequence.source_address, abort, sequence.send_opts)
         )
 
-        {{:error, :too_many_segments}, :drop}
+        {{:error, :too_many_segments, true}, :drop}
       else
         {:incomplete, new}
       end
@@ -858,6 +860,11 @@ defmodule BACnet.Stack.SegmentsStore do
   @spec handle_segment_compute_state(State.t(), {term(), byte()}, Sequence.t() | :drop) ::
           State.t()
   defp handle_segment_compute_state(%State{} = state, id, new_sequence) do
+    case Map.fetch(state.sequences, id) do
+      {:ok, %Sequence{timer: timer}} -> Process.cancel_timer(timer)
+      :error -> :ok
+    end
+
     if new_sequence == :drop do
       %State{state | sequences: Map.delete(state.sequences, id)}
     else
@@ -866,8 +873,7 @@ defmodule BACnet.Stack.SegmentsStore do
         | sequences:
             Map.put(state.sequences, id, %{
               new_sequence
-              | timer: Process.send_after(self(), {:timer, id}, state.opts.apdu_timeout),
-                timeout_count: 0
+              | timer: :erlang.start_timer(state.opts.apdu_timeout, self(), id)
             })
       }
     end
@@ -911,10 +917,7 @@ defmodule BACnet.Stack.SegmentsStore do
       nil ->
         :ok
 
-      term when is_integer(term) and term >= 2 and term <= 64 ->
-        :ok
-
-      term when term == :more_than_64 or term == :unspecified ->
+      term when term in [2, 4, 8, 16, 32, 64, :more_than_64, :unspecified] ->
         :ok
 
       term ->

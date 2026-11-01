@@ -1,7 +1,7 @@
 defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
   alias BACnet.Protocol.AccessSpecification
-  alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.APDU.ConfirmedServiceRequest
+  alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.Services.Protocol, as: ServicesProtocol
   alias BACnet.Protocol.Services.WritePropertyMultiple
@@ -244,6 +244,29 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
                invoke_id: 1,
                max_segments: 4
              )
+  end
+
+  test "encoding WritePropertyMultiple preserves segmented_response_accepted=false" do
+    service = %WritePropertyMultiple{
+      list: [
+        %AccessSpecification{
+          object_identifier: %ObjectIdentifier{type: :analog_input, instance: 1},
+          properties: [
+            %AccessSpecification.Property{
+              property_identifier: :present_value,
+              property_array_index: nil,
+              property_value: Encoding.create!({:real, 1.0})
+            }
+          ]
+        }
+      ]
+    }
+
+    assert {:ok, %ConfirmedServiceRequest{segmented_response_accepted: false} = apdu} =
+             WritePropertyMultiple.to_apdu(service, segmented_response_accepted: false)
+
+    assert {:ok, ^apdu} =
+             ServicesProtocol.to_apdu(service, segmented_response_accepted: false)
   end
 
   test "protocol implementation get name" do

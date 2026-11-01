@@ -1,7 +1,7 @@
 defmodule BACnet.Protocol.CalendarEntryTest do
   alias BACnet.Protocol.BACnetDate
-  alias BACnet.Protocol.DateRange
   alias BACnet.Protocol.CalendarEntry
+  alias BACnet.Protocol.DateRange
   alias BACnet.Protocol.WeekNDay
 
   use ExUnit.Case, async: true

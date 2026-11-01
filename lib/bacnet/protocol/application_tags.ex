@@ -178,7 +178,11 @@ defmodule BACnet.Protocol.ApplicationTags do
 
   defguardp is_opening_tag(tag_number) when Bitwise.band(tag_number, 0x07) == 0x06
 
-  # defguardp is_closing_tag(tag_number) when Bitwise.band(tag_number, 0x07) == 0x07
+  defguardp is_closing_tag(tag_number)
+            when is_context_specific(tag_number) and Bitwise.band(tag_number, 0x07) == 0x07
+
+  defguardp is_normal_closing_tag(opening_tag, closing_tag)
+            when not is_extended_tag_number(opening_tag) and closing_tag - 1 == opening_tag
 
   defguardp is_valid_undef(term) when term == :unspecified or term == 255
   defguardp is_valid_undef2(term) when term == 255
@@ -199,13 +203,13 @@ defmodule BACnet.Protocol.ApplicationTags do
             when (is_valid_undef(hour) or hour in 0..23) and
                    (is_valid_undef(min) or min in 0..59) and
                    (is_valid_undef(sec) or sec in 0..59) and
-                   (is_valid_undef(hundredth) or hundredth in 0..255)
+                   (is_valid_undef(hundredth) or hundredth in 0..99)
 
   defguardp is_valid_time2(hour, min, sec, hundredth)
             when (is_valid_undef2(hour) or hour in 0..23) and
                    (is_valid_undef2(min) or min in 0..59) and
                    (is_valid_undef2(sec) or sec in 0..59) and
-                   (is_valid_undef2(hundredth) or hundredth in 0..255)
+                   (is_valid_undef2(hundredth) or hundredth in 0..99)
 
   # Truncate float 32 if more than 3 consecutive digits are the same (i.e. 0.300000000004 -> 0.3)
   # The float will be truncated to the last non-repeating digit (i.e. 6.914000045 -> 6.914)
@@ -385,7 +389,8 @@ defmodule BACnet.Protocol.ApplicationTags do
                 {:ok, {:constructed, {tag_number, [], 0}}, rest}
 
               # Handle constructed encoding with zero elements
-              <<byte::size(8), rest::binary>> when byte - 1 == initial_octet ->
+              <<byte::size(8), rest::binary>>
+              when is_normal_closing_tag(initial_octet, byte) ->
                 {:ok, {:constructed, {tag_number, [], 0}}, rest}
 
               _else ->
@@ -397,15 +402,16 @@ defmodule BACnet.Protocol.ApplicationTags do
         when initial_octet == 254 and byte == tag_number ->
           {:ok, {:constructed, {tag_number, encoding, 0}}, rest}
 
-        {:ok, encoding, <<byte::size(8), rest::binary>>} when byte - 1 == initial_octet ->
+        {:ok, encoding, <<byte::size(8), rest::binary>>}
+        when is_normal_closing_tag(initial_octet, byte) ->
           {:ok, {:constructed, {tag_number, encoding, 0}}, rest}
 
         {:ok, encoding, rest} ->
           res =
             Enum.reduce_while(
               1..byte_size(rest)//1,
-              {:ok, {rest, [encoding]}},
-              fn _index, {:ok, {rest, acc}} ->
+              {:incomplete, {rest, [encoding]}},
+              fn _index, {:incomplete, {rest, acc}} ->
                 case decode(rest) do
                   # Extended tag number
                   {:ok, encoding, <<255::size(8), byte::size(8), rest::binary>>}
@@ -413,11 +419,11 @@ defmodule BACnet.Protocol.ApplicationTags do
                     {:halt, {:ok, {rest, [encoding | acc]}}}
 
                   {:ok, encoding, <<byte::size(8), rest::binary>>}
-                  when byte - 1 == initial_octet ->
+                  when is_normal_closing_tag(initial_octet, byte) ->
                     {:halt, {:ok, {rest, [encoding | acc]}}}
 
                   {:ok, encoding, rest} ->
-                    {:cont, {:ok, {rest, [encoding | acc]}}}
+                    {:cont, {:incomplete, {rest, [encoding | acc]}}}
 
                   term ->
                     {:halt, term}
@@ -429,6 +435,9 @@ defmodule BACnet.Protocol.ApplicationTags do
             {:ok, {rest, result}} ->
               {:ok, {:constructed, {tag_number, Enum.reverse(result), 0}}, rest}
 
+            {:incomplete, _result} ->
+              {:error, :insufficient_tag_value_data}
+
             term ->
               term
           end
@@ -437,6 +446,10 @@ defmodule BACnet.Protocol.ApplicationTags do
           term
       end
     end
+  end
+
+  def decode(<<initial_octet::size(8), _rest::binary>>) when is_closing_tag(initial_octet) do
+    {:error, :invalid_data}
   end
 
   def decode(<<initial_octet::size(8), _rest::binary>> = data) do
@@ -1089,7 +1102,8 @@ defmodule BACnet.Protocol.ApplicationTags do
   defp decode_value_internal(
          Constants.macro_by_name(:application_tag, :bitstring),
          <<_length::size(32), unused_bits::size(8), data::binary>>
-       ) do
+       )
+       when unused_bits in 0..7 and unused_bits <= bit_size(data) do
     bits =
       data
       |> bitstring_to_bits()

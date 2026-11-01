@@ -161,6 +161,52 @@ defmodule BACnet.Protocol.BACnetArrayTest do
     assert [5, 52, 99] = BACnetArray.to_list(array)
   end
 
+  test "explicit append beyond a fixed array returns array_full" do
+    array = BACnetArray.new(2)
+    assert {:error, :array_full} = BACnetArray.set_item(array, 3, :value)
+    assert {:error, :array_full} = BACnetArray.set_item(array, nil, :value)
+    assert {:error, :invalid_position} = BACnetArray.set_item(array, 4, :value)
+    assert {:error, :invalid_position} = BACnetArray.set_item(array, 0, :value)
+  end
+
+  test "updating the last fixed-array slot preserves the capacity" do
+    array = BACnetArray.new(2)
+    assert {:ok, updated} = BACnetArray.set_item(array, 2, :value)
+    assert BACnetArray.size(updated) == 2
+    assert {:ok, :value} = BACnetArray.get_item(updated, 2)
+    assert {:error, :array_full} = BACnetArray.set_item(updated, 3, :other)
+    assert {:error, :array_full} = BACnetArray.set_item(updated, nil, :other)
+  end
+
+  test "variable arrays still allow both append forms" do
+    array = BACnetArray.from_list([:first, :second])
+    assert {:ok, updated} = BACnetArray.set_item(array, 2, :updated)
+    assert {:ok, appended} = BACnetArray.set_item(updated, 3, :third)
+    assert {:ok, appended} = BACnetArray.set_item(appended, nil, :fourth)
+    assert BACnetArray.size(appended) == 4
+    assert BACnetArray.to_list(appended) == [:first, :updated, :third, :fourth]
+    assert {:error, :invalid_position} = BACnetArray.set_item(appended, 6, :value)
+    assert {:error, :invalid_position} = BACnetArray.set_item(appended, 0, :value)
+  end
+
+  test "empty fixed arrays reject both append forms" do
+    array = BACnetArray.from_list([], true)
+    assert BACnetArray.size(array) == 0
+    assert {:error, :array_full} = BACnetArray.set_item(array, 1, :value)
+    assert {:error, :array_full} = BACnetArray.set_item(array, nil, :value)
+  end
+
+  test "set item rejects non-integer positions" do
+    array = BACnetArray.from_list([:first, :second])
+    assert_raise FunctionClauseError, fn -> BACnetArray.set_item(array, 1.5, :value) end
+    assert_raise FunctionClauseError, fn -> BACnetArray.set_item(array, 3.0, :value) end
+    assert_raise FunctionClauseError, fn -> BACnetArray.set_item(array, :invalid, :value) end
+
+    fixed = BACnetArray.new(2)
+    assert_raise FunctionClauseError, fn -> BACnetArray.set_item(fixed, 3.0, :value) end
+    assert_raise FunctionClauseError, fn -> BACnetArray.set_item(fixed, -1, :value) end
+  end
+
   test "size array" do
     assert 0 == BACnetArray.size(BACnetArray.new())
     assert 3 == BACnetArray.size(BACnetArray.new(3))

@@ -204,6 +204,21 @@ defmodule BACnet.Test.Protocol.Services.AtomicReadFile do
              )
   end
 
+  test "encoding AtomicReadFile preserves segmented_response_accepted=false" do
+    service = %AtomicReadFile{
+      object_identifier: %ObjectIdentifier{type: :file, instance: 1},
+      stream_access: true,
+      start_position: 0,
+      requested_count: 1
+    }
+
+    assert {:ok, %ConfirmedServiceRequest{segmented_response_accepted: false} = apdu} =
+             AtomicReadFile.to_apdu(service, segmented_response_accepted: false)
+
+    assert {:ok, ^apdu} =
+             ServicesProtocol.to_apdu(service, segmented_response_accepted: false)
+  end
+
   test "protocol implementation get name" do
     assert :atomic_read_file ==
              ServicesProtocol.get_name(%AtomicReadFile{

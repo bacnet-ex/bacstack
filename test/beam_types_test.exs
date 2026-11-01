@@ -725,35 +725,32 @@ defmodule BACnet.BeamTypesTest do
   end
 
   test "generate valid clause with rules" do
-    ast =
+    {type, opts, rest} =
       quote do
         unquote(BACnet.BeamTypes).check_type(:octet_string, t.hello)
       end
-      |> then(fn {type, opts, rest} ->
-        {type, Keyword.replace(opts, :context, BACnet.BeamTypes), rest}
-      end)
+
+    ast = {type, Keyword.replace(opts, :context, BACnet.BeamTypes), rest}
 
     assert ast == BeamTypes.generate_valid_clause(BeamTypesSupport.StructTypes, __ENV__)
   end
 
   test "generate valid clause with multiple rules" do
-    ast =
+    {type, opts, rest} =
       quote do
         unquote(BACnet.BeamTypes).check_type(:octet_string, t.hello) and
           unquote(BACnet.BeamTypes).check_type(:signed_integer, t.sum)
       end
-      |> then(fn {type, opts, rest} ->
-        {type, Keyword.replace(opts, :context, BACnet.BeamTypes), rest}
-      end)
 
-    ast2 =
+    ast = {type, Keyword.replace(opts, :context, BACnet.BeamTypes), rest}
+
+    {type, opts, rest} =
       quote do
         unquote(BACnet.BeamTypes).check_type(:signed_integer, t.sum) and
           unquote(BACnet.BeamTypes).check_type(:octet_string, t.hello)
       end
-      |> then(fn {type, opts, rest} ->
-        {type, Keyword.replace(opts, :context, BACnet.BeamTypes), rest}
-      end)
+
+    ast2 = {type, Keyword.replace(opts, :context, BACnet.BeamTypes), rest}
 
     clause = BeamTypes.generate_valid_clause(BeamTypesSupport.StructTypes2, __ENV__)
 
@@ -787,11 +784,11 @@ defmodule BACnet.BeamTypesTest do
     assert :bitstring == BeamTypes.resolve_type(quote(do: tuple()), __ENV__)
 
     assert {:array, :boolean} ==
-             BeamTypes.resolve_type(quote(do: BACnet.Protocol.BACnetArray.t(boolean())), __ENV__)
+             BeamTypes.resolve_type(quote(do: BACnetArray.t(boolean())), __ENV__)
 
     assert {:array, :boolean, 7} ==
              BeamTypes.resolve_type(
-               quote(do: BACnet.Protocol.BACnetArray.t(boolean(), 7)),
+               quote(do: BACnetArray.t(boolean(), 7)),
                __ENV__
              )
 
@@ -814,13 +811,13 @@ defmodule BACnet.BeamTypesTest do
 
   test "resolve type array requires subtype" do
     assert_raise CompileError, ~r"BACnetArray must have a subtype", fn ->
-      BeamTypes.resolve_type(quote(do: BACnet.Protocol.BACnetArray.t()), __ENV__)
+      BeamTypes.resolve_type(quote(do: BACnetArray.t()), __ENV__)
     end
   end
 
   test "resolve type array too many args" do
     assert_raise CompileError, ~r"BACnetArray must have one or two parameters", fn ->
-      BeamTypes.resolve_type(quote(do: BACnet.Protocol.BACnetArray.t(a, b, c)), __ENV__)
+      BeamTypes.resolve_type(quote(do: BACnetArray.t(a, b, c)), __ENV__)
     end
   end
 

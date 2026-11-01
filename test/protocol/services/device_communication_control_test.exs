@@ -368,6 +368,20 @@ defmodule BACnet.Test.Protocol.Services.DeviceCommunicationControlTest do
              )
   end
 
+  test "encoding DeviceCommunicationControl preserves segmented_response_accepted=false" do
+    service = %DeviceCommunicationControl{
+      state: :enable,
+      time_duration: nil,
+      password: nil
+    }
+
+    assert {:ok, %ConfirmedServiceRequest{segmented_response_accepted: false} = apdu} =
+             DeviceCommunicationControl.to_apdu(service, segmented_response_accepted: false)
+
+    assert {:ok, ^apdu} =
+             ServicesProtocol.to_apdu(service, segmented_response_accepted: false)
+  end
+
   test "protocol implementation get name" do
     assert :device_communication_control =
              ServicesProtocol.get_name(%DeviceCommunicationControl{

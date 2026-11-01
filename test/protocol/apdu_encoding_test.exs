@@ -2,6 +2,7 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
   alias BACnet.Protocol.APDU
   alias BACnet.Protocol.Constants.ConstantError
   alias BACnet.Stack.EncoderProtocol
+  alias BACnet.Test.Stack.ApduFactory
 
   use ExUnit.Case, async: true
 
@@ -159,7 +160,7 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
                    constructed: {1, {:tagged, {0, "U", 1}}, 0}
                  ]
                },
-               22
+               28
              )
   end
 
@@ -231,7 +232,7 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
                    constructed: {1, {:tagged, {0, "U", 1}}, 0}
                  ]
                },
-               100
+               106
              )
   end
 
@@ -332,7 +333,7 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
              EncoderProtocol.encode_to_segmented(
                apdu,
                EncoderProtocol.encode(apdu),
-               22
+               28
              )
   end
 
@@ -408,7 +409,7 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
              EncoderProtocol.encode_to_segmented(
                apdu,
                EncoderProtocol.encode(apdu),
-               100
+               106
              )
   end
 
@@ -1006,7 +1007,7 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
                  proposed_window_size: 16,
                  sequence_number: 2
                },
-               22
+               27
              )
   end
 
@@ -1066,7 +1067,7 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
                  proposed_window_size: 16,
                  sequence_number: 2
                },
-               4
+               9
              )
   end
 
@@ -1116,7 +1117,7 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
              EncoderProtocol.encode_to_segmented(
                apdu,
                EncoderProtocol.encode(apdu),
-               22
+               27
              )
   end
 
@@ -1180,7 +1181,7 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
              EncoderProtocol.encode_to_segmented(
                apdu,
                EncoderProtocol.encode(apdu),
-               4
+               9
              )
   end
 
@@ -1783,5 +1784,128 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
         50
       )
     end
+  end
+
+  for kind <- [:confirmed_request, :complex_ack],
+      maximum <- [50, 128, 480, 1476],
+      encoding <- [:encode_segmented, :encode_to_segmented] do
+    test "#{kind} #{encoding} respects complete APDU maximum #{maximum}" do
+      payload = [octet_string: :binary.copy(<<7>>, unquote(maximum) * 2)]
+
+      apdu =
+        case unquote(kind) do
+          :complex_ack ->
+            %{ApduFactory.complex_ack(1, payload) | sequence_number: 0, proposed_window_size: 4}
+
+          :confirmed_request ->
+            %{
+              ApduFactory.read_property()
+              | sequence_number: 0,
+                proposed_window_size: 4,
+                parameters: payload
+            }
+        end
+
+      encoded = IO.iodata_to_binary(EncoderProtocol.encode(apdu))
+
+      segments =
+        case unquote(encoding) do
+          :encode_segmented ->
+            EncoderProtocol.encode_segmented(apdu, unquote(maximum))
+
+          :encode_to_segmented ->
+            EncoderProtocol.encode_to_segmented(apdu, encoded, unquote(maximum))
+        end
+
+      assert length(segments) > 1
+
+      assert Enum.all?(segments, &(IO.iodata_length(&1) <= unquote(maximum))),
+             "segment lengths #{inspect(Enum.map(segments, &IO.iodata_length/1), charlists: :as_lists)} exceed #{unquote(maximum)}"
+
+      chunks =
+        Enum.with_index(segments, fn bytes, index ->
+          assert {:incomplete, segment} = APDU.decode(IO.iodata_to_binary(bytes))
+          assert segment.sequence_number == index
+          assert segment.more_follows == index < length(segments) - 1
+          segment.data
+        end)
+
+      header_size = if unquote(kind) == :complex_ack, do: 3, else: 4
+
+      assert IO.iodata_to_binary(chunks) ==
+               binary_part(encoded, header_size, byte_size(encoded) - header_size)
+    end
+  end
+
+  for kind <- [:confirmed_request, :complex_ack],
+      encoding <- [:encode_segmented, :encode_to_segmented] do
+    test "#{kind} #{encoding} handles exact payload-capacity boundaries" do
+      header_size = if unquote(kind) == :confirmed_request, do: 6, else: 5
+      capacity = 50 - header_size
+
+      for body_size <- [capacity - 1, capacity, capacity + 1, 2 * capacity] do
+        payload = [octet_string: :binary.copy(<<7>>, body_size - 2)]
+        apdu = segmented_apdu(unquote(kind), payload)
+        encoded = IO.iodata_to_binary(EncoderProtocol.encode(apdu))
+        segments = encode_segments(unquote(encoding), apdu, encoded, 50)
+
+        assert length(segments) == div(body_size + capacity - 1, capacity)
+
+        chunks =
+          Enum.with_index(segments, fn bytes, index ->
+            assert IO.iodata_length(bytes) <= 50
+            assert {:incomplete, segment} = APDU.decode(IO.iodata_to_binary(bytes))
+            assert segment.sequence_number == index
+            assert segment.more_follows == index < length(segments) - 1
+            segment.data
+          end)
+
+        original_header_size = header_size - 2
+
+        assert IO.iodata_to_binary(chunks) ==
+                 binary_part(
+                   encoded,
+                   original_header_size,
+                   byte_size(encoded) - original_header_size
+                 )
+      end
+    end
+
+    test "#{kind} #{encoding} rejects a budget without payload space" do
+      apdu = segmented_apdu(unquote(kind), unsigned_integer: 7)
+      encoded = EncoderProtocol.encode(apdu)
+      header_size = if unquote(kind) == :confirmed_request, do: 6, else: 5
+
+      for maximum <- [header_size - 1, header_size] do
+        assert_raise ArgumentError, ~r/segmented header size/, fn ->
+          encode_segments(unquote(encoding), apdu, encoded, maximum)
+        end
+      end
+
+      segments = encode_segments(unquote(encoding), apdu, encoded, header_size + 1)
+      assert length(segments) == 2
+      assert Enum.all?(segments, &(IO.iodata_length(&1) == header_size + 1))
+    end
+  end
+
+  defp segmented_apdu(:complex_ack, payload) do
+    %{ApduFactory.complex_ack(1, payload) | sequence_number: 0, proposed_window_size: 4}
+  end
+
+  defp segmented_apdu(:confirmed_request, payload) do
+    %{
+      ApduFactory.read_property()
+      | sequence_number: 0,
+        proposed_window_size: 4,
+        parameters: payload
+    }
+  end
+
+  defp encode_segments(:encode_segmented, apdu, _encoded, maximum) do
+    EncoderProtocol.encode_segmented(apdu, maximum)
+  end
+
+  defp encode_segments(:encode_to_segmented, apdu, encoded, maximum) do
+    EncoderProtocol.encode_to_segmented(apdu, encoded, maximum)
   end
 end
