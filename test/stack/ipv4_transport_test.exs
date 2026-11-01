@@ -1,14 +1,11 @@
 defmodule BACnet.Stack.Transport.IPv4TransportTest do
   alias BACnet.Protocol.BvlcResult
-  alias BACnet.Protocol.Constants
   alias BACnet.Protocol.NetworkLayerProtocolMessage
   alias BACnet.Protocol.NPCI
   alias BACnet.Protocol.NpciTarget
   alias BACnet.Stack.EncoderProtocol
   alias BACnet.Stack.Transport.IPv4Transport
   alias BACnet.Test.Stack.ApduFactory
-
-  require Constants
 
   use BACnet.Test.Stack.Case, async: false
 
