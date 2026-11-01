@@ -15,7 +15,7 @@ defmodule BACnet.Stack.TelemetryTest do
   alias BACnet.Stack.Telemetry, warn: false
   alias BACnet.Stack.TrendLogger, warn: false
 
-  use ExUnit.Case, async: true
+  use BACnet.Test.Stack.Case, async: true
 
   @moduletag :telemetry
 

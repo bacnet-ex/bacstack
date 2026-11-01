@@ -2,7 +2,7 @@ defmodule BACnet.Stack.LogBufferTreeTest do
   alias BACnet.Stack.LogBufferBehaviour
   alias BACnet.Stack.LogBufferTree
 
-  use ExUnit.Case, async: true
+  use BACnet.Test.Stack.Case, async: true
 
   @moduletag :stack
   @moduletag :log_buffer

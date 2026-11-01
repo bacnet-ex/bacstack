@@ -45,12 +45,18 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
   @max_apdu 1476
   @transport_protocol {@bacnet_proto, __MODULE__}
 
+  # We only want to know whether OTP25+ or pre-OTP25
+  # Since code compiled for OTP24 can't run on OTP25+ and
+  # code compiled on OTP25 can't run on OTP24, this is fine
+  @otp_version String.to_integer(System.otp_release())
+
   # Looks up the transport PID through the portal (but only if the port is still open)
   @spec lookup_broadcast_address_by_portal_port(port()) ::
           {:inet.ip4_address(), :inet.port_number()}
   defp lookup_broadcast_address_by_portal_port(portal) do
-    case :inet.info(portal) do
-      %{owner: owner} -> get_broadcast_address(owner)
+    # Unlike :inet.info/1 on early OTP 24, port_info/2 handles closed ports.
+    case :erlang.port_info(portal, :connected) do
+      {:connected, owner} -> get_broadcast_address(owner)
       _else -> {{255, 255, 255, 255}, @bacnet_port}
     end
   end
@@ -295,6 +301,7 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
   - `recbuffer_size: pos_integer()` - Optional. Sets the minimum size of the receive buffer to use for the UDP socket.
   - `reuseaddr: boolean()` - Optional. Allows to set `SO_REUSEADDR` on the UDP socket.
   - `reuseport: boolean()` - Optional. Allows to set `SO_REUSEPORT` on the UDP socket - only with socket backend.
+    Requires OTP 29 or newer for support in the UDP socket backend.
   - `supervisor: Supervisor.supervisor()` - Optional. The task supervisor to use to spawn tasks under.
     Tasks are spawned to invoke the given callback. If no supervisor is given,
     the tasks will be spawned unsupervised.
@@ -526,21 +533,29 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
       end
 
     # Allow to use socket backend, instead of the current default inet
-    {backend, opts_tail} =
+    backend_opts =
       if Map.get(opts, :inet_backend, nil) == :socket do
-        {:socket, [{:reuseport, !!Map.get(opts, :reuseport, false)} | opts_tail]}
+        [{:inet_backend, :socket} | reuseport_opts(opts)]
       else
-        {:inet, opts_tail}
+        # OTP 24 has no UDP backend selector
+        if @otp_version < 25 do
+          []
+        else
+          [inet_backend: :inet]
+        end
       end
 
-    case :gen_udp.open(bac_port, [
-           {:inet_backend, backend},
-           :binary,
-           :inet,
-           {:active, @active_num_start},
-           {:broadcast, true}
-           | opts_tail
-         ]) do
+    case :gen_udp.open(
+           bac_port,
+           backend_opts ++
+             [
+               :binary,
+               :inet,
+               {:active, @active_num_start},
+               {:broadcast, true}
+               | opts_tail
+             ]
+         ) do
       {:ok, port} ->
         # For broadcasts and not on Windows, open separate broadcast receive udp port,
         # because on Linux you can not receive broadcasts once you bind
@@ -550,13 +565,16 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
           if local_ip != nil and not match?({:win32, _name}, :os.type()) do
             brd_opts_tail = Keyword.replace!(opts_tail, :ip, broadcast_addr)
 
-            :gen_udp.open(bac_port, [
-              {:inet_backend, backend},
-              :binary,
-              :inet,
-              {:active, @active_num_start}
-              | brd_opts_tail
-            ])
+            :gen_udp.open(
+              bac_port,
+              backend_opts ++
+                [
+                  :binary,
+                  :inet,
+                  {:active, @active_num_start}
+                  | brd_opts_tail
+                ]
+            )
           else
             {:ok, nil}
           end
@@ -849,6 +867,15 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
   end
 
   #### Helpers ####
+
+  @spec reuseport_opts(map()) :: Keyword.t()
+  defp reuseport_opts(opts) do
+    if Map.get(opts, :reuseport, false) do
+      [reuseport: true]
+    else
+      []
+    end
+  end
 
   # Spawns a new task (either supervisored or not) and invokes the function,
   # ignoring any errors that may occur by the callback

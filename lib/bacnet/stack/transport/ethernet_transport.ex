@@ -5,6 +5,8 @@ defmodule BACnet.Stack.Transport.EthernetTransport do
   This module uses the `:socket` module and requires `NET_RAW`
   capabilities to use raw ethernet sockets.
 
+  Native socket addresses require OTP 24.1 or newer.
+
   Windows does not support raw ethernet sockets as part of its API
   and thus trying to start an Ethernet transport will fail at socket level.
 

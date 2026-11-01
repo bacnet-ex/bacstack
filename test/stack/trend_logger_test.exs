@@ -25,7 +25,7 @@ defmodule BACnet.Stack.TrendLoggerTest do
   alias BACnet.Stack.LogBufferTree
   alias BACnet.Stack.TrendLogger
 
-  use ExUnit.Case, async: true
+  use BACnet.Test.Stack.Case, async: true
 
   @moduletag :stack
   @moduletag :trend_logger

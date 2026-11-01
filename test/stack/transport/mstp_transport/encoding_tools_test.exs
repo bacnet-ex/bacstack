@@ -6,7 +6,7 @@ defmodule BACnet.Stack.Transport.MstpTransport.EncodingToolsTest do
   alias BACnet.Protocol.Services.WhoHas
   alias BACnet.Stack.Transport.MstpTransport.EncodingTools
 
-  use ExUnit.Case, async: true
+  use BACnet.Test.Stack.Case, async: true
 
   @moduletag :stack
   @moduletag :transport

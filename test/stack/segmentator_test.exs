@@ -10,7 +10,7 @@ defmodule BACnet.Stack.SegmentatorTest do
   alias BACnet.Test.Stack.FakeTransport
   alias BACnet.Test.Stack.FakeTransport.Limited
 
-  use ExUnit.Case, async: true
+  use BACnet.Test.Stack.Case, async: true
 
   @moduletag :stack
   @moduletag :segmentator
@@ -1023,7 +1023,7 @@ defmodule BACnet.Stack.SegmentatorTest do
     assert_sequence(@dest, 1)
   end
 
-  defp assert_sequence(dest, sequence_number, timeout \\ 100) do
+  defp assert_sequence(dest, sequence_number, timeout \\ 1_000) do
     assert_receive {:fake_transport_send, ^dest, data, opts}, timeout
 
     assert {:incomplete, %IncompleteAPDU{sequence_number: ^sequence_number} = incomplete} =

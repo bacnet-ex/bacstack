@@ -7,7 +7,7 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
   alias BACnet.Test.Stack.ApduFactory
   alias Circuits.UART
 
-  use ExUnit.Case, async: false
+  use BACnet.Test.Stack.Case, async: false
 
   @moduletag :stack
   @moduletag :mstp_transport

@@ -17,7 +17,7 @@ defmodule BACnet.Stack.ForeignDeviceTest do
 
   require Constants
 
-  use ExUnit.Case, async: true
+  use BACnet.Test.Stack.Case, async: true
 
   @moduletag :stack
   @moduletag :foreign_device
@@ -340,13 +340,10 @@ defmodule BACnet.Stack.ForeignDeviceTest do
 
   test "send_whois collects an I-Am and stops at max", %{client: client, transport: transport} do
     fd = start_fd!(client)
-    parent = self()
 
-    spawn(fn ->
-      send(parent, {:who, ForeignDevice.send_whois(fd, 200, max: 1, receive_timeout: 30)})
-    end)
+    task = Task.async(fn -> ForeignDevice.send_whois(fd, 1_000, max: 1, receive_timeout: 30) end)
 
-    assert_receive {:fake_transport_send, @bbmd, _apdu, _opts}, 500
+    assert_receive {:fake_transport_send, @bbmd, _apdu, _opts}
     raw = i_am_binary()
 
     send(
@@ -354,7 +351,7 @@ defmodule BACnet.Stack.ForeignDeviceTest do
       {:bacnet_transport, :bacnet_ipv4, @bbmd, {:apdu, nil, NPCI.new([]), raw}, transport}
     )
 
-    assert_receive {:who, {:ok, [{@bbmd, %IAm{vendor_id: 42}}]}}, 500
+    assert {:ok, [{@bbmd, %IAm{vendor_id: 42}}]} = Task.await(task)
 
     assert_raise ArgumentError, ~r/keyword list/, fn ->
       ForeignDevice.send_whois(fd, 100, [1])
@@ -468,7 +465,7 @@ defmodule BACnet.Stack.ForeignDeviceTest do
 
   test "send_whois returns when its timer fires", %{client: client} do
     fd = start_fd!(client)
-    assert {:ok, []} = ForeignDevice.send_whois(fd, 100, receive_timeout: 20, max: 0)
+    assert {:ok, []} = ForeignDevice.send_whois(fd, 1_000, receive_timeout: 20, max: 0)
   end
 
   test "unknown messages are ignored", %{client: client} do

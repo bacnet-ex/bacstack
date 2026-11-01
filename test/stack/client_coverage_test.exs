@@ -17,7 +17,7 @@ defmodule BACnet.Stack.ClientCoverageTest do
 
   require Constants
 
-  use ExUnit.Case, async: true
+  use BACnet.Test.Stack.Case, async: true
 
   @moduletag :stack
   @moduletag :client

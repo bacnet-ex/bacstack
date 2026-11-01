@@ -19,7 +19,7 @@ defmodule BACnet.Stack.ClientHelperTest do
 
   require Constants
 
-  use ExUnit.Case, async: true
+  use BACnet.Test.Stack.Case, async: true
 
   @moduletag :stack
   @moduletag :client_helper
@@ -853,13 +853,11 @@ defmodule BACnet.Stack.ClientHelperTest do
     end)
 
     assert {:error, {:down, %ObjectIdentifier{}}} = Task.await(task)
+    # Failed object reads also notify the fake transport owner. Drain them so
+    # the next reply targets the new scan's object-list request.
+    flush_sends()
 
     {:ok, exiting} = Task.Supervisor.start_link()
-
-    task =
-      Task.Supervisor.async_nolink(exiting, fn ->
-        ClientHelper.scan_device(client, @dest, device, exit_on_error: true)
-      end)
 
     :ok = FakeTransport.set_send_result(transport, :ok)
 
@@ -870,6 +868,12 @@ defmodule BACnet.Stack.ClientHelperTest do
       end)
 
     Agent.update(halted, fn _state -> 0 end)
+
+    # Finish arranging the transport before the scan task can send its first read.
+    task =
+      Task.Supervisor.async_nolink(exiting, fn ->
+        ClientHelper.scan_device(client, @dest, device, exit_on_error: true)
+      end)
 
     reply_confirmed(@dest, fn invoke_id ->
       read_ack(invoke_id, device, :object_list, [

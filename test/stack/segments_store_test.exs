@@ -9,7 +9,7 @@ defmodule BACnet.Stack.SegmentsStoreTest do
   alias BACnet.Test.Stack.ApduFactory
   alias BACnet.Test.Stack.FakeTransport
 
-  use ExUnit.Case, async: true
+  use BACnet.Test.Stack.Case, async: true
 
   @moduletag :stack
   @moduletag :segments_store

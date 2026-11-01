@@ -5,12 +5,18 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
   alias BACnet.Stack.Transport.EthernetTransport
   alias BACnet.Test.Stack.ApduFactory
 
-  use ExUnit.Case, async: false
+  use BACnet.Test.Stack.Case, async: false
 
   import ExUnit.CaptureLog
 
   @moduletag :stack
   @moduletag :ethernet_transport
+
+  # OTP 24.0's socket NIF cannot decode native AF_PACKET addresses. Argument
+  # validation still runs there; only tests that bind a raw socket are skipped.
+  @raw_socket_skip if String.to_integer(System.otp_release()) < 25,
+                     do: "native AF_PACKET addresses require OTP 24.1+",
+                     else: false
 
   @broadcast <<0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF>>
   @lo_mac <<0, 0, 0, 0, 0, 0>>
@@ -81,6 +87,7 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
     assert message =~ "no-such-if-bacstack"
   end
 
+  @tag skip: @raw_socket_skip
   test "the first enumerated interface is loopback" do
     assert {:ok, transport} = EthernetTransport.open(self())
 
@@ -98,6 +105,7 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
     assert :ok = EthernetTransport.close(transport)
   end
 
+  @tag skip: @raw_socket_skip
   test "a loopback transport reports its address and accepts supervisor shapes" do
     transport = start_lo!()
     assert EthernetTransport.get_local_address(transport) == @lo_mac
@@ -158,12 +166,15 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
     end
   end
 
+  @tag skip: @raw_socket_skip
   test "a broadcast who-is is delivered and a unicast reply is written" do
     transport = start_lo!()
     peer = open_peer!(transport)
 
     write_frame!(peer, transport, @broadcast, @peer_mac, @who_is)
-    assert {:apdu, :original_broadcast, %NPCI{}, <<16, 8>>} = await_payload(@peer_mac)
+
+    assert {:apdu, :original_broadcast, %NPCI{}, <<16, 8>>} =
+             await_payload(@peer_mac, transport)
 
     portal = EthernetTransport.get_portal(transport)
     drain_peer(peer)
@@ -189,6 +200,7 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
     assert binary_contains?(struct_frame, encoded)
   end
 
+  @tag skip: @raw_socket_skip
   test "frames that are not for this interface are ignored" do
     transport = start_lo!()
     peer = open_peer!(transport)
@@ -200,17 +212,24 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
     refute_receive {:bacnet_transport, _, _, _, _}, 150
 
     write_frame!(peer, transport, @lo_mac, @peer_mac, @who_is)
-    assert {:apdu, :original_unicast, %NPCI{}, <<16, 8>>} = await_payload(@peer_mac)
+
+    assert {:apdu, :original_unicast, %NPCI{}, <<16, 8>>} =
+             await_payload(@peer_mac, transport)
+
     assert EthernetTransport.get_local_address(transport) == @lo_mac
   end
 
+  @tag skip: @raw_socket_skip
   test "a padded payload is cut to the length field" do
     transport = start_lo!()
     peer = open_peer!(transport)
     write_frame!(peer, transport, @broadcast, @peer_mac, @who_is <> <<0, 0, 0, 0, 0>>, 4)
-    assert {:apdu, :original_broadcast, %NPCI{}, <<16, 8>>} = await_payload(@peer_mac)
+
+    assert {:apdu, :original_broadcast, %NPCI{}, <<16, 8>>} =
+             await_payload(@peer_mac, transport)
   end
 
+  @tag skip: @raw_socket_skip
   test "an undecodable payload and a zero hop count are discarded" do
     transport = start_lo!()
     peer = open_peer!(transport)
@@ -237,6 +256,7 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
                      _portal}
   end
 
+  @tag skip: @raw_socket_skip
   test "a network-layer message is delivered" do
     transport = start_lo!()
     peer = open_peer!(transport)
@@ -244,9 +264,10 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
     write_frame!(peer, transport, @lo_mac, @peer_mac, npci <> <<0, 0, 1>>)
 
     assert {:network, :original_unicast, %NPCI{is_network_message: true},
-            %NetworkLayerProtocolMessage{}} = await_payload(@peer_mac)
+            %NetworkLayerProtocolMessage{}} = await_payload(@peer_mac, transport)
   end
 
+  @tag skip: @raw_socket_skip
   test "a function, an mfa, and a dead name can be the callback" do
     parent = self()
 
@@ -294,6 +315,7 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
     assert_receive {:task, @peer_mac, {:apdu, :original_broadcast, %NPCI{}, <<16, 8>>}, _}, 1_000
   end
 
+  @tag skip: @raw_socket_skip
   test "unknown messages leave the transport running" do
     transport = start_lo!()
     send(transport, :unused)
@@ -302,6 +324,7 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
     assert EthernetTransport.get_local_address(transport) == @lo_mac
   end
 
+  @tag skip: @raw_socket_skip
   test "closing the socket from outside stops the transport" do
     transport = start_lo!()
     {socket, _ifindex, _mac} = EthernetTransport.get_portal(transport)
@@ -365,15 +388,6 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
 
   defp packet_addr(ifindex) do
     %{family: 17, addr: <<0::16, ifindex::32-native, 0::128>>}
-  end
-
-  defp await_payload(source) do
-    assert_receive {:bacnet_transport, {:bacnet_ethernet, EthernetTransport}, ^source, data,
-                    _portal},
-                   1_000
-
-    drain_callbacks()
-    data
   end
 
   defp await_payload(source, transport, deadline \\ System.monotonic_time(:millisecond) + 1_000) do

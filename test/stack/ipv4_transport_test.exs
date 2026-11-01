@@ -10,7 +10,7 @@ defmodule BACnet.Stack.Transport.IPv4TransportTest do
 
   require Constants
 
-  use ExUnit.Case, async: false
+  use BACnet.Test.Stack.Case, async: false
 
   import ExUnit.CaptureLog
 
@@ -503,7 +503,7 @@ defmodule BACnet.Stack.Transport.IPv4TransportTest do
     :gen_udp.close(rebound)
   end
 
-  test "reuseaddr, a receive buffer, and the socket backend are accepted" do
+  test "reuseaddr and a receive buffer are accepted" do
     {transport, port} =
       open!(self(), reuseaddr: true, recbuffer_size: 8192, inet_backend: :inet)
 
@@ -512,19 +512,52 @@ defmodule BACnet.Stack.Transport.IPv4TransportTest do
     assert {:ok, [recbuf: size]} = :inet.getopts(portal, [:recbuf])
     assert size >= 8192
 
-    {socket_transport, socket_port} =
-      open!(self(), inet_backend: :socket, reuseport: true, reuseaddr: true)
+    assert IPv4Transport.get_broadcast_address(transport) == {{255, 255, 255, 255}, port}
+  end
+
+  # The UDP socket backend was introduced in OTP 24.1 (ERTS 12.1)
+  @tag skip:
+         if(
+           String.to_integer(System.otp_release()) < 25,
+           do: "the UDP socket backend requires OTP 25+",
+           else: false
+         )
+  test "the socket backend receives frames without reuseport" do
+    {socket_transport, socket_port} = open!(self(), inet_backend: :socket)
 
     socket_portal = IPv4Transport.get_portal(socket_transport)
     refute is_port(socket_portal)
+
     {:ok, peer, _peer_port} = peer_socket()
     push(peer, socket_port, unicast_who_is())
 
     assert_receive {:bacnet_transport, {:bacnet_ipv4, IPv4Transport}, {{127, 0, 0, 1}, _},
                     {:apdu, :original_unicast, _, <<16, 8>>}, ^socket_portal},
                    500
+  end
 
-    assert IPv4Transport.get_broadcast_address(transport) == {{255, 255, 255, 255}, port}
+  # OTP 26 introduced the inet option; support in the socket backend arrived
+  # in OTP 29 (OTP-19917). Earlier socket backends reject or ignore the option.
+  @tag skip:
+         if(String.to_integer(System.otp_release()) < 29,
+           do: "native reuseport in the UDP socket backend requires OTP 29+",
+           else: false
+         )
+  test "the socket backend accepts native reuseport" do
+    {transport, port} = open!(self(), inet_backend: :socket, reuseport: true, reuseaddr: true)
+    portal = IPv4Transport.get_portal(transport)
+    assert {:ok, [reuseport: true]} = :inet.getopts(portal, [:reuseport])
+
+    {:ok, peer, _peer_port} = peer_socket()
+    push(peer, port, unicast_who_is())
+
+    assert_receive {:bacnet_transport, {:bacnet_ipv4, IPv4Transport}, {{127, 0, 0, 1}, _},
+                    {:apdu, :original_unicast, _, <<16, 8>>}, ^portal},
+                   1_000
+
+    {default_transport, _default_port} = open!(self(), inet_backend: :socket)
+    default_portal = IPv4Transport.get_portal(default_transport)
+    assert {:ok, [reuseport: false]} = :inet.getopts(default_portal, [:reuseport])
   end
 
   test "a callback atom that is not registered is ignored" do

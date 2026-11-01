@@ -5,7 +5,7 @@ defmodule BACnet.Stack.Transport.MstpTransport.ReceiveFSMTest do
   alias BACnet.Stack.Transport.MstpTransport.ReceiveFSM
   alias Circuits.UART
 
-  use ExUnit.Case, async: false
+  use BACnet.Test.Stack.Case, async: false
 
   @moduletag :stack
   @moduletag :transport
@@ -73,6 +73,44 @@ defmodule BACnet.Stack.Transport.MstpTransport.ReceiveFSMTest do
 
     write_frame!(peer, token_frame(5, 1))
     assert await_baud(transport, 9600) == 9600
+  end
+
+  test "the receiver accepts an autobaud header before the transport initializes" do
+    {mine, peer_path, socat_pid} = pty_pair()
+    {:ok, peer} = UART.start_link()
+    :ok = UART.open(peer, peer_path, uart_opts())
+
+    on_exit(fn ->
+      if Process.alive?(peer), do: UART.stop(peer)
+      stop_socat(socat_pid)
+    end)
+
+    parent = self()
+
+    task =
+      Task.async(fn ->
+        # Hold the transport between init/1 and its :initialize continuation.
+        # UART data can already reach the receiver in this window.
+        {:ok, state, {:continue, :initialize}} =
+          MstpTransport.init({parent, %{port_name: mine, local_address: 5, baudrate: :auto}})
+
+        try do
+          send(parent, :receiver_ready)
+
+          receive do
+            :received_valid_frame_autobaud -> :ok
+          after
+            1_000 -> :header_not_received
+          end
+        after
+          ReceiveFSM.close(state.receive_fsm)
+          UART.stop(state.uart_pid)
+        end
+      end)
+
+    assert_receive :receiver_ready
+    write_frame!(peer, token_frame(5, 1))
+    assert :ok = Task.await(task)
   end
 
   test "an invalid frame during autobaud tries the next baudrate" do

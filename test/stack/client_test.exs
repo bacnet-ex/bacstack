@@ -12,7 +12,7 @@ defmodule BACnet.Stack.ClientTest do
 
   require Constants
 
-  use ExUnit.Case, async: true
+  use BACnet.Test.Stack.Case, async: true
 
   @moduletag :stack
   @moduletag :client
@@ -367,9 +367,11 @@ defmodule BACnet.Stack.ClientTest do
          {:apdu, :original_unicast, NPCI.new(expects_reply: true), raw}, transport}
       )
 
-      assert_receive {:bacnet_client, ref, %APDU.ConfirmedServiceRequest{invoke_id: 8},
-                      {@dest, :original_unicast, %NPCI{}}, ^client}
-                     when is_reference(ref)
+      sync(client)
+
+      assert_received {:bacnet_client, ref, %APDU.ConfirmedServiceRequest{invoke_id: 8},
+                       {@dest, :original_unicast, %NPCI{}}, ^client}
+                      when is_reference(ref)
 
       assert :ok = Client.reply(client, ref, ApduFactory.simple_ack(8))
       assert_received {:fake_transport_send, @dest, reply, opts}
@@ -399,7 +401,8 @@ defmodule BACnet.Stack.ClientTest do
          {:apdu, :original_unicast, NPCI.new(expects_reply: true), raw}, transport}
       )
 
-      assert_receive {:fake_transport_send, @dest, data, _opts}
+      sync(client)
+      assert_received {:fake_transport_send, @dest, data, _opts}
       assert {:ok, %APDU.Reject{invoke_id: 2, reason: :other}} = APDU.decode(data)
     end
 

@@ -975,7 +975,9 @@ if Code.ensure_loaded?(Circuits.UART) do
 
           fsm_opts =
             new_opts
-            |> Map.take([:baudrate, :local_address])
+            |> Map.take([:local_address])
+            |> Map.put(:baudrate, baudrate)
+            |> Map.put(:autobaud, new_opts.baudrate == :auto)
             |> Map.put(:log_communication, !!new_opts[:log_communication_rcv])
             |> Enum.to_list()
 
