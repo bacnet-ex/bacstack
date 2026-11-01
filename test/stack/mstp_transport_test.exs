@@ -125,7 +125,7 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
 
     assert :ok = MstpTransport.reply_postponed(transport, 8)
     assert MstpTransport.get_state(transport) == :idle
-    assert_receive {:circuits_uart, ^peer, reply}, 1_000
+    reply = await_uart(peer)
     assert :binary.at(reply, 2) == 7
   end
 
@@ -148,7 +148,7 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
     assert :ok = MstpTransport.send(transport, 255, <<16, 8>>, is_broadcast: true)
     write_frame!(peer, token_frame(3, 1))
 
-    assert_receive {:circuits_uart, ^peer, frame}, 1_000
+    frame = await_uart(peer)
     assert :binary.at(frame, 2) == 6
     assert :binary.at(frame, 3) == 255
     assert :binary.at(frame, 4) == 3
@@ -205,13 +205,13 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
   test "a poll for master is answered and a test request is echoed" do
     %{transport: transport, peer: peer} = start_master!(local_address: 6)
     write_frame!(peer, token_frame_type(1, 6, 2))
-    assert_receive {:circuits_uart, ^peer, reply}, 1_000
+    reply = await_uart(peer)
     assert :binary.at(reply, 2) == 2
     assert :binary.at(reply, 3) == 2
     assert :binary.at(reply, 4) == 6
 
     write_frame!(peer, data_frame(3, 6, 2, "ping"))
-    assert_receive {:circuits_uart, ^peer, response}, 1_000
+    response = await_uart(peer)
     assert :binary.at(response, 2) == 4
     assert :binary.match(response, "ping") != :nomatch
     assert MstpTransport.get_state(transport) == :idle
@@ -229,7 +229,7 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
 
     assert_receive :calling
     write_frame!(peer, token_frame(6, 1))
-    assert_receive {:circuits_uart, ^peer, request}, 1_000
+    request = await_uart(peer)
     assert :binary.at(request, 2) == 3
 
     write_frame!(peer, data_frame(4, 6, 2, "Hello World"))
@@ -258,7 +258,7 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
              :pass_token
            ]
 
-    assert_receive {:circuits_uart, ^peer, _frame}, 1_000
+    _frame = await_uart(peer)
     assert Process.alive?(transport)
   end
 
@@ -271,7 +271,7 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
     assert MstpTransport.get_state(transport) == :poll_for_master
     flush_uart(peer)
     write_frame!(peer, token_frame_type(2, 1, 2))
-    assert_receive {:circuits_uart, ^peer, token}, 1_000
+    token = await_uart(peer)
     assert :binary.at(token, 2) == 0
     assert MstpTransport.get_state(transport) == :pass_token
   end
@@ -410,11 +410,10 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
     assert :ok = MstpTransport.send(transport, 7, <<16, 8>>, npci: nil)
     write_frame!(peer, token_frame(4, 1))
 
-    assert_receive {:circuits_uart, ^peer, raw}, 1_000
-    assert raw == <<9, 9, 9, 9>>
-    assert_receive {:circuits_uart, ^peer, ext}, 1_000
+    assert read_uart(peer, 4) == <<9, 9, 9, 9>>
+    ext = await_uart(peer)
     assert :binary.at(ext, 2) == 33
-    assert_receive {:circuits_uart, ^peer, plain}, 1_000
+    plain = await_uart(peer)
     assert :binary.at(plain, 2) == 6
   end
 
@@ -480,7 +479,7 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
     assert :binary.at(request, 2) == 5
 
     write_frame!(peer, token_frame(4, 9))
-    refute_receive {:circuits_uart, ^peer, _frame}, 40
+    refute_uart(peer, 40)
     assert MstpTransport.get_state(transport) == :idle
   end
 
@@ -562,7 +561,7 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
     assert MstpTransport.get_state(transport) == :autobaud_detection
 
     write_frame!(peer, token_frame_type(1, 5, 2))
-    assert_receive {:circuits_uart, ^peer, reply}, 1_000
+    reply = await_uart(peer)
     assert :binary.at(reply, 2) == 2
     assert is_integer(MstpTransport.get_baudrate(transport))
   end
@@ -641,7 +640,7 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
     assert MstpTransport.get_state(transport) == :poll_for_master
 
     write_frame!(peer, token_frame(4, 1))
-    refute_receive {:circuits_uart, ^peer, _dropped}, 20
+    refute_uart(peer, 20)
     assert MstpTransport.get_state(transport) == :idle
 
     write_frame!(peer, token_frame(4, 1))
@@ -649,6 +648,32 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
     assert :binary.at(extended, 2) == 32
     assert :binary.at(extended, 3) == 8
     assert MstpTransport.get_state(transport) == :wait_for_reply
+  end
+
+  test "outgoing frame assertions handle split and coalesced UART deliveries" do
+    frames = [
+      data_frame(6, 7, 4, @who_is <> <<0x55, 0xFF>>),
+      token_frame_type(8, 7, 4),
+      token_frame_type(128, 7, 4),
+      cobs_frame(32, 8, 4, @who_is)
+    ]
+
+    wire = IO.iodata_to_binary(frames)
+
+    # Exercise every split position, including one delivery containing all
+    # frames. Preamble bytes inside a payload must not split that frame.
+    for split <- 0..byte_size(wire) do
+      peer = make_ref()
+      first = binary_part(wire, 0, split)
+      second = binary_part(wire, split, byte_size(wire) - split)
+
+      for chunk <- [first, second], chunk != <<>> do
+        send(self(), {:circuits_uart, peer, chunk})
+      end
+
+      assert Enum.map(frames, fn _frame -> await_uart(peer) end) == frames
+      refute_uart(peer, 0)
+    end
   end
 
   test "an empty payload and a forced reply bit share one token" do
@@ -850,7 +875,7 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
 
     send(transport, {:timer_generate_token, System.monotonic_time(:millisecond)})
     assert MstpTransport.get_state(transport) == :no_token
-    refute_receive {:circuits_uart, ^peer, _frame}, 80
+    refute_uart(peer, 80)
 
     %{transport: passing, peer: passing_peer} =
       start_master!(local_address: 1, max_master_address: 2)
@@ -874,7 +899,7 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
     assert :ok = MstpTransport.disable_token_passing(passing)
     send(passing, {:timer_retry_token_handoff, 2})
     assert MstpTransport.get_state(passing) == :no_token
-    refute_receive {:circuits_uart, ^passing_peer, _frame}, 20
+    refute_uart(passing_peer, 20)
   end
 
   test "the answer timer postpones a master and expires quietly on a slave" do
@@ -900,7 +925,7 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
     assert MstpTransport.get_state(slave) == :answer_data_request
     send(slave, :timer_answer_timeout)
     assert MstpTransport.get_state(slave) == :idle
-    refute_receive {:circuits_uart, ^slave_peer, _frame}, 40
+    refute_uart(slave_peer, 40)
   end
 
   test "a slave ignores a token and a poll for master" do
@@ -913,7 +938,7 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
                     ^transport},
                    1_000
 
-    refute_receive {:circuits_uart, ^peer, _frame}, 40
+    refute_uart(peer, 40)
     assert MstpTransport.get_state(transport) == :idle
   end
 
@@ -928,7 +953,7 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
                     ^transport},
                    1_000
 
-    refute_receive {:circuits_uart, ^peer, _frame}, 40
+    refute_uart(peer, 40)
     assert MstpTransport.get_state(transport) == :idle
   end
 
@@ -957,7 +982,7 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
                    1_000
 
     refute_receive {:bacnet_transport, _, _, _, _}, 40
-    refute_receive {:circuits_uart, ^peer, _frame}, 20
+    refute_uart(peer, 20)
     assert MstpTransport.get_state(transport) == :idle
   end
 
@@ -1028,7 +1053,7 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
     assert MstpTransport.get_state(transport) == :idle
     assert :ok = MstpTransport.disable_token_passing(transport)
     send(transport, :wakeup_use_token)
-    refute_receive {:circuits_uart, ^peer, _frame}, 20
+    refute_uart(peer, 20)
     assert MstpTransport.get_state(transport) == :no_token
   end
 
@@ -1332,6 +1357,8 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
   end
 
   defp flush_uart(peer) do
+    Process.delete({__MODULE__, :uart_buffer, peer})
+
     receive do
       {:circuits_uart, ^peer, _data} -> flush_uart(peer)
     after
@@ -1344,8 +1371,40 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
   end
 
   defp await_uart(peer) do
-    assert_receive {:circuits_uart, ^peer, frame}, 1_000
-    frame
+    # UART.Framing.None delivers arbitrary byte chunks, including partial
+    # frames and several frames in a single message. Keep unread bytes per peer.
+    deadline = System.monotonic_time(:millisecond) + 1_000
+    header = read_uart(peer, 8, deadline)
+    assert <<0x55, 0xFF, _type, _destination, _source, length::16, _crc>> = header
+    payload_length = if length > 0, do: length + 2, else: 0
+    header <> read_uart(peer, payload_length, deadline)
+  end
+
+  defp read_uart(peer, length, deadline \\ System.monotonic_time(:millisecond) + 1_000) do
+    key = {__MODULE__, :uart_buffer, peer}
+    buffer = Process.get(key, <<>>)
+
+    if byte_size(buffer) >= length do
+      data = binary_part(buffer, 0, length)
+      Process.put(key, binary_part(buffer, length, byte_size(buffer) - length))
+      data
+    else
+      timeout = max(0, deadline - System.monotonic_time(:millisecond))
+
+      receive do
+        {:circuits_uart, ^peer, data} when is_binary(data) ->
+          Process.put(key, buffer <> data)
+          read_uart(peer, length, deadline)
+      after
+        timeout ->
+          flunk("expected #{length} UART bytes, received #{inspect(buffer)}")
+      end
+    end
+  end
+
+  defp refute_uart(peer, timeout) do
+    assert Process.get({__MODULE__, :uart_buffer, peer}, <<>>) == <<>>
+    refute_receive {:circuits_uart, ^peer, _data}, timeout
   end
 
   defp await_state(transport, expected, attempts \\ 15) do

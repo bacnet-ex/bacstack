@@ -140,7 +140,7 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
     )
   end
 
-  defp create(contract, properties \\ %{}, opts \\ [], hook_overrides \\ %{}) do
+  defp create(contract, properties, opts, hook_overrides) do
     ObjectOperations.create(
       contract,
       1,
@@ -153,32 +153,34 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
 
   test "create rejects a missing required property and a bad object name" do
     assert {:error, {:missing_required_property, :present_value}} =
-             create(contract(default_properties: %{}), %{})
+             create(contract(default_properties: %{}), %{}, [], %{})
 
     assert {:error, {:invalid_non_printable_object_name, :object_name}} =
              ObjectOperations.create(contract(), 1, "", %{}, [], hooks(contract()))
   end
 
   test "create rejects, ignores, or stores unknown properties" do
-    assert {:error, {:unknown_property, :nope}} = create(contract(), %{nope: 1})
+    assert {:error, {:unknown_property, :nope}} = create(contract(), %{nope: 1}, [], %{})
 
     assert {:ok, object} =
-             create(contract(), %{5 => false}, allow_unknown_properties: true)
+             create(contract(), %{5 => false}, [allow_unknown_properties: true], %{})
 
     assert object._unknown_properties[5] == false
 
     assert {:error, {:unknown_property, :nope}} =
-             create(contract(), %{nope: 1}, allow_unknown_properties: true)
+             create(contract(), %{nope: 1}, [allow_unknown_properties: true], %{})
 
     assert {:ok, remote} =
-             create(contract(), %{nope: 1, present_value: true},
-               allow_unknown_properties: true,
-               remote_object: 4
+             create(
+               contract(),
+               %{nope: 1, present_value: true},
+               [allow_unknown_properties: true, remote_object: 4],
+               %{}
              )
 
     assert remote._unknown_properties[:nope] == 1
 
-    assert {:ok, ignored} = create(contract(), %{nope: 1}, ignore_unknown_properties: true)
+    assert {:ok, ignored} = create(contract(), %{nope: 1}, [ignore_unknown_properties: true], %{})
     assert ignored._unknown_properties == %{}
   end
 
@@ -191,7 +193,7 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
       )
 
     assert {:error, {:value_failed_property_validation, :present_value}} =
-             create(contract, %{present_value: false})
+             create(contract, %{present_value: false}, [], %{})
 
     contract =
       contract(
@@ -200,10 +202,10 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
       )
 
     assert {:error, {:invalid_property_type, :event_state}} =
-             create(contract, %{event_state: 3})
+             create(contract, %{event_state: 3}, [], %{})
 
     assert {:ok, object} =
-             create(contract, %{event_state: 3}, allow_numeric_constants: true)
+             create(contract, %{event_state: 3}, [allow_numeric_constants: true], %{})
 
     assert object.event_state == 3
   end
@@ -213,25 +215,25 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
       contract(annotations: [note: [required_when: {:opts, :needs_note}]])
 
     assert {:error, {:missing_required_property, :note}} =
-             create(required, %{}, needs_note: true)
+             create(required, %{}, [needs_note: true], %{})
 
-    assert {:ok, %{note: nil}} = create(required, %{})
+    assert {:ok, %{note: nil}} = create(required, %{}, [], %{})
 
     only = contract(annotations: [note: [only_when: {:property, :description}]])
 
     assert {:error, {:property_not_allowed, :note}} =
-             create(only, %{note: "x"})
+             create(only, %{note: "x"}, [], %{})
 
     assert {:error, {:missing_required_property, :note}} =
-             create(only, %{description: "d"})
+             create(only, %{description: "d"}, [], %{})
 
-    assert {:ok, object} = create(only, %{description: "d", note: "x"})
+    assert {:ok, object} = create(only, %{description: "d", note: "x"}, [], %{})
     assert object.note == "x"
 
     optional =
       contract(annotations: [note: [only_when: fn _props, _meta -> :optional end]])
 
-    assert {:ok, %{note: nil}} = create(optional, %{})
+    assert {:ok, %{note: nil}} = create(optional, %{}, [], %{})
   end
 
   test "revision skip, remote defaults, init_fun, and intrinsic defaults" do
@@ -242,12 +244,14 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
         revision_map: %{note: 99}
       )
 
-    assert {:ok, object} = create(revised, %{})
+    assert {:ok, object} = create(revised, %{}, [], %{})
     refute :note in object._metadata.properties_list
 
     remote_contract = contract(remote_defaults: %{description: "remote"})
 
-    assert {:ok, remote} = create(remote_contract, %{present_value: true}, remote_object: 9)
+    assert {:ok, remote} =
+             create(remote_contract, %{present_value: true}, [remote_object: 9], %{})
+
     assert remote.description == "remote"
     refute remote._metadata.intrinsic_reporting
 
@@ -258,8 +262,11 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
       )
 
     assert {:ok, object} =
-             create(local, %{status_flags: flags(), out_of_service: false},
-               intrinsic_reporting: true
+             create(
+               local,
+               %{status_flags: flags(), out_of_service: false},
+               [intrinsic_reporting: true],
+               %{}
              )
 
     assert object.note == "started"
@@ -282,7 +289,7 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
   test "implicit relationships add and remove the partner property" do
     contract = contract(implicit_relationships: %{note: :gadget})
 
-    assert {:ok, object} = create(contract, %{note: "n"})
+    assert {:ok, object} = create(contract, %{note: "n"}, [], %{})
     assert object.gadget == "gadget"
     assert :gadget in object._metadata.properties_list
 
@@ -299,7 +306,7 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
       )
 
     assert {:error, {:missing_optional_property, :gadget}} =
-             create(missing, %{note: "n"})
+             create(missing, %{note: "n"}, [], %{})
   end
 
   test "inhibit and add_defaults hooks are honored" do
@@ -337,15 +344,20 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
       )
 
     assert {:ok, object} =
-             create(propagated, %{
-               present_value: false,
-               out_of_service: false,
-               status_flags: flags(),
-               event_state: @normal,
-               reliability: @no_fault,
-               priority_array: %PriorityArray{priority_16: true},
-               relinquish_default: false
-             })
+             create(
+               propagated,
+               %{
+                 present_value: false,
+                 out_of_service: false,
+                 status_flags: flags(),
+                 event_state: @normal,
+                 reliability: @no_fault,
+                 priority_array: %PriorityArray{priority_16: true},
+                 relinquish_default: false
+               },
+               [],
+               %{}
+             )
 
     assert object.present_value == true
     assert object.status_flags.out_of_service == false
@@ -413,7 +425,8 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
                  status_flags: flags(),
                  out_of_service: false
                },
-               auto_write_feedback: true
+               [auto_write_feedback: true],
+               %{}
              )
 
     assert {:ok, updated} =
@@ -455,11 +468,16 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
 
   test "property_writable? uses the readonly list and priority array" do
     assert {:ok, object} =
-             create(contract(), %{
-               description: "d",
-               out_of_service: false,
-               priority_array: %PriorityArray{}
-             })
+             create(
+               contract(),
+               %{
+                 description: "d",
+                 out_of_service: false,
+                 priority_array: %PriorityArray{}
+               },
+               [],
+               %{}
+             )
 
     assert ObjectOperations.property_writable?(object, :description, [:object_name])
     refute ObjectOperations.property_writable?(object, :object_name, [:object_name])
@@ -470,7 +488,7 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
   end
 
   test "inspect prints properties list keys" do
-    assert {:ok, object} = create(contract(), %{description: "d"})
+    assert {:ok, object} = create(contract(), %{description: "d"}, [], %{})
 
     rendered =
       object
@@ -485,7 +503,7 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
   end
 
   test "check_property_exists reports membership" do
-    assert {:ok, object} = create(contract(), %{})
+    assert {:ok, object} = create(contract(), %{}, [], %{})
     assert :ok == ObjectOperations.check_property_exists(object, :present_value)
 
     assert {:error, {:unknown_property, :note}} ==
@@ -493,7 +511,7 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
   end
 
   test "add_property accepts a new property and rejects duplicates, intrinsic, and remote" do
-    assert {:ok, object} = create(contract(), %{})
+    assert {:ok, object} = create(contract(), %{}, [], %{})
 
     assert {:ok, added} =
              ObjectOperations.add_property(
@@ -561,7 +579,7 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
   end
 
   test "remove_property drops optional and numeric properties and rejects required ones" do
-    assert {:ok, object} = create(contract(), %{description: "d"})
+    assert {:ok, object} = create(contract(), %{description: "d"}, [], %{})
 
     assert {:ok, same} =
              ObjectOperations.remove_property(contract(), object, :note, hooks(contract()))
@@ -606,7 +624,7 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
   end
 
   test "get_property reads struct fields and unknown numeric keys" do
-    assert {:ok, object} = create(contract(), %{})
+    assert {:ok, object} = create(contract(), %{}, [], %{})
     assert {:ok, false} = ObjectOperations.get_property(object, :present_value)
     assert {:error, {:unknown_property, :note}} = ObjectOperations.get_property(object, :note)
 
@@ -627,19 +645,24 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
   end
 
   test "create ignores nil properties and rejects protected input" do
-    assert {:ok, object} = create(contract(), %{note: nil, description: "kept"})
+    assert {:ok, object} = create(contract(), %{note: nil, description: "kept"}, [], %{})
     assert object.description == "kept"
     refute :note in object._metadata.properties_list
 
     assert {:error, {:protected_property, :object_instance}} =
-             create(contract(), %{object_instance: 2})
+             create(contract(), %{object_instance: 2}, [], %{})
   end
 
   test "priority array element validation and unknown property types" do
     priority = contract(has_priority_array: true)
 
     assert {:ok, object} =
-             create(priority, %{priority_array: %PriorityArray{}, relinquish_default: false})
+             create(
+               priority,
+               %{priority_array: %PriorityArray{}, relinquish_default: false},
+               [],
+               %{}
+             )
 
     assert {:error, {:invalid_property_type, :priority_array}} =
              ObjectOperations.update_property(
@@ -665,7 +688,7 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
 
   test "validators, skipped remote validation, and physical input metadata" do
     failing = contract(validators: %{description: {fn _value -> false end, nil}})
-    assert {:ok, object} = create(contract(), %{description: "d"})
+    assert {:ok, object} = create(contract(), %{description: "d"}, [], %{})
 
     assert {:error, {:value_failed_property_validation, :description}} =
              ObjectOperations.update_property(failing, object, :description, "d", hooks(failing))
@@ -702,9 +725,11 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
       contract(validators: %{description: {nil, fn _value, _object -> false end}})
 
     assert {:ok, _object} =
-             create(remote_skip, %{description: "d", present_value: true},
-               remote_object: 2,
-               skip_property_validation_remote_object: :value
+             create(
+               remote_skip,
+               %{description: "d", present_value: true},
+               [remote_object: 2, skip_property_validation_remote_object: :value],
+               %{}
              )
 
     metadata =
@@ -715,7 +740,7 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
     assert metadata.physical_input == true
 
     assert_raise ArgumentError, "Object does not support intrinsic reporting", fn ->
-      create(contract(supports_intrinsic: false), %{}, intrinsic_reporting: true)
+      create(contract(supports_intrinsic: false), %{}, [intrinsic_reporting: true], %{})
     end
   end
 
@@ -725,7 +750,9 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
                contract(annotations: [note: [required_when: {:property, :description, "other"}]]),
                %{
                  description: "d"
-               }
+               },
+               [],
+               %{}
              )
 
     assert {:ok, matched} =
@@ -734,7 +761,9 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
                  annotations: [note: [required_when: {:property, :description, "d"}]],
                  default_properties_all: %{present_value: false, note: "filled"}
                ),
-               %{description: "d"}
+               %{description: "d"},
+               [],
+               %{}
              )
 
     assert matched.note == "filled"
@@ -745,7 +774,9 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
                  annotations: [note: [required_when: {:property, :description, :==, "d"}]],
                  default_properties_all: %{present_value: false, note: "filled"}
                ),
-               %{description: "d"}
+               %{description: "d"},
+               [],
+               %{}
              )
 
     assert filled.note == "filled"
@@ -754,30 +785,46 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
              create(
                contract(annotations: [note: [required_when: {:opts, :needs_note, "yes"}]]),
                %{description: "d", note: "already"},
-               needs_note: "yes"
+               [needs_note: "yes"],
+               %{}
              )
 
     assert present.note == "already"
 
     assert {:ok, _object} =
-             create(contract(annotations: [note: [required_when: {:opts, :level, :>, 5}]]), %{})
+             create(
+               contract(annotations: [note: [required_when: {:opts, :level, :>, 5}]]),
+               %{},
+               [],
+               %{}
+             )
 
     assert {:error, {:missing_required_property, :note}} =
              create(
                contract(annotations: [note: [required_when: fn _props -> :optional end]]),
+               %{},
+               [],
                %{}
              )
 
     assert {:ok, _object} =
-             create(contract(annotations: [note: [required_when: fn _props -> :nope end]]), %{})
+             create(
+               contract(annotations: [note: [required_when: fn _props -> :nope end]]),
+               %{},
+               [],
+               %{}
+             )
 
     assert {:ok, _object} =
              create(
                contract(annotations: [note: [required_when: fn _props, _meta -> :nope end]]),
+               %{},
+               [],
                %{}
              )
 
-    assert {:ok, _object} = create(contract(annotations: [note: [required_when: :nope]]), %{})
+    assert {:ok, _object} =
+             create(contract(annotations: [note: [required_when: :nope]]), %{}, [], %{})
 
     assert {:ok, scheduled} =
              create(
@@ -785,14 +832,16 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
                  annotations: [note: [only_when: {:property, :description}]],
                  default_properties_all: %{present_value: false, note: "from-default"}
                ),
-               %{description: "d"}
+               %{description: "d"},
+               [],
+               %{}
              )
 
     assert scheduled.note == "from-default"
   end
 
   test "property_writable? covers commandable and event inhibit rules" do
-    assert {:ok, object} = create(contract(), %{})
+    assert {:ok, object} = create(contract(), %{}, [], %{})
     assert ObjectOperations.property_writable?(object, :present_value, [])
 
     max_id = Constants.macro_by_name(:asn1, :max_instance_and_property_id)
@@ -827,17 +876,20 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
 
   test "remove honors required_when and remote updates skip the intrinsic check" do
     gated = contract(annotations: [note: [required_when: {:property, :description}]])
-    assert {:ok, object} = create(gated, %{description: "d", note: "n"})
+    assert {:ok, object} = create(gated, %{description: "d", note: "n"}, [], %{})
 
     assert {:error, {:property_not_allowed, :note}} =
              ObjectOperations.remove_property(gated, object, :note, hooks(gated))
 
     assert {:ok, _object} =
-             create(contract(annotations: [note: [required_when: {:opts, :level, :>, 5}]]), %{},
-               level: 1
+             create(
+               contract(annotations: [note: [required_when: {:opts, :level, :>, 5}]]),
+               %{},
+               [level: 1],
+               %{}
              )
 
-    assert {:ok, local} = create(contract(), %{})
+    assert {:ok, local} = create(contract(), %{}, [], %{})
     remote = %{local | _metadata: %{local._metadata | remote_object: 8}}
 
     assert {:ok, updated} =
@@ -854,7 +906,7 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
 
   test "propagation leaves feedback unchanged without auto_write_feedback" do
     feedback = contract(has_feedback_value: true)
-    assert {:ok, object} = create(feedback, %{description: "d"})
+    assert {:ok, object} = create(feedback, %{description: "d"}, [], %{})
 
     assert {:ok, updated} =
              ObjectOperations.update_property(
@@ -883,7 +935,12 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
     priority = contract(has_priority_array: true, has_feedback_value: false)
 
     assert {:ok, object} =
-             create(priority, %{priority_array: %PriorityArray{}, relinquish_default: false})
+             create(
+               priority,
+               %{priority_array: %PriorityArray{}, relinquish_default: false},
+               [],
+               %{}
+             )
 
     assert {:ok, updated} = ObjectOperations.set_priority(priority, object, 3, true)
     assert updated.present_value == true

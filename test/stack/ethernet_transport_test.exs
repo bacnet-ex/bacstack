@@ -201,6 +201,30 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
   end
 
   @tag skip: @raw_socket_skip
+  test "a delayed outgoing burst keeps Ethernet packet boundaries" do
+    transport = start_lo!()
+    peer = open_peer!(transport)
+    portal = EthernetTransport.get_portal(transport)
+    second_destination = <<2, 0, 0, 0, 0, 2>>
+
+    task =
+      Task.async(fn ->
+        # Start the receive while the socket is empty, then deliver two packets.
+        Process.sleep(20)
+        :ok = EthernetTransport.send(portal, @peer_mac, <<16, 8>>)
+        :ok = EthernetTransport.send(portal, second_destination, <<16, 9>>)
+      end)
+
+    assert <<@peer_mac, @lo_mac, 7::16, @llc, 1, 0, 16, 8>> ==
+             await_outgoing(peer, @peer_mac, @lo_mac)
+
+    assert <<second_destination::binary, @lo_mac, 7::16, @llc, 1, 0, 16, 9>> ==
+             await_outgoing(peer, second_destination, @lo_mac)
+
+    assert :ok = Task.await(task)
+  end
+
+  @tag skip: @raw_socket_skip
   test "frames that are not for this interface are ignored" do
     transport = start_lo!()
     peer = open_peer!(transport)
@@ -415,8 +439,8 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
   end
 
   defp drain_peer(peer) do
-    case :socket.recv(peer, 2_000, [], 0) do
-      {:ok, _packet} -> drain_peer(peer)
+    case :socket.recvfrom(peer, 2_000, [], 0) do
+      {:ok, {_address, _packet}} -> drain_peer(peer)
       _other -> :ok
     end
   end
@@ -426,8 +450,10 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
   end
 
   defp await_outgoing(peer, dst, src, attempts) do
-    case :socket.recv(peer, 2_000, [], 100) do
-      {:ok, <<^dst::binary-size(6), ^src::binary-size(6), _rest::binary>> = frame} ->
+    # AF_PACKET carries individual Ethernet frames. A sized recv/4 can wait
+    # for more bytes and return concatenated frames inside a timeout result.
+    case :socket.recvfrom(peer, 2_000, [], 100) do
+      {:ok, {_address, <<^dst::binary-size(6), ^src::binary-size(6), _rest::binary>> = frame}} ->
         frame
 
       {:ok, _other} when attempts > 1 ->
