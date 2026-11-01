@@ -197,16 +197,10 @@ defmodule BACnet.Stack.ForeignDeviceTest do
     fd = start_fd!(client)
     {:ok, apdu} = WhoIs.to_apdu(%WhoIs{device_id_low_limit: 1, device_id_high_limit: 2}, [])
 
-    parent = self()
+    task =
+      Task.async(fn -> ForeignDevice.distribute_broadcast(fd, apdu, receive_timeout: 2_000) end)
 
-    spawn(fn ->
-      send(
-        parent,
-        {:distributed, ForeignDevice.distribute_broadcast(fd, apdu, receive_timeout: 500)}
-      )
-    end)
-
-    assert_receive {:fake_transport_send, @bbmd, _apdu, opts}
+    assert_receive {:fake_transport_send, @bbmd, _apdu, opts}, 1_000
     assert opts[:bvlc] != nil
 
     send(
@@ -217,7 +211,7 @@ defmodule BACnet.Stack.ForeignDeviceTest do
       })
     )
 
-    assert_receive {:distributed, {:error, %BvlcResult{}}}, 500
+    assert {:error, %BvlcResult{}} = Task.await(task)
   end
 
   test "distribute_broadcast rejects a request that expects a reply", %{client: client} do
@@ -245,13 +239,11 @@ defmodule BACnet.Stack.ForeignDeviceTest do
       mask: {255, 255, 255, 0}
     }
 
-    parent = self()
+    # Successful table exchanges are driven by the test, with Task.await/1
+    # bounding completion. A short protocol timeout races coverage and CI load.
+    task = Task.async(fn -> ForeignDevice.read_broadcast_distribution_table(fd) end)
 
-    spawn(fn ->
-      send(parent, {:bdt, ForeignDevice.read_broadcast_distribution_table(fd, timeout: 500)})
-    end)
-
-    assert_receive {:fake_transport_send, @bbmd, _data, opts}
+    assert_receive {:fake_transport_send, @bbmd, _data, opts}, 1_000
     assert opts[:npci] == false
 
     send(
@@ -266,19 +258,14 @@ defmodule BACnet.Stack.ForeignDeviceTest do
       })
     )
 
-    assert_receive {:bdt, {:ok, [^entry]}}, 500
+    assert {:ok, [^entry]} = Task.await(task)
 
-    spawn(fn ->
-      send(
-        parent,
-        {:written, ForeignDevice.write_broadcast_distribution_table(fd, [entry], timeout: 500)}
-      )
-    end)
+    task = Task.async(fn -> ForeignDevice.write_broadcast_distribution_table(fd, [entry]) end)
 
-    assert_receive {:fake_transport_send, @bbmd, _data, _opts}
+    assert_receive {:fake_transport_send, @bbmd, _data, _opts}, 1_000
 
     send(client, bvlc_frame(transport, @bbmd, %BvlcResult{result_code: :successful_completion}))
-    assert_receive {:written, :ok}, 500
+    assert :ok = Task.await(task)
 
     assert_raise ArgumentError, ~r/BroadcastDistributionTableEntry/, fn ->
       ForeignDevice.write_broadcast_distribution_table(fd, [:nope])
@@ -291,13 +278,9 @@ defmodule BACnet.Stack.ForeignDeviceTest do
 
   test "table reads and writes report a negative result", %{client: client, transport: transport} do
     fd = start_fd!(client)
-    parent = self()
+    task = Task.async(fn -> ForeignDevice.read_foreign_device_table(fd) end)
 
-    spawn(fn ->
-      send(parent, {:fdt, ForeignDevice.read_foreign_device_table(fd, timeout: 300)})
-    end)
-
-    assert_receive {:fake_transport_send, @bbmd, _data, _opts}
+    assert_receive {:fake_transport_send, @bbmd, _data, _opts}, 1_000
 
     send(
       client,
@@ -307,16 +290,11 @@ defmodule BACnet.Stack.ForeignDeviceTest do
       })
     )
 
-    assert_receive {:fdt, {:error, %BvlcResult{}}}, 500
+    assert {:error, %BvlcResult{}} = Task.await(task)
 
-    spawn(fn ->
-      send(
-        parent,
-        {:bdt_nak, ForeignDevice.read_broadcast_distribution_table(fd, timeout: 300)}
-      )
-    end)
+    task = Task.async(fn -> ForeignDevice.read_broadcast_distribution_table(fd) end)
 
-    assert_receive {:fake_transport_send, @bbmd, _data, _opts}
+    assert_receive {:fake_transport_send, @bbmd, _data, _opts}, 1_000
 
     send(
       client,
@@ -329,7 +307,7 @@ defmodule BACnet.Stack.ForeignDeviceTest do
       })
     )
 
-    assert_receive {:bdt_nak, {:error, %BvlcResult{}}}, 500
+    assert {:error, %BvlcResult{}} = Task.await(task)
 
     entry = %BroadcastDistributionTableEntry{
       ip: {1, 2, 3, 4},
@@ -337,14 +315,9 @@ defmodule BACnet.Stack.ForeignDeviceTest do
       mask: {255, 255, 255, 255}
     }
 
-    spawn(fn ->
-      send(
-        parent,
-        {:write_nak, ForeignDevice.write_broadcast_distribution_table(fd, [entry], timeout: 300)}
-      )
-    end)
+    task = Task.async(fn -> ForeignDevice.write_broadcast_distribution_table(fd, [entry]) end)
 
-    assert_receive {:fake_transport_send, @bbmd, _data, _opts}
+    assert_receive {:fake_transport_send, @bbmd, _data, _opts}, 1_000
 
     send(
       client,
@@ -357,7 +330,7 @@ defmodule BACnet.Stack.ForeignDeviceTest do
       })
     )
 
-    assert_receive {:write_nak, {:error, %BvlcResult{}}}, 500
+    assert {:error, %BvlcResult{}} = Task.await(task)
   end
 
   test "a table read times out", %{client: client} do
@@ -451,14 +424,13 @@ defmodule BACnet.Stack.ForeignDeviceTest do
       send(parent, {:stopped, GenServer.stop(fd, :shutdown)})
     end)
 
-    assert_receive {:stopped, :ok}
-    assert_receive {:fake_transport_send, @bbmd, _data, opts}
+    assert_receive {:stopped, :ok}, 1_000
+    assert_received {:fake_transport_send, @bbmd, _data, opts}
     assert opts[:npci] == false
   end
 
   test "the foreign device table can be read", %{client: client, transport: transport} do
     fd = start_fd!(client)
-    parent = self()
 
     entry = %ForeignDeviceTableEntry{
       ip: {10, 0, 0, 8},
@@ -467,11 +439,9 @@ defmodule BACnet.Stack.ForeignDeviceTest do
       remaining_time: 40
     }
 
-    spawn(fn ->
-      send(parent, {:fdt, ForeignDevice.read_foreign_device_table(fd, timeout: 500)})
-    end)
+    task = Task.async(fn -> ForeignDevice.read_foreign_device_table(fd) end)
 
-    assert_receive {:fake_transport_send, @bbmd, _data, _opts}
+    assert_receive {:fake_transport_send, @bbmd, _data, _opts}, 1_000
 
     send(
       client,
@@ -485,7 +455,7 @@ defmodule BACnet.Stack.ForeignDeviceTest do
       })
     )
 
-    assert_receive {:fdt, {:ok, [^entry]}}, 500
+    assert {:ok, [^entry]} = Task.await(task)
 
     assert_raise ArgumentError, ~r/keyword list/, fn ->
       ForeignDevice.read_foreign_device_table(fd, [1])

@@ -458,7 +458,9 @@ defmodule BACnet.Stack.ClientHelperTest do
 
     flush_client()
 
-    assert {:ok, []} = ClientHelper.who_is(client, 10)
+    # The subscribed path also starts a task and calls the client to subscribe,
+    # send and unsubscribe. A 10 ms window leaves only 5 ms for that work.
+    assert {:ok, []} = ClientHelper.who_is(client, 1_000)
 
     assert {:ok, []} =
              ClientHelper.who_is(client, 10, no_subscribe: true, apdu_destination: :direct)

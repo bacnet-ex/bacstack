@@ -181,9 +181,10 @@ defmodule BACnet.Stack.ClientTest do
       transport: transport
     } do
       deliver(client, @dest, ApduFactory.simple_ack(3), transport)
+      sync(client)
 
-      assert_receive {:bacnet_client, nil, %APDU.SimpleACK{invoke_id: 3}, {@dest, _, %NPCI{}},
-                      ^client}
+      assert_received {:bacnet_client, nil, %APDU.SimpleACK{invoke_id: 3}, {@dest, _, %NPCI{}},
+                       ^client}
     end
 
     test "invalid destination sends nothing", %{client: client} do

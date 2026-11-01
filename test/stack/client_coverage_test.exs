@@ -136,7 +136,8 @@ defmodule BACnet.Stack.ClientCoverageTest do
        {:apdu, :original_unicast, NPCI.new([]), raw}, transport}
     )
 
-    assert_receive {:bacnet_client, nil, %APDU.UnconfirmedServiceRequest{}, _, ^with_dead}
+    sync(with_dead)
+    assert_received {:bacnet_client, nil, %APDU.UnconfirmedServiceRequest{}, _, ^with_dead}
 
     assert_raise ArgumentError, ~r/apdu_retries/, fn ->
       Client.start_link(
@@ -710,7 +711,8 @@ defmodule BACnet.Stack.ClientCoverageTest do
        {:apdu, :original_unicast, NPCI.new(expects_reply: true), raw}, transport}
     )
 
-    assert_receive {:bacnet_client, ref, _, _, ^client}
+    sync(client)
+    assert_received {:bacnet_client, ref, _, _, ^client}
 
     ack = %{large_ack() | payload: [{:octet_string, :binary.copy(<<7>>, 400)}]}
     assert {:error, :too_many_segments} = Client.reply(client, ref, ack)
@@ -776,8 +778,9 @@ defmodule BACnet.Stack.ClientCoverageTest do
         NPCI.new(expects_reply: true, source: %NpciTarget{net: 2, address: 15}), raw}, transport}
     )
 
-    assert_receive {:bacnet_client, _ref, %APDU.ConfirmedServiceRequest{}, _, ^client}
-    assert_receive {:fake_transport_send, @dest, abort, _opts}, 200
+    sync(client)
+    assert_received {:bacnet_client, _ref, %APDU.ConfirmedServiceRequest{}, _, ^client}
+    assert_receive {:fake_transport_send, @dest, abort, _opts}, 1_000
     assert {:ok, %APDU.Abort{reason: :application_exceeded_reply_time}} = APDU.decode(abort)
 
     assert :ok = Client.add_apdu_timeout(client, :other, nil, 60_000)
@@ -790,8 +793,12 @@ defmodule BACnet.Stack.ClientCoverageTest do
         NPCI.new(expects_reply: true, source: %NpciTarget{net: 2, address: 21}), raw}, transport}
     )
 
-    assert_receive {:bacnet_client, _ref, %APDU.ConfirmedServiceRequest{invoke_id: 2}, _, ^client}
-    assert_receive {:fake_transport_send, @dest, fallback_abort, _opts}, 200
+    sync(client)
+
+    assert_received {:bacnet_client, _ref, %APDU.ConfirmedServiceRequest{invoke_id: 2}, _,
+                     ^client}
+
+    assert_receive {:fake_transport_send, @dest, fallback_abort, _opts}, 1_000
 
     assert {:ok, %APDU.Abort{reason: :application_exceeded_reply_time}} =
              APDU.decode(fallback_abort)
@@ -840,13 +847,15 @@ defmodule BACnet.Stack.ClientCoverageTest do
     request = ApduFactory.read_property(invoke_id: 3)
 
     deliver(client, @dest, request, transport, NPCI.new(expects_reply: true, source: target_a))
-    assert_receive {:bacnet_client, _, %APDU.ConfirmedServiceRequest{}, _, ^client}
-    assert_receive {:fake_transport_send, @dest, abort, opts}, 500
+    sync(client)
+    assert_received {:bacnet_client, _, %APDU.ConfirmedServiceRequest{}, _, ^client}
+    assert_receive {:fake_transport_send, @dest, abort, opts}, 1_000
     assert {:ok, %APDU.Abort{reason: :application_exceeded_reply_time}} = APDU.decode(abort)
     assert opts[:destination] == target_a
 
     deliver(client, @dest, request, transport, NPCI.new(expects_reply: true, source: target_b))
-    assert_receive {:bacnet_client, ref, %APDU.ConfirmedServiceRequest{}, _, ^client}
+    sync(client)
+    assert_received {:bacnet_client, ref, %APDU.ConfirmedServiceRequest{}, _, ^client}
     assert :ok = Client.reply(client, ref, ApduFactory.simple_ack(3))
     assert_received {:fake_transport_send, @dest, reply, opts}
     assert {:ok, %APDU.SimpleACK{}} = APDU.decode(reply)
@@ -907,9 +916,10 @@ defmodule BACnet.Stack.ClientCoverageTest do
       transport
     )
 
-    assert_receive {:bacnet_client, nil, %APDU.Abort{}, _, ^client}
-    assert_receive {:bacnet_client, nil, %APDU.Reject{}, _, ^client}
-    assert_receive {:bacnet_client, nil, %APDU.Error{}, _, ^client}
+    sync(client)
+    assert_received {:bacnet_client, nil, %APDU.Abort{}, _, ^client}
+    assert_received {:bacnet_client, nil, %APDU.Reject{}, _, ^client}
+    assert_received {:bacnet_client, nil, %APDU.Error{}, _, ^client}
 
     deliver(
       client,
@@ -919,7 +929,8 @@ defmodule BACnet.Stack.ClientCoverageTest do
       NPCI.new(source: %NpciTarget{net: 2, address: 15})
     )
 
-    assert_receive {:bacnet_client, nil, %APDU.SimpleACK{invoke_id: 4}, _, ^client}
+    sync(client)
+    assert_received {:bacnet_client, nil, %APDU.SimpleACK{invoke_id: 4}, _, ^client}
   end
 
   test "segment ack for an unknown sequence is ignored", %{client: client, transport: transport} do
@@ -1024,7 +1035,10 @@ defmodule BACnet.Stack.ClientCoverageTest do
        {:apdu, :original_unicast, NPCI.new([]), IO.iodata_to_binary(first)}, transport}
     )
 
-    assert_receive {:fake_transport_send, ^source, %APDU.SegmentACK{actual_window_size: 1}, _opts}
+    sync(client)
+
+    assert_received {:fake_transport_send, ^source, %APDU.SegmentACK{actual_window_size: 1},
+                     _opts}
   end
 
   test "a segmented sequence that the store rejects is not delivered", %{
@@ -1033,9 +1047,10 @@ defmodule BACnet.Stack.ClientCoverageTest do
   } do
     segments = segmented_request()
     send(client, incoming(transport, List.last(segments)))
+    sync(client)
 
-    assert_receive {:fake_transport_send, @dest, %APDU.Abort{reason: :invalid_apdu_in_this_state},
-                    _opts}
+    assert_received {:fake_transport_send, @dest,
+                     %APDU.Abort{reason: :invalid_apdu_in_this_state}, _opts}
 
     refute_receive {:bacnet_client, _, _, _, _}, 30
   end
@@ -1077,7 +1092,8 @@ defmodule BACnet.Stack.ClientCoverageTest do
       incoming(transport, raw, NPCI.new(expects_reply: true, source: source))
     )
 
-    assert_receive {:fake_transport_send, @dest, reject, opts}
+    sync(client)
+    assert_received {:fake_transport_send, @dest, reject, opts}
     assert {:ok, %APDU.Reject{invoke_id: 1, reason: :other}} = APDU.decode(reject)
     assert opts[:destination] == source
   end
@@ -1236,5 +1252,7 @@ defmodule BACnet.Stack.ClientCoverageTest do
     ref
   end
 
+  # The client handles incoming frames and sends notifications in its own process.
+  # A call from the frame sender is a barrier before inspecting the test mailbox.
   defp sync(client), do: Client.get_transport(client)
 end
