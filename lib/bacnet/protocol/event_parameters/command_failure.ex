@@ -9,7 +9,7 @@ defmodule BACnet.Protocol.EventParameters.CommandFailure do
   """
 
   alias BACnet.Protocol.ApplicationTags
-  alias BACnet.Protocol.ApplicationTags.Encoding
+  alias BACnet.Protocol.DeviceObjectPropertyRef
   alias BACnet.Protocol.EventParameters
 
   use TypedStruct
@@ -18,7 +18,7 @@ defmodule BACnet.Protocol.EventParameters.CommandFailure do
   Representative type for the event parameter.
   """
   typedstruct do
-    field :feedback_value, Encoding.t(), enforce: true
+    field :feedback_value, DeviceObjectPropertyRef.t(), enforce: true
     field :time_delay, non_neg_integer(), enforce: true
     field :time_delay_normal, non_neg_integer()
   end

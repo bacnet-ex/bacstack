@@ -54,7 +54,7 @@ defmodule BACnet.Stack.Transport.IPv4Transport do
   @spec lookup_broadcast_address_by_portal_port(port()) ::
           {:inet.ip4_address(), :inet.port_number()}
   defp lookup_broadcast_address_by_portal_port(portal) do
-    # Unlike :inet.info/1 on early OTP 24, port_info/2 handles closed ports.
+    # Unlike :inet.info/1 on early OTP 24, port_info/2 handles closed ports
     case :erlang.port_info(portal, :connected) do
       {:connected, owner} -> get_broadcast_address(owner)
       _else -> {{255, 255, 255, 255}, @bacnet_port}

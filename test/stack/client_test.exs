@@ -1,6 +1,5 @@
 defmodule BACnet.Stack.ClientTest do
   alias BACnet.Protocol.APDU
-  alias BACnet.Protocol.Constants
   alias BACnet.Protocol.NPCI
   alias BACnet.Protocol.NpciTarget
   alias BACnet.Stack.Client
@@ -9,8 +8,6 @@ defmodule BACnet.Stack.ClientTest do
   alias BACnet.Stack.SegmentsStore
   alias BACnet.Test.Stack.ApduFactory
   alias BACnet.Test.Stack.FakeTransport
-
-  require Constants
 
   use BACnet.Test.Stack.Case, async: true
 
