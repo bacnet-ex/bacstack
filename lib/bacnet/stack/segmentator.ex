@@ -23,6 +23,9 @@ defmodule BACnet.Stack.Segmentator do
   Users of this module need to route incoming `Abort`, `Error`, `Reject` and `SegmentACK` APDUs to this module,
   so the Segmentator can function properly. See the `handle_apdu/3` documentation.
 
+  Sequences are scoped by the transport module, portal, destination address, effective NPCI
+  destination (including network and address), local requester/responder role, and invoke ID.
+
   This module is written to not require one instance per destination or transport layer protocol, as such when creating
   a new sequence, the transport module, transport, portal, and destination parameters need to be given.
 
@@ -33,6 +36,7 @@ defmodule BACnet.Stack.Segmentator do
   alias BACnet.Protocol.APDU
   alias BACnet.Protocol.Constants
   alias BACnet.Stack.EncoderProtocol
+  alias BACnet.Stack.SegmentationEndpoint
   alias BACnet.Stack.Telemetry
   alias BACnet.Stack.TransportBehaviour
 
@@ -66,6 +70,7 @@ defmodule BACnet.Stack.Segmentator do
     Representative type for its purpose.
     """
     @type t :: %__MODULE__{
+            endpoint: SegmentationEndpoint.t(),
             module: module(),
             transport: term(),
             portal: term(),
@@ -85,6 +90,7 @@ defmodule BACnet.Stack.Segmentator do
           }
 
     @fields [
+      :endpoint,
       :module,
       :transport,
       :portal,
@@ -118,7 +124,7 @@ defmodule BACnet.Stack.Segmentator do
     """
     @type t :: %__MODULE__{
             sequences: %{
-              optional({destination_address :: term(), invoke_id :: byte()}) =>
+              optional(SegmentationEndpoint.sequence_key()) =>
                 %BACnet.Stack.Segmentator.Sequence{}
             },
             opts: %{
@@ -334,6 +340,13 @@ defmodule BACnet.Stack.Segmentator do
   @doc """
   Handles incoming `Abort`, `Error`, `Reject` and `SegmentACK` APDUs.
 
+  Pass a `BACnet.Stack.SegmentationEndpoint` as the second argument to identify the same
+  transport module, portal, peer address and complete NPCI target used by `create_sequence/7`.
+  A transport address alone is supported for compatibility only when exactly one sequence
+  matches that address, invoke ID, and local role indicated by the APDU. The sender/server
+  flag on SegmentACK and Abort selects the opposite local role; Error and Reject select
+  the local requester. Ambiguous address-only calls do nothing.
+
   Received `Abort`, `Error`, `Reject` and `SegmentACK` APDUs need to be piped into this module using this function.
   Only then this module can automatically function correctly and transmit or retransmit the segments.
 
@@ -343,7 +356,7 @@ defmodule BACnet.Stack.Segmentator do
   """
   @spec handle_apdu(
           server(),
-          term(),
+          SegmentationEndpoint.t() | term(),
           APDU.Abort.t() | APDU.Error.t() | APDU.Reject.t() | APDU.SegmentACK.t()
         ) ::
           :ok | {:error, term()}
@@ -403,7 +416,9 @@ defmodule BACnet.Stack.Segmentator do
         "#{inspect(destination)}:#{inspect(apdu_struct.invoke_id)}"
     end)
 
-    id = {destination, apdu_struct.invoke_id}
+    endpoint = SegmentationEndpoint.new(module, portal, destination, opts)
+    role = if EncoderProtocol.response?(apdu_struct), do: :responder, else: :requester
+    id = {endpoint, role, apdu_struct.invoke_id}
 
     {reply, new_state} =
       if Map.has_key?(state.sequences, id) do
@@ -467,6 +482,7 @@ defmodule BACnet.Stack.Segmentator do
               {callback_msg, opts} = Keyword.pop(opts, :callback_msg)
 
               new_sequence = %Sequence{
+                endpoint: endpoint,
                 module: module,
                 transport: transport,
                 portal: portal,
@@ -586,7 +602,13 @@ defmodule BACnet.Stack.Segmentator do
         "#{inspect(destination)}:#{inspect(apdu.invoke_id)}"
     end)
 
-    id = {destination, apdu.invoke_id}
+    id =
+      SegmentationEndpoint.sequence_key(
+        state.sequences,
+        destination,
+        apdu.invoke_id,
+        SegmentationEndpoint.incoming_role(apdu)
+      )
 
     {reply, new_state} =
       case Map.fetch(state.sequences, id) do
@@ -607,7 +629,7 @@ defmodule BACnet.Stack.Segmentator do
           }
 
           log_transport_send_error(
-            module.send(sequence.portal, destination, abort, sequence.send_opts)
+            module.send(sequence.portal, sequence.destination, abort, sequence.send_opts)
           )
 
           Telemetry.execute_segmentator_sequence_error(
@@ -615,7 +637,7 @@ defmodule BACnet.Stack.Segmentator do
             module,
             sequence.transport,
             sequence.portal,
-            destination,
+            sequence.destination,
             nil,
             nil,
             abort,
@@ -644,7 +666,13 @@ defmodule BACnet.Stack.Segmentator do
         "#{inspect(destination)}:#{inspect(apdu.invoke_id)}"
     end)
 
-    id = {destination, apdu.invoke_id}
+    id =
+      SegmentationEndpoint.sequence_key(
+        state.sequences,
+        destination,
+        apdu.invoke_id,
+        SegmentationEndpoint.incoming_role(apdu)
+      )
 
     {reply, new_state} =
       case Map.fetch(state.sequences, id) do
@@ -711,7 +739,13 @@ defmodule BACnet.Stack.Segmentator do
         "#{inspect(destination)}:#{inspect(apdu.invoke_id)}"
     end)
 
-    id = {destination, apdu.invoke_id}
+    id =
+      SegmentationEndpoint.sequence_key(
+        state.sequences,
+        destination,
+        apdu.invoke_id,
+        SegmentationEndpoint.incoming_role(apdu)
+      )
 
     {reply, new_state} =
       case Map.fetch(state.sequences, id) do
@@ -757,7 +791,13 @@ defmodule BACnet.Stack.Segmentator do
         "#{inspect(destination)}:#{inspect(apdu.invoke_id)}"
     end)
 
-    id = {destination, apdu.invoke_id}
+    id =
+      SegmentationEndpoint.sequence_key(
+        state.sequences,
+        destination,
+        apdu.invoke_id,
+        SegmentationEndpoint.incoming_role(apdu)
+      )
 
     {reply, new_state} =
       case Map.fetch(state.sequences, id) do
@@ -931,7 +971,7 @@ defmodule BACnet.Stack.Segmentator do
   defp send_window(id, %Sequence{} = sequence, first_segment, %State{} = state) do
     last_segment = min(first_segment + sequence.window_size - 1, map_size(sequence.segments) - 1)
 
-    # Retain the start of the outstanding window so a timeout retransmits it.
+    # Retain the start of the outstanding window so a timeout retransmits it
     send_segments(
       id,
       %Sequence{sequence | sequence_number: first_segment},

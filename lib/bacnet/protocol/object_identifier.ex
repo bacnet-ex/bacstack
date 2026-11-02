@@ -126,9 +126,13 @@ defmodule BACnet.Protocol.ObjectIdentifier do
 
   The object identifier number is a 32bit non-negative integer
   which consists of a 10bit object type number and 22bit instance number.
+
+  This function intentionally truncates the number to 32bit.
+  Validation that the input is in the valid range is the user responsibility.
   """
   @spec from_number(non_neg_integer()) :: {:ok, t()} | {:error, term()}
-  def from_number(number) when is_integer(number) and number >= 0 do
+  def from_number(number)
+      when is_integer(number) and number >= 0 do
     ApplicationTags.decode_value(
       Constants.macro_by_name(:application_tag, :object_identifier),
       <<number::size(32)>>
@@ -158,8 +162,20 @@ defmodule BACnet.Protocol.ObjectIdentifier do
   which consists of a 10bit object type number and 22bit instance number.
   """
   @spec to_number(t()) :: non_neg_integer()
-  def to_number(%__MODULE__{} = t) do
-    Bitwise.bor(Bitwise.bsl(Constants.by_name!(:object_type, t.type), 22), t.instance)
+  def to_number(%__MODULE__{type: type, instance: instance} = _t)
+      when (is_atom(type) or
+              (is_integer(type) and type >= 0 and
+                 type <= Constants.macro_by_name(:asn1, :max_object_type))) and
+             instance >= 0 and
+             instance <= Constants.macro_by_name(:asn1, :max_instance_and_property_id) do
+    type_id =
+      if is_integer(type) do
+        type
+      else
+        Constants.by_name!(:object_type, type)
+      end
+
+    Bitwise.bor(Bitwise.bsl(type_id, 22), instance)
   end
 
   @doc """

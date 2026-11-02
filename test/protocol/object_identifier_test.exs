@@ -1,4 +1,5 @@
 defmodule BACnet.Protocol.ObjectIdentifierTest do
+  alias BACnet.Protocol.Constants.ConstantError
   alias BACnet.Protocol.ObjectIdentifier
 
   use ExUnit.Case, async: true
@@ -33,9 +34,26 @@ defmodule BACnet.Protocol.ObjectIdentifierTest do
 
   test "to number" do
     assert 255 = ObjectIdentifier.to_number(%ObjectIdentifier{type: :analog_input, instance: 255})
+    assert 255 = ObjectIdentifier.to_number(%ObjectIdentifier{type: 0, instance: 255})
 
     assert 34_756_042 =
              ObjectIdentifier.to_number(%ObjectIdentifier{type: :device, instance: 1_201_610})
+  end
+
+  test "to number unknown atom raises" do
+    assert_raise ConstantError, fn ->
+      ObjectIdentifier.to_number(%ObjectIdentifier{type: :hello_there, instance: 0})
+    end
+  end
+
+  test "to number too large raises" do
+    assert_raise FunctionClauseError, fn ->
+      ObjectIdentifier.to_number(%ObjectIdentifier{type: :device, instance: 4_194_304})
+    end
+
+    assert_raise FunctionClauseError, fn ->
+      ObjectIdentifier.to_number(%ObjectIdentifier{type: :device, instance: 34_756_042})
+    end
   end
 
   test "valid object identifier" do

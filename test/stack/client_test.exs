@@ -4,6 +4,7 @@ defmodule BACnet.Stack.ClientTest do
   alias BACnet.Protocol.NpciTarget
   alias BACnet.Stack.Client
   alias BACnet.Stack.EncoderProtocol
+  alias BACnet.Stack.SegmentationEndpoint
   alias BACnet.Stack.Segmentator
   alias BACnet.Stack.SegmentsStore
   alias BACnet.Test.Stack.ApduFactory
@@ -280,7 +281,13 @@ defmodule BACnet.Stack.ClientTest do
                  {:ok, %APDU.ConfirmedServiceRequest{invoke_id: invoke_id}} = APDU.decode(raw)
 
                  # The client handles this after the send completes and installs its timer.
-                 send(client, {:timeout, {:apdu_timer_setup, {@dest, nil, invoke_id}}})
+                 send(
+                   client,
+                   {:timeout,
+                    {:apdu_timer_setup, SegmentationEndpoint.new(FakeTransport, transport, @dest),
+                     :requester, {@dest, nil, invoke_id}}}
+                 )
+
                  :ok
                end)
 

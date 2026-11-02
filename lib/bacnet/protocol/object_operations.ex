@@ -944,7 +944,7 @@ defmodule BACnet.Protocol.ObjectOperations do
   defp verify_properties_with_required_when(contract, properties, metadata) do
     Enum.reduce_while(annotations_with(contract, :required_when), {:ok, properties}, fn
       {name, annotation}, {:ok, properties} ->
-        # `:optional` is treated as required here. `only_when` is what allows absence.
+        # `:optional` is treated as required here. `only_when` is what allows absence
         if verify_properties_required_when(properties, metadata, annotation) == false do
           {:cont, {:ok, properties}}
         else

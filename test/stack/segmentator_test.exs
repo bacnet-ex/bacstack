@@ -2,9 +2,12 @@ defmodule BACnet.Stack.SegmentatorTest do
   alias BACnet.Protocol.APDU
   alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.IncompleteAPDU
+  alias BACnet.Protocol.NPCI
+  alias BACnet.Protocol.NpciTarget
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.Services.WriteProperty
   alias BACnet.Stack.EncoderProtocol
+  alias BACnet.Stack.SegmentationEndpoint
   alias BACnet.Stack.Segmentator
   alias BACnet.Test.Stack.ApduFactory
   alias BACnet.Test.Stack.FakeTransport
@@ -48,14 +51,14 @@ defmodule BACnet.Stack.SegmentatorTest do
     assert_receive {:fake_transport_postponed, @dest, []}
     assert_sequence(@dest, 0)
 
-    send(segmentator, {:timer, {@dest, 1}})
-    send(segmentator, {:timer, {@dest, 1}})
-    send(segmentator, {:timer, {@dest, 1}})
+    send(segmentator, {:timer, key(transport, 1)})
+    send(segmentator, {:timer, key(transport, 1)})
+    send(segmentator, {:timer, key(transport, 1)})
     assert_sequence(@dest, 0)
     assert_sequence(@dest, 0)
     assert_sequence(@dest, 0)
 
-    send(segmentator, {:timer, {@dest, 1}})
+    send(segmentator, {:timer, key(transport, 1)})
     refute_receive {:fake_transport_send, _, _, _}, 30
     refute_receive {:fake_transport_send, _, %APDU.Abort{}, _}, 0
   end
@@ -79,7 +82,7 @@ defmodule BACnet.Stack.SegmentatorTest do
     assert_sequence(@dest, 0)
 
     assert :ok = Segmentator.configure(segmentator, apdu_retries: 0, apdu_timeout: 60_000)
-    send(segmentator, {:timer, {@dest, 2}})
+    send(segmentator, {:timer, key(transport, 2)})
     assert_receive {:timeout, :configured}
     refute_receive {:fake_transport_send, _, %APDU.Abort{}, _}, 0
 
@@ -413,20 +416,25 @@ defmodule BACnet.Stack.SegmentatorTest do
   end
 
   test "acks for an unknown sequence are ignored", %{segmentator: segmentator} do
-    assert :ok = Segmentator.handle_apdu(segmentator, @dest, ApduFactory.segment_ack(1))
-
     assert :ok =
              Segmentator.handle_apdu(
                segmentator,
                @dest,
-               ApduFactory.segment_ack(1, actual_window_size: 0)
+               ApduFactory.segment_ack(1, sent_by_server: true)
              )
 
     assert :ok =
              Segmentator.handle_apdu(
                segmentator,
                @dest,
-               ApduFactory.segment_ack(1, negative_ack: true)
+               ApduFactory.segment_ack(1, sent_by_server: true, actual_window_size: 0)
+             )
+
+    assert :ok =
+             Segmentator.handle_apdu(
+               segmentator,
+               @dest,
+               ApduFactory.segment_ack(1, sent_by_server: true, negative_ack: true)
              )
 
     assert :ok = Segmentator.handle_apdu(segmentator, @dest, ApduFactory.abort(1))
@@ -454,7 +462,11 @@ defmodule BACnet.Stack.SegmentatorTest do
              Segmentator.handle_apdu(
                segmentator,
                @dest,
-               ApduFactory.segment_ack(16, sequence_number: 1, actual_window_size: 1)
+               ApduFactory.segment_ack(16,
+                 sent_by_server: true,
+                 sequence_number: 1,
+                 actual_window_size: 1
+               )
              )
 
     assert_receive {:done, :finished}
@@ -473,7 +485,7 @@ defmodule BACnet.Stack.SegmentatorTest do
              Segmentator.handle_apdu(
                segmentator,
                @dest,
-               ApduFactory.segment_ack(17, sequence_number: 1)
+               ApduFactory.segment_ack(17, sent_by_server: true, sequence_number: 1)
              )
 
     refute_receive {:done, _}, 30
@@ -489,7 +501,11 @@ defmodule BACnet.Stack.SegmentatorTest do
              Segmentator.handle_apdu(
                segmentator,
                @dest,
-               ApduFactory.segment_ack(18, sequence_number: 0, actual_window_size: 1)
+               ApduFactory.segment_ack(18,
+                 sent_by_server: true,
+                 sequence_number: 0,
+                 actual_window_size: 1
+               )
              )
 
     assert_sequence(@dest, 1)
@@ -521,7 +537,11 @@ defmodule BACnet.Stack.SegmentatorTest do
              Segmentator.handle_apdu(
                segmentator,
                @dest,
-               ApduFactory.segment_ack(19, sequence_number: 0, actual_window_size: 4)
+               ApduFactory.segment_ack(19,
+                 sent_by_server: true,
+                 sequence_number: 0,
+                 actual_window_size: 4
+               )
              )
 
     assert_sequence(@dest, 1)
@@ -533,7 +553,11 @@ defmodule BACnet.Stack.SegmentatorTest do
              Segmentator.handle_apdu(
                segmentator,
                @dest,
-               ApduFactory.segment_ack(19, sequence_number: 4, actual_window_size: 1)
+               ApduFactory.segment_ack(19,
+                 sent_by_server: true,
+                 sequence_number: 4,
+                 actual_window_size: 1
+               )
              )
 
     assert_receive {:done, :window}
@@ -550,6 +574,7 @@ defmodule BACnet.Stack.SegmentatorTest do
                segmentator,
                @dest,
                ApduFactory.segment_ack(20,
+                 sent_by_server: true,
                  negative_ack: true,
                  sequence_number: 0,
                  actual_window_size: 1
@@ -569,14 +594,14 @@ defmodule BACnet.Stack.SegmentatorTest do
              Segmentator.handle_apdu(
                segmentator,
                @dest,
-               ApduFactory.segment_ack(21, actual_window_size: 0, sent_by_server: false)
+               ApduFactory.segment_ack(21, actual_window_size: 0, sent_by_server: true)
              )
 
     assert_receive {:fake_transport_send, @dest,
                     %APDU.Abort{
                       invoke_id: 21,
                       reason: :window_size_out_of_range,
-                      sent_by_server: true
+                      sent_by_server: false
                     }, _opts}
 
     refute_receive {:done, _}, 0
@@ -638,10 +663,10 @@ defmodule BACnet.Stack.SegmentatorTest do
     assert_receive {:fake_transport_postponed, @dest, []}
     assert_sequence(@dest, 0)
 
-    send(segmentator, {:timer, {@dest, 25}})
+    send(segmentator, {:timer, key(transport, 25)})
     assert_sequence(@dest, 0)
 
-    send(segmentator, {:timer, {@dest, 25}})
+    send(segmentator, {:timer, key(transport, 25)})
     assert_receive {:timeout, :timed}
     refute_receive {:fake_transport_send, _, %APDU.Abort{}, _}, 0
     refute_receive {:fake_transport_send, _, _, _}, 0
@@ -653,7 +678,7 @@ defmodule BACnet.Stack.SegmentatorTest do
   } do
     open_pair(segmentator, transport, 26, callback_msg: :retry_err)
     assert :ok = FakeTransport.set_send_result(transport, {:error, :down})
-    send(segmentator, {:timer, {@dest, 26}})
+    send(segmentator, {:timer, key(transport, 26)})
     assert_sequence(@dest, 0)
 
     assert :ok = FakeTransport.set_send_result(transport, :ok)
@@ -662,15 +687,15 @@ defmodule BACnet.Stack.SegmentatorTest do
              Segmentator.handle_apdu(
                segmentator,
                @dest,
-               ApduFactory.segment_ack(26, sequence_number: 1)
+               ApduFactory.segment_ack(26, sent_by_server: true, sequence_number: 1)
              )
 
     assert_receive {:done, :retry_err}
   end
 
   test "unknown timer messages are ignored", %{segmentator: segmentator, transport: transport} do
-    send(segmentator, {:timer, {@dest, 99}})
-    send(segmentator, {:seq_timer, {@dest, 99}, 1, 2})
+    send(segmentator, {:timer, key(transport, 99)})
+    send(segmentator, {:seq_timer, key(transport, 99), 1, 2})
 
     assert :ok =
              Segmentator.create_sequence(
@@ -696,7 +721,11 @@ defmodule BACnet.Stack.SegmentatorTest do
              Segmentator.handle_apdu(
                segmentator,
                @dest,
-               ApduFactory.segment_ack(30, sequence_number: 4, actual_window_size: 1)
+               ApduFactory.segment_ack(30,
+                 sent_by_server: true,
+                 sequence_number: 4,
+                 actual_window_size: 1
+               )
              )
 
     assert_receive {:done, :complete}
@@ -708,7 +737,11 @@ defmodule BACnet.Stack.SegmentatorTest do
              Segmentator.handle_apdu(
                segmentator,
                @dest,
-               ApduFactory.segment_ack(31, sequence_number: 0, actual_window_size: 1)
+               ApduFactory.segment_ack(31,
+                 sent_by_server: true,
+                 sequence_number: 0,
+                 actual_window_size: 1
+               )
              )
 
     assert_sequence(@dest, 1)
@@ -720,6 +753,7 @@ defmodule BACnet.Stack.SegmentatorTest do
                segmentator,
                @dest,
                ApduFactory.segment_ack(32,
+                 sent_by_server: true,
                  negative_ack: true,
                  sequence_number: 2,
                  actual_window_size: 1
@@ -734,7 +768,7 @@ defmodule BACnet.Stack.SegmentatorTest do
              Segmentator.handle_apdu(
                segmentator,
                @dest,
-               ApduFactory.segment_ack(33, actual_window_size: 128)
+               ApduFactory.segment_ack(33, sent_by_server: true, actual_window_size: 128)
              )
 
     assert_receive {:fake_transport_send, @dest, %APDU.Abort{reason: :window_size_out_of_range},
@@ -750,14 +784,14 @@ defmodule BACnet.Stack.SegmentatorTest do
   test "the final timeout and a retry cancel a running sequence timer", %{transport: transport} do
     {:ok, segmentator} = Segmentator.start_link(apdu_timeout: 60_000, apdu_retries: 0)
     open_window(segmentator, transport, 35, :final)
-    send(segmentator, {:timer, {@dest, 35}})
+    send(segmentator, {:timer, key(transport, 35)})
     assert_receive {:timeout, :final}
     refute_receive {:fake_transport_send, @dest, %APDU.Abort{}, _}, 0
 
     {:ok, segmentator} = Segmentator.start_link(apdu_timeout: 60_000, apdu_retries: 2)
     open_window(segmentator, transport, 36, :retry)
     assert :ok = FakeTransport.set_send_result(transport, {:error, :down})
-    send(segmentator, {:timer, {@dest, 36}})
+    send(segmentator, {:timer, key(transport, 36)})
 
     # Retry the outstanding window from its first segment, not its last one
     assert_sequence(@dest, 1)
@@ -794,7 +828,11 @@ defmodule BACnet.Stack.SegmentatorTest do
              Segmentator.handle_apdu(
                segmentator,
                @dest,
-               ApduFactory.segment_ack(37, sequence_number: 0, actual_window_size: 2)
+               ApduFactory.segment_ack(37,
+                 sent_by_server: true,
+                 sequence_number: 0,
+                 actual_window_size: 2
+               )
              )
 
     assert_sequence(@dest, 1)
@@ -830,6 +868,7 @@ defmodule BACnet.Stack.SegmentatorTest do
 
     ack =
       ApduFactory.segment_ack(1,
+        sent_by_server: false,
         negative_ack: false,
         sequence_number: 0,
         actual_window_size: 4
@@ -846,7 +885,11 @@ defmodule BACnet.Stack.SegmentatorTest do
 
     # A retry must repeat this partial window, without returning to the
     # previous window or starting beyond the final segment
-    send(segmentator, {:timer, {:peer, 1}})
+    send(
+      segmentator,
+      {:timer, {SegmentationEndpoint.new(FakeTransport, transport, @dest), :responder, 1}}
+    )
+
     assert_segment(1)
     assert_segment(2)
     refute_receive {:DOWN, ^monitor, :process, ^segmentator, _reason}, 200
@@ -855,7 +898,11 @@ defmodule BACnet.Stack.SegmentatorTest do
              Segmentator.handle_apdu(
                segmentator,
                :peer,
-               ApduFactory.segment_ack(1, sequence_number: 2, actual_window_size: 4)
+               ApduFactory.segment_ack(1,
+                 sent_by_server: false,
+                 sequence_number: 2,
+                 actual_window_size: 4
+               )
              )
 
     assert_receive {:done, :completed}
@@ -888,6 +935,7 @@ defmodule BACnet.Stack.SegmentatorTest do
 
     ack =
       ApduFactory.segment_ack(1,
+        sent_by_server: false,
         negative_ack: true,
         sequence_number: 1,
         actual_window_size: 4
@@ -904,7 +952,11 @@ defmodule BACnet.Stack.SegmentatorTest do
 
     # A retry must repeat this partial window, without returning to the
     # previous window or starting beyond the final segment
-    send(segmentator, {:timer, {:peer, 1}})
+    send(
+      segmentator,
+      {:timer, {SegmentationEndpoint.new(FakeTransport, transport, @dest), :responder, 1}}
+    )
+
     assert_segment(1)
     assert_segment(2)
     refute_receive {:DOWN, ^monitor, :process, ^segmentator, _reason}, 200
@@ -913,7 +965,11 @@ defmodule BACnet.Stack.SegmentatorTest do
              Segmentator.handle_apdu(
                segmentator,
                :peer,
-               ApduFactory.segment_ack(1, sequence_number: 2, actual_window_size: 4)
+               ApduFactory.segment_ack(1,
+                 sent_by_server: false,
+                 sequence_number: 2,
+                 actual_window_size: 4
+               )
              )
 
     assert_receive {:done, :completed}
@@ -938,6 +994,7 @@ defmodule BACnet.Stack.SegmentatorTest do
                segmentator,
                @dest,
                ApduFactory.segment_ack(38,
+                 sent_by_server: false,
                  negative_ack: true,
                  sequence_number: 0,
                  actual_window_size: 2
@@ -952,7 +1009,11 @@ defmodule BACnet.Stack.SegmentatorTest do
              Segmentator.handle_apdu(
                segmentator,
                @dest,
-               ApduFactory.segment_ack(38, sequence_number: 1, actual_window_size: 2)
+               ApduFactory.segment_ack(38,
+                 sent_by_server: false,
+                 sequence_number: 1,
+                 actual_window_size: 2
+               )
              )
 
     assert_sequence(@dest, 2)
@@ -961,10 +1022,435 @@ defmodule BACnet.Stack.SegmentatorTest do
              Segmentator.handle_apdu(
                segmentator,
                @dest,
-               ApduFactory.segment_ack(38, sequence_number: 2, actual_window_size: 2)
+               ApduFactory.segment_ack(38,
+                 sent_by_server: false,
+                 sequence_number: 2,
+                 actual_window_size: 2
+               )
              )
 
     assert_receive {:done, :bounded_window}
+  end
+
+  test "ACKs, NAKs, completion and callbacks isolate networks, portals and modules", %{
+    segmentator: segmentator,
+    transport: transport
+  } do
+    other_portal = start_supervised!({FakeTransport, owner: self()})
+    target = %NpciTarget{net: 10, address: 7}
+
+    endpoints = [
+      SegmentationEndpoint.new(FakeTransport, transport, @dest, destination: target),
+      SegmentationEndpoint.new(FakeTransport, transport, @dest, destination: %{target | net: 20}),
+      SegmentationEndpoint.new(FakeTransport, other_portal, @dest, destination: target),
+      SegmentationEndpoint.new(Limited, transport, @dest, destination: target)
+    ]
+
+    for endpoint <- endpoints do
+      assert :ok = create_endpoint_sequence(segmentator, endpoint, transport, 60)
+      assert_sequence(@dest, 0)
+    end
+
+    sequences = :sys.get_state(segmentator).sequences
+    assert map_size(sequences) == 4
+    assert :ok = Segmentator.handle_apdu(segmentator, @dest, ApduFactory.abort(60))
+    assert :sys.get_state(segmentator).sequences == sequences
+
+    for endpoint <- Enum.reverse(endpoints) do
+      other_sequences =
+        Map.delete(:sys.get_state(segmentator).sequences, {endpoint, :requester, 60})
+
+      assert :ok =
+               Segmentator.handle_apdu(
+                 segmentator,
+                 endpoint,
+                 ApduFactory.segment_ack(60,
+                   sent_by_server: true,
+                   sequence_number: 0,
+                   actual_window_size: 1
+                 )
+               )
+
+      assert {%IncompleteAPDU{}, opts} = assert_sequence(@dest, 1)
+      assert opts[:destination] == endpoint.npci
+
+      assert Map.delete(:sys.get_state(segmentator).sequences, {endpoint, :requester, 60}) ==
+               other_sequences
+
+      assert :ok =
+               Segmentator.handle_apdu(
+                 segmentator,
+                 endpoint,
+                 ApduFactory.segment_ack(60,
+                   sent_by_server: true,
+                   negative_ack: true,
+                   sequence_number: 1,
+                   actual_window_size: 1
+                 )
+               )
+
+      assert_sequence(@dest, 1)
+
+      last = map_size(sequences[{endpoint, :requester, 60}].segments) - 1
+
+      assert :ok =
+               Segmentator.handle_apdu(
+                 segmentator,
+                 endpoint,
+                 ApduFactory.segment_ack(60,
+                   sent_by_server: true,
+                   sequence_number: last,
+                   actual_window_size: 1
+                 )
+               )
+
+      assert_receive {:done, ^endpoint}
+      assert :sys.get_state(segmentator).sequences == other_sequences
+    end
+  end
+
+  test "remote failures and invalid ACK windows cancel only the exact endpoint", %{
+    segmentator: segmentator,
+    transport: transport
+  } do
+    first =
+      SegmentationEndpoint.new(FakeTransport, transport, @dest,
+        destination: %NpciTarget{net: 10, address: 7}
+      )
+
+    second = %{first | npci: %{first.npci | net: 20}}
+
+    for canceller <- [
+          ApduFactory.abort(61),
+          ApduFactory.reject(61),
+          %APDU.Error{
+            invoke_id: 61,
+            service: :read_property,
+            class: :device,
+            code: :operational_problem,
+            payload: []
+          },
+          ApduFactory.segment_ack(61, sent_by_server: true, actual_window_size: 0)
+        ] do
+      for endpoint <- [first, second] do
+        assert :ok = create_endpoint_sequence(segmentator, endpoint, transport, 61)
+        assert_sequence(@dest, 0)
+      end
+
+      sequences = :sys.get_state(segmentator).sequences
+      assert :ok = Segmentator.handle_apdu(segmentator, first, canceller)
+      assert Process.read_timer(sequences[{first, :requester, 61}].timer) == false
+
+      assert :sys.get_state(segmentator).sequences ==
+               Map.delete(sequences, {first, :requester, 61})
+
+      if is_struct(canceller, APDU.SegmentACK) do
+        assert_receive {:fake_transport_send, @dest,
+                        %APDU.Abort{reason: :window_size_out_of_range}, opts}
+
+        assert opts[:destination] == first.npci
+      else
+        assert_receive {:cancelled, ^first}
+      end
+
+      assert :ok = Segmentator.handle_apdu(segmentator, second, ApduFactory.abort(61))
+      assert_receive {:cancelled, ^second}
+    end
+  end
+
+  test "retry, window pacing and timeout messages retain the complete endpoint", %{
+    transport: transport
+  } do
+    segmentator = start_supervised!({Segmentator, apdu_timeout: 60_000, apdu_retries: 1})
+
+    first =
+      SegmentationEndpoint.new(FakeTransport, transport, @dest,
+        destination: %NpciTarget{net: 10, address: 7}
+      )
+
+    second = %{first | npci: %{first.npci | net: 20}}
+
+    for endpoint <- [first, second] do
+      assert :ok = create_endpoint_sequence(segmentator, endpoint, transport, 62)
+      assert_sequence(@dest, 0)
+    end
+
+    sequences = :sys.get_state(segmentator).sequences
+
+    send(segmentator, {:timer, {first, :requester, 62}})
+    assert_sequence(@dest, 0)
+    assert :sys.get_state(segmentator).sequences[{first, :requester, 62}].retry_count == 1
+
+    assert :sys.get_state(segmentator).sequences[{second, :requester, 62}] ==
+             sequences[{second, :requester, 62}]
+
+    send(segmentator, {:timer, {first, :requester, 62}})
+    assert_receive {:timeout, ^first}
+    assert :sys.get_state(segmentator).sequences == Map.delete(sequences, {first, :requester, 62})
+
+    # A paced window must send every segment with the selected endpoint's options.
+    assert :ok =
+             Segmentator.handle_apdu(
+               segmentator,
+               second,
+               ApduFactory.segment_ack(62,
+                 sent_by_server: true,
+                 actual_window_size: 4,
+                 sequence_number: 0
+               )
+             )
+
+    assert {_segment, opts} = assert_sequence(@dest, 1)
+    assert opts[:destination] == second.npci
+    assert {_segment, opts} = assert_sequence(@dest, 2)
+    assert opts[:destination] == second.npci
+    assert {_segment, opts} = assert_sequence(@dest, 3)
+    assert opts[:destination] == second.npci
+    assert {_segment, opts} = assert_sequence(@dest, 4)
+    assert opts[:destination] == second.npci
+
+    assert :ok =
+             Segmentator.handle_apdu(
+               segmentator,
+               second,
+               ApduFactory.segment_ack(62,
+                 sent_by_server: true,
+                 actual_window_size: 4,
+                 sequence_number: 4
+               )
+             )
+
+    assert_receive {:done, ^second}
+    assert :sys.get_state(segmentator).sequences == %{}
+  end
+
+  test "explicit NPCI destination scopes creation and overrides the destination option", %{
+    segmentator: segmentator,
+    transport: transport
+  } do
+    target = %NpciTarget{net: 10, address: 7}
+    other_target = %{target | net: 20}
+    endpoint = SegmentationEndpoint.new(FakeTransport, transport, @dest, destination: target)
+
+    assert :ok =
+             Segmentator.create_sequence(
+               segmentator,
+               trip(transport),
+               @dest,
+               confirmed_request(63, 1),
+               50,
+               16,
+               npci: NPCI.new(destination: target),
+               destination: other_target
+             )
+
+    assert_sequence(@dest, 0)
+
+    assert {:error, :already_exists} =
+             Segmentator.create_sequence(
+               segmentator,
+               trip(transport),
+               @dest,
+               confirmed_request(63, 1),
+               50,
+               16,
+               destination: target
+             )
+
+    assert :ok =
+             Segmentator.create_sequence(
+               segmentator,
+               trip(transport),
+               @dest,
+               confirmed_request(63, 1),
+               50,
+               16,
+               destination: other_target
+             )
+
+    assert_sequence(@dest, 0)
+    assert :ok = Segmentator.handle_apdu(segmentator, endpoint, ApduFactory.abort(63))
+    assert map_size(:sys.get_state(segmentator).sequences) == 1
+  end
+
+  test "both local roles progress independently at one endpoint and invoke ID", %{
+    segmentator: sender,
+    transport: transport
+  } do
+    for lookup <- [:address, :endpoint] do
+      endpoint = open_role_pair(sender, transport, 80)
+      peer = if lookup == :address, do: @dest, else: endpoint
+
+      for role <- [:responder, :requester] do
+        id = {endpoint, role, 80}
+        other = Map.delete(:sys.get_state(sender).sequences, id)
+        last = map_size(:sys.get_state(sender).sequences[id].segments) - 1
+        ack = ApduFactory.segment_ack(80, sent_by_server: role == :requester)
+        assert :ok = Segmentator.handle_apdu(sender, peer, ack)
+        assert {%IncompleteAPDU{server: server}, _opts} = assert_sequence(@dest, 1)
+        assert server == (role == :requester)
+        assert Map.delete(:sys.get_state(sender).sequences, id) == other
+
+        assert :ok =
+                 Segmentator.handle_apdu(sender, peer, %{
+                   ack
+                   | negative_ack: true,
+                     sequence_number: 1
+                 })
+
+        assert_sequence(@dest, 1)
+        timer = :sys.get_state(sender).sequences[id].timer
+
+        for number <- 1..last do
+          assert :ok = Segmentator.handle_apdu(sender, peer, %{ack | sequence_number: number})
+          if number < last, do: assert_sequence(@dest, number + 1)
+        end
+
+        assert_receive {:done, {^role, 80}}
+        assert Process.read_timer(timer) == false
+        assert :sys.get_state(sender).sequences == other
+        # Replaying an ACK for the removed role must not complete the opposite role.
+        assert :ok = Segmentator.handle_apdu(sender, peer, %{ack | sequence_number: last})
+        assert :sys.get_state(sender).sequences == other
+      end
+    end
+  end
+
+  test "terminal APDUs and invalid windows select their role with either peer representation", %{
+    segmentator: sender,
+    transport: transport
+  } do
+    error = %APDU.Error{
+      invoke_id: 81,
+      service: :read_property,
+      class: :device,
+      code: :operational_problem,
+      payload: []
+    }
+
+    cases = [
+      {:requester, ApduFactory.abort(81)},
+      {:responder, %{ApduFactory.abort(81) | sent_by_server: false}},
+      {:requester, ApduFactory.reject(81)},
+      {:requester, error},
+      {:requester, ApduFactory.segment_ack(81, sent_by_server: true, actual_window_size: 0)},
+      {:responder, ApduFactory.segment_ack(81, sent_by_server: false, actual_window_size: 0)}
+    ]
+
+    for lookup <- [:address, :endpoint], {role, apdu} <- cases do
+      endpoint = open_role_pair(sender, transport, 81)
+      peer = if lookup == :address, do: @dest, else: endpoint
+      id = {endpoint, role, 81}
+      sequences = :sys.get_state(sender).sequences
+      assert :ok = Segmentator.handle_apdu(sender, peer, apdu)
+      assert :sys.get_state(sender).sequences == Map.delete(sequences, id)
+      assert Process.read_timer(sequences[id].timer) == false
+
+      if is_struct(apdu, APDU.SegmentACK) do
+        assert_receive {:fake_transport_send, @dest, %APDU.Abort{} = abort, _opts}
+        assert abort.sent_by_server == (role == :responder)
+      else
+        assert_receive {:cancelled, {^role, 81}}
+      end
+
+      # A repeated terminal message cannot cancel the other role either.
+      assert :ok = Segmentator.handle_apdu(sender, peer, apdu)
+      assert :sys.get_state(sender).sequences == Map.delete(sequences, id)
+
+      for remaining_role <- [:requester, :responder] -- [role] do
+        assert :ok =
+                 Segmentator.handle_apdu(sender, endpoint, %{
+                   ApduFactory.abort(81)
+                   | sent_by_server: remaining_role == :requester
+                 })
+
+        assert_receive {:cancelled, {^remaining_role, 81}}
+      end
+    end
+  end
+
+  test "paced windows, retries and final timeouts remain local to each role", %{
+    transport: transport
+  } do
+    sender = start_supervised!({Segmentator, apdu_timeout: 60_000, apdu_retries: 1})
+
+    for role <- [:requester, :responder] do
+      endpoint = open_role_pair(sender, transport, 82, 4, 200)
+      id = {endpoint, role, 82}
+      other = Map.delete(:sys.get_state(sender).sequences, id)
+
+      assert :ok =
+               Segmentator.handle_apdu(
+                 sender,
+                 endpoint,
+                 ApduFactory.segment_ack(82,
+                   sent_by_server: role == :requester,
+                   actual_window_size: 2
+                 )
+               )
+
+      assert_sequence(@dest, 1)
+      assert_sequence(@dest, 2)
+      assert Map.delete(:sys.get_state(sender).sequences, id) == other
+      send(sender, {:timer, id})
+      assert_sequence(@dest, 1)
+      assert_sequence(@dest, 2)
+      assert Map.delete(:sys.get_state(sender).sequences, id) == other
+      send(sender, {:timer, id})
+      assert_receive {:timeout, {^role, 82}}
+      assert :sys.get_state(sender).sequences == other
+      [{{_endpoint, other_role, 82}, _sequence}] = Map.to_list(other)
+
+      assert :ok =
+               Segmentator.handle_apdu(sender, endpoint, %{
+                 ApduFactory.abort(82)
+                 | sent_by_server: other_role == :requester
+               })
+
+      assert_receive {:cancelled, {^other_role, 82}}
+    end
+  end
+
+  defp open_role_pair(sender, transport, invoke_id, window \\ 1, bytes \\ 80) do
+    endpoint = SegmentationEndpoint.new(FakeTransport, transport, @dest)
+
+    response = %{
+      complex_ack(invoke_id, window)
+      | payload: [octet_string: :binary.copy(<<9>>, bytes)]
+    }
+
+    for {role, apdu} <- [
+          {:requester, confirmed_request(invoke_id, window, bytes)},
+          {:responder, response}
+        ] do
+      assert :ok =
+               Segmentator.create_sequence(sender, trip(transport), @dest, apdu, 50, 16,
+                 callback_to: self(),
+                 callback_msg: {role, invoke_id}
+               )
+
+      assert_sequence(@dest, 0)
+    end
+
+    endpoint
+  end
+
+  defp create_endpoint_sequence(segmentator, endpoint, transport, invoke_id) do
+    Segmentator.create_sequence(
+      segmentator,
+      {endpoint.transport_module, transport, endpoint.portal},
+      endpoint.address,
+      confirmed_request(invoke_id, 4, 200),
+      50,
+      16,
+      destination: endpoint.npci,
+      callback_to: self(),
+      callback_msg: endpoint
+    )
+  end
+
+  defp key(transport, invoke_id) do
+    {SegmentationEndpoint.new(FakeTransport, transport, @dest), :requester, invoke_id}
   end
 
   defp assert_segment(number) do
@@ -1017,7 +1503,11 @@ defmodule BACnet.Stack.SegmentatorTest do
              Segmentator.handle_apdu(
                segmentator,
                @dest,
-               ApduFactory.segment_ack(invoke_id, sequence_number: 0, actual_window_size: 2)
+               ApduFactory.segment_ack(invoke_id,
+                 sent_by_server: true,
+                 sequence_number: 0,
+                 actual_window_size: 2
+               )
              )
 
     assert_sequence(@dest, 1)

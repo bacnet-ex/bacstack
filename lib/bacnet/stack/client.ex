@@ -53,8 +53,8 @@ defmodule BACnet.Stack.Client do
   automatically, if no response arrives in the APDU timeout timeframe. If the maximum APDU retries
   is reached, the request will be deleted and the application will get an APDU timeout response.
 
-  Invoke IDs are automatically managed per destination and optional routed NPCI target to avoid
-  duplicated invoke IDs being sent to the same destination.
+  Confirmed request invoke IDs are managed per destination and optional routed NPCI target.
+  Responses preserve the peer's invoke ID independently of any local requester transaction.
   This mechanism can be disabled on startup and allows external management (or usage with care) if desired.
 
   If the application takes too long to respond to a remote BACnet request, the client will automatically
@@ -88,6 +88,7 @@ defmodule BACnet.Stack.Client do
   alias BACnet.Protocol.NPCI
   alias BACnet.Protocol.NpciTarget
   alias BACnet.Stack.EncoderProtocol
+  alias BACnet.Stack.SegmentationEndpoint
   alias BACnet.Stack.Segmentator
   alias BACnet.Stack.SegmentsStore
   alias BACnet.Stack.Telemetry
@@ -556,14 +557,6 @@ defmodule BACnet.Stack.Client do
 
   See the `c:BACnet.Stack.TransportBehaviour.send/4` documentation for what `opts` can be.
   In addition the following are available:
-    - `npci_id: NpciTarget.t()` - Optional. The remote network/address pair
-      used to scope invoke ID allocation together with the transport destination.
-      Set it to the same complete target used in `:destination` or `:npci.destination`
-      when allocating invoke IDs independently for devices behind a router.
-      This option does not configure routing; omit it to share one invoke ID pool
-      for the transport destination. It is not a BACnet Device object instance.
-      Please note, if wrongfully used, this may lead to collisions and invalid data -
-      including  replies sent to requests that were never meant for that request.
     - `max_apdu_length: pos_integer()` - Optional. The maximum APDU length
       the remote BACnet device supports (defaults to the transport max APDU length).
       Limited by the transport max (extended) APDU length.
@@ -574,6 +567,14 @@ defmodule BACnet.Stack.Client do
       actual maximum transmission unit.
     - `max_segments: pos_integer()` - Optional. Maximum amount of segments the
       remote BACnet device can accept (defaults to 2).
+    - `npci_id: NpciTarget.t()` - Optional. The remote network/address pair
+      used to scope invoke ID allocation together with the transport destination.
+      Set it to the same complete target used in `:destination` or `:npci.destination`
+      when allocating invoke IDs independently for devices behind a router.
+      This option does not configure routing; omit it to share one invoke ID pool
+      for the transport destination.
+      Please note, if wrongfully used, this may lead to collisions and invalid data -
+      including  replies sent to requests that were never meant for that request.
     - `segmentation_supported: Constants.segmentation()` - Optional. Which kind
       of segmentation the remote BACnet device supports (defaults to none).
 
@@ -855,7 +856,7 @@ defmodule BACnet.Stack.Client do
             end
 
           if state.opts.disable_invoke_id_management and
-               Map.has_key?(data, :invoke_id) and
+               is_struct(data, ConfirmedServiceRequest) and
                Map.has_key?(
                  state.apdu_timers,
                  {destination, apdu_timer_id, Map.get(data, :invoke_id)}
@@ -1043,55 +1044,26 @@ defmodule BACnet.Stack.Client do
     {:noreply, new_state}
   end
 
-  def handle_info({seg_state, {:apdu_timer_setup, key}}, %State{} = state) do
-    # Segmentator module reports back for the segmented APDU
-    # seg_state will be :done|:timeout|:cancelled
-    # (:cancelled shouldn't scratch us, as this should already be locally handled)
-    log_debug(fn ->
-      "Client: Received APDU timer setup message for #{inspect(key)} with state #{seg_state}"
-    end)
+  def handle_info(
+        {seg_state, {:apdu_timer_setup, %SegmentationEndpoint{} = endpoint, :requester, key}},
+        %State{} = state
+      ) do
+    case Map.fetch(state.apdu_timers, key) do
+      {:ok, timer} ->
+        if SegmentationEndpoint.new(
+             state.transport_mod,
+             timer.portal,
+             timer.destination,
+             timer.send_opts
+           ) == endpoint do
+          handle_segmented_apdu_result(seg_state, key, state)
+        else
+          {:noreply, state}
+        end
 
-    new_state =
-      case Map.fetch(state.apdu_timers, key) do
-        {:ok, %ApduTimer{} = timer} ->
-          case seg_state do
-            :done ->
-              %{
-                state
-                | apdu_timers:
-                    Map.update!(state.apdu_timers, key, fn timer ->
-                      %{
-                        timer
-                        | retry_count: timer.retry_count + 1,
-                          timer:
-                            Process.send_after(
-                              self(),
-                              {:apdu_timer, key},
-                              state.opts.apdu_timeout + @apdu_timer_offset
-                            )
-                      }
-                    end)
-              }
-
-            :timeout ->
-              log_debug(fn ->
-                "Client: APDU timer #{inspect(key)} has reached max retry count (via Segmentator), removing"
-              end)
-
-              Telemetry.execute_client_request_apdu_timer(self(), timer, state)
-
-              GenServer.reply(timer.call_ref, {:error, :apdu_timeout})
-              %{state | apdu_timers: Map.delete(state.apdu_timers, key)}
-
-            _other ->
-              %{state | apdu_timers: Map.delete(state.apdu_timers, key)}
-          end
-
-        :error ->
-          state
-      end
-
-    {:noreply, new_state}
+      :error ->
+        {:noreply, state}
+    end
   end
 
   def handle_info({:apdu_timer, key}, %State{opts: %{apdu_retries: max_retry}} = state) do
@@ -1280,6 +1252,150 @@ defmodule BACnet.Stack.Client do
     {:noreply, state}
   end
 
+  @spec handle_segmented_apdu_result(
+          :done | :timeout | :cancelled,
+          State.app_timer_key(),
+          State.t()
+        ) :: {:noreply, State.t()}
+  defp handle_segmented_apdu_result(seg_state, key, %State{} = state) do
+    # Segmentator module reports back for the segmented APDU
+    # seg_state will be :done|:timeout|:cancelled
+    # (:cancelled shouldn't scratch us, as this should already be locally handled)
+    log_debug(fn ->
+      "Client: Received APDU timer setup message for #{inspect(key)} with state #{seg_state}"
+    end)
+
+    new_state =
+      case Map.fetch(state.apdu_timers, key) do
+        {:ok, %ApduTimer{} = timer} ->
+          case seg_state do
+            :done ->
+              %{
+                state
+                | apdu_timers:
+                    Map.update!(state.apdu_timers, key, fn timer ->
+                      %{
+                        timer
+                        | retry_count: timer.retry_count + 1,
+                          timer:
+                            Process.send_after(
+                              self(),
+                              {:apdu_timer, key},
+                              state.opts.apdu_timeout + @apdu_timer_offset
+                            )
+                      }
+                    end)
+              }
+
+            :timeout ->
+              log_debug(fn ->
+                "Client: APDU timer #{inspect(key)} has reached max retry count (via Segmentator), removing"
+              end)
+
+              Telemetry.execute_client_request_apdu_timer(self(), timer, state)
+
+              GenServer.reply(timer.call_ref, {:error, :apdu_timeout})
+              %{state | apdu_timers: Map.delete(state.apdu_timers, key)}
+
+            _other ->
+              %{state | apdu_timers: Map.delete(state.apdu_timers, key)}
+          end
+
+        :error ->
+          state
+      end
+
+    {:noreply, new_state}
+  end
+
+  # Segmentation control must reach shared components even without application subscribers
+  # or an outgoing request timer (for example, while sending a segmented response)
+  @spec handle_segmentation_control(
+          term(),
+          Protocol.bvlc(),
+          NPCI.t(),
+          Protocol.apdu(),
+          TransportBehaviour.portal(),
+          State.t()
+        ) :: State.t()
+  defp handle_segmentation_control(source_address, bvlc, npci, %type{} = apdu, portal, state)
+       when type in [APDU.SegmentACK, APDU.Abort, APDU.Error, APDU.Reject, APDU.SimpleACK] do
+    endpoint =
+      SegmentationEndpoint.new(
+        state.transport_mod,
+        portal,
+        segmentation_peer(source_address, bvlc),
+        destination: npci.source
+      )
+
+    if type in [APDU.SegmentACK, APDU.Abort, APDU.Error, APDU.Reject] do
+      case Segmentator.handle_apdu(state.segmentator, endpoint, apdu) do
+        :ok ->
+          :ok
+
+        {:error, err} ->
+          log_debug(fn ->
+            "Client: Error while handling APDU by Segmentator, error: #{inspect(err)}"
+          end)
+
+          Telemetry.execute_client_exception(
+            self(),
+            :error,
+            err,
+            [Telemetry.make_stacktrace_from_env(__ENV__)],
+            %{},
+            state
+          )
+      end
+    end
+
+    if type != APDU.SegmentACK do
+      SegmentsStore.cancel(state.segments_store, endpoint, apdu)
+    end
+
+    case apdu do
+      %APDU.Abort{sent_by_server: false} ->
+        cancel_responder_reply(source_address, npci.source, apdu.invoke_id, portal, state)
+
+      _other ->
+        state
+    end
+  end
+
+  defp handle_segmentation_control(_source_address, _bvlc, _npci, _apdu, _portal, state),
+    do: state
+
+  @spec cancel_responder_reply(
+          term(),
+          NpciTarget.t() | nil,
+          byte(),
+          TransportBehaviour.portal(),
+          State.t()
+        ) :: State.t()
+  defp cancel_responder_reply(source_address, npci_id, invoke_id, portal, state) do
+    reply_key = {source_address, npci_id, invoke_id}
+
+    case Map.fetch(state.app_reply_timers, reply_key) do
+      {:ok, %ReplyTimer{portal: ^portal} = reply} ->
+        if reply.timer, do: Process.cancel_timer(reply.timer)
+
+        %{
+          state
+          | app_reply_timers: Map.delete(state.app_reply_timers, reply_key),
+            app_reply_mapping: Map.delete(state.app_reply_mapping, reply.ref)
+        }
+
+      _other ->
+        state
+    end
+  end
+
+  @spec segmentation_peer(term(), Protocol.bvlc()) :: term()
+  defp segmentation_peer(_source_address, %BvlcForwardedNPDU{} = forwarded),
+    do: {forwarded.originating_ip, forwarded.originating_port}
+
+  defp segmentation_peer(source_address, _bvlc), do: source_address
+
   @spec handle_raw_apdu(
           term(),
           Protocol.bvlc(),
@@ -1299,6 +1415,7 @@ defmodule BACnet.Stack.Client do
     case APDU.decode(raw_apdu) do
       {:ok, apdu} ->
         Telemetry.execute_client_inc_apdu(self(), source_address, bvlc, npci, apdu, state)
+        state = handle_segmentation_control(source_address, bvlc, npci, apdu, portal, state)
         handle_apdu(source_address, bvlc, npci, apdu, portal, state)
 
       {:incomplete, %IncompleteAPDU{} = incomplete} ->
@@ -1318,7 +1435,8 @@ defmodule BACnet.Stack.Client do
         # The SegmentsStore module handles individual segment timeouts
         state =
           case Map.fetch(state.apdu_timers, reply_key) do
-            {:ok, %ApduTimer{timer: ptimer} = timer} when not is_nil(ptimer) ->
+            {:ok, %ApduTimer{timer: ptimer} = timer}
+            when not incomplete.server and not is_nil(ptimer) ->
               Process.cancel_timer(ptimer)
 
               %{
@@ -1352,7 +1470,7 @@ defmodule BACnet.Stack.Client do
                incomplete_apdu,
                trans_mod,
                portal,
-               source_address,
+               segmentation_peer(source_address, bvlc),
                destination: npci.source
              ) do
           {:ok, complete_data} ->
@@ -1711,6 +1829,29 @@ defmodule BACnet.Stack.Client do
          source_address,
          bvlc,
          %NPCI{} = npci,
+         %APDU.Abort{sent_by_server: false} = apdu,
+         portal,
+         npci_id,
+         %State{} = state
+       ) do
+    # A client Abort cancels our responder transaction, never our outgoing request
+    send_notification_apdu(
+      ref,
+      source_address,
+      bvlc,
+      npci,
+      apdu,
+      portal,
+      npci_id,
+      state
+    )
+  end
+
+  defp do_handle_apdu(
+         ref,
+         source_address,
+         bvlc,
+         %NPCI{} = npci,
          %ConfirmedServiceRequest{} = apdu,
          portal,
          npci_id,
@@ -1792,34 +1933,14 @@ defmodule BACnet.Stack.Client do
 
   defp do_handle_apdu(
          _ref,
-         source_address,
+         _source_address,
          _bvlc,
          %NPCI{} = _npci,
-         %APDU.SegmentACK{} = apdu,
+         %APDU.SegmentACK{},
          _portal,
          _npci_id,
          %State{} = state
        ) do
-    # Send SegmentACK to Segmentator for processing
-    case Segmentator.handle_apdu(state.segmentator, source_address, apdu) do
-      :ok ->
-        :ok
-
-      {:error, err} ->
-        log_debug(fn ->
-          "Client: Error while handling SegmentACK by Segmentator, error: #{inspect(err)}"
-        end)
-
-        Telemetry.execute_client_exception(
-          self(),
-          :error,
-          err,
-          [Telemetry.make_stacktrace_from_env(__ENV__)],
-          %{},
-          state
-        )
-    end
-
     state
   end
 
@@ -1834,10 +1955,6 @@ defmodule BACnet.Stack.Client do
          %State{} = state
        )
        when type in [APDU.Abort, APDU.Error, APDU.Reject] do
-    # Send the APDU to the Segmentator and SegmentsStore process
-    Segmentator.handle_apdu(state.segmentator, source_address, apdu)
-    SegmentsStore.cancel(state.segments_store, source_address, apdu)
-
     case remove_apdu_timer_for_response(source_address, apdu, npci_id, state) do
       {nil, new_state} ->
         send_notification_apdu(
@@ -2022,7 +2139,7 @@ defmodule BACnet.Stack.Client do
        )
 
   defp send_data(
-         %{invoke_id: _id} = apdu,
+         %ConfirmedServiceRequest{} = apdu,
          opts,
          destination,
          portal,
@@ -2192,7 +2309,7 @@ defmodule BACnet.Stack.Client do
     key = {destination, apdu_timer_npci_key, Map.get(apdu, :invoke_id)}
 
     # Reserve NPCI space in the transport's NPDU budget before applying the
-    # peer's complete APDU limit. The encoder reserves each segment's APCI.
+    # peer's complete APDU limit. The encoder reserves each segment's APCI
     transport_apdu_len =
       max_npdu_len - 2 - if(send_opts[:source], do: 9, else: 0) -
         if(send_opts[:destination], do: 10, else: 0)
@@ -2291,7 +2408,13 @@ defmodule BACnet.Stack.Client do
             send_opts
             |> transport_send_opts()
             |> Keyword.put(:callback_to, self())
-            |> Keyword.put(:callback_msg, {:apdu_timer_setup, key})
+            |> Keyword.put(
+              :callback_msg,
+              {:apdu_timer_setup,
+               SegmentationEndpoint.new(trans_mod, portal, destination, send_opts),
+               if(is_struct(apdu, ConfirmedServiceRequest), do: :requester, else: :responder),
+               key}
+            )
 
           Segmentator.create_sequence(
             state.segmentator,
@@ -2404,8 +2527,8 @@ defmodule BACnet.Stack.Client do
     nil
   end
 
-  # These options drive segmentation inside the client. The transport send
-  # does not understand them.
+  # These options drive segmentation inside the client
+  # The transport send does not understand them
   @spec transport_send_opts(Keyword.t()) :: Keyword.t()
   defp transport_send_opts(opts) do
     Keyword.drop(opts, [:max_apdu_length, :max_segments, :segmentation_supported])

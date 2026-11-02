@@ -60,6 +60,8 @@ defmodule BACstack.MixProject do
         "format --force",
         "compile --force",
         "credo --all --strict --ignore todo",
+        # credo task is disabled after the run, so we need to enable it again
+        fn _args -> Mix.Task.reenable("credo") end,
         "credo --all --strict -C test",
         "doctor --failed",
         "dialyzer",

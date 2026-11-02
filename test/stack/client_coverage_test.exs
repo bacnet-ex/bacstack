@@ -9,6 +9,7 @@ defmodule BACnet.Stack.ClientCoverageTest do
   alias BACnet.Protocol.Services.WriteProperty
   alias BACnet.Stack.Client
   alias BACnet.Stack.EncoderProtocol
+  alias BACnet.Stack.SegmentationEndpoint
   alias BACnet.Stack.Segmentator
   alias BACnet.Stack.SegmentsStore
   alias BACnet.Test.Stack.ApduFactory
@@ -589,22 +590,41 @@ defmodule BACnet.Stack.ClientCoverageTest do
     assert {:ok, %APDU.SimpleACK{invoke_id: ^invoke_id}} = Task.await(task)
   end
 
-  test "segmentator done rearms the apdu timer and the next tick times out", %{client: client} do
+  test "segmentator done rearms the apdu timer and the next tick times out", %{
+    client: client,
+    transport: transport
+  } do
     task = Task.async(fn -> Client.send(client, @dest, ApduFactory.read_property()) end)
     assert_receive {:fake_transport_send, @dest, _, _}
     sync(client)
 
-    send(client, {:done, {:apdu_timer_setup, {@dest, nil, 0}}})
+    send(
+      client,
+      {:done,
+       {:apdu_timer_setup, SegmentationEndpoint.new(FakeTransport, transport, @dest), :requester,
+        {@dest, nil, 0}}}
+    )
+
     sync(client)
     send(client, {:apdu_timer, {@dest, nil, 0}})
     assert {:error, :apdu_timeout} = Task.await(task)
   end
 
-  test "segmentator cancel drops the timer without answering", %{client: client} do
+  test "segmentator cancel drops the timer without answering", %{
+    client: client,
+    transport: transport
+  } do
     task = Task.async(fn -> Client.send(client, @dest, ApduFactory.read_property()) end)
     assert_receive {:fake_transport_send, @dest, _, _}
     sync(client)
-    send(client, {:cancelled, {:apdu_timer_setup, {@dest, nil, 0}}})
+
+    send(
+      client,
+      {:cancelled,
+       {:apdu_timer_setup, SegmentationEndpoint.new(FakeTransport, transport, @dest), :requester,
+        {@dest, nil, 0}}}
+    )
+
     sync(client)
     refute_receive {:fake_transport_send, _, _, _}, 20
     Task.shutdown(task, :brutal_kill)
@@ -612,7 +632,13 @@ defmodule BACnet.Stack.ClientCoverageTest do
   end
 
   test "an unknown segmentator timer key is ignored", %{client: client, transport: transport} do
-    send(client, {:done, {:apdu_timer_setup, {:missing, nil, 4}}})
+    send(
+      client,
+      {:done,
+       {:apdu_timer_setup, SegmentationEndpoint.new(FakeTransport, transport, :missing),
+        :requester, {:missing, nil, 4}}}
+    )
+
     send(client, {:apdu_timer, {:missing, nil, 4}})
     assert {FakeTransport, ^transport, ^transport} = Client.get_transport(client)
   end
@@ -939,7 +965,7 @@ defmodule BACnet.Stack.ClientCoverageTest do
     assert {FakeTransport, ^transport, ^transport} = Client.get_transport(client)
   end
 
-  test "a segmented confirmed request is joined and then dropped", %{
+  test "a segmented confirmed request is joined and delivered with its original header", %{
     client: client,
     transport: transport
   } do
@@ -958,7 +984,16 @@ defmodule BACnet.Stack.ClientCoverageTest do
                     %APDU.SegmentACK{invoke_id: 9, sequence_number: last}, _opts}
 
     assert last == length(segments) - 1
-    refute_receive {:bacnet_client, _, _, _, _}, 30
+
+    assert_receive {:bacnet_client, ref,
+                    %APDU.ConfirmedServiceRequest{
+                      invoke_id: 9,
+                      service: :read_property,
+                      max_apdu: 1476,
+                      max_segments: :more_than_64
+                    }, _, ^client}
+
+    assert is_reference(ref)
     assert {FakeTransport, ^transport, ^transport} = Client.get_transport(client)
   end
 
@@ -1007,7 +1042,7 @@ defmodule BACnet.Stack.ClientCoverageTest do
     assert {:ok, %APDU.ComplexACK{invoke_id: 0, service: :read_property}} = Task.await(task)
   end
 
-  test "a segmented request while a confirmed send is open refreshes the apdu timer", %{
+  test "an unrelated segmented request leaves a confirmed send usable", %{
     client: client,
     transport: transport
   } do
@@ -1142,8 +1177,347 @@ defmodule BACnet.Stack.ClientCoverageTest do
     assert {:ok, ^ack} = APDU.decode(IO.iodata_to_binary(bytes))
   end
 
+  test "interleaved routed segmented responses with the same invoke ID complete independently", %{
+    client: client,
+    transport: transport,
+    store: store
+  } do
+    targets = for net <- [10, 20], do: %NpciTarget{net: net, address: 7}
+
+    tasks =
+      for target <- targets do
+        task =
+          Task.async(fn ->
+            Client.send(client, @dest, ApduFactory.read_property(),
+              destination: target,
+              npci_id: target
+            )
+          end)
+
+        assert_receive {:fake_transport_send, @dest, raw, _opts}
+        assert {:ok, %APDU.ConfirmedServiceRequest{invoke_id: 0}} = APDU.decode(raw)
+        {target, task}
+      end
+
+    [first | rest] = segmented_complex_ack(0)
+
+    for target <- targets do
+      send(client, incoming(transport, first, NPCI.new(source: target)))
+      sync(client)
+      assert_receive {:fake_transport_send, @dest, %APDU.SegmentACK{sequence_number: 0}, opts}
+      assert opts[:destination] == target
+    end
+
+    assert map_size(:sys.get_state(store).sequences) == 2
+
+    for raw <- rest, target <- Enum.reverse(targets) do
+      send(client, incoming(transport, raw, NPCI.new(source: target)))
+      sync(client)
+    end
+
+    for {_target, task} <- tasks do
+      assert {:ok, %APDU.ComplexACK{invoke_id: 0}} = Task.await(task)
+    end
+
+    assert :sys.get_state(store).sequences == %{}
+  end
+
+  test "shared segmentation components keep routed outgoing requests and callbacks separate", %{
+    client: client,
+    transport: transport,
+    segmentator: segmentator
+  } do
+    targets = for net <- [10, 20], do: %NpciTarget{net: net, address: 7}
+
+    tasks =
+      for target <- targets do
+        task =
+          Task.async(fn ->
+            Client.send(client, @dest, long_confirmed_request(),
+              destination: target,
+              npci_id: target,
+              max_apdu_length: 50,
+              max_segments: 16,
+              segmentation_supported: :segmented_both
+            )
+          end)
+
+        assert_receive {:fake_transport_send, @dest, raw, _opts}
+        assert {:incomplete, %{invoke_id: 0}} = APDU.decode(IO.iodata_to_binary(raw))
+        {target, task}
+      end
+
+    sequences = :sys.get_state(segmentator).sequences
+    assert map_size(sequences) == 2
+
+    for target <- targets do
+      endpoint = SegmentationEndpoint.new(FakeTransport, transport, @dest, destination: target)
+
+      assert sequences[{endpoint, :requester, 0}].callback_msg ==
+               {:apdu_timer_setup, endpoint, :requester, {@dest, target, 0}}
+    end
+
+    [sequence | _remaining_sequences] = Map.values(sequences)
+    last = map_size(sequence.segments) - 1
+
+    for number <- 0..last, target <- targets do
+      deliver(
+        client,
+        @dest,
+        ApduFactory.segment_ack(0,
+          sent_by_server: true,
+          sequence_number: number,
+          actual_window_size: 1
+        ),
+        transport,
+        NPCI.new(source: target)
+      )
+
+      sync(client)
+
+      if number < last do
+        assert_receive {:fake_transport_send, @dest, raw, opts}
+        assert {:incomplete, segment} = APDU.decode(IO.iodata_to_binary(raw))
+        assert segment.sequence_number == number + 1
+        assert opts[:destination] == target
+        assert :sys.get_state(client).apdu_timers[{@dest, target, 0}].timer == nil
+      else
+        # The completion callback queues behind the frame that produced it.
+        sync(client)
+        assert :sys.get_state(client).apdu_timers[{@dest, target, 0}].timer != nil
+      end
+    end
+
+    for target <- targets do
+      deliver(client, @dest, ApduFactory.simple_ack(0), transport, NPCI.new(source: target))
+    end
+
+    for {_target, task} <- tasks do
+      assert {:ok, %APDU.SimpleACK{invoke_id: 0}} = Task.await(task)
+    end
+
+    assert :sys.get_state(segmentator).sequences == %{}
+  end
+
+  test "segmented responses on shared components accept ACKs without subscribers", %{
+    client: client,
+    transport: transport,
+    segmentator: segmentator,
+    opts: opts
+  } do
+    other_portal = start_supervised!({FakeTransport, owner: self()})
+
+    other_client =
+      start_supervised!({Client, Keyword.put(opts, :transport, {FakeTransport, other_portal})})
+
+    target = %NpciTarget{net: 10, address: 7}
+
+    for {sender, portal} <- [{client, transport}, {other_client, other_portal}] do
+      assert :ok = Client.unsubscribe(sender, self())
+
+      assert :ok =
+               Client.send(sender, @dest, large_ack(),
+                 destination: target,
+                 segmentation_supported: :segmented_both,
+                 max_apdu_length: 50,
+                 max_segments: 16
+               )
+
+      assert_receive {:fake_transport_send, @dest, _raw, _opts}
+      assert :sys.get_state(sender).apdu_timers == %{}
+      endpoint = SegmentationEndpoint.new(FakeTransport, portal, @dest, destination: target)
+      assert Map.has_key?(:sys.get_state(segmentator).sequences, {endpoint, :responder, 1})
+    end
+
+    assert map_size(:sys.get_state(segmentator).sequences) == 2
+
+    for {sender, portal} <- [{client, transport}, {other_client, other_portal}] do
+      endpoint = SegmentationEndpoint.new(FakeTransport, portal, @dest, destination: target)
+      sequence = :sys.get_state(segmentator).sequences[{endpoint, :responder, 1}]
+      last = map_size(sequence.segments) - 1
+
+      for number <- 0..last do
+        deliver(
+          sender,
+          @dest,
+          ApduFactory.segment_ack(1, sequence_number: number, actual_window_size: 1),
+          portal,
+          NPCI.new(source: target)
+        )
+
+        sync(sender)
+
+        if number < last do
+          assert_receive {:fake_transport_send, @dest, raw, opts}
+          assert {:incomplete, segment} = APDU.decode(IO.iodata_to_binary(raw))
+          assert segment.sequence_number == number + 1
+          assert opts[:destination] == target
+        end
+      end
+
+      refute Map.has_key?(:sys.get_state(segmentator).sequences, {endpoint, :responder, 1})
+    end
+
+    assert :sys.get_state(segmentator).sequences == %{}
+  end
+
+  test "client cancellation scopes all terminal APDUs even without subscribers", %{
+    client: client,
+    transport: transport,
+    segmentator: segmentator,
+    store: store
+  } do
+    assert :ok = Client.unsubscribe(client, self())
+    targets = for net <- [10, 20], do: %NpciTarget{net: net, address: 7}
+
+    endpoints =
+      for target <- targets,
+          do: SegmentationEndpoint.new(FakeTransport, transport, @dest, destination: target)
+
+    [selected, other] = endpoints
+
+    for canceller <- [
+          ApduFactory.abort(70),
+          ApduFactory.reject(70),
+          ApduFactory.simple_ack(70),
+          %APDU.Error{
+            invoke_id: 70,
+            service: :read_property,
+            class: :device,
+            code: :operational_problem,
+            payload: []
+          }
+        ] do
+      assert {:incomplete, first} =
+               APDU.decode(IO.iodata_to_binary(hd(segmented_complex_ack(70))))
+
+      for endpoint <- endpoints do
+        assert :incomplete =
+                 SegmentsStore.segment(store, first, FakeTransport, transport, @dest,
+                   destination: endpoint.npci
+                 )
+
+        assert :ok =
+                 Segmentator.create_sequence(
+                   segmentator,
+                   {FakeTransport, transport, transport},
+                   @dest,
+                   %{
+                     long_confirmed_request()
+                     | invoke_id: 70,
+                       sequence_number: 0,
+                       proposed_window_size: 1
+                   },
+                   50,
+                   16,
+                   destination: endpoint.npci
+                 )
+      end
+
+      deliver(client, @dest, canceller, transport, NPCI.new(source: selected.npci))
+      sync(client)
+      assert :ok = SegmentsStore.configure(store, [])
+      assert Map.keys(:sys.get_state(store).sequences) == [{other, :requester, 70}]
+
+      unless is_struct(canceller, APDU.SimpleACK) do
+        refute Map.has_key?(:sys.get_state(segmentator).sequences, {selected, :requester, 70})
+      end
+
+      # Reset both components before the next APDU variant.
+      for endpoint <- endpoints do
+        SegmentsStore.cancel(store, endpoint, 70)
+        Segmentator.handle_apdu(segmentator, endpoint, ApduFactory.abort(70))
+      end
+    end
+  end
+
+  test "forwarded and direct segments and control APDUs identify the same originating peer", %{
+    client: client,
+    transport: transport,
+    store: store,
+    segmentator: segmentator
+  } do
+    forwarded = %BvlcForwardedNPDU{originating_ip: {10, 1, 2, 3}, originating_port: 47_808}
+    origin = {forwarded.originating_ip, forwarded.originating_port}
+    target = %NpciTarget{net: 10, address: 7}
+    npci = NPCI.new(source: target)
+    [first | rest] = segmented_complex_ack(71)
+
+    send(
+      client,
+      {:bacnet_transport, {:test, FakeTransport}, :bbmd,
+       {:apdu, forwarded, npci, IO.iodata_to_binary(first)}, transport}
+    )
+
+    sync(client)
+    assert_receive {:fake_transport_send, ^origin, %APDU.SegmentACK{}, opts}
+    assert opts[:destination] == target
+    endpoint = SegmentationEndpoint.new(FakeTransport, transport, origin, destination: target)
+    assert Map.has_key?(:sys.get_state(store).sequences, {endpoint, :requester, 71})
+
+    for raw <- rest do
+      send(client, incoming_from(transport, origin, raw, npci))
+      sync(client)
+    end
+
+    assert :sys.get_state(store).sequences == %{}
+    assert_receive {:bacnet_client, nil, %APDU.ComplexACK{invoke_id: 71}, _, ^client}
+
+    # Outgoing creation uses the origin, while its ACK can arrive through the BBMD.
+    assert :ok =
+             Client.send(client, origin, large_ack(),
+               destination: target,
+               segmentation_supported: :segmented_both,
+               max_apdu_length: 50,
+               max_segments: 16
+             )
+
+    sequence = :sys.get_state(segmentator).sequences[{endpoint, :responder, 1}]
+
+    raw =
+      EncoderProtocol.encode(
+        ApduFactory.segment_ack(1,
+          sequence_number: map_size(sequence.segments) - 1
+        )
+      )
+
+    send(
+      client,
+      {:bacnet_transport, {:test, FakeTransport}, :bbmd,
+       {:apdu, forwarded, npci, IO.iodata_to_binary(raw)}, transport}
+    )
+
+    sync(client)
+    assert :sys.get_state(segmentator).sequences == %{}
+  end
+
+  test "segmentation callbacks from another endpoint do not change a client timer", %{
+    client: client,
+    transport: transport
+  } do
+    task = Task.async(fn -> Client.send(client, @dest, ApduFactory.read_property()) end)
+    assert_receive {:fake_transport_send, @dest, _raw, _opts}
+    sync(client)
+    timers = :sys.get_state(client).apdu_timers
+    endpoint = SegmentationEndpoint.new(FakeTransport, transport, @dest)
+
+    for wrong <- [
+          %{endpoint | portal: self()},
+          %{endpoint | transport_module: Limited},
+          %{endpoint | npci: %NpciTarget{net: 20, address: 7}},
+          %{endpoint | address: :other}
+        ] do
+      send(client, {:timeout, {:apdu_timer_setup, wrong, :requester, {@dest, nil, 0}}})
+      sync(client)
+      assert :sys.get_state(client).apdu_timers == timers
+    end
+
+    deliver(client, @dest, ApduFactory.simple_ack(0), transport)
+    assert {:ok, %APDU.SimpleACK{}} = Task.await(task)
+  end
+
   defp collect_outgoing_segments(client, transport, next_sequence \\ 0) do
-    assert_receive {:fake_transport_send, @dest, bytes, _opts}, 1_000
+    assert_receive {:fake_transport_send, @dest, bytes, opts}, 1_000
     assert {:incomplete, segment} = APDU.decode(IO.iodata_to_binary(bytes))
     assert segment.sequence_number == next_sequence
 
@@ -1151,10 +1525,12 @@ defmodule BACnet.Stack.ClientCoverageTest do
       client,
       @dest,
       ApduFactory.segment_ack(segment.invoke_id,
+        sent_by_server: segment.server,
         sequence_number: next_sequence,
         actual_window_size: 1
       ),
-      transport
+      transport,
+      NPCI.new(source: SegmentationEndpoint.new(FakeTransport, transport, @dest, opts).npci)
     )
 
     if segment.more_follows do

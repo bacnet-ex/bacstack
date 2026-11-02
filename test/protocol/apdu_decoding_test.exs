@@ -1,5 +1,6 @@
 defmodule BACnet.Test.Protocol.APDUDecodingTest do
   alias BACnet.Protocol.APDU
+  alias BACnet.Stack.EncoderProtocol
 
   use ExUnit.Case, async: true
 
@@ -43,7 +44,7 @@ defmodule BACnet.Test.Protocol.APDUDecodingTest do
     assert {
              :incomplete,
              %BACnet.Protocol.IncompleteAPDU{
-               header: <<2, 1, 12>>,
+               header: <<2, 117, 1, 12>>,
                server: true,
                invoke_id: 1,
                sequence_number: 0,
@@ -58,6 +59,37 @@ defmodule BACnet.Test.Protocol.APDUDecodingTest do
                <<10, 117, 1, 0, 8, 12, 145, 0, 117, 11, 0, 104, 101, 108, 108, 111, 32, 119, 111,
                  114, 108, 100, 101, 6, 0, 0, 42, 0, 12, 0>>
              )
+  end
+
+  test "reassembled confirmed requests preserve negotiated limits and the original APDU" do
+    for max_apdu <- [50, 480, 1476],
+        max_segments <- [2, 16, :more_than_64],
+        response_accepted <- [false, true] do
+      request = %APDU.ConfirmedServiceRequest{
+        segmented_response_accepted: response_accepted,
+        max_apdu: max_apdu,
+        max_segments: max_segments,
+        invoke_id: 37,
+        sequence_number: 0,
+        proposed_window_size: 2,
+        service: :read_property,
+        parameters: [tagged: {0, <<0, 0, 0, 1>>, 4}, tagged: {1, <<85>>, 1}]
+      }
+
+      segments =
+        for bytes <- EncoderProtocol.encode_segmented(request, 12) do
+          assert {:incomplete, segment} = APDU.decode(IO.iodata_to_binary(bytes))
+          segment
+        end
+
+      assert length(segments) > 1
+
+      assembled =
+        IO.iodata_to_binary([List.last(segments).header | Enum.map(segments, & &1.data)])
+
+      expected = %{request | sequence_number: nil, proposed_window_size: nil}
+      assert {:ok, ^expected} = APDU.decode(assembled)
+    end
   end
 
   test "decoding invalid segmented confirmed service request" do

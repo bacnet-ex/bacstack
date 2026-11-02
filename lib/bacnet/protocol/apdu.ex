@@ -224,7 +224,7 @@ defmodule BACnet.Protocol.APDU do
   def decode_confirmed_request(
         <<Constants.macro_by_name(:pdu_type, :confirmed_request)::size(4), 1::size(1),
           more_follows::size(1), seg_resp_accepted::size(1), _filler::size(1), _any::size(1),
-          _max_segments::size(3), _max_apdu::size(4), apdu_data::binary>>
+          max_segments::size(3), max_apdu::size(4), apdu_data::binary>>
       ) do
     with {:ok, {invoke_id, seq_number, window_size, service, data}} <-
            data_segments_info_extract(apdu_data, true) do
@@ -232,8 +232,8 @@ defmodule BACnet.Protocol.APDU do
         # Remove the segmented bit for the header
         header:
           <<Constants.macro_by_name(:pdu_type, :confirmed_request)::size(4), 0::size(1),
-            more_follows::size(1), seg_resp_accepted::size(1), 0::size(1), invoke_id::size(8),
-            service::size(8)>>,
+            more_follows::size(1), seg_resp_accepted::size(1), 0::size(1), 0::size(1),
+            max_segments::size(3), max_apdu::size(4), invoke_id::size(8), service::size(8)>>,
         server: true,
         invoke_id: invoke_id,
         sequence_number: seq_number,

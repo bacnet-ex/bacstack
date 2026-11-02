@@ -824,9 +824,11 @@ defmodule BACnet.Protocol.ApplicationTags do
         {:object_identifier, %Protocol.ObjectIdentifier{instance: instance} = value},
         _opts
       )
-      when is_integer(instance) and instance >= 0 do
+      when is_integer(instance) and instance >= 0 and
+             instance <= Constants.macro_by_name(:asn1, :max_instance_and_property_id) do
     res =
-      if is_integer(value.type) and value.type >= 0 do
+      if is_integer(value.type) and value.type >= 0 and
+           value.type <= Constants.macro_by_name(:asn1, :max_object_type) do
         {:ok, value.type}
       else
         Constants.by_name(:object_type, value.type)

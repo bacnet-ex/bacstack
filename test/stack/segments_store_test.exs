@@ -2,12 +2,16 @@ defmodule BACnet.Stack.SegmentsStoreTest do
   alias BACnet.Protocol.APDU
   alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.IncompleteAPDU
+  alias BACnet.Protocol.NPCI
+  alias BACnet.Protocol.NpciTarget
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.Services.WriteProperty
   alias BACnet.Stack.EncoderProtocol
+  alias BACnet.Stack.SegmentationEndpoint
   alias BACnet.Stack.SegmentsStore
   alias BACnet.Test.Stack.ApduFactory
   alias BACnet.Test.Stack.FakeTransport
+  alias BACnet.Test.Stack.FakeTransport.Limited
 
   use BACnet.Test.Stack.Case, async: true
 
@@ -93,7 +97,7 @@ defmodule BACnet.Stack.SegmentsStoreTest do
 
     assert :incomplete = feed(store, transport, first, track: :first)
     assert [track: :first] == assert_ack(@dest, 2, 0, 1, false)
-    timer = :sys.get_state(store).sequences[{@dest, 2}].timer
+    timer = :sys.get_state(store).sequences[key(transport, 2, :requester)].timer
 
     assert {:ok, binary} = feed(store, transport, last, track: :later)
     assert Process.read_timer(timer) == false
@@ -158,7 +162,7 @@ defmodule BACnet.Stack.SegmentsStoreTest do
 
     assert [track: :abort] == assert_abort(@dest, 7, :window_size_out_of_range, true)
 
-    send(store, {:timeout, make_ref(), {@dest, 7}})
+    send(store, {:timeout, make_ref(), key(transport, 7)})
     assert :ok = SegmentsStore.configure(store, [])
     refute_received {:fake_transport_send, _, %APDU.Abort{}, _}
   end
@@ -357,10 +361,10 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     ]
 
     for {invoke, canceller} <- cancellers do
-      [first, second | _remaining_segments] = pieces(:request, invoke, 1, 80)
+      [first, second | _remaining_segments] = pieces(:ack, invoke, 1, 80)
       assert :incomplete = feed(store, transport, first)
-      assert_ack(@dest, invoke, 0, 1, true)
-      timer = :sys.get_state(store).sequences[{@dest, invoke}].timer
+      assert_ack(@dest, invoke, 0, 1, false)
+      timer = :sys.get_state(store).sequences[key(transport, invoke, :requester)].timer
 
       assert :ok = SegmentsStore.cancel(store, @dest, canceller)
       assert :ok = SegmentsStore.configure(store, [])
@@ -369,7 +373,7 @@ defmodule BACnet.Stack.SegmentsStoreTest do
       assert {:error, :invalid_apdu_in_this_state_missing_id, true} =
                feed(store, transport, second)
 
-      assert_abort(@dest, invoke, :invalid_apdu_in_this_state, true)
+      assert_abort(@dest, invoke, :invalid_apdu_in_this_state, false)
     end
   end
 
@@ -380,20 +384,22 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     [first, last] = pieces(:request, 25, 1, 80)
     assert :incomplete = feed(store, transport, first)
     assert_ack(@dest, 25, 0, 1, true)
-    timer = :sys.get_state(store).sequences[{@dest, 25}].timer
+    timer = :sys.get_state(store).sequences[key(transport, 25)].timer
 
-    assert :ok = SegmentsStore.cancel(store, @dest, ApduFactory.abort(25))
-    send(store, {:timeout, timer, {@dest, 25}})
+    assert :ok =
+             SegmentsStore.cancel(store, @dest, %{ApduFactory.abort(25) | sent_by_server: false})
+
+    send(store, {:timeout, timer, key(transport, 25)})
     assert :ok = SegmentsStore.configure(store, [])
     assert Process.read_timer(timer) == false
     refute_received {:fake_transport_send, _, %APDU.Abort{}, _}
 
     assert :incomplete = feed(store, transport, first)
     assert_ack(@dest, 25, 0, 1, true)
-    sequence = :sys.get_state(store).sequences[{@dest, 25}]
+    sequence = :sys.get_state(store).sequences[key(transport, 25)]
     assert sequence.timer != timer
-    send(store, {:timeout, timer, {@dest, 25}})
-    assert :sys.get_state(store).sequences[{@dest, 25}] == sequence
+    send(store, {:timeout, timer, key(transport, 25)})
+    assert :sys.get_state(store).sequences[key(transport, 25)] == sequence
 
     assert {:ok, binary} = feed(store, transport, last)
     assert_ack(@dest, 25, 1, 1, true)
@@ -408,7 +414,7 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     assert :incomplete = feed(store, transport, first)
     assert_ack(@dest, 26, 0, 1, true)
 
-    fire_timer(store, {@dest, 26})
+    fire_timer(store, key(transport, 26))
     assert :ok = SegmentsStore.configure(store, [])
     refute_received {:fake_transport_send, _, %APDU.Abort{}, _}
 
@@ -425,7 +431,7 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     assert :incomplete = feed(store, transport, first)
     assert_ack(@dest, 27, 0, 4, true)
 
-    fire_timer(store, {@dest, 27})
+    fire_timer(store, key(transport, 27))
     assert :ok = SegmentsStore.configure(store, [])
     assert :incomplete = feed(store, transport, second)
     refute_received {:fake_transport_send, @dest, %APDU.Abort{}, _}
@@ -437,8 +443,8 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     assert :incomplete = feed(store, transport, first)
     assert_ack(@dest, 33, 0, 4, true)
 
-    fire_timer(store, {@dest, 33})
-    fire_timer(store, {@dest, 33})
+    fire_timer(store, key(transport, 33))
+    fire_timer(store, key(transport, 33))
     assert :ok = SegmentsStore.configure(store, [])
     refute_received {:fake_transport_send, _, %APDU.Abort{}, _}
 
@@ -452,12 +458,12 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     assert :incomplete = feed(store, transport, first)
     assert_ack(@dest, 36, 0, 4, true)
 
-    fire_timer(store, {@dest, 36})
+    fire_timer(store, key(transport, 36))
     assert :ok = SegmentsStore.configure(store, [])
     assert {:error, :segments_out_of_order, false} = feed(store, transport, third)
     assert {%APDU.SegmentACK{negative_ack: true, sequence_number: 0}, _opts} = take_ack()
 
-    fire_timer(store, {@dest, 36})
+    fire_timer(store, key(transport, 36))
     assert :ok = SegmentsStore.configure(store, [])
     assert {:error, :invalid_apdu_in_this_state_missing_id, true} = feed(store, transport, second)
     assert_abort(@dest, 36, :invalid_apdu_in_this_state, true)
@@ -469,17 +475,17 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     assert :incomplete = feed(store, transport, first)
     assert_ack(@dest, 34, 0, 4, true)
 
-    fire_timer(store, {@dest, 34})
+    fire_timer(store, key(transport, 34))
     assert :ok = SegmentsStore.configure(store, [])
     assert :incomplete = feed(store, transport, second)
 
-    fire_timer(store, {@dest, 34})
+    fire_timer(store, key(transport, 34))
     assert :ok = SegmentsStore.configure(store, [])
     assert :incomplete = feed(store, transport, third)
     refute_received {:fake_transport_send, @dest, _, _}
 
-    fire_timer(store, {@dest, 34})
-    fire_timer(store, {@dest, 34})
+    fire_timer(store, key(transport, 34))
+    fire_timer(store, key(transport, 34))
     assert :ok = SegmentsStore.configure(store, [])
     assert {:error, :invalid_apdu_in_this_state_missing_id, true} = feed(store, transport, fourth)
     assert_abort(@dest, 34, :invalid_apdu_in_this_state, true)
@@ -491,7 +497,7 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     assert :incomplete = feed(store, transport, first)
     assert_ack(@dest, 28, 0, 4, true)
 
-    fire_timer(store, {@dest, 28})
+    fire_timer(store, key(transport, 28))
     assert :ok = SegmentsStore.configure(store, [])
     assert :incomplete = feed(store, transport, second)
   end
@@ -505,7 +511,7 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     assert_ack(@dest, 35, 0, 4, true)
 
     for _attempt <- 1..4 do
-      fire_timer(store, {@dest, 35})
+      fire_timer(store, key(transport, 35))
     end
 
     assert :ok = SegmentsStore.configure(store, [])
@@ -531,8 +537,8 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     assert_abort(@dest, 29, :invalid_apdu_in_this_state, true)
   end
 
-  test "an unknown timer is ignored", %{store: store} do
-    send(store, {:timeout, make_ref(), {@dest, 99}})
+  test "an unknown timer is ignored", %{store: store, transport: transport} do
+    send(store, {:timeout, make_ref(), key(transport, 99)})
     assert :ok = SegmentsStore.configure(store, [])
     refute_received {:fake_transport_send, _, _, _}
   end
@@ -542,16 +548,16 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     [first | _remaining_segments] = pieces(:request, 37, 4, 160)
     assert :incomplete = feed(store, transport, first)
     assert_ack(@dest, 37, 0, 4, true)
-    timer = :sys.get_state(store).sequences[{@dest, 37}].timer
+    timer = :sys.get_state(store).sequences[key(transport, 37)].timer
 
-    fire_timer(store, {@dest, 37})
-    sequence = :sys.get_state(store).sequences[{@dest, 37}]
+    fire_timer(store, key(transport, 37))
+    sequence = :sys.get_state(store).sequences[key(transport, 37)]
     assert sequence.timeout_count == 1
     assert sequence.timer != timer
-    send(store, {:timeout, timer, {@dest, 37}})
-    assert :sys.get_state(store).sequences[{@dest, 37}] == sequence
+    send(store, {:timeout, timer, key(transport, 37)})
+    assert :sys.get_state(store).sequences[key(transport, 37)] == sequence
 
-    fire_timer(store, {@dest, 37})
+    fire_timer(store, key(transport, 37))
     assert :sys.get_state(store).sequences == %{}
   end
 
@@ -606,16 +612,17 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     assert {:incomplete, second} = APDU.decode(second_bytes)
 
     assert :incomplete = SegmentsStore.segment(store, first, FakeTransport, transport, :peer)
-    timer = :sys.get_state(store).sequences[{:peer, 42}].timer
+    timer = :sys.get_state(store).sequences[key(transport, 42, :requester)].timer
     # Move the next deadline far away without sleeping close to an expiry
     assert :ok = SegmentsStore.configure(store, apdu_timeout: 60_000)
     assert :incomplete = SegmentsStore.segment(store, second, FakeTransport, transport, :peer)
     assert Process.read_timer(timer) == false
-    send(store, {:timeout, timer, {:peer, 42}})
+    send(store, {:timeout, timer, key(transport, 42, :requester)})
 
     # This deliberate wait exercises delivery of any orphaned original timer
     Process.sleep(1_200)
-    assert %{{:peer, 42} => sequence} = :sys.get_state(store).sequences
+    id = key(transport, 42, :requester)
+    assert %{^id => sequence} = :sys.get_state(store).sequences
     assert sequence.count_segments == 2
     assert sequence.timeout_count == 0
   end
@@ -623,7 +630,7 @@ defmodule BACnet.Stack.SegmentsStoreTest do
   test "the initial segment arms exactly one timeout", %{transport: transport} do
     {:ok, state, :hibernate} = SegmentsStore.init(%{apdu_timeout: 40, apdu_retries: 1})
     [first | _remaining_segments] = pieces(:request, 38, 1, 80)
-    id = {@dest, 38}
+    id = key(transport, 38)
 
     assert {:reply, :incomplete, state} =
              SegmentsStore.handle_call(
@@ -636,6 +643,274 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     assert is_reference(timer)
     assert_receive {:timeout, ^timer, ^id}, 500
     refute_receive {:timeout, _other_timer, ^id}, 80
+  end
+
+  test "reassembly isolates networks, portals and transport modules", %{
+    store: store,
+    transport: transport
+  } do
+    other_portal = start_supervised!({FakeTransport, owner: self()})
+    target = %NpciTarget{net: 10, address: 7}
+
+    endpoints = [
+      SegmentationEndpoint.new(FakeTransport, transport, @dest, destination: target),
+      SegmentationEndpoint.new(FakeTransport, transport, @dest, destination: %{target | net: 20}),
+      SegmentationEndpoint.new(FakeTransport, other_portal, @dest, destination: target),
+      SegmentationEndpoint.new(Limited, transport, @dest, destination: target)
+    ]
+
+    transfers =
+      Enum.with_index(endpoints, fn endpoint, index ->
+        segments = pieces(:ack, 60, 1, 80 + index)
+        [first | _rest] = segments
+        assert :incomplete = feed_endpoint(store, endpoint, first)
+        assert [destination: endpoint.npci] == assert_ack(@dest, 60, 0, 1, false)
+        {endpoint, segments}
+      end)
+
+    sequences = :sys.get_state(store).sequences
+    assert map_size(sequences) == 4
+    assert Enum.all?(endpoints, &(sequences[{&1, :requester, 60}].endpoint == &1))
+
+    # Address-only cancellation must not pick one endpoint or cancel all of them.
+    assert :ok = SegmentsStore.cancel(store, @dest, 60)
+    assert :sys.get_state(store).sequences == sequences
+
+    for {endpoint, [first, last]} <- Enum.reverse(transfers) do
+      assert {:ok, binary} = feed_endpoint(store, endpoint, last)
+      assert binary == joined([first, last])
+      assert [destination: endpoint.npci] == assert_ack(@dest, 60, 1, 1, false)
+    end
+
+    assert :sys.get_state(store).sequences == %{}
+  end
+
+  test "cancellation, invalid segments and timeouts affect only the exact endpoint", %{
+    store: store,
+    transport: transport
+  } do
+    target = %NpciTarget{net: 10, address: 7}
+
+    first_endpoint =
+      SegmentationEndpoint.new(FakeTransport, transport, @dest, destination: target)
+
+    second_endpoint = %{first_endpoint | npci: %{target | net: 20}}
+    [first, last] = pieces(:ack, 61, 1, 80)
+
+    for canceller <- [
+          ApduFactory.abort(61),
+          ApduFactory.reject(61),
+          ApduFactory.simple_ack(61),
+          %APDU.Error{
+            invoke_id: 61,
+            service: :read_property,
+            class: :device,
+            code: :operational_problem,
+            payload: []
+          },
+          61
+        ] do
+      for endpoint <- [first_endpoint, second_endpoint] do
+        assert :incomplete = feed_endpoint(store, endpoint, first)
+        assert_ack(@dest, 61, 0, 1, false)
+      end
+
+      sequences = :sys.get_state(store).sequences
+      timer = sequences[{first_endpoint, :requester, 61}].timer
+      assert :ok = SegmentsStore.cancel(store, first_endpoint, canceller)
+
+      assert :sys.get_state(store).sequences ==
+               Map.delete(sequences, {first_endpoint, :requester, 61})
+
+      assert Process.read_timer(timer) == false
+      assert {:ok, _binary} = feed_endpoint(store, second_endpoint, last)
+      assert_ack(@dest, 61, 1, 1, false)
+    end
+
+    for endpoint <- [first_endpoint, second_endpoint] do
+      assert :incomplete = feed_endpoint(store, endpoint, first)
+      assert_ack(@dest, 61, 0, 1, false)
+    end
+
+    sequences = :sys.get_state(store).sequences
+
+    assert {:error, :invalid_proposed_window_size, true} =
+             feed_endpoint(store, first_endpoint, %{last | window_size: 0})
+
+    assert [destination: target] == assert_abort(@dest, 61, :window_size_out_of_range, false)
+
+    assert :sys.get_state(store).sequences ==
+             Map.delete(sequences, {first_endpoint, :requester, 61})
+
+    # Reuse the first endpoint and expire only its timer, leaving the other untouched.
+    assert :incomplete = feed_endpoint(store, first_endpoint, first)
+    assert_ack(@dest, 61, 0, 1, false)
+    fire_timer(store, {first_endpoint, :requester, 61})
+
+    assert :sys.get_state(store).sequences ==
+             Map.delete(sequences, {first_endpoint, :requester, 61})
+
+    assert {:ok, _binary} = feed_endpoint(store, second_endpoint, last)
+    assert_ack(@dest, 61, 1, 1, false)
+  end
+
+  test "explicit NPCI destination scopes reassembly and overrides destination option", %{
+    store: store,
+    transport: transport
+  } do
+    target = %NpciTarget{net: 10, address: 7}
+    other_target = %{target | net: 20}
+    [first, last] = pieces(:ack, 62, 1, 80)
+
+    assert :incomplete =
+             feed(store, transport, first,
+               npci: NPCI.new(destination: target),
+               destination: other_target
+             )
+
+    assert_ack(@dest, 62, 0, 1, false)
+    assert :incomplete = feed(store, transport, first, destination: other_target)
+    assert_ack(@dest, 62, 0, 1, false)
+    assert {:ok, _binary} = feed(store, transport, last, destination: target)
+    assert_ack(@dest, 62, 1, 1, false)
+    assert {:ok, _binary} = feed(store, transport, last, destination: other_target)
+    assert_ack(@dest, 62, 1, 1, false)
+  end
+
+  test "segmented requests and responses sharing an endpoint and invoke ID reassemble separately",
+       %{
+         store: store,
+         transport: transport
+       } do
+    for first_role <- [:requester, :responder] do
+      {endpoint, transfers} = open_role_pair(store, transport, 80)
+      # An integer alone must not select one of the two roles, even for a complete endpoint.
+      sequences = :sys.get_state(store).sequences
+
+      for peer <- [@dest, endpoint] do
+        assert :ok = SegmentsStore.cancel(store, peer, 80)
+        assert :sys.get_state(store).sequences == sequences
+      end
+
+      for role <- [first_role] ++ ([:requester, :responder] -- [first_role]) do
+        other = Map.delete(:sys.get_state(store).sequences, {endpoint, role, 80})
+        [first, last] = transfers[role]
+        assert {:ok, binary} = feed_endpoint(store, endpoint, last)
+        assert binary == joined([first, last])
+        assert_ack(@dest, 80, 1, 1, role == :responder)
+        assert :sys.get_state(store).sequences == other
+      end
+    end
+  end
+
+  test "received terminal APDUs and explicit local cancellation remove only the matching role", %{
+    store: store,
+    transport: transport
+  } do
+    error = %APDU.Error{
+      invoke_id: 81,
+      service: :read_property,
+      class: :device,
+      code: :operational_problem,
+      payload: []
+    }
+
+    cases = [
+      {:requester, ApduFactory.abort(81)},
+      {:responder, %{ApduFactory.abort(81) | sent_by_server: false}},
+      {:requester, error},
+      {:requester, ApduFactory.reject(81)},
+      {:requester, ApduFactory.simple_ack(81)},
+      {:requester, 81},
+      {:responder, 81}
+    ]
+
+    for lookup <- [:address, :endpoint], {role, apdu} <- cases do
+      {endpoint, transfers} = open_role_pair(store, transport, 81)
+      peer = if lookup == :address, do: @dest, else: endpoint
+      id = {endpoint, role, 81}
+      sequences = :sys.get_state(store).sequences
+
+      if is_integer(apdu) do
+        assert :ok = SegmentsStore.cancel(store, peer, apdu, role)
+      else
+        assert :ok = SegmentsStore.cancel(store, peer, apdu)
+      end
+
+      assert :sys.get_state(store).sequences == Map.delete(sequences, id)
+      assert Process.read_timer(sequences[id].timer) == false
+
+      # Repeating a role-specific cancellation must leave the opposite transfer intact.
+      assert :ok = SegmentsStore.cancel(store, peer, 81, role)
+      assert :sys.get_state(store).sequences == Map.delete(sequences, id)
+      [other_role] = [:requester, :responder] -- [role]
+      assert {:ok, _binary} = feed_endpoint(store, endpoint, List.last(transfers[other_role]))
+      assert_ack(@dest, 81, 1, 1, other_role == :responder)
+    end
+  end
+
+  test "invalid windows, duplicate initial segments and timeouts isolate the receiving role", %{
+    store: store,
+    transport: transport
+  } do
+    for role <- [:requester, :responder], reason <- [:invalid_window, :duplicate, :timeout] do
+      {endpoint, transfers} = open_role_pair(store, transport, 82)
+      id = {endpoint, role, 82}
+      sequences = :sys.get_state(store).sequences
+
+      case reason do
+        :invalid_window ->
+          assert {:error, :invalid_proposed_window_size, true} =
+                   feed_endpoint(store, endpoint, %{List.last(transfers[role]) | window_size: 0})
+
+          assert_abort(@dest, 82, :window_size_out_of_range, role == :responder)
+
+        :duplicate ->
+          assert {:error, :invalid_apdu_in_this_state_already_present, true} =
+                   feed_endpoint(store, endpoint, hd(transfers[role]))
+
+          assert_abort(@dest, 82, :invalid_apdu_in_this_state, role == :responder)
+
+        :timeout ->
+          fire_timer(store, id)
+      end
+
+      assert :sys.get_state(store).sequences == Map.delete(sequences, id)
+      [other_role] = [:requester, :responder] -- [role]
+      assert {:ok, _binary} = feed_endpoint(store, endpoint, List.last(transfers[other_role]))
+      assert_ack(@dest, 82, 1, 1, other_role == :responder)
+    end
+  end
+
+  defp open_role_pair(store, transport, invoke_id) do
+    endpoint = SegmentationEndpoint.new(FakeTransport, transport, @dest)
+
+    transfers = %{
+      requester: pieces(:ack, invoke_id, 1, 80),
+      responder: pieces(:request, invoke_id, 1, 80)
+    }
+
+    for {role, [first | _remaining]} <- transfers do
+      assert :incomplete = feed_endpoint(store, endpoint, first)
+      assert_ack(@dest, invoke_id, 0, 1, role == :responder)
+    end
+
+    {endpoint, transfers}
+  end
+
+  defp feed_endpoint(store, endpoint, segment) do
+    SegmentsStore.segment(
+      store,
+      segment,
+      endpoint.transport_module,
+      endpoint.portal,
+      endpoint.address,
+      destination: endpoint.npci
+    )
+  end
+
+  defp key(transport, invoke_id, role \\ :responder) do
+    {SegmentationEndpoint.new(FakeTransport, transport, @dest), role, invoke_id}
   end
 
   defp fire_timer(store, id) do

@@ -27,6 +27,7 @@ defmodule BACnet.Stack.SegmentsStore do
   alias BACnet.Protocol.APDU
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.IncompleteAPDU
+  alias BACnet.Stack.SegmentationEndpoint
   alias BACnet.Stack.Telemetry
   alias BACnet.Stack.TransportBehaviour
 
@@ -53,6 +54,7 @@ defmodule BACnet.Stack.SegmentsStore do
     Representative type for its purpose.
     """
     @type t :: %__MODULE__{
+            endpoint: SegmentationEndpoint.t(),
             transport_module: module(),
             portal: TransportBehaviour.portal(),
             source_address: term(),
@@ -72,6 +74,7 @@ defmodule BACnet.Stack.SegmentsStore do
           }
 
     @fields [
+      :endpoint,
       :transport_module,
       :portal,
       :source_address,
@@ -105,7 +108,7 @@ defmodule BACnet.Stack.SegmentsStore do
     """
     @type t :: %__MODULE__{
             sequences: %{
-              optional({source_address :: term(), invoke_id :: byte()}) =>
+              optional(SegmentationEndpoint.sequence_key()) =>
                 %BACnet.Stack.SegmentsStore.Sequence{}
             },
             opts: %{
@@ -205,8 +208,9 @@ defmodule BACnet.Stack.SegmentsStore do
   @doc """
   Sends a segment to the Store to be handled. `cancel` specifies whether segmentation is aborted/cancelled.
 
-  If no segment sequence for the source address and invoke ID exist yet, one will be created automatically. Sequences
-  aborted by the Store are automatically removed from it and the remote BACnet device is notified.
+  If no sequence exists for the transport module, portal, source address, complete NPCI target and invoke ID,
+  one will be created automatically. Sequences aborted by the Store are automatically removed from it and
+  the remote BACnet device is notified.
 
   Once all segments have been received, an ok-tuple is returned with the complete APDU binary data,
   which then can be decoded using the `BACnet.Protocol` module.
@@ -214,6 +218,7 @@ defmodule BACnet.Stack.SegmentsStore do
   This module sends answers directly to the remote BACnet device, as such the transport module and portal needs to be specified.
 
   The `opts` argument will be passed on to the transport module's send function without modification.
+  Its effective NPCI destination also scopes the sequence (see `BACnet.Stack.SegmentationEndpoint.new/4`).
   """
   @spec segment(
           server(),
@@ -243,6 +248,14 @@ defmodule BACnet.Stack.SegmentsStore do
   @doc """
   Cancels a segment sequence in the Store.
 
+  Pass a `BACnet.Stack.SegmentationEndpoint` as the second argument to select the complete
+  endpoint. A transport address alone is supported for compatibility only when exactly one
+  sequence matches that address, invoke ID, and local role. Received APDUs determine the local
+  role: a server Abort, Error, Reject, or SimpleACK selects the requester; a client Abort
+  selects the responder. An integer invoke ID selects a sequence only when the role is
+  unambiguous, even with a complete endpoint. Use `cancel/4` to select a role explicitly.
+  Ambiguous calls do nothing.
+
   This function must be called by the user when one of the following conditions is met:
     - Abort PDU received with the same invoke ID
     - Error PDU received with the same invoke ID
@@ -256,7 +269,7 @@ defmodule BACnet.Stack.SegmentsStore do
   """
   @spec cancel(
           server(),
-          term(),
+          SegmentationEndpoint.t() | term(),
           APDU.Abort.t()
           | APDU.Error.t()
           | APDU.Reject.t()
@@ -265,20 +278,29 @@ defmodule BACnet.Stack.SegmentsStore do
         ) :: :ok
   def cancel(server, source_address, apdu)
 
-  def cancel(server, source_address, %APDU.Abort{} = abort) when is_server(server),
-    do: GenServer.cast(server, {:cancel, abort.invoke_id, source_address})
-
-  def cancel(server, source_address, %APDU.Error{} = error) when is_server(server),
-    do: GenServer.cast(server, {:cancel, error.invoke_id, source_address})
-
-  def cancel(server, source_address, %APDU.Reject{} = reject) when is_server(server),
-    do: GenServer.cast(server, {:cancel, reject.invoke_id, source_address})
-
-  def cancel(server, source_address, %APDU.SimpleACK{} = simple) when is_server(server),
-    do: GenServer.cast(server, {:cancel, simple.invoke_id, source_address})
+  def cancel(server, source_address, %type{} = apdu)
+      when is_server(server) and type in [APDU.Abort, APDU.Error, APDU.Reject, APDU.SimpleACK] do
+    GenServer.cast(
+      server,
+      {:cancel, apdu.invoke_id, source_address, SegmentationEndpoint.incoming_role(apdu)}
+    )
+  end
 
   def cancel(server, source_address, invoke_id) when is_server(server) and invoke_id in 0..255 do
-    GenServer.cast(server, {:cancel, invoke_id, source_address})
+    GenServer.cast(server, {:cancel, invoke_id, source_address, nil})
+  end
+
+  @doc """
+  Cancels a sequence by invoke ID and explicit local transaction role.
+
+  Use this for local cancellation when both roles share an endpoint and invoke ID.
+  Received terminal APDUs should be passed to `cancel/3`, which derives the role from the APDU.
+  """
+  @spec cancel(server(), SegmentationEndpoint.t() | term(), byte(), SegmentationEndpoint.role()) ::
+          :ok
+  def cancel(server, source_address, invoke_id, role)
+      when is_server(server) and invoke_id in 0..255 and role in [:requester, :responder] do
+    GenServer.cast(server, {:cancel, invoke_id, source_address, role})
   end
 
   @doc false
@@ -316,7 +338,8 @@ defmodule BACnet.Stack.SegmentsStore do
         "#{inspect(source_addr)}:#{inspect(incomplete.invoke_id)}"
     end)
 
-    id = {source_addr, incomplete.invoke_id}
+    endpoint = SegmentationEndpoint.new(module, portal, source_addr, send_opts)
+    id = {endpoint, SegmentationEndpoint.incoming_role(incomplete), incomplete.invoke_id}
     has_id = Map.has_key?(state.sequences, id)
 
     {reply, new_state} =
@@ -510,13 +533,16 @@ defmodule BACnet.Stack.SegmentsStore do
   end
 
   @doc false
-  def handle_cast({:cancel, invoke_id, source_addr}, %State{} = state) do
+  def handle_cast({:cancel, invoke_id, source_addr, role}, %State{} = state) do
     log_debug(fn ->
       "SegmentsStore: Received cancel request for #{inspect(source_addr)}:#{invoke_id}"
     end)
 
     new_state =
-      case Map.pop(state.sequences, {source_addr, invoke_id}) do
+      case Map.pop(
+             state.sequences,
+             SegmentationEndpoint.sequence_key(state.sequences, source_addr, invoke_id, role)
+           ) do
         {%Sequence{} = sequence, new_map} ->
           Process.cancel_timer(sequence.timer)
 
@@ -538,7 +564,7 @@ defmodule BACnet.Stack.SegmentsStore do
 
   @doc false
   def handle_info({:timeout, timer, id}, %State{} = state) do
-    # Ignore timers replaced by a segment, a retry, or a new sequence with the same ID.
+    # Ignore timers replaced by a segment, a retry, or a new sequence with the same ID
     new_state =
       case Map.fetch(state.sequences, id) do
         {:ok, %Sequence{transport_module: module, timer: ^timer} = sequence} ->
@@ -645,6 +671,7 @@ defmodule BACnet.Stack.SegmentsStore do
         log_transport_send_error(module.send(portal, source_addr, ack, send_opts))
 
         sequence = %Sequence{
+          endpoint: elem(id, 0),
           transport_module: module,
           portal: portal,
           source_address: source_addr,
@@ -857,7 +884,11 @@ defmodule BACnet.Stack.SegmentsStore do
      }}
   end
 
-  @spec handle_segment_compute_state(State.t(), {term(), byte()}, Sequence.t() | :drop) ::
+  @spec handle_segment_compute_state(
+          State.t(),
+          SegmentationEndpoint.sequence_key(),
+          Sequence.t() | :drop
+        ) ::
           State.t()
   defp handle_segment_compute_state(%State{} = state, id, new_sequence) do
     case Map.fetch(state.sequences, id) do

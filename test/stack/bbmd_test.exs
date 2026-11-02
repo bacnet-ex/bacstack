@@ -384,11 +384,12 @@ defmodule BACnet.Stack.BBMDTest do
     assert BBMD.get_broadcast_distribution_table(readonly) == [original, hd(replacement)]
   end
 
-  test "an original broadcast is forwarded to other foreign devices", %{
-    client: client,
-    transport: transport,
-    who_is: who_is
-  } do
+  test "an original broadcast is forwarded to other foreign devices without a local rebroadcast",
+       %{
+         client: client,
+         transport: transport,
+         who_is: who_is
+       } do
     bbmd =
       start_bbmd!(client,
         bdt: [
@@ -411,6 +412,7 @@ defmodule BACnet.Stack.BBMDTest do
     end
 
     refute Enum.any?(sent, fn {dest, _data, _opts} -> dest == {{192, 168, 1, 255}, 47_808} end)
+    refute Enum.any?(sent, fn {dest, _data, _opts} -> dest == @broadcast end)
   end
 
   test "a routed broadcast is sent to foreign subnets and skipped for the origin subnet", %{

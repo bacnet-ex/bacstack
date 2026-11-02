@@ -1216,7 +1216,7 @@ defmodule BACnet.Stack.TrendLogger do
          id,
          _state
        ) do
-    # Keep this reference through the lookup to reject stale requests and results.
+    # Keep this reference through the lookup to reject stale requests and results
     timer = :erlang.start_timer(make_interval(object.log_interval), self(), {:poll_log, id})
 
     %{log | poll_timer: timer}

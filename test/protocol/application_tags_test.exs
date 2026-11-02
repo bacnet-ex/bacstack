@@ -617,11 +617,42 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
     assert {:error, :invalid_value} = ApplicationTags.encode_value({:time, time})
   end
 
+  test "encode object identifier invalid too large type" do
+    assert {:error, :unknown_object_type} =
+             ApplicationTags.encode(
+               {:object_identifier, %ObjectIdentifier{type: 1024, instance: 0}}
+             )
+  end
+
   test "encode object identifier invalid negative instance" do
     assert {:error, :invalid_value} =
              ApplicationTags.encode(
                {:object_identifier, %ObjectIdentifier{type: :device, instance: -1}}
              )
+  end
+
+  test "encode object identifier invalid too large instance" do
+    for instance <- [4_194_304, 4_194_304_999] do
+      value = {:object_identifier, %ObjectIdentifier{type: :device, instance: instance}}
+      assert {:error, :invalid_value} = ApplicationTags.encode(value)
+      assert {:error, :invalid_value} = ApplicationTags.encode_value(value)
+    end
+  end
+
+  test "object identifier encoding preserves both boundaries of the 22-bit instance field" do
+    for type <- [:device, 1023], instance <- [0, 4_194_303] do
+      identifier = %ObjectIdentifier{type: type, instance: instance}
+      assert ObjectIdentifier.valid?(identifier)
+
+      assert {:ok, bytes, _header} =
+               ApplicationTags.encode_value({:object_identifier, identifier})
+
+      assert byte_size(bytes) == 4
+      assert {:ok, ^identifier} = ApplicationTags.decode_value(12, bytes)
+
+      assert {:ok, <<0xC4, ^bytes::binary>>} =
+               ApplicationTags.encode({:object_identifier, identifier})
+    end
   end
 
   test "encode object identifier integer object type" do
