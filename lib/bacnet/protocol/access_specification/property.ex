@@ -76,7 +76,7 @@ defmodule BACnet.Protocol.AccessSpecification.Property do
             end),
          {:ok, prop_value} <-
            (if property.property_value do
-              with {:ok, base} <- Encoding.to_encoding(property.property_value) do
+              with {:ok, base} <- encode_property_value(property.property_value) do
                 {:ok, {:constructed, {2, base, 0}}}
               end
             else
@@ -89,6 +89,25 @@ defmodule BACnet.Protocol.AccessSpecification.Property do
       ]
 
       {:ok, Enum.reject(params, &is_nil/1)}
+    end
+  end
+
+  # A list is a sequence of values inside the property-value constructed tag,
+  # the same way WriteProperty encodes a list of encodings.
+  defp encode_property_value(%Encoding{} = value), do: Encoding.to_encoding(value)
+
+  defp encode_property_value(values) when is_list(values) do
+    result =
+      Enum.reduce_while(values, {:ok, []}, fn item, {:ok, acc} ->
+        case Encoding.to_encoding(item) do
+          {:ok, encoding} -> {:cont, {:ok, [encoding | acc]}}
+          term -> {:halt, term}
+        end
+      end)
+
+    case result do
+      {:ok, list} -> {:ok, Enum.reverse(list)}
+      term -> term
     end
   end
 
@@ -120,8 +139,14 @@ defmodule BACnet.Protocol.AccessSpecification.Property do
               property_array_index: property_array_index,
               property_value:
                 case prop_value do
-                  {:constructed, {2, tag, _len}} -> Encoding.create!(tag)
-                  _else -> nil
+                  {:constructed, {2, tags, _len}} when is_list(tags) ->
+                    Enum.map(tags, &Encoding.create!/1)
+
+                  {:constructed, {2, tag, _len}} ->
+                    Encoding.create!(tag)
+
+                  _else ->
+                    nil
                 end
             }
         end

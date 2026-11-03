@@ -398,6 +398,9 @@ defmodule BACnet.Stack.ClientHelper do
            ),
          {:ok, %APDU.SimpleACK{} = _apdu} <- Client.send(server, destination, req, opts) do
       :ok
+    else
+      {:ok, apdu} -> {:error, apdu}
+      other -> other
     end
   end
 
@@ -607,44 +610,8 @@ defmodule BACnet.Stack.ClientHelper do
   def send_time_synchronization(server, destination \\ :broadcast, opts \\ [])
 
   def send_time_synchronization(server, destination, opts) when is_list(opts) do
-    {new_utc, dt} =
-      case Keyword.fetch(opts, :datetime) do
-        {:ok, dt} ->
-          if Keyword.get(opts, :utc, false) do
-            {true, DateTime.shift_zone(dt, "Etc/UTC")}
-          else
-            {false, dt}
-          end
-
-        :error ->
-          if Keyword.get(opts, :utc, false) do
-            {true, DateTime.now!("Etc/UTC")}
-          else
-            tz = Application.get_env(:bacstack, :default_timezone, "Etc/UTC")
-            {tz == "Etc/UTC", DateTime.now!(tz)}
-          end
-      end
-
-    sync_apdu =
-      if new_utc do
-        Services.UtcTimeSynchronization.to_apdu(
-          %Services.UtcTimeSynchronization{
-            date: BACnetDate.from_date(DateTime.to_date(dt)),
-            time: BACnetTime.from_time(DateTime.to_time(dt))
-          },
-          opts
-        )
-      else
-        Services.TimeSynchronization.to_apdu(
-          %Services.TimeSynchronization{
-            date: BACnetDate.from_date(DateTime.to_date(dt)),
-            time: BACnetTime.from_time(DateTime.to_time(dt))
-          },
-          opts
-        )
-      end
-
-    with {:ok, apdu} <- sync_apdu,
+    with {:ok, is_utc, dt} <- time_synchronization_timestamp(opts),
+         {:ok, apdu} <- time_synchronization_apdu(is_utc, dt, opts),
          {:ok, addr} <- get_address(server, destination) do
       Client.send(server, addr, apdu, Keyword.drop(opts, [:datetime, :utc]))
     end
@@ -977,7 +944,7 @@ defmodule BACnet.Stack.ClientHelper do
     else
       {:ok, %APDU.Error{service: :write_property_multiple} = error} ->
         case Services.Error.WritePropertyMultipleError.from_apdu(error) do
-          {:ok, error} -> error
+          {:ok, error} -> {:error, error}
           _other -> {:error, error}
         end
 
@@ -1118,15 +1085,19 @@ defmodule BACnet.Stack.ClientHelper do
                  {:halt, {:error, {:unable_to_convert, property_identifier}}}
                end
            end) do
-      {:ok,
-       {[
-          %AccessSpecification.Property{
-            property_identifier: property_identifier,
-            property_array_index: index,
-            property_value: Enum.reverse(list)
-          }
-          | acc
-        ], opts}}
+      {:cont,
+       {:ok,
+        {[
+           %AccessSpecification.Property{
+             property_identifier: property_identifier,
+             property_array_index: index,
+             property_value: Enum.reverse(list)
+           }
+           | acc
+         ], opts}}}
+    else
+      {:halt, {:error, _reason}} = halted -> halted
+      {:error, reason} -> {:halt, {:error, reason}}
     end
   end
 
@@ -1174,6 +1145,48 @@ defmodule BACnet.Stack.ClientHelper do
 
   defp get_address(server, :broadcast), do: GenServer.call(server, :get_broadcast_address)
   defp get_address(_server, addr), do: {:ok, addr}
+
+  defp time_synchronization_timestamp(opts) do
+    case Keyword.fetch(opts, :datetime) do
+      {:ok, dt} ->
+        if Keyword.get(opts, :utc, false) do
+          case DateTime.shift_zone(dt, "Etc/UTC") do
+            {:ok, utc} -> {:ok, true, utc}
+            {:error, reason} -> {:error, reason}
+          end
+        else
+          {:ok, false, dt}
+        end
+
+      :error ->
+        if Keyword.get(opts, :utc, false) do
+          {:ok, true, DateTime.now!("Etc/UTC")}
+        else
+          tz = Application.get_env(:bacstack, :default_timezone, "Etc/UTC")
+          {:ok, tz == "Etc/UTC", DateTime.now!(tz)}
+        end
+    end
+  end
+
+  defp time_synchronization_apdu(true, %DateTime{} = dt, opts) do
+    Services.UtcTimeSynchronization.to_apdu(
+      %Services.UtcTimeSynchronization{
+        date: BACnetDate.from_date(DateTime.to_date(dt)),
+        time: BACnetTime.from_time(DateTime.to_time(dt))
+      },
+      opts
+    )
+  end
+
+  defp time_synchronization_apdu(false, %DateTime{} = dt, opts) do
+    Services.TimeSynchronization.to_apdu(
+      %Services.TimeSynchronization{
+        date: BACnetDate.from_date(DateTime.to_date(dt)),
+        time: BACnetTime.from_time(DateTime.to_time(dt))
+      },
+      opts
+    )
+  end
 
   @spec make_access_property_from_identifier(
           AccessSpecification.Property.t()

@@ -378,7 +378,7 @@ defmodule BACnet.Stack.ClientHelperTest do
       }
     end)
 
-    assert {:ok, %APDU.Error{code: :password_failure}} = Task.await(task)
+    assert {:error, %APDU.Error{code: :password_failure}} = Task.await(task)
   end
 
   test "time synchronization uses utc or local time and the broadcast address", %{client: client} do
@@ -398,6 +398,25 @@ defmodule BACnet.Stack.ClientHelperTest do
     assert_receive {:fake_transport_send, :broadcast, raw, _opts}
     {:ok, apdu} = APDU.decode(raw)
     assert apdu.service == :time_synchronization
+
+    local = DateTime.new!(~D[2024-05-06], ~T[07:08:09], "Etc/UTC")
+
+    assert :ok =
+             ClientHelper.send_time_synchronization(client, @dest, datetime: local, utc: true)
+
+    assert_receive {:fake_transport_send, @dest, raw, opts}
+    refute Keyword.has_key?(opts, :datetime)
+    refute Keyword.has_key?(opts, :utc)
+    {:ok, apdu} = APDU.decode(raw)
+
+    assert {:ok,
+            %Services.UtcTimeSynchronization{
+              date: date,
+              time: time
+            }} = Services.UtcTimeSynchronization.from_apdu(apdu)
+
+    assert date == BACnet.Protocol.BACnetDate.from_date(~D[2024-05-06])
+    assert time == BACnet.Protocol.BACnetTime.from_time(~T[07:08:09])
   end
 
   test "subscribe_cov_property sends the lifetime and confirmed flag", %{client: client} do
@@ -606,7 +625,8 @@ defmodule BACnet.Stack.ClientHelperTest do
       error
     end)
 
-    assert %WritePropertyMultipleError{error_code: :write_access_denied} = Task.await(task)
+    assert {:error, %WritePropertyMultipleError{error_code: :write_access_denied}} =
+             Task.await(task)
 
     task =
       Task.async(fn ->
@@ -624,6 +644,31 @@ defmodule BACnet.Stack.ClientHelperTest do
       end)
 
     reply_confirmed(@dest, &ApduFactory.simple_ack/1)
+    assert :ok = Task.await(task)
+
+    task =
+      Task.async(fn ->
+        ClientHelper.write_property_multiple(client, @dest, analog, %{
+          present_value: [real(1.0), real(2.0)]
+        })
+      end)
+
+    assert_receive {:fake_transport_send, @dest, raw, _opts}
+    {:ok, %APDU.ConfirmedServiceRequest{invoke_id: invoke_id} = request} = APDU.decode(raw)
+
+    assert {:ok, %Services.WritePropertyMultiple{list: [specification]}} =
+             Services.WritePropertyMultiple.from_apdu(request)
+
+    assert [
+             %BACnet.Protocol.AccessSpecification.Property{
+               property_identifier: :present_value,
+               property_value: property_value
+             }
+           ] = specification.properties
+
+    assert property_value == [real(1.0), real(2.0)]
+
+    deliver(@dest, ApduFactory.simple_ack(invoke_id))
     assert :ok = Task.await(task)
 
     task =

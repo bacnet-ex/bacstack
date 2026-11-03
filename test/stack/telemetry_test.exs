@@ -15,8 +15,9 @@ defmodule BACnet.Stack.TelemetryTest do
   alias BACnet.Stack.Telemetry, warn: false
   alias BACnet.Stack.TrendLogger, warn: false
 
-  use BACnet.Test.Stack.Case, async: true
+  use BACnet.Test.Stack.Case, async: false
 
+  @moduletag :stack
   @moduletag :telemetry
 
   # Telemetry tests fail always on Elixir < 1.15, so just skip it
@@ -134,12 +135,29 @@ defmodule BACnet.Stack.TelemetryTest do
     end
 
     test "assert basic metadata contains keys" do
-      assert %{monotonic_time: _time, system_time: _os_time} =
+      basic = Telemetry.get_telemetry_measurements()
+      assert is_integer(basic.monotonic_time)
+      assert is_integer(basic.system_time)
+      assert map_size(basic) == 2
+      assert Telemetry.compiled_with_telemetry()
+
+      assert %{monotonic_time: time, system_time: os_time} =
                Telemetry.get_telemetry_measurements(%{})
 
+      assert is_integer(time)
+      assert is_integer(os_time)
+
       # Assert the given map OVERRIDES the basic map
-      assert %{monotonic_time: false, system_time: _os_time} =
+      assert %{monotonic_time: false, system_time: overridden} =
                Telemetry.get_telemetry_measurements(%{monotonic_time: false})
+
+      assert is_integer(overridden)
+    end
+
+    test "make_stacktrace_from_env records the caller" do
+      assert {{__MODULE__, :stacktrace_caller, 0, location}, line} = stacktrace_caller()
+      assert location[:file] == __ENV__.file
+      assert location[:line] == line
     end
 
     test "call telemetry bbmd exception function and assert reception", %{
@@ -464,7 +482,20 @@ defmodule BACnet.Stack.TelemetryTest do
       :ok = Telemetry.execute_client_send(self(), nil, nil, [], false, struct(Client.State, []))
 
       assert_receive {[:bacstack, :client, :send], ^telemetry_ref, %{monotonic_time: _time},
-                      %{self: _self}}
+                      %{self: _self, segmented: false, send_opts: []}}
+
+      :ok =
+        Telemetry.execute_client_send(
+          self(),
+          :peer,
+          nil,
+          [port: 1],
+          true,
+          struct(Client.State, [])
+        )
+
+      assert_receive {[:bacstack, :client, :send], ^telemetry_ref, %{monotonic_time: _time},
+                      %{self: _self, destination: :peer, segmented: true, send_opts: [port: 1]}}
     end
 
     test "call telemetry client send error function and assert reception", %{
@@ -652,7 +683,25 @@ defmodule BACnet.Stack.TelemetryTest do
         )
 
       assert_receive {[:bacstack, :segmentator, :sequence, :error], ^telemetry_ref,
-                      %{monotonic_time: _time}, %{self: _self}}
+                      %{monotonic_time: _time}, %{self: _self, send_opts: nil, reason: :other}}
+
+      :ok =
+        Telemetry.execute_segmentator_sequence_error(
+          self(),
+          __MODULE__,
+          self(),
+          self(),
+          :peer,
+          nil,
+          [port: 1],
+          nil,
+          :other,
+          struct(Segmentator.State, [])
+        )
+
+      assert_receive {[:bacstack, :segmentator, :sequence, :error], ^telemetry_ref,
+                      %{monotonic_time: _time},
+                      %{self: _self, destination: :peer, send_opts: [port: 1], reason: :other}}
     end
 
     test "call telemetry segmentator segment start function and assert reception", %{
@@ -748,7 +797,24 @@ defmodule BACnet.Stack.TelemetryTest do
         )
 
       assert_receive {[:bacstack, :segments_store, :sequence, :error], ^telemetry_ref,
-                      %{monotonic_time: _time}, %{self: _self}}
+                      %{monotonic_time: _time}, %{self: _self, send_opts: nil, reason: :other}}
+
+      :ok =
+        Telemetry.execute_segments_store_sequence_error(
+          self(),
+          __MODULE__,
+          self(),
+          :peer,
+          nil,
+          [port: 1],
+          nil,
+          :other,
+          struct(SegmentsStore.State, [])
+        )
+
+      assert_receive {[:bacstack, :segments_store, :sequence, :error], ^telemetry_ref,
+                      %{monotonic_time: _time},
+                      %{self: _self, destination: :peer, send_opts: [port: 1], reason: :other}}
     end
 
     test "call telemetry segments store segment start function and assert reception", %{
@@ -952,6 +1018,10 @@ defmodule BACnet.Stack.TelemetryTest do
 
       assert_receive {[:bacstack, :trend_logger, :lookup_object, :stop], ^telemetry_ref,
                       %{monotonic_time: _time, duration: 500}, %{self: _self}}
+    end
+
+    defp stacktrace_caller() do
+      {Telemetry.make_stacktrace_from_env(__ENV__), __ENV__.line}
     end
   end
 end

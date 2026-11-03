@@ -1,6 +1,10 @@
 defmodule BACnet.Test.Protocol.APDU.ConfirmedServiceRequestTest do
+  alias BACnet.Protocol.APDU
   alias BACnet.Protocol.APDU.ConfirmedServiceRequest
+  alias BACnet.Protocol.Constants
+  alias BACnet.Protocol.IncompleteAPDU
   alias BACnet.Protocol.ObjectIdentifier
+  alias BACnet.Protocol.PropertyRef
   alias BACnet.Protocol.Services
   alias BACnet.Stack.EncoderProtocol
 
@@ -505,6 +509,80 @@ defmodule BACnet.Test.Protocol.APDU.ConfirmedServiceRequestTest do
   end
 
   @tag :service
+  test "APDU to service SubscribeCov" do
+    assert {:ok,
+            %Services.SubscribeCov{
+              process_identifier: 18,
+              monitored_object: %ObjectIdentifier{type: :analog_input, instance: 10},
+              issue_confirmed_notifications: true,
+              lifetime: 0
+            }} =
+             ConfirmedServiceRequest.to_service(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :subscribe_cov,
+               parameters: [
+                 tagged: {0, <<18>>, 1},
+                 tagged: {1, <<0, 0, 0, 10>>, 4},
+                 tagged: {2, <<1>>, 1},
+                 tagged: {3, <<0>>, 1}
+               ]
+             })
+  end
+
+  @tag :service
+  test "APDU to service SubscribeCovProperty" do
+    assert {:ok,
+            %Services.SubscribeCovProperty{
+              process_identifier: 18,
+              monitored_object: %ObjectIdentifier{type: :analog_input, instance: 10},
+              issue_confirmed_notifications: true,
+              lifetime: 60,
+              monitored_property: %PropertyRef{
+                property_identifier: :present_value,
+                property_array_index: nil
+              },
+              cov_increment: 1.0
+            }} =
+             ConfirmedServiceRequest.to_service(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :subscribe_cov_property,
+               parameters: [
+                 tagged: {0, <<18>>, 1},
+                 tagged: {1, <<0, 0, 0, 10>>, 4},
+                 tagged: {2, <<1>>, 1},
+                 tagged: {3, "<", 1},
+                 constructed: {4, {:tagged, {0, "U", 1}}, 0},
+                 tagged: {5, <<63, 128, 0, 0>>, 4}
+               ]
+             })
+  end
+
+  @tag :service
+  test "APDU to service is not supported for an unknown service" do
+    assert :not_supported =
+             ConfirmedServiceRequest.to_service(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 480,
+               max_segments: :unspecified,
+               invoke_id: 35,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: 250,
+               parameters: []
+             })
+  end
+
+  @tag :service
   test "APDU to service WriteProperty" do
     assert {:ok, %Services.WriteProperty{}} =
              ConfirmedServiceRequest.to_service(%ConfirmedServiceRequest{
@@ -544,4 +622,240 @@ defmodule BACnet.Test.Protocol.APDU.ConfirmedServiceRequestTest do
                ]
              })
   end
+
+  test "EncoderProtocol supports segmentation" do
+    assert true ==
+             EncoderProtocol.supports_segmentation(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :acknowledge_alarm,
+               parameters: []
+             })
+  end
+
+  test "encode returns the encoded request or the encoder error" do
+    request = %ConfirmedServiceRequest{
+      segmented_response_accepted: true,
+      max_apdu: 480,
+      max_segments: :unspecified,
+      invoke_id: 35,
+      sequence_number: nil,
+      proposed_window_size: nil,
+      service: :read_property,
+      parameters: []
+    }
+
+    assert {:ok, iodata} = ConfirmedServiceRequest.encode(request)
+    assert is_binary(IO.iodata_to_binary(iodata))
+
+    assert {:error, %ArgumentError{message: message}} =
+             ConfirmedServiceRequest.encode(%{request | invoke_id: -1})
+
+    assert message =~ "Invoke ID"
+  end
+
+  test "EncoderProtocol encodes limits" do
+    request = %ConfirmedServiceRequest{
+      segmented_response_accepted: true,
+      max_apdu: 1476,
+      max_segments: :unspecified,
+      invoke_id: 35,
+      sequence_number: nil,
+      proposed_window_size: nil,
+      service: :read_property,
+      parameters: [tagged: {0, <<0, 0, 0, 1>>, 4}, tagged: {1, "P", 1}]
+    }
+
+    assert raw(request) == <<2, 5, 35, 12, 12, 0, 0, 0, 1, 25, 80>>
+
+    assert {:ok, decoded} = APDU.decode(raw(request))
+    assert decoded.invoke_id == 35
+    assert decoded.service == :read_property
+    assert decoded.max_apdu == 1476
+    assert decoded.max_segments == :unspecified
+    assert decoded.segmented_response_accepted == true
+    assert decoded.sequence_number == nil
+    assert decoded.proposed_window_size == nil
+
+    plain = %ConfirmedServiceRequest{
+      segmented_response_accepted: true,
+      max_apdu: 480,
+      max_segments: :unspecified,
+      invoke_id: 35,
+      sequence_number: nil,
+      proposed_window_size: nil,
+      service: :read_property,
+      parameters: []
+    }
+
+    refused = %{plain | segmented_response_accepted: false, max_apdu: 50, max_segments: 2}
+    assert {:ok, decoded} = APDU.decode(raw(refused))
+    assert decoded.segmented_response_accepted == false
+    assert decoded.max_apdu == 50
+    assert decoded.max_segments == 2
+
+    for max_segments <- [2, 4, 8, 16, 32, 64, :more_than_64, :unspecified] do
+      apdu = %{plain | max_segments: max_segments}
+      assert {:ok, decoded} = APDU.decode(raw(apdu))
+      assert decoded.max_segments == max_segments
+    end
+
+    for max_apdu <- [50, 128, 206, 480, 1024, 1476] do
+      apdu = %{plain | max_apdu: max_apdu}
+      assert {:ok, decoded} = APDU.decode(raw(apdu))
+      assert decoded.max_apdu == max_apdu
+    end
+
+    service = Constants.by_name!(:confirmed_service_choice, :read_property)
+    assert raw(%{plain | service: service}) == raw(plain)
+
+    numbered = %{plain | invoke_id: 255, service: 250}
+    assert {:ok, decoded} = APDU.decode(raw(numbered))
+    assert decoded.invoke_id == 255
+    assert decoded.service == 250
+    assert decoded.parameters == []
+
+    assert raw(plain) ==
+             raw(%{plain | sequence_number: 0, proposed_window_size: 127})
+
+    assert_raise RuntimeError, ~r/Unable to encode parameters in confirmed/, fn ->
+      EncoderProtocol.encode(%{plain | parameters: [{:constructed, :bad}]})
+    end
+  end
+
+  test "EncoderProtocol rejects inconsistent segmentation fields" do
+    request = %ConfirmedServiceRequest{
+      segmented_response_accepted: true,
+      max_apdu: 480,
+      max_segments: :unspecified,
+      invoke_id: 35,
+      sequence_number: nil,
+      proposed_window_size: nil,
+      service: :read_property,
+      parameters: []
+    }
+
+    assert_raise ArgumentError, ~r/Invoke ID/, fn ->
+      EncoderProtocol.encode(%{request | invoke_id: -1})
+    end
+
+    assert_raise ArgumentError, ~r/Sequence number must be nil/, fn ->
+      EncoderProtocol.encode(%{request | sequence_number: -1, proposed_window_size: 1})
+    end
+
+    assert_raise ArgumentError, ~r/Sequence number must be nil/, fn ->
+      EncoderProtocol.encode(%{request | sequence_number: 256, proposed_window_size: 1})
+    end
+
+    assert_raise ArgumentError, ~r/Proposed window size/, fn ->
+      EncoderProtocol.encode(%{request | sequence_number: 0, proposed_window_size: 0})
+    end
+
+    assert_raise ArgumentError, ~r/Proposed window size/, fn ->
+      EncoderProtocol.encode(%{request | sequence_number: 0, proposed_window_size: 128})
+    end
+
+    assert_raise ArgumentError, ~r/both be nil or an integer/, fn ->
+      EncoderProtocol.encode(%{request | sequence_number: nil, proposed_window_size: 1})
+    end
+
+    assert_raise ArgumentError, ~r/both be nil or an integer/, fn ->
+      EncoderProtocol.encode(%{request | sequence_number: 0, proposed_window_size: nil})
+    end
+  end
+
+  test "EncoderProtocol segments a payload and rejects a short maximum" do
+    empty = %ConfirmedServiceRequest{
+      segmented_response_accepted: true,
+      max_apdu: 480,
+      max_segments: :unspecified,
+      invoke_id: 35,
+      sequence_number: 0,
+      proposed_window_size: 1,
+      service: :read_property,
+      parameters: []
+    }
+
+    assert [segment] = EncoderProtocol.encode_segmented(empty, 50)
+    assert {:ok, decoded} = APDU.decode(IO.iodata_to_binary(segment))
+    assert decoded.invoke_id == empty.invoke_id
+    assert decoded.service == :read_property
+    assert decoded.parameters == []
+    assert decoded.sequence_number == nil
+    assert decoded.proposed_window_size == nil
+    assert EncoderProtocol.encode_to_segmented(empty, segment, 50) == []
+
+    request = %ConfirmedServiceRequest{
+      segmented_response_accepted: false,
+      max_apdu: 480,
+      max_segments: :unspecified,
+      invoke_id: 35,
+      sequence_number: 9,
+      proposed_window_size: 4,
+      service: :read_property,
+      parameters: [unsigned_integer: 1, unsigned_integer: 2]
+    }
+
+    segments = assert_split(request, 4, 7)
+    assert [0, 1 | _rest] = Enum.map(segments, &sequence_number/1)
+
+    assert_raise ArgumentError, ~r/segmented header size of 6/, fn ->
+      EncoderProtocol.encode_segmented(request, 6)
+    end
+  end
+
+  defp assert_split(apdu, header_size, apdu_size) do
+    full = raw(apdu)
+    payload = binary_part(full, header_size, byte_size(full) - header_size)
+    assert byte_size(payload) > 1
+
+    segments = EncoderProtocol.encode_segmented(apdu, apdu_size)
+    header = binary_part(full, 0, header_size)
+
+    assert segments ==
+             EncoderProtocol.encode_to_segmented(apdu, [header, payload], apdu_size)
+
+    payload_limit = apdu_size - header_size - 2
+
+    assert length(segments) ==
+             div(byte_size(payload) + payload_limit - 1, payload_limit)
+
+    joined =
+      segments
+      |> Enum.with_index()
+      |> Enum.map(fn {segment, index} ->
+        assert {:incomplete, %IncompleteAPDU{} = incomplete} =
+                 APDU.decode(IO.iodata_to_binary(segment))
+
+        assert incomplete.sequence_number == index
+        assert incomplete.window_size == apdu.proposed_window_size
+        assert incomplete.invoke_id == apdu.invoke_id
+        assert incomplete.more_follows == index < length(segments) - 1
+        assert :binary.last(incomplete.header) == service_byte(apdu.service)
+        incomplete.data
+      end)
+      |> IO.iodata_to_binary()
+
+    assert joined == payload
+    segments
+  end
+
+  defp sequence_number(segment) do
+    assert {:incomplete, %IncompleteAPDU{sequence_number: sequence_number}} =
+             APDU.decode(IO.iodata_to_binary(segment))
+
+    sequence_number
+  end
+
+  defp service_byte(service) when is_atom(service) do
+    Constants.by_name!(:confirmed_service_choice, service)
+  end
+
+  defp service_byte(service) when is_integer(service), do: service
+
+  defp raw(apdu), do: IO.iodata_to_binary(EncoderProtocol.encode(apdu))
 end

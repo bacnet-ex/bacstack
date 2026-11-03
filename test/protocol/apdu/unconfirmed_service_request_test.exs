@@ -1,7 +1,9 @@
 defmodule BACnet.Test.Protocol.APDU.UnconfirmedServiceRequestTest do
+  alias BACnet.Protocol.APDU
   alias BACnet.Protocol.APDU.UnconfirmedServiceRequest
   alias BACnet.Protocol.BACnetDate
   alias BACnet.Protocol.BACnetTime
+  alias BACnet.Protocol.Constants
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.Services
   alias BACnet.Stack.EncoderProtocol
@@ -242,6 +244,15 @@ defmodule BACnet.Test.Protocol.APDU.UnconfirmedServiceRequestTest do
   end
 
   @tag :service
+  test "APDU to service is not supported for an unknown service" do
+    assert :not_supported =
+             UnconfirmedServiceRequest.to_service(%UnconfirmedServiceRequest{
+               service: 250,
+               parameters: []
+             })
+  end
+
+  @tag :service
   test "APDU to service WriteGroup" do
     assert {:ok, %Services.WriteGroup{}} =
              UnconfirmedServiceRequest.to_service(%UnconfirmedServiceRequest{
@@ -260,4 +271,65 @@ defmodule BACnet.Test.Protocol.APDU.UnconfirmedServiceRequestTest do
                ]
              })
   end
+
+  test "EncoderProtocol supports segmentation" do
+    assert false ==
+             EncoderProtocol.supports_segmentation(%UnconfirmedServiceRequest{
+               service: :who_is,
+               parameters: []
+             })
+  end
+
+  test "encode returns the encoded request or the encoder error" do
+    who_is = %UnconfirmedServiceRequest{service: :who_is, parameters: []}
+
+    assert {:ok, iodata} = UnconfirmedServiceRequest.encode(who_is)
+    assert IO.iodata_to_binary(iodata) == <<16, 8>>
+
+    assert {:error, %RuntimeError{message: message}} =
+             UnconfirmedServiceRequest.encode(%{
+               who_is
+               | parameters: [{:constructed, :bad}]
+             })
+
+    assert message =~ "Unable to encode parameters"
+  end
+
+  test "EncoderProtocol encodes parameters" do
+    who_is = %UnconfirmedServiceRequest{service: :who_is, parameters: []}
+    i_am = %UnconfirmedServiceRequest{service: :i_am, parameters: []}
+
+    assert raw(who_is) == <<16, 8>>
+    assert raw(i_am) == <<16, 0>>
+    assert {:ok, ^who_is} = APDU.decode(raw(who_is))
+
+    service = Constants.by_name!(:unconfirmed_service_choice, :who_is)
+    assert raw(who_is) == raw(%{who_is | service: service})
+
+    numbered = %{who_is | service: 250}
+    assert {:ok, ^numbered} = APDU.decode(raw(numbered))
+
+    with_parameters = %{who_is | parameters: [unsigned_integer: 1, unsigned_integer: 2]}
+    assert {:ok, decoded} = APDU.decode(raw(with_parameters))
+    assert decoded.service == :who_is
+    assert decoded.parameters == [unsigned_integer: 1, unsigned_integer: 2]
+
+    assert_raise RuntimeError, ~r/Unable to encode parameters in unconfirmed/, fn ->
+      EncoderProtocol.encode(%{who_is | parameters: [{:constructed, :bad}]})
+    end
+
+    refute_segmentation(who_is)
+  end
+
+  defp refute_segmentation(apdu) do
+    assert_raise RuntimeError, "Illegal function call, APDU can not be segmented", fn ->
+      EncoderProtocol.encode_segmented(apdu, 50)
+    end
+
+    assert_raise RuntimeError, "Illegal function call, APDU can not be segmented", fn ->
+      EncoderProtocol.encode_to_segmented(apdu, <<0>>, 50)
+    end
+  end
+
+  defp raw(apdu), do: IO.iodata_to_binary(EncoderProtocol.encode(apdu))
 end
