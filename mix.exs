@@ -228,6 +228,7 @@ defmodule BACstack.MixProject do
           BACnet.Protocol.SpecialEvent,
           BACnet.Protocol.StatusFlags,
           BACnet.Protocol.TimeValue,
+          BACnet.Protocol.ValueSource,
           BACnet.Protocol.VmacEntry,
           BACnet.Protocol.WeekNDay
         ],

@@ -115,6 +115,8 @@ defmodule BACnet.Protocol.NameValue do
   well-formed value of a supported type.
   """
   @spec valid?(t()) :: boolean()
+  def valid?(t)
+
   def valid?(%__MODULE__{name: name, value: value} = _t)
       when is_binary(name) and byte_size(name) > 0 do
     # ASHRAE Y.1.4 specifies:
