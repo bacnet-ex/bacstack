@@ -203,6 +203,7 @@ defmodule BACstack.MixProject do
           BACnet.Protocol.EventInformation,
           BACnet.Protocol.EventLogRecord,
           BACnet.Protocol.EventMessageTexts,
+          BACnet.Protocol.EventPriorities,
           BACnet.Protocol.EventTimestamps,
           BACnet.Protocol.EventTransitionBits,
           BACnet.Protocol.GroupChannelValue,

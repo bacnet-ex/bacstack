@@ -220,8 +220,15 @@ defmodule BACnet.Protocol.ObjectsMacro do
   """
   @type only_when ::
           required_when()
-          | (properties_so_far :: map() -> boolean() | :optional)
-          | (properties_so_far :: map(), metadata :: map() -> boolean() | :optional)
+          | (properties :: map() -> boolean() | :optional)
+          | (properties :: map(), metadata :: map() -> boolean() | :optional)
+
+  @typedoc """
+  Supported values for annotation `forbidden_when`.
+
+  Uses the same conditions as `required_when`. Only a `true` result forbids the property.
+  """
+  @type forbidden_when :: required_when()
 
   @typedoc """
   Supported values for annotation `required_when`.
@@ -236,8 +243,8 @@ defmodule BACnet.Protocol.ObjectsMacro do
           | {:opts, name :: atom()}
           | {:opts, name :: atom(), value :: term()}
           | {:opts, name :: atom(), operator :: atom(), value :: term()}
-          | (properties_so_far :: map() -> boolean())
-          | (properties_so_far :: map(), metadata :: map() -> boolean())
+          | (properties :: map() -> boolean())
+          | (properties :: map(), metadata :: map() -> boolean())
 
   @doc """
   Get a default BACnet DateTime with every field set to `:unspecified`.
@@ -539,14 +546,16 @@ defmodule BACnet.Protocol.ObjectsMacro do
   - `encoder: encoder()` - Function used to encode the Elixir value (the typespec) to an ASN.1 value.
   - `only_when: only_when() | :optional` - See below. Allows a property to "exist" only when the condition is met.
   - `required_when: required_when()` - See below. Marks a property as required when the condition is met.
+  - `forbidden_when: forbidden_when()` - See below. Forbids a property when the condition is met.
 
   The encoder and decoder annotations are used by the `BACnet.Protocol.ObjectsUtility` module to encode and decode properties.
 
-  Annotations with the key name `required_when` and `only_when` will be respected, if their value is supported.
+  Annotations with the key name `required_when`, `only_when`, and `forbidden_when` will be respected,
+  if their value is supported.
   `required_when` can be used to conditionally require certain properties.
-  Both checks are executed after all properties have been accumulated.
+  These checks are executed after all properties have been accumulated.
   More complex checks (as in multiple conditions, either `and` or `or` chained) can be implemented using functions.
-  For remote objects, the `required_when` and `optional_when` checks are not executed.
+  For remote objects, these checks are not executed.
 
   The following values are supported:
     - `{:property, Constants.property_identifier()}` - The given property must be present in the object.
@@ -598,6 +607,24 @@ defmodule BACnet.Protocol.ObjectsMacro do
   That means, the optional property can not be used unless the `only_when` test passes true.
   The exception being remote objects, where all optional properties can always be used,
   as these our outside of our responsibility.
+
+  To forbid a property under a condition while leaving it optional otherwise, use
+  `forbidden_when`. It supports the same conditions as `required_when`. Only `true`
+  forbids the property, while `false` (or an unsupported condition) leaves it available.
+  A forbidden property returns `{:error, {:property_not_allowed, property}}`, including
+  when it was supplied by a default or an implicit relationship. The rule is also
+  checked after adding, updating, or removing properties and after priority writes.
+
+  For example, to prohibit a property from protocol revision 19 onward:
+
+  ```elixir
+  field(:slave_proxy_enable, BACnetArray.t(boolean()),
+    annotation: [forbidden_when: {:opts, :revision, :>=, 19}]
+  )
+  ```
+
+  This condition uses the object's `revision` creation option (stored as a numeric
+  protocol revision in metadata).
 
   ### Extendibility
 
@@ -1096,9 +1123,11 @@ defmodule BACnet.Protocol.ObjectsMacro do
         For remote objects, this means you have to write "raw values" (usually `Encoding` structs).
       - `ignore_unknown_properties` - Properties that are unknown to the object implementation are usually rejected.
         With this option, unknown properties get ignored, as if they were not specified.
-      - `revision` - The BACnet protocol revision to check required properties against.
-        Optional properties are regardless of revision available.
-        See `t:BACnet.Protocol.Constants.protocol_revision/0` for the available revisions.
+      - `revision` - The BACnet protocol revision used for required properties and annotation
+        conditions. Accepts a non-negative protocol revision number (for example, `19`)
+        or a name from `t:BACnet.Protocol.Constants.protocol_revision/0`.
+        Optional properties remain available unless an annotation prohibits them.
+        Selecting a revision does not imply full support for that revision of the standard.
       - `skip_property_validation_remote_object` - Skips property validation for remote objects.
         Sometimes it is possible that the value is invalid as per BACnet specification
         (i.e. value 0 for a multistate object), but you still want those to be represented.
@@ -1110,7 +1139,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
               {:allow_numeric_constants, boolean()}
               | {:allow_unknown_properties, boolean()}
               | {:ignore_unknown_properties, boolean()}
-              | {:revision, Constants.protocol_revision()}
+              | {:revision, Constants.protocol_revision() | non_neg_integer()}
               | {:skip_property_validation_remote_object, boolean() | :value}
 
       @typedoc """

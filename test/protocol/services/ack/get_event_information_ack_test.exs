@@ -4,6 +4,7 @@ defmodule BACnet.Test.Protocol.Services.GetEventInformationAckTest do
   alias BACnet.Protocol.BACnetTime
   alias BACnet.Protocol.BACnetTimestamp
   alias BACnet.Protocol.EventInformation
+  alias BACnet.Protocol.EventPriorities
   alias BACnet.Protocol.EventTimestamps
   alias BACnet.Protocol.EventTransitionBits
   alias BACnet.Protocol.ObjectIdentifier
@@ -73,7 +74,11 @@ defmodule BACnet.Test.Protocol.Services.GetEventInformationAckTest do
                     to_fault: true,
                     to_normal: true
                   },
-                  event_priorities: {15, 15, 20}
+                  event_priorities: %EventPriorities{
+                    to_offnormal: 15,
+                    to_fault: 15,
+                    to_normal: 20
+                  }
                 },
                 %EventInformation{
                   object_identifier: %ObjectIdentifier{
@@ -127,7 +132,11 @@ defmodule BACnet.Test.Protocol.Services.GetEventInformationAckTest do
                     to_fault: true,
                     to_normal: true
                   },
-                  event_priorities: {15, 15, 20}
+                  event_priorities: %EventPriorities{
+                    to_offnormal: 15,
+                    to_fault: 15,
+                    to_normal: 20
+                  }
                 }
               ],
               more_events: false
@@ -383,7 +392,11 @@ defmodule BACnet.Test.Protocol.Services.GetEventInformationAckTest do
                        to_fault: true,
                        to_normal: true
                      },
-                     event_priorities: {15, 15, 20}
+                     event_priorities: %EventPriorities{
+                       to_offnormal: 15,
+                       to_fault: 15,
+                       to_normal: 20
+                     }
                    },
                    %EventInformation{
                      object_identifier: %ObjectIdentifier{
@@ -437,7 +450,11 @@ defmodule BACnet.Test.Protocol.Services.GetEventInformationAckTest do
                        to_fault: true,
                        to_normal: true
                      },
-                     event_priorities: {15, 15, 20}
+                     event_priorities: %EventPriorities{
+                       to_offnormal: 15,
+                       to_fault: 15,
+                       to_normal: 20
+                     }
                    }
                  ],
                  more_events: false
@@ -529,7 +546,11 @@ defmodule BACnet.Test.Protocol.Services.GetEventInformationAckTest do
                      to_fault: true,
                      to_normal: true
                    },
-                   event_priorities: {15, 15, 20}
+                   event_priorities: %EventPriorities{
+                     to_offnormal: 15,
+                     to_fault: 15,
+                     to_normal: 20
+                   }
                  }
                ],
                more_events: true
@@ -589,7 +610,11 @@ defmodule BACnet.Test.Protocol.Services.GetEventInformationAckTest do
                      to_fault: true,
                      to_normal: true
                    },
-                   event_priorities: {15, 15, 20}
+                   event_priorities: %EventPriorities{
+                     to_offnormal: 15,
+                     to_fault: 15,
+                     to_normal: 20
+                   }
                  }
                ],
                more_events: true

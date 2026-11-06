@@ -104,7 +104,9 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
     `BACnet.Stack.Transport.MstpTransport`. Properties must not be present if no
     MS/TP transport is used.
   - `auto_slave_discovery`, `slave_proxy_enable`, `manual_slave_address_binding`,
-    `slave_address_binding` - used for a slave proxy (must be implemented by the user.
+    `slave_address_binding` - used for a slave proxy (must be implemented by the user).
+    These properties are prohibited on local objects created with `revision: 19` or higher,
+    since slave proxy functionality was removed in ASHRAE 135-2016.
   - All the time-related properties (`utc_offset`, `daylight_savings_status`) -
     Writes to `utc_offset` or DST status usually have to be pushed into
     the OS or into the time-sync state machine.
@@ -448,20 +450,27 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
     )
 
     # Properties for slave proxy functionality (per-se not provided by this bacstack)
+    # Slave proxy functionality was removed in ASHRAE 135-2016 (protocol revision 19)
     field(:slave_proxy_enable, BACnetArray.t(boolean()),
-      implicit_relationship: :auto_slave_discovery
+      implicit_relationship: :auto_slave_discovery,
+      annotation: [forbidden_when: {:opts, :revision, :>=, 19}]
     )
 
     field(:auto_slave_discovery, BACnetArray.t(boolean()),
-      implicit_relationship: :slave_address_binding
+      implicit_relationship: :slave_address_binding,
+      annotation: [forbidden_when: {:opts, :revision, :>=, 19}]
     )
 
     field(:slave_address_binding, [AddressBinding.t()],
       default: [],
-      implicit_relationship: :manual_slave_address_binding
+      implicit_relationship: :manual_slave_address_binding,
+      annotation: [forbidden_when: {:opts, :revision, :>=, 19}]
     )
 
-    field(:manual_slave_address_binding, [AddressBinding.t()], default: [])
+    field(:manual_slave_address_binding, [AddressBinding.t()],
+      default: [],
+      annotation: [forbidden_when: {:opts, :revision, :>=, 19}]
+    )
 
     # Properties for BACnet MS/TP master nodes
     field(:max_master, 1..127,

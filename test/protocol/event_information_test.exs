@@ -2,6 +2,7 @@ defmodule BACnet.Protocol.EventInformationTest do
   alias BACnet.Protocol.BACnetTime
   alias BACnet.Protocol.BACnetTimestamp
   alias BACnet.Protocol.EventInformation
+  alias BACnet.Protocol.EventPriorities
   alias BACnet.Protocol.EventTimestamps
   alias BACnet.Protocol.EventTransitionBits
   alias BACnet.Protocol.ObjectIdentifier
@@ -66,7 +67,7 @@ defmodule BACnet.Protocol.EventInformationTest do
                  to_fault: true,
                  to_normal: true
                },
-               event_priorities: {15, 15, 20}
+               event_priorities: %EventPriorities{to_offnormal: 15, to_fault: 15, to_normal: 20}
              }, []}} =
              EventInformation.parse(
                tagged: {0, <<0, 0, 0, 2>>, 4},
@@ -84,6 +85,57 @@ defmodule BACnet.Protocol.EventInformationTest do
                constructed:
                  {6, [unsigned_integer: 15, unsigned_integer: 15, unsigned_integer: 20], 0}
              )
+  end
+
+  test "event priorities round trip and reject malformed priority lists" do
+    tags = [
+      tagged: {0, <<0, 0, 0, 2>>, 4},
+      tagged: {1, <<3>>, 1},
+      tagged: {2, <<5, 96>>, 2},
+      constructed:
+        {3,
+         [
+           tagged: {0, <<15, 35, 0, 20>>, 4},
+           tagged: {0, <<255, 255, 255, 255>>, 4},
+           tagged: {0, <<255, 255, 255, 255>>, 4}
+         ], 0},
+      tagged: {4, <<0>>, 1},
+      tagged: {5, <<5, 224>>, 2},
+      constructed: {6, [unsigned_integer: 0, unsigned_integer: 15, unsigned_integer: 255], 0}
+    ]
+
+    assert {:ok, {event, [boolean: true]}} = EventInformation.parse(tags ++ [boolean: true])
+
+    assert event.event_priorities == %EventPriorities{
+             to_offnormal: 0,
+             to_fault: 15,
+             to_normal: 255
+           }
+
+    assert EventInformation.valid?(event)
+    assert {:ok, ^tags} = EventInformation.encode(event)
+
+    refute EventInformation.valid?(%{event | event_priorities: {0, 15, 255}})
+
+    refute EventInformation.valid?(%{
+             event
+             | event_priorities: Map.from_struct(event.event_priorities)
+           })
+
+    for priorities <- [
+          [],
+          [unsigned_integer: 0, unsigned_integer: 15],
+          [unsigned_integer: 0, unsigned_integer: 15, unsigned_integer: 255, unsigned_integer: 1],
+          [unsigned_integer: -1, unsigned_integer: 15, unsigned_integer: 255],
+          [unsigned_integer: 0, unsigned_integer: 256, unsigned_integer: 255],
+          [unsigned_integer: 0, unsigned_integer: 15, unsigned_integer: 256],
+          :invalid
+        ] do
+      assert {:error, :invalid_tags} =
+               EventInformation.parse(
+                 List.replace_at(tags, -1, {:constructed, {6, priorities, 0}})
+               )
+    end
   end
 
   test "decode invalid event info wrong timestamps" do
@@ -239,7 +291,7 @@ defmodule BACnet.Protocol.EventInformationTest do
                  to_fault: true,
                  to_normal: true
                },
-               event_priorities: {15, 15, 20}
+               event_priorities: %EventPriorities{to_offnormal: 15, to_fault: 15, to_normal: 20}
              })
   end
 
@@ -297,7 +349,7 @@ defmodule BACnet.Protocol.EventInformationTest do
                  to_fault: true,
                  to_normal: true
                },
-               event_priorities: {15, 15, 20}
+               event_priorities: %EventPriorities{to_offnormal: 15, to_fault: 15, to_normal: 20}
              })
   end
 
@@ -355,7 +407,7 @@ defmodule BACnet.Protocol.EventInformationTest do
                  to_fault: true,
                  to_normal: true
                },
-               event_priorities: {15, 15, 20}
+               event_priorities: %EventPriorities{to_offnormal: 15, to_fault: 15, to_normal: 20}
              })
   end
 
@@ -413,7 +465,7 @@ defmodule BACnet.Protocol.EventInformationTest do
                  to_fault: true,
                  to_normal: true
                },
-               event_priorities: {15, 15, 20}
+               event_priorities: %EventPriorities{to_offnormal: 15, to_fault: 15, to_normal: 20}
              })
 
     assert true ==
@@ -469,7 +521,11 @@ defmodule BACnet.Protocol.EventInformationTest do
                  to_fault: true,
                  to_normal: true
                },
-               event_priorities: {255, 255, 255}
+               event_priorities: %EventPriorities{
+                 to_offnormal: 255,
+                 to_fault: 255,
+                 to_normal: 255
+               }
              })
   end
 
@@ -524,7 +580,7 @@ defmodule BACnet.Protocol.EventInformationTest do
                  to_fault: true,
                  to_normal: true
                },
-               event_priorities: {15, 15, 20}
+               event_priorities: %EventPriorities{to_offnormal: 15, to_fault: 15, to_normal: 20}
              })
 
     assert false ==
@@ -580,7 +636,7 @@ defmodule BACnet.Protocol.EventInformationTest do
                  to_fault: true,
                  to_normal: true
                },
-               event_priorities: {15, 15, 20}
+               event_priorities: %EventPriorities{to_offnormal: 15, to_fault: 15, to_normal: 20}
              })
 
     assert false ==
@@ -636,7 +692,11 @@ defmodule BACnet.Protocol.EventInformationTest do
                  to_fault: true,
                  to_normal: true
                },
-               event_priorities: {255, 255, 255}
+               event_priorities: %EventPriorities{
+                 to_offnormal: 255,
+                 to_fault: 255,
+                 to_normal: 255
+               }
              })
 
     assert false ==
@@ -688,7 +748,7 @@ defmodule BACnet.Protocol.EventInformationTest do
                  to_fault: true,
                  to_normal: true
                },
-               event_priorities: {15, 15, 20}
+               event_priorities: %EventPriorities{to_offnormal: 15, to_fault: 15, to_normal: 20}
              })
 
     assert false ==
@@ -744,7 +804,7 @@ defmodule BACnet.Protocol.EventInformationTest do
                  to_fault: true,
                  to_normal: true
                },
-               event_priorities: {15, 15, 20}
+               event_priorities: %EventPriorities{to_offnormal: 15, to_fault: 15, to_normal: 20}
              })
 
     assert false ==
@@ -766,7 +826,7 @@ defmodule BACnet.Protocol.EventInformationTest do
                  to_fault: true,
                  to_normal: true
                },
-               event_priorities: {15, 15, 20}
+               event_priorities: %EventPriorities{to_offnormal: 15, to_fault: 15, to_normal: 20}
              })
 
     assert false ==
@@ -812,7 +872,7 @@ defmodule BACnet.Protocol.EventInformationTest do
                  to_fault: true,
                  to_normal: true
                },
-               event_priorities: {15, 15, 20}
+               event_priorities: %EventPriorities{to_offnormal: 15, to_fault: 15, to_normal: 20}
              })
 
     assert false ==
@@ -868,7 +928,7 @@ defmodule BACnet.Protocol.EventInformationTest do
                  to_fault: true,
                  to_normal: true
                },
-               event_priorities: {15, 15, 20}
+               event_priorities: %EventPriorities{to_offnormal: 15, to_fault: 15, to_normal: 20}
              })
 
     assert false ==
@@ -920,7 +980,7 @@ defmodule BACnet.Protocol.EventInformationTest do
                },
                notify_type: :alarm,
                event_enable: :hello,
-               event_priorities: {15, 15, 20}
+               event_priorities: %EventPriorities{to_offnormal: 15, to_fault: 15, to_normal: 20}
              })
 
     assert false ==
@@ -976,7 +1036,7 @@ defmodule BACnet.Protocol.EventInformationTest do
                  to_fault: true,
                  to_normal: true
                },
-               event_priorities: {15, 15, 20}
+               event_priorities: %EventPriorities{to_offnormal: 15, to_fault: 15, to_normal: 20}
              })
 
     assert false ==
@@ -1032,7 +1092,7 @@ defmodule BACnet.Protocol.EventInformationTest do
                  to_fault: true,
                  to_normal: true
                },
-               event_priorities: {-1, 15, 20}
+               event_priorities: %EventPriorities{to_offnormal: -1, to_fault: 15, to_normal: 20}
              })
 
     assert false ==
@@ -1088,7 +1148,7 @@ defmodule BACnet.Protocol.EventInformationTest do
                  to_fault: true,
                  to_normal: true
                },
-               event_priorities: {15, 256, 20}
+               event_priorities: %EventPriorities{to_offnormal: 15, to_fault: 256, to_normal: 20}
              })
 
     assert false ==

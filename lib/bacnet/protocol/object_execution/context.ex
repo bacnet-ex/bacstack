@@ -11,7 +11,7 @@ defmodule BACnet.Protocol.ObjectExecution.Context do
   - `monotonic_time` is the current monotonic time in milliseconds. Use it for
     elapsed durations and delays, which must not be affected by wall-clock
     adjustments. Its origin is arbitrary and its value may be negative.
-  - `trigger` identifies why execution was requested: `:periodic` (the default),
+  - `trigger` identifies why execution was requested: `:periodic`,
     `:initialization`, `:clock_change`, or
     `{:property_write, property_identifier, array_index, priority}`. A property
     write trigger is supplied after a successful write, with the updated object,
@@ -78,7 +78,7 @@ defmodule BACnet.Protocol.ObjectExecution.Context do
           (DeviceObjectPropertyRef.t(), term(), 1..16 | nil -> :ok | {:error, term()})
 
   @typedoc """
-  Caller-supplied inputs for one execution step. Both clocks must be supplied.
+  Caller-supplied inputs for one execution step.
   """
   @type t :: %__MODULE__{
           now: DateTime.t(),
@@ -91,17 +91,18 @@ defmodule BACnet.Protocol.ObjectExecution.Context do
           options: Keyword.t()
         }
 
-  @enforce_keys [:now, :monotonic_time]
-  defstruct [
+  @fields [
     :now,
     :monotonic_time,
+    :trigger,
     :state,
     :lookup_object,
     :read_property,
     :write_property,
-    trigger: :periodic,
-    options: []
+    :options
   ]
+  @enforce_keys @fields
+  defstruct @fields
 
   @doc """
   Looks up an object through the host callback, or reports the missing operation.

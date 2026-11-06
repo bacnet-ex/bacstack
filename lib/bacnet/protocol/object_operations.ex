@@ -84,9 +84,9 @@ defmodule BACnet.Protocol.ObjectOperations do
            hooks.check_implicit_relationships.(struct(contract.object_module, props), :add),
          obj = sync_commandable_present_value(obj),
          :ok <- recheck_property_values(contract, props, opts),
-         {:ok, obj} <- verify_properties(contract, obj, new_metadata) do
+         {:ok, obj} <- verify_property_requirements(contract, obj, obj._metadata) do
       case obj._metadata.remote_object do
-        nil -> hooks.inhibit_object_check.(propagate_properties(contract, obj))
+        nil -> validate_and_inhibit(contract, propagate_properties(contract, obj), hooks)
         _remote -> {:ok, obj}
       end
     else
@@ -133,7 +133,7 @@ defmodule BACnet.Protocol.ObjectOperations do
 
       case hooks.check_implicit_relationships.(Map.put(new_object, property, value), :add) do
         {:ok, obj} ->
-          hooks.inhibit_object_check.(propagate_properties(contract, obj))
+          validate_and_inhibit(contract, propagate_properties(contract, obj), hooks)
 
         other ->
           other
@@ -180,7 +180,7 @@ defmodule BACnet.Protocol.ObjectOperations do
       |> Map.put(property, nil)
       |> hooks.check_implicit_relationships.(:remove)
       |> case do
-        {:ok, obj} -> hooks.inhibit_object_check.(obj)
+        {:ok, obj} -> validate_and_inhibit(contract, obj, hooks)
         other -> other
       end
     else
@@ -211,7 +211,7 @@ defmodule BACnet.Protocol.ObjectOperations do
       object
       |> Map.put(property, value)
       |> then(&propagate_properties(contract, &1))
-      |> hooks.inhibit_object_check.()
+      |> then(&validate_and_inhibit(contract, &1, hooks))
     end
   end
 
@@ -258,7 +258,8 @@ defmodule BACnet.Protocol.ObjectOperations do
           end
 
         new_object = %{object | priority_array: new_prio, present_value: present_value}
-        {:ok, maybe_write_feedback(contract, object, new_object)}
+        new_object = maybe_write_feedback(contract, object, new_object)
+        verify_properties_with_forbidden_when(contract, new_object, new_object._metadata)
 
       {:error, {key, :present_value}} ->
         {:error, {key, :priority_array}}
@@ -397,13 +398,21 @@ defmodule BACnet.Protocol.ObjectOperations do
   end
 
   @doc """
-  Checks required properties, `required_when`, and `only_when`.
+  Checks required properties, `required_when`, `only_when`, and `forbidden_when`.
 
   Remote objects only check required properties and their protocol revision.
   """
   @spec verify_properties(ObjectsContract.t(), map(), metadata()) ::
           {:ok, map()} | {:error, term()}
   def verify_properties(%ObjectsContract{} = contract, properties, metadata) do
+    with {:ok, properties} <- verify_property_requirements(contract, properties, metadata) do
+      verify_properties_with_forbidden_when(contract, properties, metadata)
+    end
+  end
+
+  @spec verify_property_requirements(ObjectsContract.t(), map(), metadata()) ::
+          {:ok, map()} | {:error, term()}
+  defp verify_property_requirements(contract, properties, metadata) do
     with :ok <- verify_required_properties(contract, properties, metadata) do
       if metadata.remote_object do
         {:ok, properties}
@@ -537,10 +546,10 @@ defmodule BACnet.Protocol.ObjectOperations do
     metadata = %{
       properties_list: [],
       revision:
-        Constants.by_name!(
-          :protocol_revision,
-          Keyword.get(opts, :revision, Constants.macro_by_name(:protocol_revision, :default))
-        ),
+        case Keyword.get(opts, :revision, Constants.macro_by_name(:protocol_revision, :default)) do
+          revision when is_integer(revision) and revision >= 0 -> revision
+          revision -> Constants.by_name!(:protocol_revision, revision)
+        end,
       intrinsic_reporting: truthy?(Keyword.get(opts, :intrinsic_reporting, false)),
       remote_object: Keyword.get(opts, :remote_object, nil),
       physical_input:
@@ -994,6 +1003,47 @@ defmodule BACnet.Protocol.ObjectOperations do
           end
         end
     end)
+  end
+
+  @spec verify_properties_with_forbidden_when(ObjectsContract.t(), map(), metadata()) ::
+          {:ok, map()} | {:error, {:property_not_allowed, atom()}}
+  defp verify_properties_with_forbidden_when(_contract, properties, %{remote_object: remote})
+       when remote != nil and remote != false do
+    {:ok, properties}
+  end
+
+  defp verify_properties_with_forbidden_when(contract, properties, metadata) do
+    case annotations_with(contract, :forbidden_when) do
+      [] ->
+        {:ok, properties}
+
+      annotations ->
+        # Conditional defaults can populate values without adding them to properties_list.
+        # Include these values when checking presence and evaluating property conditions.
+        present_properties =
+          Enum.filter(contract.properties, fn name ->
+            Map.get(properties, name) != nil or name in metadata.properties_list
+          end)
+
+        metadata = %{metadata | properties_list: present_properties}
+
+        Enum.reduce_while(annotations, {:ok, properties}, fn {name, annotation}, acc ->
+          if name in present_properties and
+               verify_properties_required_when(properties, metadata, annotation) == true do
+            {:halt, {:error, {:property_not_allowed, name}}}
+          else
+            {:cont, acc}
+          end
+        end)
+    end
+  end
+
+  @spec validate_and_inhibit(ObjectsContract.t(), struct(), operation_hooks()) :: update_result()
+  defp validate_and_inhibit(contract, object, hooks) do
+    with {:ok, object} <-
+           verify_properties_with_forbidden_when(contract, object, object._metadata) do
+      hooks.inhibit_object_check.(object)
+    end
   end
 
   @spec annotations_with(ObjectsContract.t(), atom()) :: [{atom(), term()}]

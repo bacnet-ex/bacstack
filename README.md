@@ -242,7 +242,11 @@ context = %Context{
   now: DateTime.utc_now(), # Supply device-local time for time-based behaviour.
   monotonic_time: System.monotonic_time(:millisecond),
   trigger: :periodic,
-  state: previous_state # nil on the first execution of this object instance
+  state: previous_state, # nil on the first execution of this object instance
+  lookup_object: nil,
+  read_property: nil,
+  write_property: nil,
+  options: []
 }
 
 {:ok, %Result{object: updated_object, state: next_state}} =

@@ -151,6 +151,185 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
     )
   end
 
+  test "forbidden_when supports property, option, and function conditions" do
+    cases = [
+      {{:property, :out_of_service}, %{out_of_service: false}, [], %{}, []},
+      {{:property, :out_of_service, false}, %{out_of_service: false}, [], %{out_of_service: true},
+       []},
+      {{:property, :present_value, :==, true}, %{present_value: true}, [],
+       %{present_value: false}, []},
+      {{:opts, :physical_input}, %{}, [physical_input: true], %{}, []},
+      {{:opts, :blocked}, %{}, [blocked: true], %{}, [blocked: false]},
+      {{:opts, :mode, :blocked}, %{}, [mode: :blocked], %{}, [mode: :allowed]},
+      {{:opts, :revision, :>=, 19}, %{}, [revision: 19], %{}, [revision: 18]},
+      {fn props -> props.present_value end, %{present_value: true}, [], %{}, []},
+      {fn _props, meta -> meta.other[:blocked] == true end, %{}, [blocked: true], %{}, []}
+    ]
+
+    for {condition, forbidden_props, forbidden_opts, allowed_props, allowed_opts} <- cases do
+      contract = contract(annotations: [description: [forbidden_when: condition]])
+
+      assert {:error, {:property_not_allowed, :description}} =
+               create(contract, Map.put(forbidden_props, :description, "d"), forbidden_opts, %{})
+
+      assert {:ok, %{description: "d"}} =
+               create(contract, Map.put(allowed_props, :description, "d"), allowed_opts, %{})
+
+      assert {:ok, object} = create(contract, forbidden_props, forbidden_opts, %{})
+      refute :description in object._metadata.properties_list
+    end
+  end
+
+  test "forbidden_when ignores unsupported conditions and non-boolean function results" do
+    for condition <- [:unsupported, fn _props -> :optional end, fn _props, _meta -> :yes end] do
+      contract = contract(annotations: [description: [forbidden_when: condition]])
+      assert {:ok, %{description: "d"}} = create(contract, %{description: "d"}, [], %{})
+    end
+  end
+
+  test "forbidden_when rejects defaults, init values, and conditional defaults" do
+    for overrides <- [
+          [default_properties: %{present_value: false, gadget: "g"}],
+          [init_funs: %{gadget: fn -> "g" end}],
+          [annotations: [gadget: [required_when: {:opts, :required}]]],
+          [annotations: [gadget: [only_when: {:opts, :required}]]]
+        ] do
+      annotations = Keyword.get(overrides, :annotations, gadget: [])
+
+      annotations =
+        Keyword.update!(annotations, :gadget, &[{:forbidden_when, {:opts, :blocked}} | &1])
+
+      contract = contract(Keyword.put(overrides, :annotations, annotations))
+
+      assert {:error, {:property_not_allowed, :gadget}} =
+               create(contract, %{}, [required: true, blocked: true], %{})
+    end
+
+    contract =
+      contract(
+        annotations: [
+          gadget: [required_when: {:opts, :required}],
+          description: [forbidden_when: {:property, :gadget}]
+        ]
+      )
+
+    assert {:error, {:property_not_allowed, :description}} =
+             create(contract, %{description: "d"}, [required: true], %{})
+  end
+
+  test "forbidden_when rejects properties added through implicit relationships" do
+    contract =
+      contract(
+        implicit_relationships: %{description: :gadget},
+        annotations: [gadget: [forbidden_when: {:opts, :blocked}]]
+      )
+
+    assert {:error, {:property_not_allowed, :gadget}} =
+             create(contract, %{description: "d"}, [blocked: true], %{})
+
+    assert {:ok, object} = create(contract, %{}, [blocked: true], %{})
+
+    assert {:error, {:property_not_allowed, :gadget}} =
+             ObjectOperations.add_property(contract, object, :description, "d", hooks(contract))
+  end
+
+  test "adding a property checks both the property itself and conditions on existing properties" do
+    contract = contract(annotations: [description: [forbidden_when: {:property, :note}]])
+    assert {:ok, object} = create(contract, %{note: "n"}, [], %{})
+
+    assert {:error, {:property_not_allowed, :description}} =
+             ObjectOperations.add_property(contract, object, :description, "d", hooks(contract))
+
+    assert {:ok, object} = create(contract, %{description: "d"}, [], %{})
+
+    assert {:error, {:property_not_allowed, :description}} =
+             ObjectOperations.add_property(contract, object, :note, "n", hooks(contract))
+
+    assert {:ok, _object} =
+             ObjectOperations.add_property(contract, object, :gadget, "g", hooks(contract))
+  end
+
+  test "updating and removing properties cannot activate a prohibition on another property" do
+    contract =
+      contract(annotations: [description: [forbidden_when: {:property, :note, "blocked"}]])
+
+    assert {:ok, object} = create(contract, %{description: "d", note: "allowed"}, [], %{})
+
+    assert {:error, {:property_not_allowed, :description}} =
+             ObjectOperations.update_property(contract, object, :note, "blocked", hooks(contract))
+
+    contract =
+      contract(
+        annotations: [description: [forbidden_when: fn props -> Map.get(props, :note) == nil end]]
+      )
+
+    assert {:error, {:property_not_allowed, :description}} =
+             ObjectOperations.remove_property(contract, object, :note, hooks(contract))
+
+    assert {:ok, object} =
+             ObjectOperations.remove_property(contract, object, :description, hooks(contract))
+
+    assert {:ok, _object} =
+             ObjectOperations.remove_property(contract, object, :note, hooks(contract))
+  end
+
+  test "priority writes check prohibitions after updating present value" do
+    contract =
+      contract(annotations: [description: [forbidden_when: {:property, :present_value, true}]])
+
+    assert {:ok, object} =
+             create(
+               contract,
+               %{description: "d", priority_array: %PriorityArray{}, relinquish_default: false},
+               [],
+               %{}
+             )
+
+    assert {:error, {:property_not_allowed, :description}} =
+             ObjectOperations.set_priority(contract, object, 8, true)
+
+    assert {:ok, _object} = ObjectOperations.set_priority(contract, object, 8, false)
+  end
+
+  test "creation evaluates prohibitions against the final propagated values" do
+    contract =
+      contract(
+        has_out_of_service: true,
+        has_status_flags: true,
+        annotations: [
+          description: [forbidden_when: fn props -> props.status_flags.out_of_service end]
+        ]
+      )
+
+    assert {:error, {:property_not_allowed, :description}} =
+             create(
+               contract,
+               %{description: "d", out_of_service: true, status_flags: flags()},
+               [],
+               %{}
+             )
+
+    assert {:ok, %{status_flags: %{out_of_service: false}}} =
+             create(
+               contract,
+               %{
+                 description: "d",
+                 out_of_service: false,
+                 status_flags: flags(out_of_service: true)
+               },
+               [],
+               %{}
+             )
+  end
+
+  test "verify_properties also enforces forbidden_when outside object creation" do
+    assert {:ok, object} = create(contract(), %{description: "d"}, [], %{})
+    contract = contract(annotations: [description: [forbidden_when: {:opts, :revision, :>=, 14}]])
+
+    assert {:error, {:property_not_allowed, :description}} =
+             ObjectOperations.verify_properties(contract, object, object._metadata)
+  end
+
   test "create rejects a missing required property and a bad object name" do
     assert {:error, {:missing_required_property, :present_value}} =
              create(contract(default_properties: %{}), %{}, [], %{})

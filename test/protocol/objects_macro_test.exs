@@ -2115,6 +2115,56 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
              )
   end
 
+  defmodule BacObjectWithForbiddenPropertiesStub do
+    use ObjectsMacro
+
+    @type object_opts :: nil
+
+    bac_object :binary_input do
+      services(intrinsic: false)
+      field(:present_value, boolean(), required: true, default: false)
+
+      field(:description, String.t(), annotation: [forbidden_when: {:opts, :revision, :>=, 19}])
+    end
+  end
+
+  test "forbidden_when leaves properties optional unless its condition holds" do
+    mod_name = BacObjectWithForbiddenPropertiesStub
+
+    assert mod_name.get_annotation(:description)[:forbidden_when] == {:opts, :revision, :>=, 19}
+
+    for revision <- [:revision_14, 0, 18] do
+      assert {:ok, %{description: "allowed"}} =
+               mod_name.create(1, "TEST", %{description: "allowed"}, revision: revision)
+    end
+
+    for revision <- [19, 22] do
+      assert {:ok, object} = mod_name.create(1, "TEST", %{}, revision: revision)
+      refute :description in object._metadata.properties_list
+      assert object._metadata.revision == revision
+
+      assert {:error, {:property_not_allowed, :description}} =
+               mod_name.create(1, "TEST", %{description: "forbidden"}, revision: revision)
+
+      assert {:error, {:property_not_allowed, :description}} =
+               mod_name.add_property(object, :description, "forbidden")
+    end
+  end
+
+  test "forbidden_when preserves remote object properties" do
+    assert {:ok, %{description: "remote"} = remote} =
+             BacObjectWithForbiddenPropertiesStub.create(
+               1,
+               "TEST",
+               %{present_value: false, description: "remote"},
+               revision: 19,
+               remote_object: 42
+             )
+
+    assert {:ok, %{description: "updated"}} =
+             BacObjectWithForbiddenPropertiesStub.update_property(remote, :description, "updated")
+  end
+
   test "verify get_required_properties/0 only lists properties that actually exist" do
     mod_name = unquote(mod_name_minimal_stub)
 

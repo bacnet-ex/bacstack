@@ -17,6 +17,7 @@ defmodule BACnet.Protocol.EventInformation do
 
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.Constants
+  alias BACnet.Protocol.EventPriorities
   alias BACnet.Protocol.EventTimestamps
   alias BACnet.Protocol.EventTransitionBits
   alias BACnet.Protocol.ObjectIdentifier
@@ -33,7 +34,7 @@ defmodule BACnet.Protocol.EventInformation do
           event_timestamps: EventTimestamps.t(),
           notify_type: Constants.notify_type(),
           event_enable: EventTransitionBits.t(),
-          event_priorities: {to_offnormal :: byte(), to_fault :: byte(), to_normal :: byte()}
+          event_priorities: EventPriorities.t()
         }
 
   @fields [
@@ -53,7 +54,7 @@ defmodule BACnet.Protocol.EventInformation do
   """
   @spec encode(t(), Keyword.t()) ::
           {:ok, ApplicationTags.encoding_list()} | {:error, term()}
-  def encode(%__MODULE__{event_priorities: {ev_prio1, ev_prio2, ev_prio3}} = event, _opts \\ []) do
+  def encode(%__MODULE__{} = event, opts \\ []) do
     with {:ok, obj, _header} <-
            ApplicationTags.encode_value({:object_identifier, event.object_identifier}),
          {:ok, event_state_c} <-
@@ -78,7 +79,8 @@ defmodule BACnet.Protocol.EventInformation do
          {:ok, notify_type, _header} <-
            ApplicationTags.encode_value({:enumerated, notify_type_c}),
          {:ok, event_enable, _header} <-
-           ApplicationTags.encode_value(EventTransitionBits.to_bitstring(event.event_enable)) do
+           ApplicationTags.encode_value(EventTransitionBits.to_bitstring(event.event_enable)),
+         {:ok, priorities} <- EventPriorities.encode(event.event_priorities, opts) do
       params = [
         {:tagged, {0, obj, byte_size(obj)}},
         {:tagged, {1, event_state, byte_size(event_state)}},
@@ -86,13 +88,7 @@ defmodule BACnet.Protocol.EventInformation do
         {:constructed, {3, timestamps, 0}},
         {:tagged, {4, notify_type, byte_size(notify_type)}},
         {:tagged, {5, event_enable, byte_size(event_enable)}},
-        {:constructed,
-         {6,
-          [
-            {:unsigned_integer, ev_prio1},
-            {:unsigned_integer, ev_prio2},
-            {:unsigned_integer, ev_prio3}
-          ], 0}}
+        {:constructed, {6, priorities, 0}}
       ]
 
       {:ok, params}
@@ -131,15 +127,9 @@ defmodule BACnet.Protocol.EventInformation do
            ),
          {:ok, {ev_offnormal, ev_fault, ev_normal}, rest} <-
            pattern_extract_tags(rest, {:tagged, {5, _c, _l}}, :bitstring, false),
-         {:ok,
-          {:constructed,
-           {6,
-            [
-              unsigned_integer: prio1,
-              unsigned_integer: prio2,
-              unsigned_integer: prio3
-            ], _len}}, rest} <-
-           pattern_extract_tags(rest, {:constructed, {6, _c, _l}}, nil, false) do
+         {:ok, {:constructed, {6, priorities_raw, _len}}, rest} when is_list(priorities_raw) <-
+           pattern_extract_tags(rest, {:constructed, {6, _c, _l}}, nil, false),
+         {:ok, {priorities, []}} <- EventPriorities.parse(priorities_raw) do
       info = %__MODULE__{
         object_identifier: obj,
         event_state: event_state_c,
@@ -155,11 +145,12 @@ defmodule BACnet.Protocol.EventInformation do
           to_fault: ev_fault,
           to_normal: ev_normal
         },
-        event_priorities: {prio1, prio2, prio3}
+        event_priorities: priorities
       }
 
       {:ok, {info, rest}}
     else
+      {:ok, {_priorities, _rest}} -> {:error, :invalid_tags}
       {:ok, _term, _rest} -> {:error, :invalid_tags}
       {:error, :missing_pattern} -> {:error, :invalid_tags}
       {:error, _err} = err -> err
@@ -180,15 +171,13 @@ defmodule BACnet.Protocol.EventInformation do
           event_timestamps: %EventTimestamps{} = event,
           notify_type: type,
           event_enable: %EventTransitionBits{} = enable,
-          event_priorities: {to_offnormal, to_fault, to_normal}
+          event_priorities: %EventPriorities{} = priorities
         } = _t
-      )
-      when is_integer(to_offnormal) and to_offnormal >= 0 and to_offnormal <= 255 and
-             is_integer(to_fault) and to_fault >= 0 and to_fault <= 255 and
-             is_integer(to_normal) and to_normal >= 0 and to_normal <= 255 do
+      ) do
     ObjectIdentifier.valid?(obj_ref) and Constants.has_by_name(:event_state, state) and
       EventTransitionBits.valid?(ack_trans) and EventTimestamps.valid?(event) and
-      Constants.has_by_name(:notify_type, type) and EventTransitionBits.valid?(enable)
+      Constants.has_by_name(:notify_type, type) and EventTransitionBits.valid?(enable) and
+      EventPriorities.valid?(priorities)
   end
 
   def valid?(%__MODULE__{} = _t), do: false

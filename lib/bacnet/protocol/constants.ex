@@ -64,8 +64,8 @@ defmodule BACnet.Protocol.Constants do
   @constdoc """
   When creating BACnet objects, the designated revision can
   be chosen from the constants. The designated revision decides
-  which properties are required. Optional properties are regardless
-  of the revision available.
+  which properties are required and can be used in property annotation conditions.
+  Optional properties are available unless an annotation prohibits them.
 
   The following revisions are supported (to be):
   - Revision 14 (135-2012)

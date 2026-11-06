@@ -9,7 +9,16 @@ defmodule BACnet.Test.Protocol.ObjectExecution.ContextTest do
 
   @moduletag :object_test
 
-  @context %Context{now: ~U[2026-11-06 12:00:00Z], monotonic_time: -1000}
+  @context %Context{
+    now: ~U[2026-11-06 12:00:00Z],
+    monotonic_time: -1000,
+    trigger: :periodic,
+    state: nil,
+    lookup_object: nil,
+    read_property: nil,
+    write_property: nil,
+    options: []
+  }
   @object_reference %DeviceObjectRef{
     object_identifier: %ObjectIdentifier{type: :calendar, instance: 1},
     device_identifier: %ObjectIdentifier{type: :device, instance: 42}

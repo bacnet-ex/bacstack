@@ -63,10 +63,12 @@ defmodule BACnet.Test.Protocol.ObjectsProtocolTest do
     context = %Context{
       now: @now,
       monotonic_time: -1000,
+      trigger: :periodic,
       state: %{preserve: make_ref()},
       lookup_object: fn _ref -> flunk("no-op must not look up objects") end,
       read_property: fn _ref -> flunk("no-op must not read properties") end,
-      write_property: fn _ref, _value, _priority -> flunk("no-op must not write properties") end
+      write_property: fn _ref, _value, _priority -> flunk("no-op must not write properties") end,
+      options: []
     }
 
     for module <- Map.values(ObjectsUtility.get_object_type_mappings()) do
@@ -93,6 +95,9 @@ defmodule BACnet.Test.Protocol.ObjectsProtocolTest do
     context = %Context{
       now: @now,
       monotonic_time: -1000,
+      trigger: :periodic,
+      state: nil,
+      lookup_object: nil,
       options: [source: @source, target: @target, priority: 8],
       read_property: fn reference ->
         assert reference == @source
@@ -161,6 +166,8 @@ defmodule BACnet.Test.Protocol.ObjectsProtocolTest do
       now: @now,
       monotonic_time: 0,
       trigger: {:property_write, :present_value, nil, 8},
+      state: nil,
+      lookup_object: nil,
       options: [source: @source, target: @target],
       read_property: fn _reference -> {:ok, false} end,
       write_property: fn _ref, _value, _priority -> :ok end
@@ -181,7 +188,18 @@ defmodule BACnet.Test.Protocol.ObjectsProtocolTest do
 
   test "overrides can call the unchanged-object default through super" do
     assert {:ok, object} = ExecutableObject.create(1, "Executable object")
-    context = %Context{now: @now, monotonic_time: 0, state: :preserved, options: [skip: true]}
+
+    context = %Context{
+      now: @now,
+      monotonic_time: 0,
+      trigger: :periodic,
+      state: :preserved,
+      lookup_object: nil,
+      read_property: nil,
+      write_property: nil,
+      options: [skip: true]
+    }
+
     result = %Result{object: object, state: :preserved}
 
     assert {:ok, ^result} = ExecutableObject.execute(object, context)
@@ -194,6 +212,9 @@ defmodule BACnet.Test.Protocol.ObjectsProtocolTest do
     context = %Context{
       now: @now,
       monotonic_time: 0,
+      trigger: :periodic,
+      state: nil,
+      lookup_object: nil,
       options: [source: @source, target: @target],
       read_property: fn _reference -> {:ok, :invalid} end,
       write_property: fn _ref, _value, _priority -> flunk("invalid value must not be written") end
@@ -229,7 +250,16 @@ defmodule BACnet.Test.Protocol.ObjectsProtocolTest do
     assert ObjectsProtocol.impl_for(~D[2026-11-06]) == nil
 
     assert_raise Protocol.UndefinedError, fn ->
-      ObjectsProtocol.execute(~D[2026-11-06], %Context{now: @now, monotonic_time: 0})
+      ObjectsProtocol.execute(~D[2026-11-06], %Context{
+        now: @now,
+        monotonic_time: 0,
+        trigger: :periodic,
+        state: nil,
+        lookup_object: nil,
+        read_property: nil,
+        write_property: nil,
+        options: []
+      })
     end
   end
 end

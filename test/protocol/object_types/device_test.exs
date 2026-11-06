@@ -1,4 +1,5 @@
 defmodule BACnet.Test.Protocol.ObjectTypes.DeviceTest do
+  alias BACnet.Protocol.BACnetArray
   alias BACnet.Protocol.BACnetDate
   alias BACnet.Protocol.BACnetTime
   alias BACnet.Protocol.ObjectTypes.Device
@@ -11,6 +12,66 @@ defmodule BACnet.Test.Protocol.ObjectTypes.DeviceTest do
 
   # This test suite only extends the basic and utility test suite to
   # cover additional implemented functionality
+
+  test "slave proxy properties are available only before revision 19 on local devices" do
+    slave_properties = %{
+      slave_proxy_enable: BACnetArray.new(),
+      auto_slave_discovery: BACnetArray.new(),
+      slave_address_binding: [],
+      manual_slave_address_binding: []
+    }
+
+    properties = %{
+      vendor_identifier: 999,
+      segmentation_supported: :no_segmentation
+    }
+
+    for name <- Map.keys(slave_properties) do
+      assert Device.get_annotation(name)[:forbidden_when] == {:opts, :revision, :>=, 19}
+    end
+
+    for revision <- [:revision_14, 18] do
+      assert {:ok, device} =
+               Device.create(1, "device", Map.merge(properties, slave_properties),
+                 revision: revision
+               )
+
+      for {name, value} <- slave_properties do
+        assert Device.get_property(device, name) == {:ok, value}
+      end
+    end
+
+    for revision <- [19, 22] do
+      assert {:ok, device} = Device.create(1, "device", properties, revision: revision)
+
+      for name <- Map.keys(slave_properties) do
+        refute name in device._metadata.properties_list
+      end
+
+      assert {:error, {:property_not_allowed, name}} =
+               Device.create(1, "device", Map.merge(properties, slave_properties),
+                 revision: revision
+               )
+
+      assert Map.has_key?(slave_properties, name)
+    end
+
+    assert {:ok, local} =
+             Device.create(1, "local", Map.merge(properties, slave_properties), revision: 18)
+
+    remote_properties =
+      local
+      |> Map.from_struct()
+      |> Map.take(local._metadata.properties_list)
+      |> Map.drop([:object_instance, :object_name])
+
+    assert {:ok, remote} =
+             Device.create(2, "remote", remote_properties, revision: 19, remote_object: 42)
+
+    for {name, value} <- slave_properties do
+      assert Device.get_property(remote, name) == {:ok, value}
+    end
+  end
 
   test "vendor IDs resolve to names while explicit vendor names are preserved" do
     vendors = Device.get_vendor_ids()
