@@ -17,6 +17,18 @@ defmodule BACnet.Test.Protocol.ObjectTypes.MultistateOutputTest do
              MultistateOutput.create(1, "TEST", %{number_of_states: 4, present_value: 3})
   end
 
+  test "get_output follows present value until the output is out of service" do
+    {:ok, object} = MultistateOutput.create(1, "output", %{number_of_states: 4})
+    {:ok, object} = MultistateOutput.set_priority(object, 8, 3)
+
+    assert MultistateOutput.get_output(object) == 3
+    assert MultistateOutput.get_output(object, 2) == 3
+
+    {:ok, object} = MultistateOutput.update_property(object, :out_of_service, true)
+    assert MultistateOutput.get_output(object) == 1
+    assert MultistateOutput.get_output(object, 2) == 2
+  end
+
   test "verify create/4 enforces number_of_states for relinquish_default" do
     assert {:ok, %{present_value: 1} = _obj} =
              MultistateOutput.create(1, "TEST", %{number_of_states: 4, relinquish_default: 1})

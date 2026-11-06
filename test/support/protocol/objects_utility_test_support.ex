@@ -106,6 +106,7 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
       # for the object type - the functionality is covered by the ObjectTypes.Macro testsuite
       # However if there are good reasons, we may cover them manually in the correct testsuite
       # for the object type we want to cover
+      generate_object_test_for(obj_type, mod, object, :fetch, 2),
       []
     ]
 
@@ -214,6 +215,26 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
   @spec generate_object_test_for(Constants.object_type(), module(), struct, atom(), arity()) ::
           list()
   defp generate_object_test_for(obj_type, mod, object, function, arity)
+
+  defp generate_object_test_for(_obj_type, mod, object, :fetch, 2) do
+    code_call =
+      quote location: :keep do
+        unquote(mod).fetch(unquote(Macro.escape(object)), :object_name)
+      end
+
+    pattern_match = Macro.escape({:ok, object.object_name})
+
+    appendum_code =
+      quote location: :keep do
+        object = unquote(Macro.escape(object))
+        assert object[:object_name] == object.object_name
+        assert get_in(object, [:object_instance]) == object.object_instance
+        assert Access.fetch(object, :unknown_property) == :error
+        assert object[:unknown_property] == nil
+      end
+
+    [{"Access lookup for present and absent fields", code_call, pattern_match, appendum_code}]
+  end
 
   # defp generate_object_test_for(_obj_type, mod, object, :add_property, 3) do
   #   value = "hello_there"
