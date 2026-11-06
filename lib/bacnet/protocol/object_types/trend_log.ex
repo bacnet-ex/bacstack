@@ -68,7 +68,7 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLog do
   - `logging_type`, `log_interval`, `cov_resubscription_interval`,
     `client_cov_increment`, `align_intervals`/`interval_offset`: Sampling config.
     **Dev must**: Your task reacts to changes. Re-schedule timers or COV subs.
-    For aligned, compute sample times from midnight + offset.
+    For aligned polling, use clock boundaries and the offset modulo the interval.
 
   - `buffer_size`, `stop_when_full`, `enable`, `start_time`/`stop_time`: Logging
     control.
@@ -99,10 +99,14 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLog do
   - Update `record_count` property and run the event algorithm, if intrinsic.
   - Maintain the buffer yourself and make it available through ReadRange service.
 
-  **Clock-aligned logging**: If the `align_intervals` flag (or equivalent) is set
-  you must compute the next sample time as a multiple of the interval from
-  midnight / from the `interval_offset`. This is so that logs from many devices
-  line up nicely when plotted.
+  **Clock-aligned logging**: In polled mode with `align_intervals: true`, intervals
+  that divide a second, minute, hour, or day align to that local clock boundary.
+  Both `log_interval` and `interval_offset` use hundredths of a second; the
+  effective offset is `interval_offset` modulo `log_interval`. COV and triggered
+  acquisition ignore these alignment properties. `BACnet.Stack.TrendLogger`
+  implements this scheduling for both Trend Log and Trend Log Multiple objects.
+  The alignment properties are optional and occur together. Supplying either one
+  adds its partner with a default of `align_intervals: false` or `interval_offset: 0`.
 
   **BUFFER_READY intrinsic event**: When `intrinsic_reporting: true` the object
   carries a `notification_threshold` and the normal event fields. Every time you
@@ -144,7 +148,7 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLog do
 
       iex> alias BACnet.Protocol.{DeviceObjectPropertyRef, ObjectIdentifier}
       iex> ref = %DeviceObjectPropertyRef{object_identifier: %ObjectIdentifier{type: :analog_input, instance: 1}, property_identifier: :present_value, property_array_index: nil, device_identifier: nil}
-      iex> {:ok, tl} = BACnet.Protocol.ObjectTypes.TrendLog.create(901, "AlignedTrend", %{log_device_object_property: ref, log_interval: 300, buffer_size: 50, logging_type: :polled, align_intervals: false, interval_offset: 0}, intrinsic_reporting: true, clock_aligned_logging: true); tl.object_name
+      iex> {:ok, tl} = BACnet.Protocol.ObjectTypes.TrendLog.create(901, "AlignedTrend", %{log_device_object_property: ref, log_interval: 90_000, buffer_size: 50, logging_type: :polled, align_intervals: true, interval_offset: 3_000}, intrinsic_reporting: true); tl.object_name
       "AlignedTrend"
 
   ### See Also
@@ -169,14 +173,12 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLog do
   Options accepted when creating or configuring a Trend Log object.
 
   In addition to the common options, Trend Log supports:
-  - `clock_aligned_logging` - Enables clock-aligned logging intervals.
   - `intrinsic_reporting` - Enables BUFFER_READY intrinsic reporting (notifications when
     Notification_Threshold records have been collected).
   """
   @type object_opts ::
           {:intrinsic_reporting, boolean()}
           | common_object_opts()
-          | {:clock_aligned_logging, boolean()}
 
   @typedoc """
   Represents a Trend Log object. All keys should be treated as read-only,
@@ -237,14 +239,13 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLog do
 
     field(:logging_type, Constants.logging_type(), required: true, default: :cov)
 
-    # The following two properties are required if clock-aligned logging is supported
+    # The following two properties are required if clock-aligned logging is supported (we do)
     field(:align_intervals, boolean(),
-      annotation: [required_when: {:opts, :clock_aligned_logging}]
+      default: false,
+      implicit_relationship: :interval_offset
     )
 
-    field(:interval_offset, non_neg_integer(),
-      annotation: [required_when: {:opts, :clock_aligned_logging}]
-    )
+    field(:interval_offset, non_neg_integer(), default: 0)
 
     field(:trigger, boolean())
 

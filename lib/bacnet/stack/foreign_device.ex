@@ -19,6 +19,30 @@ defmodule BACnet.Stack.ForeignDevice do
   For each BBMD (client/transport) one Foreign Device process is required.
   This allows to register in many BBMDs as Foreign Device.
 
+  ## BVLC locking
+
+  Functions that rely on a BBMD success message, including
+  `write_broadcast_distribution_table/3` and Foreign Device registration/renewal,
+  lock the BBMD until a reply or timeout. BVLC success messages contain no request
+  identifier, so concurrent commands could otherwise receive false positives.
+  Table reads and broadcast distribution use the same lock to serialize replies.
+  Reply timeouts start after the lock is acquired; waiting for the lock is unbounded.
+
+  The lock mechanism uses `:global.set_lock/3` and `:global.del_lock/2`, scoped
+  to the local Erlang node. `:global` automatically releases a process' locks
+  when that process exits or crashes.
+
+  If you interact with the same BBMD using BVLC directly, you MUST use `lock/2`
+  and `unlock/2` around the entire exchange, from before subscribing/sending until
+  after receiving the reply or timing out. Use the client associated with the
+  transport sending the BVLC message. Locks are shared by all Foreign Device
+  processes using the same transport portal and BBMD on this Erlang node.
+  Different portals and BBMDs can communicate independently.
+
+  Always unlock in an `after` block. Do not call this module's communicating
+  functions while holding the lock: their tasks acquire the lock themselves.
+  Locking cannot distinguish a delayed reply to an earlier timed-out request.
+
   ## BACnet Specification References
 
   The registration, renewal and table-read behaviour follows Annex J.5.2.
@@ -57,6 +81,8 @@ defmodule BACnet.Stack.ForeignDevice do
   use GenServer
 
   @bbmd_fd_reg_timer 10_000
+  @bbmd_lock_retry_timer 100
+  @bbmd_delete_timeout 1_000
 
   defmodule Registration do
     @moduledoc """
@@ -208,7 +234,8 @@ defmodule BACnet.Stack.ForeignDevice do
             "as it may block the process forever waiting for a response that may never arrive"
     end
 
-    with {:ok, {client, bbmd, _trans_mod, _portal}} <- GenServer.call(server, :get_client) do
+    with {:ok, {client, bbmd, _trans_mod, _portal} = client_data} <-
+           GenServer.call(server, :get_client) do
       bvlc = Constants.macro_by_name(:bvlc_result_purpose, :bvlc_distribute_broadcast_to_network)
 
       new_opts =
@@ -220,35 +247,37 @@ defmodule BACnet.Stack.ForeignDevice do
 
       task =
         Task.async(fn ->
-          with :ok <- Client.subscribe(client, self()),
-               :ok <- Client.send(client, bbmd, apdu, new_opts) do
-            receive do
-              {:bacnet_transport, _protocol_id, ^bbmd,
-               {:bvlc,
-                %BvlcResult{
-                  result_code:
-                    Constants.macro_assert_name(
-                      :bvlc_result_format,
-                      :distribute_broadcast_to_network_nak
-                    )
-                } = result}, _portal} ->
-                Telemetry.execute_foreign_device_exception(
-                  server,
-                  :error,
-                  :distribute_broadcast_nak,
-                  [Telemetry.make_stacktrace_from_env(__ENV__)],
-                  %{},
-                  struct(State, client: client)
-                )
+          with_bvll_lock(client_data, fn ->
+            with :ok <- Client.subscribe(client, self()),
+                 :ok <- Client.send(client, bbmd, apdu, new_opts) do
+              receive do
+                {:bacnet_transport, _protocol_id, ^bbmd,
+                 {:bvlc,
+                  %BvlcResult{
+                    result_code:
+                      Constants.macro_assert_name(
+                        :bvlc_result_format,
+                        :distribute_broadcast_to_network_nak
+                      )
+                  } = result}, _portal} ->
+                  Telemetry.execute_foreign_device_exception(
+                    server,
+                    :error,
+                    :distribute_broadcast_nak,
+                    [Telemetry.make_stacktrace_from_env(__ENV__)],
+                    %{},
+                    struct(State, client: client)
+                  )
 
-                {:error, result}
-            after
-              receive_timeout -> :ok
+                  {:error, result}
+              after
+                receive_timeout -> :ok
+              end
             end
-          end
+          end)
         end)
 
-      Task.await(task)
+      Task.await(task, :infinity)
     end
   end
 
@@ -258,6 +287,47 @@ defmodule BACnet.Stack.ForeignDevice do
   @spec get_status(server()) :: :registered | :waiting_for_ack | :uninitialized
   def get_status(server) when is_server(server) do
     GenServer.call(server, :get_status)
+  end
+
+  @doc """
+  Locks communication with a BBMD through the given client's transport.
+
+  Returns `:ok` after acquiring the lock. By default, waits indefinitely.
+  `retries` is passed to `:global.set_lock/3`; use `0` for a single attempt,
+  returning `{:error, :lock_unavailable}` if another process holds the lock.
+
+  The calling process owns the lock and MUST call `unlock/2` in an `after`
+  block after the entire BVLC exchange. The lock is also released if its owner
+  exits. Repeated acquisition by the same process is not reference counted;
+  do not nest acquisitions or call communicating Foreign Device functions
+  while holding the lock.
+
+      :ok = ForeignDevice.lock(client, bbmd)
+
+      try do
+        # Subscribe, send the BVLC request and receive its response here.
+      after
+        ForeignDevice.unlock(client, bbmd)
+      end
+  """
+  @spec lock(client(), {:inet.ip4_address(), :inet.port_number()}, non_neg_integer() | :infinity) ::
+          :ok | {:error, :lock_unavailable}
+  def lock(client, bbmd, retries \\ :infinity)
+      when is_server(client) and
+             (retries == :infinity or (is_integer(retries) and retries >= 0)) do
+    {trans_mod, _transport, portal} = Client.get_transport(client)
+    lock_bvll({client, bbmd, trans_mod, portal}, retries)
+  end
+
+  @doc """
+  Releases the calling process's BBMD lock acquired with `lock/2` or `lock/3`.
+
+  The same client transport and BBMD address must be used for both calls.
+  """
+  @spec unlock(client(), {:inet.ip4_address(), :inet.port_number()}) :: :ok
+  def unlock(client, bbmd) when is_server(client) do
+    {trans_mod, _transport, portal} = Client.get_transport(client)
+    unlock_bvll({client, bbmd, trans_mod, portal})
   end
 
   @doc """
@@ -306,7 +376,8 @@ defmodule BACnet.Stack.ForeignDevice do
               :read_broadcast_distribution_table_nak
             ),
             opts
-          )
+          ),
+          :infinity
         )
 
       case result do
@@ -366,7 +437,8 @@ defmodule BACnet.Stack.ForeignDevice do
             ),
             Constants.macro_assert_name(:bvlc_result_format, :read_foreign_device_table_nak),
             opts
-          )
+          ),
+          :infinity
         )
 
       case result do
@@ -392,8 +464,9 @@ defmodule BACnet.Stack.ForeignDevice do
   @doc """
   Explicitely renews the Foreign Device Registration in the BBMD.
 
-  This function returns `:ok` almost immediately,
-  without waiting for a response from the BBMD.
+  This function returns `:ok` almost immediately, without waiting for a response
+  from the BBMD. If the BBMD is locked, renewal is deferred until the lock is
+  available. An outstanding registration request is reused rather than resent.
   """
   @spec renew(server()) :: :ok
   def renew(server) when is_server(server) do
@@ -439,7 +512,7 @@ defmodule BACnet.Stack.ForeignDevice do
           end
         end)
 
-      Task.await(task, trunc(timeout * 1.5))
+      Task.await(task, :infinity)
     end
   end
 
@@ -447,10 +520,11 @@ defmodule BACnet.Stack.ForeignDevice do
   Stops and shuts down the Foreign Device.
 
   If a registration is active, it will try to delete it in the BBMD.
+  Deletion waits for the BBMD lock and then up to one second for its reply.
   """
   @spec stop(server()) :: :ok
   def stop(server) when is_server(server) do
-    GenServer.call(server, :stop)
+    GenServer.call(server, :stop, :infinity)
   end
 
   @doc """
@@ -461,11 +535,9 @@ defmodule BACnet.Stack.ForeignDevice do
   The new `Task` will temporarily subscribe for `BACnet.Stack.Client` notifications
   to be able to process BVLL/BVLC messages.
 
-  Since the response from the BBMD is a generic success message, without any
-  other information, you MUST make sure that this is the ONLY BVLL command that
-  gets executed concurrently. Otherwise this or any other concurrent BVLL command
-  MAY receive a false positive response instead of a negative response that would
-  be the actual response to the BVLL command.
+  This function locks the BBMD until its generic success/NAK reply or timeout.
+  Direct BVLC callers using the same transport and BBMD MUST also use `lock/2`
+  and `unlock/2` around their exchanges to avoid false positive success replies.
 
   The following options are available:
   - `timeout: non_neg_integer() | :infinity` - Optional.
@@ -513,7 +585,8 @@ defmodule BACnet.Stack.ForeignDevice do
               :write_broadcast_distribution_table_nak
             ),
             opts
-          )
+          ),
+          :infinity
         )
 
       case result do
@@ -553,28 +626,77 @@ defmodule BACnet.Stack.ForeignDevice do
        )
        when is_atom(function_reply) and is_atom(function_reply_nak) and is_list(opts) do
     Task.async(fn ->
-      with :ok <- Client.subscribe(client, self()),
-           {:ok, {bbmd_bvlc, bbmd_data}} <- BvlcFunction.encode(bvlc_function),
-           :ok <-
-             trans_mod.send(portal, bbmd, bbmd_data, bvlc: <<bbmd_bvlc>>, npci: false) do
-        receive do
-          {:bacnet_transport, _protocol_id, ^bbmd,
-           {:bvlc, %BvlcFunction{function: ^function_reply, data: payload}}, _portal} ->
-            {:ok, payload}
-
-          {:bacnet_transport, _protocol_id, ^bbmd,
-           {:bvlc, %BvlcResult{result_code: ^function_reply}}, _portal} ->
-            :ok
-
-          {:bacnet_transport, _protocol_id, ^bbmd,
-           {:bvlc, %BvlcResult{result_code: ^function_reply_nak} = result}, _portal} ->
-            {:error, result}
-        after
-          opts[:timeout] || :infinity ->
-            {:error, :timeout}
-        end
-      end
+      with_bvll_lock({client, bbmd, trans_mod, portal}, fn ->
+        send_bvll_message_and_wait(
+          {client, bbmd, trans_mod, portal},
+          bvlc_function,
+          function_reply,
+          function_reply_nak,
+          opts
+        )
+      end)
     end)
+  end
+
+  defp send_bvll_message_and_wait(
+         {client, bbmd, trans_mod, portal},
+         bvlc_function,
+         function_reply,
+         function_reply_nak,
+         opts
+       ) do
+    with :ok <- Client.subscribe(client, self()) do
+      try do
+        with {:ok, {bbmd_bvlc, bbmd_data}} <- BvlcFunction.encode(bvlc_function),
+             :ok <-
+               trans_mod.send(portal, bbmd, bbmd_data, bvlc: <<bbmd_bvlc>>, npci: false) do
+          receive do
+            {:bacnet_transport, _protocol_id, ^bbmd,
+             {:bvlc, %BvlcFunction{function: ^function_reply, data: payload}}, _portal} ->
+              {:ok, payload}
+
+            {:bacnet_transport, _protocol_id, ^bbmd,
+             {:bvlc, %BvlcResult{result_code: ^function_reply}}, _portal} ->
+              :ok
+
+            {:bacnet_transport, _protocol_id, ^bbmd,
+             {:bvlc, %BvlcResult{result_code: ^function_reply_nak} = result}, _portal} ->
+              {:error, result}
+          after
+            opts[:timeout] || :infinity ->
+              {:error, :timeout}
+          end
+        end
+      after
+        Client.unsubscribe(client, self())
+      end
+    end
+  end
+
+  defp lock_bvll({_client, bbmd, trans_mod, portal}, retries) do
+    case :global.set_lock({{__MODULE__, trans_mod, portal, bbmd}, self()}, [node()], retries) do
+      true -> :ok
+      false -> {:error, :lock_unavailable}
+    end
+  end
+
+  defp unlock_bvll({_client, bbmd, trans_mod, portal}) do
+    :global.del_lock({{__MODULE__, trans_mod, portal, bbmd}, self()}, [node()])
+    :ok
+  end
+
+  defp with_bvll_lock(client_data, fun) do
+    :ok = lock_bvll(client_data, :infinity)
+
+    try do
+      fun.()
+    after
+      unlock_bvll(client_data)
+    end
+  end
+
+  defp client_data(%State{} = state) do
+    {state.client, state.bbmd, state.transport_module, state.portal}
   end
 
   defp do_who_is(client, timeout, opts) do
@@ -684,6 +806,7 @@ defmodule BACnet.Stack.ForeignDevice do
     end)
 
     Client.unsubscribe(state.client, self())
+    unlock_bvll(client_data(state))
 
     if state.registration.status == :registered do
       log_debug(fn ->
@@ -757,7 +880,7 @@ defmodule BACnet.Stack.ForeignDevice do
       if state.registration.status == :registered do
         case delete_fd_registration(state) do
           {:ok, state} -> state
-          _other -> state
+          _other -> %State{state | registration: %{state.registration | status: :uninitialized}}
         end
       else
         state
@@ -821,6 +944,7 @@ defmodule BACnet.Stack.ForeignDevice do
     end)
 
     Process.cancel_timer(reg.timer)
+    unlock_bvll(client_data(state))
 
     new_reg = %Registration{
       reg
@@ -858,6 +982,7 @@ defmodule BACnet.Stack.ForeignDevice do
     end)
 
     Process.cancel_timer(reg.timer)
+    unlock_bvll(client_data(state))
 
     new_reg = %Registration{
       reg
@@ -869,6 +994,10 @@ defmodule BACnet.Stack.ForeignDevice do
     new_state = %State{state | registration: new_reg}
 
     {:noreply, new_state}
+  end
+
+  def handle_info(:fd_reg_renew, %State{} = state) do
+    handle_continue(:bbmd_fd_reg, state)
   end
 
   def handle_info(
@@ -927,7 +1056,11 @@ defmodule BACnet.Stack.ForeignDevice do
           end)
         end
 
-        case send_fd_registration(state) do
+        # Release an unanswered registration before retrying it.
+        if reg.status == :waiting_for_ack, do: unlock_bvll(client_data(state))
+        retry_state = %State{state | registration: %{reg | status: :uninitialized}}
+
+        case send_fd_registration(retry_state) do
           {:ok, reg} ->
             Logger.debug(fn ->
               "ForeignDevice: Sent Foreign Device registration to BBMD " <> format_ip(state.bbmd)
@@ -950,7 +1083,9 @@ defmodule BACnet.Stack.ForeignDevice do
               state
             )
 
-            state
+            retry_reg = if reg.status == :waiting_for_ack, do: retry_state.registration, else: reg
+            timer = Process.send_after(self(), :fd_reg_renew, @bbmd_fd_reg_timer)
+            %State{state | registration: %{retry_reg | timer: timer}}
         end
       else
         state
@@ -965,7 +1100,32 @@ defmodule BACnet.Stack.ForeignDevice do
 
   @spec send_fd_registration(State.t()) ::
           {:ok, Registration.t()} | {:error, term()}
-  defp send_fd_registration(
+  defp send_fd_registration(%State{registration: %Registration{status: :waiting_for_ack} = reg}) do
+    # Coalesce explicit renewals while a registration reply is outstanding.
+    {:ok, reg}
+  end
+
+  defp send_fd_registration(%State{} = state) do
+    case lock_bvll(client_data(state), 0) do
+      :ok ->
+        case do_send_fd_registration(state) do
+          {:ok, _reg} = result ->
+            result
+
+          error ->
+            unlock_bvll(client_data(state))
+            error
+        end
+
+      {:error, :lock_unavailable} ->
+        # Never block the GenServer mailbox while another exchange owns the lock.
+        Process.cancel_timer(state.registration.timer)
+        timer = Process.send_after(self(), :fd_reg_renew, @bbmd_lock_retry_timer)
+        {:ok, %{state.registration | timer: timer}}
+    end
+  end
+
+  defp do_send_fd_registration(
          %State{bbmd: bbmd, transport_module: trans_mod, portal: portal} = state
        ) do
     with {:ok, {fd_reg_bvlc, fd_reg_data}} <-
@@ -975,6 +1135,8 @@ defmodule BACnet.Stack.ForeignDevice do
              data: Map.fetch!(state.opts, :ttl)
            }),
          :ok <- trans_mod.send(portal, bbmd, fd_reg_data, bvlc: <<fd_reg_bvlc>>, npci: false) do
+      Process.cancel_timer(state.registration.timer)
+
       reg = %Registration{
         bbmd: bbmd,
         status: :waiting_for_ack,
@@ -989,35 +1151,38 @@ defmodule BACnet.Stack.ForeignDevice do
   end
 
   @spec delete_fd_registration(State.t()) :: {:ok, State.t()} | {:error, term()}
-  defp delete_fd_registration(
-         %State{
-           bbmd: bbmd,
-           ip_addr: {ip, port},
-           transport_module: trans_mod,
-           portal: portal,
-           registration: reg
-         } =
-           state
-       ) do
-    Telemetry.execute_foreign_device_del_fd_registration(self(), bbmd, reg, state)
+  defp delete_fd_registration(%State{ip_addr: {ip, port}, registration: reg} = state) do
+    Telemetry.execute_foreign_device_del_fd_registration(self(), state.bbmd, reg, state)
 
-    with {:ok, {fd_reg_bvlc, fd_reg_data}} <-
-           BvlcFunction.encode(%BvlcFunction{
-             function:
-               Constants.macro_assert_name(
-                 :bvlc_result_purpose,
-                 :bvlc_delete_foreign_device_table_entry
-               ),
-             data: %ForeignDeviceTableEntry{
-               ip: ip,
-               port: port,
-               time_to_live: nil,
-               remaining_time: nil
-             }
-           }),
-         :ok <- trans_mod.send(portal, bbmd, fd_reg_data, bvlc: <<fd_reg_bvlc>>, npci: false) do
+    result =
+      Task.await(
+        send_bvll_message_and_wait_in_task(
+          client_data(state),
+          %BvlcFunction{
+            function:
+              Constants.macro_assert_name(
+                :bvlc_result_purpose,
+                :bvlc_delete_foreign_device_table_entry
+              ),
+            data: %ForeignDeviceTableEntry{
+              ip: ip,
+              port: port,
+              time_to_live: nil,
+              remaining_time: nil
+            }
+          },
+          Constants.macro_assert_name(:bvlc_result_format, :successful_completion),
+          Constants.macro_assert_name(
+            :bvlc_result_format,
+            :delete_foreign_device_table_entry_nak
+          ),
+          timeout: @bbmd_delete_timeout
+        ),
+        :infinity
+      )
+
+    with :ok <- result do
       Process.cancel_timer(reg.timer)
-
       {:ok, %State{state | registration: %{reg | status: :uninitialized, expires_at: nil}}}
     end
   end

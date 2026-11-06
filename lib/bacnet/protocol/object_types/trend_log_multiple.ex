@@ -36,6 +36,8 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
   Retrieval, buffer management, clock alignment, start/stop windows, and
   BUFFER_READY intrinsic reporting (when enabled) work the same as for a regular
   Trend Log.
+  The alignment properties are optional and occur together. Supplying either one
+  adds its partner with a default of `align_intervals: false` or `interval_offset: 0`.
 
   ### Developer Implementation Notes (geared to device server / application authors)
 
@@ -112,7 +114,7 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
 
       iex> alias BACnet.Protocol.{DeviceObjectPropertyRef, ObjectIdentifier, BACnetArray}
       iex> ref = %DeviceObjectPropertyRef{object_identifier: %ObjectIdentifier{type: :analog_input, instance: 1}, property_identifier: :present_value, property_array_index: nil, device_identifier: nil}
-      iex> {:ok, tlm} = BACnet.Protocol.ObjectTypes.TrendLogMultiple.create(1001, "AlignedMulti", %{log_device_object_property: BACnetArray.from_list([ref]), buffer_size: 50, logging_type: :polled, log_interval: 300, align_intervals: false, interval_offset: 0}, intrinsic_reporting: true, clock_aligned_logging: true); tlm.object_name
+      iex> {:ok, tlm} = BACnet.Protocol.ObjectTypes.TrendLogMultiple.create(1001, "AlignedMulti", %{log_device_object_property: BACnetArray.from_list([ref]), buffer_size: 50, logging_type: :polled, log_interval: 90_000, align_intervals: true, interval_offset: 3_000}, intrinsic_reporting: true); tlm.object_name
       "AlignedMulti"
 
   ### See Also
@@ -138,12 +140,10 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
   Options accepted when creating or configuring a Trend Log Multiple object.
 
   In addition to the common options, Trend Log Multiple supports:
-  - `clock_aligned_logging` - Enables clock-aligned logging intervals.
   - `intrinsic_reporting` - Enables BUFFER_READY intrinsic reporting.
   """
   @type object_opts ::
-          {:clock_aligned_logging, boolean()}
-          | {:intrinsic_reporting, boolean()}
+          {:intrinsic_reporting, boolean()}
           | common_object_opts()
 
   @typedoc """
@@ -209,14 +209,13 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
     # Logging Type MUST NOT be COV for Trend Log Multiple
     field(:logging_type, Constants.logging_type(), required: true, validator_fun: &(&1 != :cov))
 
-    # The following two properties are required if clock-aligned logging is supported
+    # The following two properties are required if clock-aligned logging is supported (we do)
     field(:align_intervals, boolean(),
-      annotation: [required_when: {:opts, :clock_aligned_logging}]
+      default: false,
+      implicit_relationship: :interval_offset
     )
 
-    field(:interval_offset, non_neg_integer(),
-      annotation: [required_when: {:opts, :clock_aligned_logging}]
-    )
+    field(:interval_offset, non_neg_integer(), default: 0)
 
     field(:trigger, boolean())
 

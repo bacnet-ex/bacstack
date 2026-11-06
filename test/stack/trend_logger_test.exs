@@ -24,11 +24,29 @@ defmodule BACnet.Stack.TrendLoggerTest do
   alias BACnet.Stack.LogBuffer
   alias BACnet.Stack.LogBufferTree
   alias BACnet.Stack.TrendLogger
+  alias BACnet.Stack.TrendLogger.PollSchedule
 
   use BACnet.Test.Stack.Case, async: true
 
   @moduletag :stack
   @moduletag :trend_logger
+
+  defmodule TimeZoneDatabase do
+    @moduledoc false
+    @behaviour Calendar.TimeZoneDatabase
+
+    # Each test owns its timezone data, without changing Elixir's global database
+    # or the host clock. Updating the period simulates a timezone transition.
+    @impl true
+    def time_zone_period_from_utc_iso_days(_iso_days, "Test/" <> pid) do
+      Agent.get(:erlang.list_to_pid(String.to_charlist(pid)), &{:ok, &1})
+    end
+
+    @impl true
+    def time_zone_periods_from_wall_datetime(_datetime, timezone) do
+      time_zone_period_from_utc_iso_days(nil, timezone)
+    end
+  end
 
   setup do
     parent = self()
@@ -81,6 +99,12 @@ defmodule BACnet.Stack.TrendLoggerTest do
       TrendLogger.start_link(lookup_cb: &ok_lookup/1, timezone: 1)
     end
 
+    for database <- [nil, 1, :no_such_timezone_database, DateTime] do
+      assert_raise ArgumentError, ~r/timezone_database/, fn ->
+        TrendLogger.start_link(lookup_cb: &ok_lookup/1, timezone_database: database)
+      end
+    end
+
     assert_raise ArgumentError, ~r/Not\/AZone/, fn ->
       TrendLogger.start_link(lookup_cb: &ok_lookup/1, timezone: "Not/AZone")
     end
@@ -123,6 +147,399 @@ defmodule BACnet.Stack.TrendLoggerTest do
              )
 
     Port.close(port)
+  end
+
+  test "clock changes record signed fractional seconds in every log type", %{server: server} do
+    objects = [
+      event_log(1),
+      trend(1),
+      trend(2, logging_type: :cov),
+      trend(3, logging_type: :polled, log_interval: 6_000),
+      trend_multiple(1, [property_ref(analog(), nil)])
+    ]
+
+    for object <- objects, do: assert(:ok = TrendLogger.add_object(server, object))
+
+    before = BACnetDateTime.utc_now()
+    clock_change(server, 1_250_000)
+
+    for object <- objects do
+      assert {:ok, {1, LogBuffer, buffer}} = TrendLogger.get_buffer(server, object)
+      assert [record] = LogBuffer.to_list(buffer)
+      assert Map.get(record, :log_datum, Map.get(record, :log_data)) == {:time_change, 1.25}
+      assert BACnetDateTime.compare(record.timestamp, before) in [:eq, :gt]
+      assert BACnetDateTime.compare(record.timestamp, BACnetDateTime.utc_now()) in [:eq, :lt]
+    end
+
+    clock_change(server, -500_000)
+
+    for object <- objects do
+      assert {:ok, {2, LogBuffer, buffer}} = TrendLogger.get_buffer(server, object)
+      assert [_first, record] = LogBuffer.to_list(buffer)
+      assert Map.get(record, :log_datum, Map.get(record, :log_data)) == {:time_change, -0.5}
+    end
+
+    # Clock-change records never need to read the logged property.
+    refute_receive {:lookup, _reference}, 0
+  end
+
+  test "unchanged offsets and unrelated monitor messages are ignored", %{server: server} do
+    object = trend(1)
+    assert :ok = TrendLogger.add_object(server, object)
+    state = :sys.get_state(server)
+    ref = state.time_offset_monitor
+    offset = state.time_offset
+
+    send(server, {:CHANGE, ref, :time_offset, :clock_service, offset})
+    send(server, {:CHANGE, make_ref(), :time_offset, :clock_service, offset + 1})
+    send(server, {:CHANGE, ref, :time_offset, :another_service, offset + 1})
+    send(server, {:CHANGE, ref, :process, :clock_service, offset + 1})
+    send(server, {:CHANGE, ref, :time_offset, :clock_service, :invalid})
+
+    assert records(server, object) == []
+    assert :sys.get_state(server).time_offset == offset
+
+    # A repeated notification after a real change must not append a second entry.
+    clock_change(server, 250_000)
+    new_offset = offset + System.convert_time_unit(250_000, :microsecond, :native)
+    send(server, {:CHANGE, ref, :time_offset, :clock_service, new_offset})
+    assert [%LogRecord{log_datum: {:time_change, 0.25}}] = records(server, object)
+  end
+
+  test "clock tracking advances while no objects are present or logging is disabled", %{
+    server: server
+  } do
+    clock_change(server, 5_000_000)
+    object = trend(1, enable: false)
+    assert :ok = TrendLogger.add_object(server, object)
+    clock_change(server, 2_000_000)
+    assert records(server, object) == []
+
+    assert :ok = TrendLogger.change_log_state(server, object, :enable)
+    clock_change(server, -250_000)
+
+    assert [
+             %LogRecord{log_datum: %LogStatus{}},
+             %LogRecord{log_datum: {:time_change, -0.25}}
+           ] = records(server, object)
+  end
+
+  test "clock changes immediately reevaluate logging time windows", %{server: server} do
+    now = DateTime.utc_now()
+
+    active =
+      trend(1,
+        start_time: BACnetDateTime.from_datetime(DateTime.add(now, -3_600)),
+        stop_time: BACnetDateTime.from_datetime(DateTime.add(now, 3_600))
+      )
+
+    expired =
+      trend(2,
+        start_time: BACnetDateTime.from_datetime(DateTime.add(now, -7_200)),
+        stop_time: BACnetDateTime.from_datetime(DateTime.add(now, -3_600))
+      )
+
+    future =
+      trend(3,
+        start_time: BACnetDateTime.from_datetime(DateTime.add(now, 3_600)),
+        stop_time: BACnetDateTime.from_datetime(DateTime.add(now, 7_200))
+      )
+
+    for object <- [active, expired, future] do
+      assert :ok = TrendLogger.add_object(server, object)
+    end
+
+    # Simulate cached eligibility from before a clock adjustment without changing
+    # the host clock. The handler must reevaluate it before appending time_change.
+    :sys.replace_state(server, fn state ->
+      logs =
+        state.logs
+        |> Map.update!(make_id(active), &%{&1 | enabled: false})
+        |> Map.update!(make_id(expired), &%{&1 | enabled: true})
+
+      %{state | logs: logs}
+    end)
+
+    clock_change(server, 1_000_000)
+
+    assert [
+             %LogRecord{log_datum: %LogStatus{}},
+             %LogRecord{log_datum: {:time_change, 1.0}}
+           ] = records(server, active)
+
+    assert [%LogRecord{log_datum: %LogStatus{}}] = records(server, expired)
+    assert records(server, future) == []
+    assert :sys.get_state(server).logs[make_id(active)].enabled
+    refute :sys.get_state(server).logs[make_id(expired)].enabled
+  end
+
+  test "restoring buffers creates a fresh clock monitor and offset baseline", %{server: server} do
+    object = trend(1)
+    assert :ok = TrendLogger.add_object(server, object)
+    assert :ok = TrendLogger.trigger_log(server, object, :interrupted)
+    saved = :sys.get_state(server)
+    GenServer.stop(server)
+
+    {:ok, restored} =
+      TrendLogger.start_link(lookup_cb: &ok_lookup/1, state: %{saved | time_offset: 0})
+
+    state = :sys.get_state(restored)
+    assert is_reference(state.time_offset_monitor)
+    refute state.time_offset_monitor == saved.time_offset_monitor
+    assert state.time_offset == :erlang.time_offset()
+    assert [%LogRecord{log_datum: %LogStatus{log_interrupted: true}}] = records(restored, object)
+
+    send(restored, {:CHANGE, saved.time_offset_monitor, :time_offset, :clock_service, 0})
+    clock_change(restored, 500_000)
+
+    assert [
+             %LogRecord{log_datum: %LogStatus{log_interrupted: true}},
+             %LogRecord{log_datum: {:time_change, 0.5}}
+           ] = records(restored, object)
+  end
+
+  for backend <- [LogBuffer, LogBufferTree] do
+    test "clock changes preserve stop-when-full and intrinsic reporting with #{inspect(backend)}" do
+      backend = unquote(backend)
+
+      server =
+        start_logger(log_buffer_module: backend, notification_receiver: self())
+
+      object =
+        unscheduled_trend(1, [buffer_size: 2, stop_when_full: true, notification_threshold: 1],
+          intrinsic_reporting: true
+        )
+
+      assert :ok = TrendLogger.add_object(server, object)
+
+      :sys.replace_state(server, fn state ->
+        update_in(state.logs[make_id(object)], &%{&1 | seq_number: 4_294_967_295})
+      end)
+
+      clock_change(server, 1_500_000)
+
+      assert_receive {:bacnet_trend_logger, nil, %TrendLog{enable: false},
+                      %{event: :buffer_full, buffer: {^backend, buffer}}}
+
+      assert_receive {:bacnet_trend_logger, nil, %TrendLog{enable: false},
+                      %{event: :intrinsic_reporting}}
+
+      assert [
+               %LogRecord{log_datum: {:time_change, 1.5}},
+               %LogRecord{log_datum: %LogStatus{log_disabled: true}}
+             ] = backend.to_list(buffer)
+
+      assert {:ok, {2, ^backend, ^buffer}} = TrendLogger.get_buffer(server, object)
+      clock_change(server, 1_000_000)
+      assert {:ok, {2, ^backend, ^buffer}} = TrendLogger.get_buffer(server, object)
+    end
+  end
+
+  test "DST transitions record both directions once in every log type" do
+    {server, periods, timezone} = timezone_logger()
+    objects = [event_log(1), trend(1), trend_multiple(1, [property_ref(analog(), nil)])]
+    for object <- objects, do: assert(:ok = TrendLogger.add_object(server, object))
+    assert :sys.get_state(server).timezone_offset == 3_600
+
+    Agent.update(periods, &%{&1 | std_offset: 3_600, zone_abbr: "DST"})
+    before = BACnetDateTime.from_datetime(DateTime.now!(timezone, TimeZoneDatabase))
+    check_time(server)
+
+    for object <- objects do
+      assert [record] = records(server, object)
+      assert Map.get(record, :log_datum, Map.get(record, :log_data)) == {:time_change, 3_600.0}
+      assert BACnetDateTime.compare(record.timestamp, before) in [:eq, :gt]
+
+      after_time = BACnetDateTime.from_datetime(DateTime.now!(timezone, TimeZoneDatabase))
+      assert BACnetDateTime.compare(record.timestamp, after_time) in [:eq, :lt]
+    end
+
+    check_time(server)
+    for object <- objects, do: assert(length(records(server, object)) == 1)
+
+    Agent.update(periods, &%{&1 | std_offset: 0, zone_abbr: "STD"})
+    check_time(server)
+
+    for object <- objects do
+      assert {:ok, {2, LogBuffer, buffer}} = TrendLogger.get_buffer(server, object)
+      assert [_first, record] = LogBuffer.to_list(buffer)
+      assert Map.get(record, :log_datum, Map.get(record, :log_data)) == {:time_change, -3_600.0}
+    end
+  end
+
+  test "timezone tracking uses the total offset and supports non-hour rule changes" do
+    {server, periods, _timezone} = timezone_logger()
+    object = trend(1)
+    assert :ok = TrendLogger.add_object(server, object)
+
+    Agent.update(periods, &%{&1 | utc_offset: 5_400})
+    check_time(server)
+    assert [%LogRecord{log_datum: {:time_change, 1_800.0}}] = records(server, object)
+
+    # An abbreviation change or a redistribution between UTC and DST offsets
+    # without changing local clock time must not create another record.
+    Agent.update(periods, &%{&1 | utc_offset: 3_600, std_offset: 1_800, zone_abbr: "NEW"})
+    check_time(server)
+    assert [%LogRecord{log_datum: {:time_change, 1_800.0}}] = records(server, object)
+    assert :sys.get_state(server).timezone_offset == 5_400
+  end
+
+  test "timezone tracking advances with no objects and while logging is disabled" do
+    {server, periods, _timezone} = timezone_logger()
+    Agent.update(periods, &%{&1 | std_offset: 3_600})
+    check_time(server)
+    object = trend(1, enable: false)
+    assert :ok = TrendLogger.add_object(server, object)
+
+    Agent.update(periods, &%{&1 | std_offset: 0})
+    check_time(server)
+    assert records(server, object) == []
+    assert :sys.get_state(server).timezone_offset == 3_600
+
+    assert :ok = TrendLogger.change_log_state(server, object, :enable)
+    check_time(server)
+    assert [%LogRecord{log_datum: %LogStatus{}}] = records(server, object)
+
+    Agent.update(periods, &%{&1 | std_offset: 1_800})
+    check_time(server)
+
+    assert [
+             %LogRecord{log_datum: %LogStatus{}},
+             %LogRecord{log_datum: {:time_change, 1_800.0}}
+           ] = records(server, object)
+  end
+
+  test "system-clock and timezone changes are accounted for once in either detection order" do
+    {server, periods, _timezone} = timezone_logger()
+    object = trend(1)
+    assert :ok = TrendLogger.add_object(server, object)
+
+    Agent.update(periods, &%{&1 | std_offset: 3_600})
+    clock_change(server, 250_000)
+    check_time(server)
+    assert [%LogRecord{log_datum: {:time_change, 3_600.25}}] = records(server, object)
+
+    Agent.update(periods, &%{&1 | std_offset: 0})
+    check_time(server)
+    clock_change(server, 500_000)
+    check_time(server)
+
+    assert [
+             %LogRecord{log_datum: {:time_change, 3_600.25}},
+             %LogRecord{log_datum: {:time_change, -3_600.0}},
+             %LogRecord{log_datum: {:time_change, 0.5}}
+           ] = records(server, object)
+  end
+
+  test "DST transitions reevaluate time windows and polling eligibility" do
+    {server, periods, timezone} = timezone_logger()
+    now = DateTime.now!(timezone, TimeZoneDatabase)
+
+    expiring =
+      trend(1,
+        start_time:
+          BACnetDateTime.from_datetime(DateTime.add(now, -1_800, :second, TimeZoneDatabase)),
+        stop_time:
+          BACnetDateTime.from_datetime(DateTime.add(now, 1_800, :second, TimeZoneDatabase)),
+        logging_type: :polled,
+        log_interval: 6_000
+      )
+
+    starting =
+      trend(2,
+        start_time:
+          BACnetDateTime.from_datetime(DateTime.add(now, 1_800, :second, TimeZoneDatabase)),
+        stop_time:
+          BACnetDateTime.from_datetime(DateTime.add(now, 7_200, :second, TimeZoneDatabase)),
+        logging_type: :polled,
+        log_interval: 6_000
+      )
+
+    assert :ok = TrendLogger.add_object(server, expiring)
+    assert :ok = TrendLogger.add_object(server, starting)
+    timer = :sys.get_state(server).logs[make_id(expiring)].poll_timer
+    assert is_reference(timer)
+    refute :sys.get_state(server).logs[make_id(starting)].enabled
+
+    Agent.update(periods, &%{&1 | std_offset: 3_600})
+    check_time(server)
+
+    assert [%LogRecord{log_datum: %LogStatus{}}] = records(server, expiring)
+
+    assert [
+             %LogRecord{log_datum: %LogStatus{}},
+             %LogRecord{log_datum: {:time_change, 3_600.0}}
+           ] = records(server, starting)
+
+    state = :sys.get_state(server)
+    refute state.logs[make_id(expiring)].enabled
+    assert state.logs[make_id(expiring)].poll_timer == nil
+    assert Process.read_timer(timer) == false
+    assert state.logs[make_id(starting)].enabled
+    assert is_reference(state.logs[make_id(starting)].poll_timer)
+  end
+
+  test "restoring buffers resets the timezone baseline to the current period" do
+    {server, periods, timezone} = timezone_logger()
+    object = trend(1)
+    assert :ok = TrendLogger.add_object(server, object)
+    assert :ok = TrendLogger.trigger_log(server, object, :interrupted)
+    # Snapshots saved before timezone tracking have no timezone_offset field.
+    saved = Map.delete(:sys.get_state(server), :timezone_offset)
+    Agent.update(periods, &%{&1 | std_offset: 3_600})
+
+    {:ok, restored} =
+      TrendLogger.start_link(
+        lookup_cb: &ok_lookup/1,
+        timezone: timezone,
+        timezone_database: TimeZoneDatabase,
+        state: saved
+      )
+
+    check_time(restored)
+    assert :sys.get_state(restored).timezone_offset == 7_200
+    assert [%LogRecord{log_datum: %LogStatus{}}] = records(restored, object)
+
+    Agent.update(periods, &%{&1 | std_offset: 0})
+    check_time(restored)
+
+    assert [
+             %LogRecord{log_datum: %LogStatus{}},
+             %LogRecord{log_datum: {:time_change, -3_600.0}}
+           ] = records(restored, object)
+  end
+
+  for backend <- [LogBuffer, LogBufferTree] do
+    test "timezone changes preserve buffer limits and notifications with #{inspect(backend)}" do
+      backend = unquote(backend)
+
+      {server, periods, _timezone} =
+        timezone_logger(log_buffer_module: backend, notification_receiver: self())
+
+      object =
+        trend(1, [buffer_size: 2, stop_when_full: true, notification_threshold: 1],
+          intrinsic_reporting: true
+        )
+
+      assert :ok = TrendLogger.add_object(server, object)
+      Agent.update(periods, &%{&1 | std_offset: 3_600})
+      check_time(server)
+
+      assert_receive {:bacnet_trend_logger, nil, %TrendLog{enable: false},
+                      %{event: :buffer_full, buffer: {^backend, buffer}}}
+
+      assert_receive {:bacnet_trend_logger, nil, %TrendLog{enable: false},
+                      %{event: :intrinsic_reporting}}
+
+      assert [
+               %LogRecord{log_datum: {:time_change, 3_600.0}},
+               %LogRecord{log_datum: %LogStatus{log_disabled: true}}
+             ] = backend.to_list(buffer)
+
+      Agent.update(periods, &%{&1 | std_offset: 0})
+      check_time(server)
+      assert {:ok, {2, ^backend, ^buffer}} = TrendLogger.get_buffer(server, object)
+    end
   end
 
   test "a triggered trend log records a local object value", %{server: server} do
@@ -413,6 +830,211 @@ defmodule BACnet.Stack.TrendLoggerTest do
     assert :ok = TrendLogger.trigger_log(logger, log, analog())
     assert {:ok, {2, _buffer_module, buffer}} = TrendLogger.get_buffer(logger, log)
     assert length(LogBuffer.to_list(buffer)) == 1
+  end
+
+  test "aligned Trend Log and Trend Log Multiple timers retain their phase after lookup" do
+    server = start_logger()
+
+    objects = [
+      aligned_trend(1),
+      trend_multiple(
+        1,
+        [property_ref(analog(), nil)],
+        logging_type: :polled,
+        log_interval: 90_000,
+        align_intervals: true,
+        interval_offset: 3_000
+      )
+    ]
+
+    for object <- objects do
+      assert :ok = TrendLogger.add_object(server, object)
+      assert_aligned_timer(server, object)
+      fire_poll(server, object)
+      assert [_record] = await_records(server, object, 1)
+      assert_aligned_timer(server, object)
+    end
+  end
+
+  test "alignment updates replace timers while equivalent phases keep a single timer" do
+    server = start_logger()
+    object = aligned_trend(1)
+    id = make_id(object)
+    assert :ok = TrendLogger.add_object(server, object)
+    first = :sys.get_state(server).logs[id].poll_timer
+
+    assert :ok = TrendLogger.update_object(server, object)
+    equivalent = %{object | interval_offset: object.interval_offset + object.log_interval}
+    assert :ok = TrendLogger.update_object(server, equivalent)
+    assert :sys.get_state(server).logs[id].poll_timer == first
+
+    shifted = %{object | interval_offset: 6_000}
+    assert :ok = TrendLogger.update_object(server, shifted)
+    second = :sys.get_state(server).logs[id].poll_timer
+    refute second == first
+    assert Process.read_timer(first) == false
+    assert_aligned_timer(server, shifted)
+
+    # Neither an expired timer nor an in-flight result from the old phase is used.
+    send(server, {:timeout, first, {:poll_log, id}})
+    send(server, {:submit_poll, id, first, analog()})
+    assert records(server, shifted) == []
+    assert :sys.get_state(server).logs[id].poll_timer == second
+
+    relative = %{shifted | align_intervals: false}
+    assert :ok = TrendLogger.update_object(server, relative)
+    third = :sys.get_state(server).logs[id].poll_timer
+    refute third == second
+    assert Process.read_timer(second) == false
+    assert Process.read_timer(third) in 899_000..900_000
+
+    assert :ok = TrendLogger.update_object(server, %{relative | interval_offset: 1})
+    assert :sys.get_state(server).logs[id].poll_timer == third
+    assert :ok = TrendLogger.update_object(server, shifted)
+    assert Process.read_timer(third) == false
+    assert_aligned_timer(server, shifted)
+  end
+
+  test "disable, reenable, mode changes and removal manage aligned timers" do
+    server = start_logger()
+    object = aligned_trend(1)
+    id = make_id(object)
+    assert :ok = TrendLogger.add_object(server, object)
+    first = :sys.get_state(server).logs[id].poll_timer
+
+    assert :ok = TrendLogger.change_log_state(server, object, :disable)
+    assert :sys.get_state(server).logs[id].poll_timer == nil
+    assert Process.read_timer(first) == false
+    assert :ok = TrendLogger.change_log_state(server, object, :enable)
+    assert_aligned_timer(server, object)
+
+    second = :sys.get_state(server).logs[id].poll_timer
+    assert :ok = TrendLogger.update_object(server, %{object | logging_type: :triggered})
+    assert Process.read_timer(second) == false
+    assert :sys.get_state(server).logs[id].poll_timer == nil
+
+    assert :ok = TrendLogger.update_object(server, object)
+    third = :sys.get_state(server).logs[id].poll_timer
+    assert :ok = TrendLogger.remove_object(server, object)
+    assert Process.read_timer(third) == false
+  end
+
+  test "COV, triggered trend logs and event logs have no alignment timer" do
+    server = start_logger()
+
+    for object <- [
+          %{aligned_trend(1) | logging_type: :cov, log_interval: 0},
+          %{aligned_trend(2) | logging_type: :triggered, log_interval: 0},
+          event_log(1)
+        ] do
+      assert :ok = TrendLogger.add_object(server, object)
+      assert :sys.get_state(server).logs[make_id(object)].poll_timer == nil
+    end
+  end
+
+  test "system-clock changes realign only aligned polls and discard stale results" do
+    server = start_logger()
+    aligned = aligned_trend(1)
+    relative = %{aligned_trend(2) | align_intervals: false}
+    disabled = %{aligned_trend(3) | enable: false}
+    for object <- [aligned, relative, disabled], do: TrendLogger.add_object(server, object)
+    original = :sys.get_state(server)
+    timer = original.logs[make_id(aligned)].poll_timer
+
+    unchanged = clock_change(server, 0)
+    assert unchanged.logs[make_id(aligned)].poll_timer == timer
+
+    for change <- [1_000_000, -2_000_000] do
+      before = :sys.get_state(server)
+      state = clock_change(server, change)
+      old_timer = before.logs[make_id(aligned)].poll_timer
+      refute state.logs[make_id(aligned)].poll_timer == old_timer
+      assert Process.read_timer(old_timer) == false
+
+      assert state.logs[make_id(relative)].poll_timer ==
+               original.logs[make_id(relative)].poll_timer
+
+      assert state.logs[make_id(disabled)].poll_timer == nil
+      assert_aligned_timer(server, aligned)
+    end
+
+    send(server, {:submit_poll, make_id(aligned), timer, analog()})
+
+    assert [
+             %LogRecord{log_datum: {:time_change, 1.0}},
+             %LogRecord{log_datum: {:time_change, -2.0}}
+           ] =
+             records(server, aligned)
+  end
+
+  test "DST changes realign daily polls in the configured timezone" do
+    {server, periods, _timezone} = timezone_logger()
+    object = %{aligned_trend(1) | log_interval: 8_640_000}
+    assert :ok = TrendLogger.add_object(server, object)
+    assert_aligned_timer(server, object)
+
+    for offset <- [3_600, 0] do
+      old_timer = :sys.get_state(server).logs[make_id(object)].poll_timer
+      Agent.update(periods, &%{&1 | std_offset: offset})
+      state = check_time(server)
+      refute state.logs[make_id(object)].poll_timer == old_timer
+      assert Process.read_timer(old_timer) == false
+      assert_aligned_timer(server, object)
+
+      assert check_time(server).logs[make_id(object)].poll_timer ==
+               state.logs[make_id(object)].poll_timer
+    end
+  end
+
+  test "restoring aligned polls uses the new timezone and preserves disabled timers" do
+    {server, _periods, _timezone} = timezone_logger()
+    aligned = %{aligned_trend(1) | log_interval: 8_640_000}
+    disabled = %{aligned_trend(2) | enable: false}
+    for object <- [aligned, disabled], do: TrendLogger.add_object(server, object)
+    saved = :sys.get_state(server)
+
+    restored =
+      start_supervised!(
+        {TrendLogger, lookup_cb: &ok_lookup/1, state: saved, timezone: "Etc/UTC"},
+        id: :restored_aligned_logger
+      )
+
+    state = :sys.get_state(restored)
+    refute state.logs[make_id(aligned)].poll_timer == saved.logs[make_id(aligned)].poll_timer
+    assert state.logs[make_id(disabled)].poll_timer == nil
+    assert_aligned_timer(restored, aligned)
+  end
+
+  test "a slow aligned lookup retains its acquisition timestamp" do
+    parent = self()
+
+    server =
+      start_logger(
+        lookup_cb: fn _ref ->
+          send(parent, {:acquiring, self()})
+
+          receive do
+            :complete -> {:ok, analog()}
+          end
+        end
+      )
+
+    object = aligned_trend(1)
+    assert :ok = TrendLogger.add_object(server, object)
+    before = BACnetDateTime.utc_now()
+    fire_poll(server, object)
+    assert_receive {:acquiring, task}
+    acquired = BACnetDateTime.utc_now()
+
+    # Cross a timestamp tick while the lookup is blocked.
+    Process.sleep(30)
+    completed = BACnetDateTime.utc_now()
+    send(task, :complete)
+    assert [record] = await_records(server, object, 1)
+    assert BACnetDateTime.compare(record.timestamp, before) in [:eq, :gt]
+    assert BACnetDateTime.compare(record.timestamp, acquired) in [:eq, :lt]
+    assert BACnetDateTime.compare(record.timestamp, completed) == :lt
+    assert_aligned_timer(server, object)
   end
 
   test "a polled trend log stores the looked up object", %{server: server, parent: parent} do
@@ -1269,7 +1891,7 @@ defmodule BACnet.Stack.TrendLoggerTest do
         end
       )
 
-    object = unscheduled_trend(1, logging_type: :polled, log_interval: 6)
+    object = unscheduled_trend(1, logging_type: :polled, log_interval: 60)
     assert :ok = TrendLogger.add_object(server, object)
     assert :ok = TrendLogger.update_object(server, object)
     assert :ok = TrendLogger.update_object(server, object)
@@ -1289,7 +1911,7 @@ defmodule BACnet.Stack.TrendLoggerTest do
         end
       )
 
-    object = unscheduled_trend(1, logging_type: :polled, log_interval: 5)
+    object = unscheduled_trend(1, logging_type: :polled, log_interval: 50)
     assert :ok = TrendLogger.add_object(server, object)
     assert :ok = TrendLogger.update_object(server, %{object | logging_type: :triggered})
 
@@ -1562,6 +2184,23 @@ defmodule BACnet.Stack.TrendLoggerTest do
     assert {:ok, {1, LogBuffer, ^buffer}} = TrendLogger.get_buffer(server, object)
   end
 
+  defp timezone_logger(opts \\ []) do
+    periods =
+      start_supervised!({Agent, fn -> %{utc_offset: 3_600, std_offset: 0, zone_abbr: "STD"} end})
+
+    timezone = "Test/" <> List.to_string(:erlang.pid_to_list(periods))
+
+    server =
+      start_logger(Keyword.merge([timezone: timezone, timezone_database: TimeZoneDatabase], opts))
+
+    {server, periods, timezone}
+  end
+
+  defp check_time(server) do
+    send(server, :check_time)
+    :sys.get_state(server)
+  end
+
   defp start_logger(opts \\ []) do
     start_supervised!(
       {TrendLogger,
@@ -1576,6 +2215,14 @@ defmodule BACnet.Stack.TrendLoggerTest do
     # Exercise the logger's explicit nil/nil (no schedule) branch. This keeps
     # notification and polling tests independent of the time-window predicate
     %{trend(instance, overrides, opts) | start_time: nil, stop_time: nil}
+  end
+
+  defp clock_change(server, microseconds) do
+    state = :sys.get_state(server)
+    offset = state.time_offset + System.convert_time_unit(microseconds, :microsecond, :native)
+    send(server, {:CHANGE, state.time_offset_monitor, :time_offset, :clock_service, offset})
+    # A call from this sender is ordered after the simulated monitor notification.
+    :sys.get_state(server)
   end
 
   defp trigger_until_stopped(server, object, remaining) do
@@ -1677,6 +2324,35 @@ defmodule BACnet.Stack.TrendLoggerTest do
 
     {:ok, object} = TrendLogMultiple.create(instance, "M#{instance}", props)
     object
+  end
+
+  defp aligned_trend(instance) do
+    trend(
+      instance,
+      logging_type: :polled,
+      log_interval: 90_000,
+      align_intervals: true,
+      interval_offset: 3_000
+    )
+  end
+
+  defp assert_aligned_timer(server, object) do
+    state = :sys.get_state(server)
+    timer = state.logs[make_id(object)].poll_timer
+    opts = state.opts
+    before = DateTime.now!(opts.timezone, opts.timezone_database)
+    remaining = Process.read_timer(timer)
+    after_time = DateTime.now!(opts.timezone, opts.timezone_database)
+    assert is_integer(remaining)
+
+    # Bracket the read rather than assuming how fast the test process runs.
+    local_ms =
+      DateTime.to_unix(before, :millisecond) + (before.utc_offset + before.std_offset) * 1000
+
+    period = PollSchedule.interval(object.log_interval)
+    phase = Integer.mod(local_ms + remaining - object.interval_offset * 10, period)
+    uncertainty = DateTime.diff(after_time, before, :millisecond) + 5
+    assert min(phase, period - phase) <= uncertainty
   end
 
   defp id_of(object), do: ObjectsUtility.get_object_identifier(object)

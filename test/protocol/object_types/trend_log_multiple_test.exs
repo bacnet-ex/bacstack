@@ -57,72 +57,57 @@ defmodule BACnet.Test.Protocol.ObjectTypes.TrendLogMultipleTest do
              })
   end
 
-  test "verify create/4 verifies clock_aligned_logging and requires both properties" do
-    assert {:error, {:missing_required_property, _property}} =
-             TrendLogMultiple.create(
-               1,
-               "TEST",
-               %{
-                 buffer_size: 100,
-                 log_device_object_property:
-                   BACnetArray.from_list([ObjectsMacro.get_default_dev_object_ref()]),
-                 log_interval: 0,
-                 logging_type: :triggered
-               },
-               clock_aligned_logging: true
-             )
+  test "alignment properties remain absent when neither is supplied" do
+    assert {:ok, object} = create_alignment_log(%{})
+    refute TrendLogMultiple.has_property?(object, :align_intervals)
+    refute TrendLogMultiple.has_property?(object, :interval_offset)
   end
 
-  test "verify create/4 verifies clock_aligned_logging and requires property align_intervals" do
-    assert {:error, {:missing_required_property, :align_intervals}} =
-             TrendLogMultiple.create(
-               1,
-               "TEST",
-               %{
-                 interval_offset: 0,
-                 buffer_size: 100,
-                 log_device_object_property:
-                   BACnetArray.from_list([ObjectsMacro.get_default_dev_object_ref()]),
-                 log_interval: 0,
-                 logging_type: :triggered
-               },
-               clock_aligned_logging: true
-             )
+  test "supplying align_intervals adds a zero interval_offset" do
+    for enabled <- [false, true] do
+      assert {:ok, object} = create_alignment_log(%{align_intervals: enabled})
+      assert object.align_intervals == enabled
+      assert object.interval_offset == 0
+      assert TrendLogMultiple.has_property?(object, :align_intervals)
+      assert TrendLogMultiple.has_property?(object, :interval_offset)
+    end
   end
 
-  test "verify create/4 verifies clock_aligned_logging and requires property interval_offset" do
-    assert {:error, {:missing_required_property, :interval_offset}} =
-             TrendLogMultiple.create(
-               1,
-               "TEST",
-               %{
-                 align_intervals: false,
-                 buffer_size: 100,
-                 log_device_object_property:
-                   BACnetArray.from_list([ObjectsMacro.get_default_dev_object_ref()]),
-                 log_interval: 0,
-                 logging_type: :triggered
-               },
-               clock_aligned_logging: true
-             )
+  test "supplying interval_offset adds align_intervals disabled by default" do
+    assert {:ok, object} = create_alignment_log(%{interval_offset: 3_000})
+    refute object.align_intervals
+    assert object.interval_offset == 3_000
+    assert TrendLogMultiple.has_property?(object, :align_intervals)
+    assert TrendLogMultiple.has_property?(object, :interval_offset)
   end
 
-  test "verify create/4 verifies clock_aligned_logging and with both properties succeeds" do
-    assert {:ok, %TrendLogMultiple{}} =
-             TrendLogMultiple.create(
-               1,
-               "TEST",
-               %{
-                 align_intervals: false,
-                 interval_offset: 0,
-                 buffer_size: 100,
-                 log_device_object_property:
-                   BACnetArray.from_list([ObjectsMacro.get_default_dev_object_ref()]),
-                 log_interval: 0,
-                 logging_type: :triggered
-               },
-               clock_aligned_logging: true
-             )
+  test "supplying both alignment properties preserves their values" do
+    assert {:ok, %{align_intervals: true, interval_offset: 3_000}} =
+             create_alignment_log(%{align_intervals: true, interval_offset: 3_000})
+  end
+
+  test "adding either alignment property adds its partner" do
+    assert {:ok, object} = create_alignment_log(%{})
+
+    for {property, value} <- [align_intervals: true, interval_offset: 3_000] do
+      assert {:ok, updated} = TrendLogMultiple.add_property(object, property, value)
+      assert TrendLogMultiple.has_property?(updated, :align_intervals)
+      assert TrendLogMultiple.has_property?(updated, :interval_offset)
+      assert Map.fetch!(updated, property) == value
+      assert updated.align_intervals == (property == :align_intervals)
+      assert updated.interval_offset == if(property == :interval_offset, do: 3_000, else: 0)
+    end
+  end
+
+  test "removing either alignment property removes the pair" do
+    assert {:ok, object} =
+             create_alignment_log(%{align_intervals: true, interval_offset: 3_000})
+
+    for property <- [:align_intervals, :interval_offset] do
+      assert {:ok, updated} = TrendLogMultiple.remove_property(object, property)
+      refute TrendLogMultiple.has_property?(updated, :align_intervals)
+      refute TrendLogMultiple.has_property?(updated, :interval_offset)
+    end
   end
 
   test "verify create/4 adds Log_Buffer for remote objects" do
@@ -376,5 +361,22 @@ defmodule BACnet.Test.Protocol.ObjectTypes.TrendLogMultipleTest do
 
     assert {:error, {:invalid_property_value, :record_count}} =
              TrendLogMultiple.update_property(obj, :record_count, 1)
+  end
+
+  defp create_alignment_log(properties) do
+    TrendLogMultiple.create(
+      1,
+      "TEST",
+      Map.merge(
+        %{
+          buffer_size: 100,
+          log_device_object_property:
+            BACnetArray.from_list([ObjectsMacro.get_default_dev_object_ref()]),
+          log_interval: 90_000,
+          logging_type: :polled
+        },
+        properties
+      )
+    )
   end
 end

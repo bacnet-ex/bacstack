@@ -120,7 +120,7 @@ By default, Codepagex only generates conversion code for fast conversion algorit
 If you need to use other character sets, such as CP932 (JIS-X-0208) or CP850 (DBCS), you will have to configure  Codepagex accordingly.
 Refer to their documentation for the necessary steps.
 
-## Time Zone
+## Timezone
 
 When using this library, there are some functions that take or return `DateTime` structs.
 Inside the library, there is a default timezone that will be used, when you don't particularily set/override the timezone.

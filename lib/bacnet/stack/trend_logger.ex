@@ -23,7 +23,25 @@ defmodule BACnet.Stack.TrendLogger do
   For COV reporting on the local device, the user has to route COV notifications
   to this module manually and invoke the `notify/2` function.
 
-  Please note that clock-aligned logging is currently not supported by this module.
+  Polled Trend Log and Trend Log Multiple objects support clock-aligned logging.
+  Set `align_intervals: true` on the object, and specify `log_interval` and
+  `interval_offset` in hundredths of a second. The alignment properties are optional
+  and occur together; `interval_offset` defaults to zero when only `align_intervals`
+  is supplied.
+  Intervals that divide a second, minute, hour, or day align to that boundary in
+  the configured timezone. The offset is reduced modulo the interval. For example,
+  `log_interval: 90_000` and `interval_offset: 3_000` acquire at :00:30, :15:30,
+  :30:30, and :45:30 each hour.
+
+  Each completed acquisition schedules the next future aligned time, so lookup
+  latency does not accumulate as clock drift. Missed periods are skipped; normal
+  polling waits for lookup completion. Timers are realigned after detected system-clock
+  or timezone offset changes. Acquisition and record delivery may be delayed by
+  process scheduling or lookup latency. Polled records use the acquisition start
+  time as their timestamp. COV and triggered logging ignore alignment.
+  With alignment disabled, or an interval that divides none of the four units,
+  polling uses a relative interval after each acquisition and ignores the offset.
+  A zero interval in polled mode uses a relative one-second default.
 
   Whenever the buffer reaches its max size, a notification can be sent to the
   specified notification receiver (an atom (registered name) or PID). Additionally,
@@ -42,11 +60,27 @@ defmodule BACnet.Stack.TrendLogger do
   - `event: :buffer_full | :intrinsic_reporting`
   - `intrinsic: NotificationParameters.BufferReady.t() | nil`
 
-  To trigger `time_change` log data in the log buffer, these need to be manually
-  triggered by the user. There's no clock time tracking in this module.
-  Theoretically this can be implemented by monitoring time offsets using
-  `:erlang.monitor(:time_offset, :clock_service)` and process those message.
-  Upon processing these messages, one can trigger `time_change` using `trigger_log/3`.
+  System clock changes are tracked using `:erlang.monitor(:time_offset, :clock_service)`.
+  Each nonzero offset change automatically adds a `{:time_change, seconds}` record
+  to every enabled log within its logging time window, including event logs.
+  The adjustment is signed and includes fractional seconds; records are timestamped
+  using the current time after the change. Normal buffer limits and notifications apply.
+
+  Detection follows the Erlang runtime's time warp mode and may be delayed.
+  Multi time warp mode is recommended for detecting system clock adjustments.
+  Timezone and daylight saving transitions are tracked separately by comparing
+  the configured timezone's total UTC offset (`utc_offset + std_offset`) during
+  the existing one-second logging time check. Each observed change adds a signed
+  `time_change` record through the same logging path. Changes to timezone rules
+  are detected when the configured timezone database starts returning a new offset.
+  Detection can take longer when the logger is busy; only the net offset change
+  between checks is recorded.
+
+  Regional timezones require a configured `Calendar.TimeZoneDatabase` implementation -
+  Elixir's default database only supports `Etc/UTC`. The `timezone_database` option
+  can select a database for this logger.
+  Restoring state starts tracking from the current system and timezone offsets -
+  changes while the logger was stopped are not reconstructed.
   """
 
   alias BACnet.Protocol.ApplicationTags
@@ -77,6 +111,7 @@ defmodule BACnet.Stack.TrendLogger do
   alias BACnet.Stack.LogBuffer
   alias BACnet.Stack.LogBufferBehaviour
   alias BACnet.Stack.Telemetry
+  alias BACnet.Stack.TrendLogger.PollSchedule
 
   import BACnet.Internal, only: [log_debug: 1]
 
@@ -144,6 +179,9 @@ defmodule BACnet.Stack.TrendLogger do
     """
     @type t :: %__MODULE__{
             log_buff_mod: module(),
+            time_offset: integer() | nil,
+            time_offset_monitor: reference() | nil,
+            timezone_offset: integer() | nil,
             logs: %{
               optional({Constants.object_type(), instance_number :: non_neg_integer()}) =>
                 %BACnet.Stack.TrendLogger.Log{}
@@ -163,13 +201,14 @@ defmodule BACnet.Stack.TrendLogger do
                             {:ok, BACnet.Stack.TrendLogger.object()} | {:error, term()}),
               notification_receiver: Process.dest() | nil,
               supervisor: Supervisor.supervisor() | nil,
-              timezone: Calendar.time_zone()
+              timezone: Calendar.time_zone(),
+              timezone_database: module()
             }
           }
 
     @fields [:log_buff_mod, :logs, :opts]
     @enforce_keys @fields
-    defstruct @fields
+    defstruct @fields ++ [time_offset: nil, time_offset_monitor: nil, timezone_offset: nil]
   end
 
   defguardp is_object_event(ref) when is_struct(ref, EventLog)
@@ -226,6 +265,7 @@ defmodule BACnet.Stack.TrendLogger do
           | {:state, State.t()}
           | {:supervisor, Supervisor.supervisor()}
           | {:timezone, Calendar.time_zone()}
+          | {:timezone_database, module()}
           | GenServer.option()
 
   @typedoc """
@@ -274,7 +314,13 @@ defmodule BACnet.Stack.TrendLogger do
     Tasks are spawned to invoke the given callback. If no supervisor is given,
     the tasks will be spawned unsupervised.
 
-  - `timezone: Calendar.time_zone()` - Optional. The timezone to use for timestamps. Defaults to `Etc/UTC` (resp. default timezone).
+  - `timezone: Calendar.time_zone()` - Optional. The timezone to use for timestamps and
+    clock-aligned polling. Defaults to `Etc/UTC` (resp. default timezone).
+
+  - `timezone_database: module()` - Optional. A `Calendar.TimeZoneDatabase` implementation for
+    timestamps, logging time windows and timezone/DST tracking. Defaults to
+    `Calendar.get_time_zone_database/0` at startup. Regional timezones require a database
+    that supports them; Elixir's default database only supports `Etc/UTC`.
   """
   @spec start_link(start_options()) :: GenServer.on_start()
   def start_link(opts) do
@@ -290,7 +336,8 @@ defmodule BACnet.Stack.TrendLogger do
         :notification_receiver,
         :state,
         :supervisor,
-        :timezone
+        :timezone,
+        :timezone_database
       ])
 
     validate_start_link_opts(opts2)
@@ -442,6 +489,7 @@ defmodule BACnet.Stack.TrendLogger do
   - enable
   - Intrinsic Reporting (notification threshold)
   - log_interval (trend logs only)
+  - align_intervals and interval_offset (polled trend logs only)
   - logging_type (trend logs only)
   - start_time and stop_time
   - stop_when_full
@@ -464,10 +512,15 @@ defmodule BACnet.Stack.TrendLogger do
       |> Map.put_new(:notification_receiver, nil)
       |> Map.put_new(:supervisor, nil)
       |> Map.put_new(:timezone, Application.get_env(:bacstack, :default_timezone, "Etc/UTC"))
+      |> Map.put_new(:timezone_database, Calendar.get_time_zone_database())
 
     state =
       case opts do
         %{state: %State{} = state} ->
+          # Supply new fields when restoring a snapshot from an older version.
+          %State{} = state = struct!(State, Map.from_struct(state))
+          state = %State{state | opts: new_opts}
+
           # Setup timers to poll all trend logs with logging_type == :polled
           logs =
             Map.new(state.logs, fn {id, %Log{} = log} ->
@@ -499,6 +552,16 @@ defmodule BACnet.Stack.TrendLogger do
             opts: new_opts
           }
       end
+
+    # Monitors belong to this process, so never reuse one from restored state.
+    time_offset_monitor = :erlang.monitor(:time_offset, :clock_service)
+
+    state = %State{
+      state
+      | time_offset_monitor: time_offset_monitor,
+        time_offset: :erlang.time_offset(),
+        timezone_offset: timezone_offset(local_now(state))
+    }
 
     # Check after 1s for start_time and stop_time
     # in every object
@@ -771,7 +834,7 @@ defmodule BACnet.Stack.TrendLogger do
   def handle_call(
         {:trigger_log, object, log_entry},
         _dest,
-        %State{log_buff_mod: log_buff_mod} = state
+        %State{} = state
       )
       when is_object(object) do
     log_debug(fn -> "TrendLogger: Received trigger_log request for #{make_log_id(object)}" end)
@@ -787,17 +850,7 @@ defmodule BACnet.Stack.TrendLogger do
 
           with {:cont, log_datum} <-
                  find_log_datum_from_trigger(log, object, log_entry, size, state) do
-            send(self(), {:maybe_notify_receiver, id})
-
-            new_log =
-              log_datum
-              |> then(&create_record(log, &1, id, state))
-              |> then(&log_buff_mod.checkin(log.buffer, &1))
-              |> then(&%Log{log | buffer: &1, seq_number: increment_seq_number(log.seq_number)})
-
-            Telemetry.execute_trend_logger_log_trigger(self(), new_log, log_entry, state)
-
-            {:ok, %State{state | logs: Map.put(state.logs, id, new_log)}}
+            {:ok, append_triggered_record(log, log_datum, log_entry, id, state)}
           end
 
         _else ->
@@ -987,11 +1040,12 @@ defmodule BACnet.Stack.TrendLogger do
         object: %TrendLog{} = object
       } ->
         server = self()
+        timestamp = BACnetDateTime.from_datetime(local_now(state))
 
         spawn_task(
           fn ->
             result = run_lookup_cb(server, lookup_cb, object.log_device_object_property)
-            send(server, {:submit_poll, id, timer, result})
+            send(server, {:submit_poll, id, timer, result, timestamp})
           end,
           state
         )
@@ -1003,6 +1057,7 @@ defmodule BACnet.Stack.TrendLogger do
         object: %TrendLogMultiple{} = object
       } ->
         server = self()
+        timestamp = BACnetDateTime.from_datetime(local_now(state))
 
         spawn_task(
           fn ->
@@ -1019,14 +1074,14 @@ defmodule BACnet.Stack.TrendLogger do
               on_timeout: :kill_task,
               ordered: true,
               # Let a task run for max 1min or until the next interval (minus 10ms for processing)
-              timeout: min(60_000, make_interval(object.log_interval) - 10)
+              timeout: max(1, min(60_000, PollSchedule.interval(object.log_interval) - 10))
             )
             |> Enum.map(fn
               {:ok, value} -> value
               {:exit, :timeout} -> create_timeout_error()
               {:exit, _reason} -> create_internal_error_error()
             end)
-            |> then(&send(server, {:submit_poll, id, timer, &1}))
+            |> then(&send(server, {:submit_poll, id, timer, &1, timestamp}))
           end,
           state
         )
@@ -1038,7 +1093,16 @@ defmodule BACnet.Stack.TrendLogger do
     {:noreply, state}
   end
 
-  def handle_info({:submit_poll, id, timer, result}, %State{log_buff_mod: log_buff_mod} = state)
+  def handle_info({:submit_poll, id, timer, result}, %State{} = state)
+      when is_reference(timer) do
+    timestamp = BACnetDateTime.from_datetime(local_now(state))
+    handle_info({:submit_poll, id, timer, result, timestamp}, state)
+  end
+
+  def handle_info(
+        {:submit_poll, id, timer, result, %BACnetDateTime{} = timestamp},
+        %State{log_buff_mod: log_buff_mod} = state
+      )
       when is_reference(timer) do
     log_debug(fn -> "TrendLogger: Received submit_poll message for #{inspect(id)}" end)
 
@@ -1062,6 +1126,7 @@ defmodule BACnet.Stack.TrendLogger do
               new_log =
                 log_datum
                 |> then(&create_record(log, &1, id, state))
+                |> Map.put(:timestamp, timestamp)
                 |> then(&log_buff_mod.checkin(log.buffer, &1))
                 |> then(&%{log | buffer: &1, seq_number: increment_seq_number(log.seq_number)})
 
@@ -1109,43 +1174,36 @@ defmodule BACnet.Stack.TrendLogger do
     {:noreply, state}
   end
 
-  def handle_info(:check_time, %State{log_buff_mod: log_buff_mod} = state) do
+  def handle_info(
+        {:CHANGE, ref, :time_offset, :clock_service, offset},
+        %State{time_offset_monitor: ref, time_offset: previous_offset} = state
+      )
+      when is_reference(ref) and is_integer(offset) do
+    new_state = %State{state | time_offset: offset}
+    {timezone_change, new_state} = check_timezone_offset(new_state)
+
+    # Include any timezone transition crossed by this system-clock adjustment.
+    # Updating both baselines prevents the periodic check from logging it again.
+    seconds =
+      (offset - previous_offset) / System.convert_time_unit(1, :second, :native) + timezone_change
+
+    new_state = check_log_time(new_state)
+
     new_state =
-      Enum.reduce(state.logs, state, fn
-        {id,
-         %Log{object: %{start_time: %BACnetDateTime{}, stop_time: %BACnetDateTime{}} = object} =
-             log},
-        %State{} = acc ->
-          new_enabled = log_enabled?(object, acc)
+      if offset != previous_offset or timezone_change != 0,
+        do: realign_poll_timers(new_state),
+        else: new_state
 
-          if new_enabled != log.enabled do
-            new_log = %Log{
-              log
-              | enabled: new_enabled,
-                buffer:
-                  log_buff_mod.checkin(
-                    log.buffer,
-                    create_record(log, if(new_enabled, do: :enable, else: :disable), id, acc)
-                  ),
-                seq_number: increment_seq_number(log.seq_number)
-            }
+    {:noreply, append_time_change(new_state, seconds)}
+  end
 
-            send(self(), {:maybe_notify_receiver, id})
+  def handle_info(:check_time, %State{} = state) do
+    {timezone_change, new_state} = check_timezone_offset(state)
+    new_state = check_log_time(new_state)
+    new_state = if timezone_change != 0, do: realign_poll_timers(new_state), else: new_state
+    new_state = append_time_change(new_state, timezone_change)
 
-            new_log = handle_change_enabled_state(new_log, id, log, acc)
-            new_state = %State{acc | logs: Map.put(acc.logs, id, new_log)}
-
-            new_state
-          else
-            acc
-          end
-
-        _term, acc ->
-          acc
-      end)
-
-    # Check after 1s for start_time and stop_time
-    # in every object, again!
+    # Check after 1s for start_time and stop_time in every object, again!
     Process.send_after(self(), :check_time, 1000)
 
     {:noreply, new_state}
@@ -1156,14 +1214,85 @@ defmodule BACnet.Stack.TrendLogger do
     {:noreply, state}
   end
 
+  defp local_now(%State{opts: opts}) do
+    DateTime.now!(opts.timezone, opts.timezone_database)
+  end
+
+  defp timezone_offset(%DateTime{utc_offset: utc_offset, std_offset: std_offset}) do
+    utc_offset + std_offset
+  end
+
+  defp check_timezone_offset(%State{timezone_offset: previous_offset} = state) do
+    offset = timezone_offset(local_now(state))
+    {offset - previous_offset, %State{state | timezone_offset: offset}}
+  end
+
+  defp append_time_change(state, seconds) when seconds == 0, do: state
+
+  defp append_time_change(%State{} = state, seconds) do
+    entry = {:time_change, seconds / 1}
+
+    Enum.reduce(state.logs, state, fn
+      {id, %Log{enabled: true} = log}, acc ->
+        append_triggered_record(log, entry, entry, id, acc)
+
+      _log, acc ->
+        acc
+    end)
+  end
+
+  defp check_log_time(%State{log_buff_mod: log_buff_mod} = state) do
+    Enum.reduce(state.logs, state, fn
+      {id,
+       %Log{object: %{start_time: %BACnetDateTime{}, stop_time: %BACnetDateTime{}} = object} =
+           log},
+      %State{} = acc ->
+        new_enabled = log_enabled?(object, acc)
+
+        if new_enabled != log.enabled do
+          new_log = %Log{
+            log
+            | enabled: new_enabled,
+              buffer:
+                log_buff_mod.checkin(
+                  log.buffer,
+                  create_record(log, if(new_enabled, do: :enable, else: :disable), id, acc)
+                ),
+              seq_number: increment_seq_number(log.seq_number)
+          }
+
+          send(self(), {:maybe_notify_receiver, id})
+
+          new_log = handle_change_enabled_state(new_log, id, log, acc)
+          new_state = %State{acc | logs: Map.put(acc.logs, id, new_log)}
+
+          new_state
+        else
+          acc
+        end
+
+      _term, acc ->
+        acc
+    end)
+  end
+
+  defp append_triggered_record(%Log{} = log, log_datum, log_entry, id, %State{} = state) do
+    send(self(), {:maybe_notify_receiver, id})
+
+    new_log =
+      log_datum
+      |> then(&create_record(log, &1, id, state))
+      |> then(&state.log_buff_mod.checkin(log.buffer, &1))
+      |> then(&%Log{log | buffer: &1, seq_number: increment_seq_number(log.seq_number)})
+
+    Telemetry.execute_trend_logger_log_trigger(self(), new_log, log_entry, state)
+
+    %State{state | logs: Map.put(state.logs, id, new_log)}
+  end
+
   defp make_id(%{object_instance: num} = object) do
     {ObjectsUtility.get_object_type(object), num}
   end
-
-  # log_interval is in hundreds of seconds, default to 1 second on 0
-  defp make_interval(log_interval)
-  defp make_interval(0), do: 1000
-  defp make_interval(log_interval), do: log_interval * 100
 
   @spec log_enabled?(object(), State.t()) :: boolean()
   defp log_enabled?(object, state)
@@ -1174,9 +1303,9 @@ defmodule BACnet.Stack.TrendLogger do
            start_time: %BACnetDateTime{} = start,
            stop_time: %BACnetDateTime{} = stop
          },
-         %State{opts: %{timezone: tz}}
+         %State{} = state
        ) do
-    now = BACnetDateTime.from_datetime(DateTime.now!(tz))
+    now = BACnetDateTime.from_datetime(local_now(state))
 
     not match?(:gt, BACnetDateTime.compare(start, now)) and
       match?(:lt, BACnetDateTime.compare(now, stop))
@@ -1214,10 +1343,11 @@ defmodule BACnet.Stack.TrendLogger do
          %{enabled: true, mode: @const_log_type_polled} = log,
          object,
          id,
-         _state
+         state
        ) do
     # Keep this reference through the lookup to reject stale requests and results
-    timer = :erlang.start_timer(make_interval(object.log_interval), self(), {:poll_log, id})
+    delay = PollSchedule.delay(object, local_now(state))
+    timer = :erlang.start_timer(delay, self(), {:poll_log, id})
 
     %{log | poll_timer: timer}
   end
@@ -1232,6 +1362,24 @@ defmodule BACnet.Stack.TrendLogger do
     %Log{log | poll_timer: nil}
   end
 
+  defp realign_poll_timers(%State{} = state) do
+    logs =
+      Map.new(state.logs, fn
+        {id, %Log{enabled: true, mode: @const_log_type_polled} = log} ->
+          if PollSchedule.alignment(log.object) != nil do
+            log = cancel_poll_timer(log)
+            {id, apply_log_mechanism(log, log.object, id, state)}
+          else
+            {id, log}
+          end
+
+        entry ->
+          entry
+      end)
+
+    %State{state | logs: logs}
+  end
+
   @spec handle_change_enabled_state(Log.t(), term(), Log.t(), State.t()) :: Log.t()
   defp handle_change_enabled_state(
          %Log{
@@ -1239,17 +1387,26 @@ defmodule BACnet.Stack.TrendLogger do
            mode: @const_log_type_polled,
            object: %{log_interval: interval, log_device_object_property: reference}
          } = log,
-         _id,
+         id,
          %Log{
            enabled: true,
            mode: @const_log_type_polled,
            object: %{log_interval: interval, log_device_object_property: reference}
-         },
-         _state
-       ),
-       do: log
+         } = previous_log,
+         state
+       ) do
+    if PollSchedule.alignment(log.object) == PollSchedule.alignment(previous_log.object) do
+      log
+    else
+      restart_log_mechanism(log, id, previous_log, state)
+    end
+  end
 
   defp handle_change_enabled_state(%Log{} = log, id, %Log{} = previous_log, %State{} = state) do
+    restart_log_mechanism(log, id, previous_log, state)
+  end
+
+  defp restart_log_mechanism(%Log{} = log, id, %Log{} = previous_log, %State{} = state) do
     cancel_poll_timer(previous_log)
     log = %Log{log | poll_timer: nil}
 
@@ -1368,7 +1525,7 @@ defmodule BACnet.Stack.TrendLogger do
       end
 
     %EventLogRecord{
-      timestamp: BACnetDateTime.from_datetime(DateTime.now!(state.opts.timezone)),
+      timestamp: BACnetDateTime.from_datetime(local_now(state)),
       log_datum: log_datum
     }
   end
@@ -1430,14 +1587,14 @@ defmodule BACnet.Stack.TrendLogger do
       end
 
     %LogRecord{
-      timestamp: BACnetDateTime.from_datetime(DateTime.now!(state.opts.timezone)),
+      timestamp: BACnetDateTime.from_datetime(local_now(state)),
       log_datum: log_datum,
       status_flags: status_flags
     }
   end
 
   defp create_record(%Log{object: %TrendLogMultiple{}} = log, event, _id, state) do
-    time_now = DateTime.now!(state.opts.timezone)
+    time_now = local_now(state)
 
     log_data =
       case event do
@@ -2254,13 +2411,23 @@ defmodule BACnet.Stack.TrendLogger do
                 "got: #{inspect(term)}"
     end
 
+    database = Keyword.get(opts, :timezone_database, Calendar.get_time_zone_database())
+
+    unless is_atom(database) and Code.ensure_loaded?(database) and
+             function_exported?(database, :time_zone_period_from_utc_iso_days, 2) and
+             function_exported?(database, :time_zone_periods_from_wall_datetime, 2) do
+      raise ArgumentError,
+            "start_link/1 expected timezone_database to implement Calendar.TimeZoneDatabase, " <>
+              "got: #{inspect(database)}"
+    end
+
     case opts[:timezone] do
       nil ->
         :ok
 
       term when is_binary(term) ->
         # Extreme validation by trying to use the timezone
-        DateTime.now!(term)
+        DateTime.now!(term, database)
         :ok
 
       term ->

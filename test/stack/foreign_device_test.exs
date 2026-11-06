@@ -172,10 +172,12 @@ defmodule BACnet.Stack.ForeignDeviceTest do
     ack(fd, transport, :successful_completion)
     ref = Process.monitor(fd)
 
-    assert :ok = ForeignDevice.stop(fd)
-    assert_receive {:DOWN, ^ref, :process, ^fd, :normal}
+    task = Task.async(fn -> ForeignDevice.stop(fd) end)
     assert_receive {:fake_transport_send, @bbmd, _data, opts}
     assert opts[:npci] == false
+    send(client, bvlc_frame(transport, @bbmd, %BvlcResult{result_code: :successful_completion}))
+    assert :ok = Task.await(task)
+    assert_receive {:DOWN, ^ref, :process, ^fd, :normal}
   end
 
   test "stop before registration does not delete an entry", %{client: client} do
@@ -187,14 +189,14 @@ defmodule BACnet.Stack.ForeignDeviceTest do
   end
 
   test "distribute_broadcast returns ok when the BBMD stays silent", %{client: client} do
-    fd = start_fd!(client)
+    fd = start_registered_fd!(client)
     {:ok, apdu} = WhoIs.to_apdu(%WhoIs{device_id_low_limit: nil, device_id_high_limit: nil}, [])
 
     assert :ok = ForeignDevice.distribute_broadcast(fd, apdu, receive_timeout: 40)
   end
 
   test "distribute_broadcast returns a negative result", %{client: client, transport: transport} do
-    fd = start_fd!(client)
+    fd = start_registered_fd!(client)
     {:ok, apdu} = WhoIs.to_apdu(%WhoIs{device_id_low_limit: 1, device_id_high_limit: 2}, [])
 
     task =
@@ -231,7 +233,7 @@ defmodule BACnet.Stack.ForeignDeviceTest do
     client: client,
     transport: transport
   } do
-    fd = start_fd!(client)
+    fd = start_registered_fd!(client)
 
     entry = %BroadcastDistributionTableEntry{
       ip: {192, 168, 1, 1},
@@ -277,7 +279,7 @@ defmodule BACnet.Stack.ForeignDeviceTest do
   end
 
   test "table reads and writes report a negative result", %{client: client, transport: transport} do
-    fd = start_fd!(client)
+    fd = start_registered_fd!(client)
     task = Task.async(fn -> ForeignDevice.read_foreign_device_table(fd) end)
 
     assert_receive {:fake_transport_send, @bbmd, _data, _opts}, 1_000
@@ -334,12 +336,12 @@ defmodule BACnet.Stack.ForeignDeviceTest do
   end
 
   test "a table read times out", %{client: client} do
-    fd = start_fd!(client)
+    fd = start_registered_fd!(client)
     assert {:error, :timeout} = ForeignDevice.read_foreign_device_table(fd, timeout: 20)
   end
 
   test "send_whois collects an I-Am and stops at max", %{client: client, transport: transport} do
-    fd = start_fd!(client)
+    fd = start_registered_fd!(client)
 
     task = Task.async(fn -> ForeignDevice.send_whois(fd, 1_000, max: 1, receive_timeout: 30) end)
 
@@ -421,13 +423,14 @@ defmodule BACnet.Stack.ForeignDeviceTest do
       send(parent, {:stopped, GenServer.stop(fd, :shutdown)})
     end)
 
-    assert_receive {:stopped, :ok}, 1_000
-    assert_received {:fake_transport_send, @bbmd, _data, opts}
+    assert_receive {:fake_transport_send, @bbmd, _data, opts}
     assert opts[:npci] == false
+    send(client, bvlc_frame(transport, @bbmd, %BvlcResult{result_code: :successful_completion}))
+    assert_receive {:stopped, :ok}, 1_000
   end
 
   test "the foreign device table can be read", %{client: client, transport: transport} do
-    fd = start_fd!(client)
+    fd = start_registered_fd!(client)
 
     entry = %ForeignDeviceTableEntry{
       ip: {10, 0, 0, 8},
@@ -464,7 +467,7 @@ defmodule BACnet.Stack.ForeignDeviceTest do
   end
 
   test "send_whois returns when its timer fires", %{client: client} do
-    fd = start_fd!(client)
+    fd = start_registered_fd!(client)
     assert {:ok, []} = ForeignDevice.send_whois(fd, 1_000, receive_timeout: 20, max: 0)
   end
 
@@ -495,6 +498,145 @@ defmodule BACnet.Stack.ForeignDeviceTest do
     assert {:ok, pid} = ForeignDevice.start_link(name: name, bbmd: @bbmd, client: client)
     assert Process.whereis(name) == pid
     assert ForeignDevice.get_status(name) == :waiting_for_ack
+  end
+
+  test "concurrent writes consume separate BBMD results", %{client: client, transport: transport} do
+    fd = start_registered_fd!(client)
+    first = Task.async(fn -> ForeignDevice.write_broadcast_distribution_table(fd, []) end)
+    assert_receive {:fake_transport_send, @bbmd, _data, _opts}
+
+    second = Task.async(fn -> ForeignDevice.write_broadcast_distribution_table(fd, []) end)
+    refute_receive {:fake_transport_send, @bbmd, _data, _opts}, 100
+
+    send(client, bvlc_frame(transport, @bbmd, %BvlcResult{result_code: :successful_completion}))
+    assert :ok = Task.await(first)
+    assert_receive {:fake_transport_send, @bbmd, _data, _opts}
+    assert Task.yield(second, 0) == nil
+
+    nak = %BvlcResult{result_code: :write_broadcast_distribution_table_nak}
+    send(client, bvlc_frame(transport, @bbmd, nak))
+    assert {:error, ^nak} = Task.await(second)
+  end
+
+  test "a registration success cannot acknowledge a waiting write", %{
+    client: client,
+    transport: transport
+  } do
+    fd = start_fd!(client)
+    task = Task.async(fn -> ForeignDevice.write_broadcast_distribution_table(fd, []) end)
+    refute_receive {:fake_transport_send, @bbmd, _data, _opts}, 100
+
+    send(client, bvlc_frame(transport, @bbmd, %BvlcResult{result_code: :successful_completion}))
+    assert_receive {:fake_transport_send, @bbmd, _data, _opts}
+    assert ForeignDevice.get_status(fd) == :registered
+    assert Task.yield(task, 0) == nil
+
+    nak = %BvlcResult{result_code: :write_broadcast_distribution_table_nak}
+    send(client, bvlc_frame(transport, @bbmd, nak))
+    assert {:error, ^nak} = Task.await(task)
+  end
+
+  test "renewal waits for a write without blocking the server", %{
+    client: client,
+    transport: transport
+  } do
+    fd = start_registered_fd!(client)
+    task = Task.async(fn -> ForeignDevice.write_broadcast_distribution_table(fd, []) end)
+    assert_receive {:fake_transport_send, @bbmd, _data, _opts}
+
+    assert :ok = ForeignDevice.renew(fd)
+    assert ForeignDevice.get_status(fd) == :registered
+    refute_receive {:fake_transport_send, @bbmd, _data, _opts}, 100
+
+    send(client, bvlc_frame(transport, @bbmd, %BvlcResult{result_code: :successful_completion}))
+    assert :ok = Task.await(task)
+    assert_registration(transport)
+    assert ForeignDevice.get_status(fd) == :waiting_for_ack
+    ack(fd, transport, :successful_completion)
+  end
+
+  test "direct BVLC callers share locks and other BBMDs stay independent", %{
+    client: client,
+    transport: transport
+  } do
+    fd = start_registered_fd!(client)
+    assert :ok = ForeignDevice.lock(client, @bbmd)
+
+    contender = Task.async(fn -> ForeignDevice.lock(client, @bbmd, 0) end)
+    assert {:error, :lock_unavailable} = Task.await(contender)
+
+    other = Task.async(fn -> ForeignDevice.lock(client, {{192, 168, 1, 21}, 47_808}, 0) end)
+    assert :ok = Task.await(other)
+
+    task = Task.async(fn -> ForeignDevice.write_broadcast_distribution_table(fd, []) end)
+    refute_receive {:fake_transport_send, @bbmd, _data, _opts}, 100
+    assert :ok = ForeignDevice.unlock(client, @bbmd)
+    assert_receive {:fake_transport_send, @bbmd, _data, _opts}
+    send(client, bvlc_frame(transport, @bbmd, %BvlcResult{result_code: :successful_completion}))
+    assert :ok = Task.await(task)
+  end
+
+  test "locks are released when their owner exits", %{client: client} do
+    parent = self()
+
+    {owner, monitor} =
+      spawn_monitor(fn ->
+        :ok = ForeignDevice.lock(client, @bbmd)
+        send(parent, :locked)
+
+        receive do
+          :stop -> :ok
+        end
+      end)
+
+    assert_receive :locked
+    assert {:error, :lock_unavailable} = ForeignDevice.lock(client, @bbmd, 0)
+    send(owner, :stop)
+    assert_receive {:DOWN, ^monitor, :process, ^owner, :normal}
+    assert :ok = ForeignDevice.lock(client, @bbmd)
+    assert :ok = ForeignDevice.unlock(client, @bbmd)
+  end
+
+  test "write timeout and transport failure both release the lock", %{
+    client: client,
+    transport: transport
+  } do
+    fd = start_registered_fd!(client)
+
+    assert {:error, :timeout} =
+             ForeignDevice.write_broadcast_distribution_table(fd, [], timeout: 20)
+
+    assert_receive {:fake_transport_send, @bbmd, _data, _opts}
+    assert :ok = ForeignDevice.lock(client, @bbmd, 0)
+    assert :ok = ForeignDevice.unlock(client, @bbmd)
+
+    assert :ok = FakeTransport.set_send_result(transport, {:error, :busy})
+    assert {:error, :busy} = ForeignDevice.write_broadcast_distribution_table(fd, [])
+    assert :ok = ForeignDevice.lock(client, @bbmd, 0)
+    assert :ok = ForeignDevice.unlock(client, @bbmd)
+  end
+
+  test "foreign devices sharing a portal serialize registration", %{
+    client: client,
+    transport: transport
+  } do
+    first = start_fd!(client)
+    {:ok, second} = ForeignDevice.start_link(bbmd: @bbmd, client: client, reply_rfd: false)
+    assert ForeignDevice.get_status(second) == :uninitialized
+    refute_receive {:fake_transport_send, @bbmd, _data, _opts}, 100
+
+    send(client, bvlc_frame(transport, @bbmd, %BvlcResult{result_code: :successful_completion}))
+    assert_registration(transport)
+    assert ForeignDevice.get_status(first) == :registered
+    assert ForeignDevice.get_status(second) == :waiting_for_ack
+    ack(second, transport, :successful_completion)
+  end
+
+  defp start_registered_fd!(client) do
+    fd = start_fd!(client)
+    {_mod, _transport, portal} = Client.get_transport(client)
+    ack(fd, portal, :successful_completion)
+    fd
   end
 
   defp start_fd!(client, opts \\ []) do
