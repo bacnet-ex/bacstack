@@ -1,139 +1,67 @@
 defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
   alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.BACnetArray
+  alias BACnet.Protocol.BACnetError
+  alias BACnet.Protocol.EventParameters
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.ObjectsUtility
+  alias BACnet.Protocol.ObjectTypes.AnalogOutput
   alias BACnet.Protocol.ObjectTypes.BinaryInput
-
-  import BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper
+  alias BACnet.Protocol.PriorityArray
+  alias BACnet.Protocol.ReadAccessResult
+  alias BACnet.Protocol.ReadAccessResult.ReadResult
+  alias BACnet.Protocol.Services.Ack.ReadPropertyAck
+  alias BACnet.Protocol.Services.Ack.ReadPropertyMultipleAck
 
   use ExUnit.Case, async: false
 
-  @moduletag :object_utility
-  @moduletag :bacnet_object
-  @moduletag :bacnet_object_property
+  @moduletag :objects_utility
 
   doctest ObjectsUtility
 
-  # If we run no_cover tests, skip all generation (none are tagged :no_cover)
-  # Also dont run generation or partial generation if test is excluded
-  config = ExUnit.configuration()
-  included = Keyword.fetch!(config, :include)
-  excluded = Keyword.fetch!(config, :exclude)
-
-  properties_tests =
-    if :no_cover in included or Enum.any?(excluded, &(&1 in @moduletag)) do
-      []
-    else
-      ObjectsUtility.get_object_type_mappings()
-      |> Task.async_stream(
-        fn {obj_type, mod} ->
-          property_types_map = mod.get_properties_type_map()
-
-          test_list =
-            property_types_map
-            |> Enum.map(&generate_cast_tests(obj_type, mod, property_types_map, &1))
-            |> List.flatten()
-
-          mod_atom =
-            mod
-            |> Atom.to_string()
-            |> String.split(".")
-            |> List.last()
-            |> String.to_atom()
-
-          {obj_type, mod_atom, test_list}
-        end,
-        ordered: false,
-        timeout: 10_000
-      )
-      |> Enum.map(fn {:ok, res} -> res end)
-    end
-
-  for {obj_type, mod_type, test_list} <- properties_tests,
-      not Enum.any?(excluded, &(&1 == String.to_atom("bacnet_object_#{obj_type}"))) do
-    mod_name =
-      Module.concat([__MODULE__, String.to_atom(Macro.camelize("#{mod_type}")), :Properties])
-
-    defmodule mod_name do
-      use ExUnit.Case, async: true
-
-      @moduletag :object_utility
-      @moduletag :bacnet_object
-      @moduletag :bacnet_object_property
-      @moduletag String.to_atom("bacnet_object_#{obj_type}")
-
-      for {description, object_type, prop_identifier, raw_value, parsed_value, pattern_match,
-           cast_opts} <- test_list do
-        @tag String.to_atom("bacnet_property_#{prop_identifier}")
-        @tag String.to_atom("bacnet_property_from_raw_#{prop_identifier}")
-        test "cast property to value #{description} [Encoding -> Elixir]" do
-          assert unquote(Macro.escape(pattern_match)) =
-                   ObjectsUtility.cast_property_to_value(
-                     %ObjectIdentifier{type: unquote(object_type), instance: 1},
-                     unquote(prop_identifier),
-                     unquote(Macro.escape(raw_value)),
-                     unquote(cast_opts)
-                   )
-
-          # rescue
-          #     e in [FunctionClauseError] ->
-          #       IO.inspect([description: unquote(description), object_type: unquote(object_type), prop_identifier: unquote(prop_identifier), raw_value: unquote(Macro.escape(raw_value))])
-          #       reraise(e, __STACKTRACE__)
-        end
-
-        unless !!Keyword.get(cast_opts, :allow_partial) or
-                 (String.contains?(description, "priority_array") and
-                    length(raw_value) < 16) do
-          pattern_match2 =
-            case pattern_match do
-              # {:ok, [_value]} when not is_list(raw_value) -> {:ok, raw_value}
-              # {:ok, value} when not is_list(value) and is_list(raw_value) -> {:ok, List.first(raw_value)}
-              {:ok, _value} ->
-                {:ok, raw_value}
-
-              {:error, {:invalid_tags, {property, _value}}} ->
-                {:error, {:invalid_property_value, {property, parsed_value}}}
-
-              {:error, {reason, {property, _value}}} ->
-                {:error, {reason, {property, parsed_value}}}
-
-              {:error, reason} ->
-                {:error, reason}
-            end
-
-          @tag String.to_atom("bacnet_property_#{prop_identifier}")
-          @tag String.to_atom("bacnet_property_to_raw_#{prop_identifier}")
-          test "cast value to property #{description} [Elixir -> Encoding]" do
-            value =
-              ObjectsUtility.cast_value_to_property(
-                %ObjectIdentifier{type: unquote(object_type), instance: 1},
-                unquote(prop_identifier),
-                unquote(Macro.escape(parsed_value)),
-                unquote(cast_opts)
-              )
-
-            # Rewrite the value if the value is a singular item list but the raw value is not in a list,
-            # this is due to the fact that all mod.encode funs will return a list even for single items,
-            # but the test generator may not generate a wrapping list for single items
-            raw_value_list = is_list(unquote(Macro.escape(raw_value)))
-
-            actual_value =
-              case value do
-                # not is_nil is only to remove warnings
-                {:ok, [new_value]} when not is_nil(new_value) and not raw_value_list ->
-                  {:ok, new_value}
-
-                term ->
-                  term
-              end
-
-            assert unquote(Macro.escape(pattern_match2)) = actual_value
-          end
-        end
-      end
-    end
+  # Model vendor-specific property types and codecs without changing built-in objects.
+  defmodule VendorObject do
+    @moduledoc false
+    defstruct _metadata: %{properties_list: [:description]}, description: "vendor object"
+    def get_properties_type_map(), do: Process.get({__MODULE__, :types}, %{})
+    def get_annotation(_property), do: Process.get({__MODULE__, :annotations}, [])
   end
+
+  defmodule MissingCodec do
+    @moduledoc false
+    defstruct [:value]
+  end
+
+  defmodule StreamingValue do
+    @moduledoc false
+    defstruct [:value]
+
+    def from_app_encoding([{:unsigned_integer, value} | rest]),
+      do: {:ok, {%__MODULE__{value: value}, rest}}
+
+    def from_app_encoding(_tags), do: {:error, :invalid_value}
+  end
+
+  defmodule ParsedValue do
+    @moduledoc false
+    defstruct [:value]
+
+    def parse([{:unsigned_integer, value} | rest]),
+      do: {:ok, {%__MODULE__{value: value}, rest}}
+
+    def parse(_tags), do: {:error, :invalid_value}
+  end
+
+  defmodule BrokenCodec do
+    @moduledoc false
+    defstruct [:value]
+    def valid?(%{value: :invalid}), do: raise("validation failed")
+    def valid?(_value), do: true
+    def to_app_encoding(_value), do: raise("encoding failed")
+  end
+
+  @object_id %ObjectIdentifier{type: :binary_input, instance: 7}
+  @vendor_id %ObjectIdentifier{type: :coverage_vendor, instance: 1}
 
   test "cast property to value with any type" do
     {:module, stub, _bytecode, _more} =
@@ -759,6 +687,682 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
                [ack],
                allow_unknown_properties: :no_unpack
              )
+  end
+
+  describe "property operations and casting" do
+    setup do
+      mappings = ObjectsUtility.get_object_type_mappings()
+      ObjectsUtility.put_object_type_mapping(:coverage_vendor, VendorObject)
+      on_exit(fn -> :persistent_term.put({ObjectsUtility, :object_type_mappings}, mappings) end)
+      :ok
+    end
+
+    test "property operations delegate to the object's implementation" do
+      {:ok, object} = BinaryInput.create(7, "input", %{polarity: :normal})
+      refute ObjectsUtility.property_writable?(object, :description)
+      assert {:ok, object} = ObjectsUtility.add_property(object, :description, "sensor")
+      assert ObjectsUtility.property_writable?(object, :description)
+      refute ObjectsUtility.property_writable?(object, :object_name)
+      assert {:ok, object} = ObjectsUtility.update_property(object, :description, "updated")
+      assert {:ok, "updated"} = ObjectsUtility.get_property(object, :description)
+      assert {:ok, object} = ObjectsUtility.remove_property(object, :description)
+      refute ObjectsUtility.has_property?(object, :description)
+      assert ObjectsUtility.get_properties(object) == object._metadata.properties_list
+      refute ObjectsUtility.has_priority_array?(object)
+      refute ObjectsUtility.intrinsic_reporting?(object)
+      assert ObjectsUtility.get_remote_device_id(object) == nil
+      assert ObjectsUtility.property_writable?(%VendorObject{}, :description)
+
+      assert {:error, {:unknown_property, :description}} =
+               ObjectsUtility.get_property(object, :description)
+    end
+
+    test "priority operations use the highest priority and relinquish default" do
+      {:ok, object} = AnalogOutput.create(7, "output", %{relinquish_default: 1.0})
+      assert {:ok, object} = ObjectsUtility.set_priority(object, 16, 2.0)
+      assert {:ok, object} = ObjectsUtility.set_priority(object, 8, 3.0)
+      assert {8, 3.0} = ObjectsUtility.get_priority_value(object)
+      assert object.present_value == 3.0
+      assert ObjectsUtility.has_priority_array?(object)
+      assert {:ok, object} = ObjectsUtility.set_priority(object, 8, nil)
+      assert {16, 2.0} = ObjectsUtility.get_priority_value(object)
+      assert ObjectsUtility.get_priority_value(%{}) == nil
+
+      assert {:error, {:unknown_property, :priority_array}} =
+               ObjectsUtility.set_priority(%{priority_array: nil}, 1, 1.0)
+    end
+
+    test "remote object conversion retains the device ID and visible properties" do
+      assert {:ok, object} =
+               ObjectsUtility.cast_properties_to_object(
+                 @object_id,
+                 %{
+                   object_name: "remote",
+                   polarity: :normal,
+                   present_value: false,
+                   event_state: :normal,
+                   status_flags:
+                     BACnet.Protocol.StatusFlags.from_bitstring({false, false, false, false}),
+                   out_of_service: false
+                 },
+                 remote_device_id: 42
+               )
+
+      assert {:ok, 42} = ObjectsUtility.get_remote_device_id(object)
+
+      assert :error =
+               ObjectsUtility.get_remote_device_id(%{
+                 object
+                 | _metadata: %{object._metadata | remote_object: true}
+               })
+
+      map = ObjectsUtility.to_map(object)
+      assert map.object_identifier == @object_id
+      assert map.object_name == "remote"
+      refute Map.has_key?(map, :_metadata)
+      refute Map.has_key?(map, :object_instance)
+      refute Map.has_key?(map, :description)
+      assert ObjectsUtility.to_list(object) == Enum.sort(Map.to_list(map))
+      assert_raise ArgumentError, fn -> ObjectsUtility.get_object_type(%MissingCodec{}) end
+    end
+
+    test "float rounding and truncation include priority arrays and preserve other fields" do
+      {:ok, object} = AnalogOutput.create(1, "output", %{relinquish_default: -1.239})
+      {:ok, object} = ObjectsUtility.set_priority(object, 8, 12.349)
+
+      for precision <- [2, 0.01] do
+        rounded = ObjectsUtility.truncate_float_properties(object, precision)
+        assert rounded.present_value == 12.35
+        assert rounded.priority_array.priority_8 == 12.35
+        assert rounded.relinquish_default == -1.24
+        assert rounded._metadata == object._metadata
+        assert rounded.object_name == "output"
+
+        truncated = ObjectsUtility.truncate_float_properties(object, precision, :truncate)
+        assert truncated.present_value == 12.34
+        assert truncated.priority_array.priority_8 == 12.34
+        assert truncated.relinquish_default == -1.23
+      end
+
+      for precision <- [0, 0.0, -0.0, 1.0, 5.0] do
+        assert %{present_value: 12.0, relinquish_default: -1.0} =
+                 ObjectsUtility.truncate_float_properties(object, precision)
+      end
+    end
+
+    test "casting rejects unsupported object types and incomplete object modules" do
+      object_id = %ObjectIdentifier{type: :unsupported_coverage_type, instance: 1}
+      value = Encoding.create!({:boolean, true})
+
+      assert {:error, :unsupported_object_type} =
+               ObjectsUtility.cast_property_to_value(object_id, :present_value, value)
+
+      assert {:error, :unsupported_object_type} =
+               ObjectsUtility.cast_value_to_property(object_id, :present_value, true)
+
+      assert {:error, :unsupported_object_type} =
+               ObjectsUtility.cast_properties_to_object(object_id, %{}, [])
+
+      assert {:error, :unsupported_object_type} =
+               ObjectsUtility.cast_read_properties_ack(object_id, [])
+
+      ObjectsUtility.put_object_type_mapping(:coverage_vendor, MissingCodec)
+
+      assert {:error, :invalid_object_module} =
+               ObjectsUtility.cast_value_to_property(@vendor_id, :present_value, true)
+
+      assert {:error, :invalid_object_module} =
+               ObjectsUtility.cast_property_to_value(@vendor_id, :present_value, value)
+
+      assert {:error, {:missing_property, :object_name}} =
+               ObjectsUtility.cast_properties_to_object(@object_id, %{}, [])
+
+      assert {:error, {:unknown_property, :unknown_property}} =
+               ObjectsUtility.cast_value_to_property(@object_id, :unknown_property, true)
+    end
+
+    test "casting validates keyword lists and boolean options" do
+      value = Encoding.create!({:boolean, true})
+
+      for property <- [:present_value, 85] do
+        assert_raise ArgumentError, ~r/expected a keyword list/, fn ->
+          ObjectsUtility.cast_property_to_value(@object_id, property, value, [:invalid])
+        end
+      end
+
+      assert_raise ArgumentError, ~r/expected a keyword list/, fn ->
+        ObjectsUtility.cast_value_to_property(@object_id, :present_value, true, [:invalid])
+      end
+
+      assert_raise ArgumentError, ~r/expected a keyword list/, fn ->
+        ObjectsUtility.cast_read_properties_ack(@object_id, [], [:invalid])
+      end
+
+      assert_raise ArgumentError, ~r/expected a keyword list/, fn ->
+        ObjectsUtility.cast_properties_to_object(@object_id, %{}, [:invalid])
+      end
+
+      assert_raise ArgumentError, ~r/opts\[:object_opts\]/, fn ->
+        ObjectsUtility.cast_properties_to_object(@object_id, %{}, object_opts: [:invalid])
+      end
+
+      assert_raise ArgumentError, ~r/allow_partial.*boolean/, fn ->
+        ObjectsUtility.cast_value_to_property(@object_id, :present_value, true, allow_partial: 1)
+      end
+    end
+
+    test "single property responses merge values and skip the object type" do
+      acks = [
+        read_ack(:present_value, {:enumerated, 1}),
+        read_ack(:object_type, {:enumerated, 3})
+      ]
+
+      assert {:ok, %{present_value: true}} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, acks)
+
+      assert {:ok, %{}} = ObjectsUtility.cast_read_properties_ack(@object_id, [])
+
+      assert {:error, :invalid_ack} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [:invalid])
+    end
+
+    test "single property responses enforce object identifiers and array index policy" do
+      ack = read_ack(:present_value, {:enumerated, 1})
+      mismatched = %{ack | object_identifier: %{@object_id | instance: 8}}
+
+      assert {:error, :object_identifier_mismatch} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [mismatched])
+
+      assert {:ok, %{}} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [mismatched],
+                 ignore_object_identifier_mismatch: true
+               )
+
+      indexed = %{ack | property_array_index: 1}
+
+      assert {:error, :property_array_index_not_supported} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [indexed])
+
+      assert {:ok, %{}} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [indexed],
+                 ignore_array_indexes: true
+               )
+    end
+
+    test "single property responses propagate invalid values or skip them when requested" do
+      ack = read_ack(:present_value, {:character_string, "invalid"})
+
+      assert {:error, {:invalid_property_value, {:present_value, "invalid"}}} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [ack])
+
+      assert {:ok, %{}} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [ack],
+                 ignore_invalid_properties: true
+               )
+    end
+
+    test "single property responses can skip unknown properties" do
+      ack = read_ack(:unknown_property, {:unsigned_integer, 42})
+
+      assert {:error, {:unknown_property, :unknown_property}} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [ack])
+
+      assert {:ok, %{}} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [ack],
+                 ignore_unknown_properties: true
+               )
+
+      assert {:ok, %{unknown_property: 42}} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [ack],
+                 allow_unknown_properties: true
+               )
+    end
+
+    test "multiple property responses handle unknown numeric identifiers and errors" do
+      result = read_result(65_000, {:unsigned_integer, 42})
+      ack = multiple_ack([result])
+
+      assert {:error, {:unknown_property, 65_000}} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [ack])
+
+      assert {:ok, %{}} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [ack],
+                 ignore_unknown_properties: true
+               )
+
+      assert {:ok, %{65_000 => 42}} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [ack],
+                 allow_unknown_properties: true
+               )
+
+      assert {:ok, %{65_000 => %Encoding{value: 42}}} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [ack],
+                 allow_unknown_properties: :no_unpack
+               )
+
+      ignored = [
+        %{result | error: %BACnetError{class: :property, code: :unknown_property}},
+        %{result | property_value: nil},
+        read_result(:object_type, {:enumerated, 3})
+      ]
+
+      assert {:ok, %{}} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [multiple_ack(ignored)])
+    end
+
+    test "multiple property responses enforce object identifiers and array index policy" do
+      ack = multiple_ack([read_result(:present_value, {:enumerated, 1})])
+      [result] = ack.results
+      mismatched = %{ack | results: [%{result | object_identifier: %{@object_id | instance: 8}}]}
+
+      assert {:error, :object_identifier_mismatch} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [mismatched])
+
+      assert {:ok, %{present_value: true}} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [mismatched],
+                 ignore_object_identifier_mismatch: true
+               )
+
+      indexed =
+        multiple_ack([%{read_result(:present_value, {:enumerated, 1}) | property_array_index: 1}])
+
+      assert {:error, :property_array_index_not_supported_1} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [indexed])
+
+      assert {:ok, %{present_value: true}} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [indexed],
+                 ignore_array_indexes: true
+               )
+
+      invalid = multiple_ack([read_result(:present_value, {:character_string, "invalid"})])
+
+      assert {:ok, %{}} =
+               ObjectsUtility.cast_read_properties_ack(@object_id, [invalid],
+                 ignore_invalid_properties: true
+               )
+    end
+
+    test "custom codecs transform scalar values, lists, and arrays in order" do
+      decoder = fn %Encoding{value: value} -> value + 1 end
+      encoder = fn value -> {:unsigned_integer, value - 1} end
+      inputs = Enum.map([1, 2], &Encoding.create!({:unsigned_integer, &1}))
+
+      for type <- [
+            {:list, :unsigned_integer},
+            {:array, :unsigned_integer},
+            {:array, :unsigned_integer, 2}
+          ] do
+        configure_type(type, decoder: decoder, encoder: encoder)
+
+        expected =
+          case type do
+            {:list, _subtype} -> [2, 3]
+            {:array, _subtype} -> BACnetArray.from_list([2, 3])
+            {:array, _subtype, _size} -> BACnetArray.from_list([2, 3], true)
+          end
+
+        assert {:ok, ^expected} =
+                 ObjectsUtility.cast_property_to_value(@vendor_id, :present_value, inputs)
+
+        assert {:ok, ^inputs} =
+                 ObjectsUtility.cast_value_to_property(@vendor_id, :present_value, expected)
+      end
+
+      configure_type(:unsigned_integer, decoder: decoder, encoder: encoder)
+
+      assert {:ok, 2} =
+               ObjectsUtility.cast_property_to_value(@vendor_id, :present_value, hd(inputs))
+
+      assert {:ok, %Encoding{value: 1}} =
+               ObjectsUtility.cast_value_to_property(@vendor_id, :present_value, 2)
+    end
+
+    test "custom codec failures and exceptions are returned to the caller" do
+      value = Encoding.create!({:unsigned_integer, 1})
+
+      configure_type({:list, :unsigned_integer},
+        decoder: fn _value -> {:error, :invalid_value} end,
+        encoder: fn _value -> {:error, :vendor_failure} end
+      )
+
+      assert {:error, {:invalid_property_value, {:present_value, [^value]}}} =
+               ObjectsUtility.cast_property_to_value(@vendor_id, :present_value, [value])
+
+      assert {:error, {:vendor_failure, {:present_value, [1]}}} =
+               ObjectsUtility.cast_value_to_property(@vendor_id, :present_value, [1])
+
+      configure_type(:unsigned_integer,
+        decoder: fn _value -> raise "decode failed" end,
+        encoder: fn _value -> raise "encode failed" end
+      )
+
+      assert {:error, {:exception_during_decoding, %RuntimeError{}, [_frame | _rest]}} =
+               ObjectsUtility.cast_property_to_value(@vendor_id, :present_value, value)
+
+      assert {:error, {:exception_during_encoding, %RuntimeError{}, [_frame | _rest]}} =
+               ObjectsUtility.cast_value_to_property(@vendor_id, :present_value, 1)
+    end
+
+    test "custom encoders accept Encoding structs and reject invalid raw tags" do
+      value = Encoding.create!({:unsigned_integer, 1})
+
+      for result <- [[value], [[value]], [[:invalid]], [:invalid]] do
+        configure_type(:any, encoder: fn _value -> {:ok, result} end)
+
+        expected =
+          if result in [[value], [[value]]], do: {:ok, [value]}, else: {:error, :invalid_encoding}
+
+        assert ^expected = ObjectsUtility.cast_value_to_property(@vendor_id, :present_value, 1)
+      end
+    end
+
+    test "partial array and list values use the element type in both directions" do
+      value = Encoding.create!({:unsigned_integer, 42})
+
+      for type <- [
+            {:array, :unsigned_integer},
+            {:array, :unsigned_integer, 2},
+            {:list, :unsigned_integer}
+          ] do
+        configure_type(type)
+
+        assert {:ok, 42} =
+                 ObjectsUtility.cast_property_to_value(@vendor_id, :present_value, value,
+                   allow_partial: true
+                 )
+
+        assert {:ok, ^value} =
+                 ObjectsUtility.cast_value_to_property(@vendor_id, :present_value, 42,
+                   allow_partial: true
+                 )
+
+        assert {:error, {:invalid_property_value, {:present_value, 42}}} =
+                 ObjectsUtility.cast_value_to_property(@vendor_id, :present_value, 42)
+      end
+    end
+
+    test "array and list encoding errors preserve the property and invalid value" do
+      for {type, value} <- [
+            {{:array, :unsigned_integer}, BACnetArray.from_list([1, -1])},
+            {{:list, :unsigned_integer}, [1, -1]}
+          ] do
+        configure_type(type)
+
+        assert {:error, {:invalid_property_value, {:present_value, -1}}} =
+                 ObjectsUtility.cast_value_to_property(@vendor_id, :present_value, value)
+      end
+    end
+
+    test "manual struct codecs decode variable and fixed arrays without losing order" do
+      inputs = Enum.map([1, 2], &Encoding.create!({:unsigned_integer, &1}))
+
+      for mod <- [StreamingValue, ParsedValue], fixed <- [false, true] do
+        type = if fixed, do: {:array, {:struct, mod}, 2}, else: {:array, {:struct, mod}}
+        configure_type(type)
+        expected = BACnetArray.from_list([struct(mod, value: 1), struct(mod, value: 2)], fixed)
+
+        assert {:ok, ^expected} =
+                 ObjectsUtility.cast_property_to_value(@vendor_id, :present_value, inputs)
+
+        configure_type({:array, {:struct, mod}, 3})
+
+        assert {:error, {:bacnet_array_size_mismatch, {:present_value, ^inputs}}} =
+                 ObjectsUtility.cast_property_to_value(@vendor_id, :present_value, inputs)
+      end
+
+      configure_type({:struct, ParsedValue})
+
+      assert {:ok, %ParsedValue{value: 1}} =
+               ObjectsUtility.cast_property_to_value(@vendor_id, :present_value, [hd(inputs)])
+    end
+
+    test "missing struct codecs and malformed values return errors" do
+      configure_type({:struct, MissingCodec})
+      value = Encoding.create!({:unsigned_integer, 1})
+
+      assert {:error, {:missing_parse_fun, MissingCodec}} =
+               ObjectsUtility.cast_property_to_value(@vendor_id, :present_value, value)
+
+      assert {:error, {:missing_encode_fun, MissingCodec}} =
+               ObjectsUtility.cast_value_to_property(@vendor_id, :present_value, %MissingCodec{})
+
+      configure_type({:list, {:struct, MissingCodec}})
+
+      assert {:error, {:missing_parse_fun, MissingCodec}} =
+               ObjectsUtility.cast_property_to_value(@vendor_id, :present_value, [value])
+
+      for mod <- [StreamingValue, ParsedValue] do
+        configure_type({:array, {:struct, mod}})
+        invalid = [Encoding.create!({:character_string, "invalid"})]
+
+        assert {:error, {:invalid_property_value, {:present_value, ^invalid}}} =
+                 ObjectsUtility.cast_property_to_value(@vendor_id, :present_value, invalid)
+      end
+    end
+
+    test "struct application codecs accept a list and unknown constructed values stay encoded" do
+      configure_type({:struct, EventParameters.None})
+      value = Encoding.create!({:constructed, {20, {:null, nil}, 0}})
+
+      assert {:ok, %EventParameters.None{}} =
+               ObjectsUtility.cast_property_to_value(@vendor_id, :present_value, [value])
+
+      assert {:ok, ^value} =
+               ObjectsUtility.cast_property_to_value(@object_id, 65_000, value,
+                 allow_unknown_properties: true
+               )
+    end
+
+    test "numeric constants and floating point conversions preserve their encodings" do
+      configure_type({:constant, :polarity})
+
+      assert {:ok, %Encoding{type: :enumerated, value: 42}} =
+               ObjectsUtility.cast_value_to_property(@vendor_id, :present_value, 42)
+
+      assert {:error, {:invalid_property_value, {:present_value, :invalid}}} =
+               ObjectsUtility.cast_value_to_property(@vendor_id, :present_value, :invalid)
+
+      for type <- [:real, :double], value <- [:NaN, :inf, :infn, 42] do
+        configure_type(type)
+        expected = if is_integer(value), do: 42.0, else: value
+
+        assert {:ok, %Encoding{type: ^type, value: ^expected}} =
+                 ObjectsUtility.cast_value_to_property(@vendor_id, :present_value, value)
+      end
+
+      configure_type({:in_range, -5, 5})
+
+      assert {:ok, %Encoding{type: :signed_integer, value: -2}} =
+               ObjectsUtility.cast_value_to_property(@vendor_id, :present_value, -2)
+
+      configure_type({:type_list, [:unsigned_integer, {:literal, nil}]})
+
+      assert {:ok, %Encoding{type: :null, value: nil}} =
+               ObjectsUtility.cast_value_to_property(@vendor_id, :present_value, nil)
+    end
+
+    test "object guards distinguish local, remote, intrinsic and commandable objects" do
+      {check, _bindings} =
+        Code.eval_quoted(
+          quote do
+            require ObjectsUtility
+
+            fn object ->
+              {
+                ObjectsUtility.is_object(object),
+                ObjectsUtility.is_object_loose(object),
+                ObjectsUtility.is_object_commandable(object),
+                ObjectsUtility.is_object_commandable_loose(object),
+                ObjectsUtility.is_object_intrinsic(object),
+                ObjectsUtility.is_object_local(object),
+                ObjectsUtility.is_object_remote(object)
+              }
+            end
+          end
+        )
+
+      {:ok, object} = BinaryInput.create(7, "input", %{polarity: :normal})
+      assert check.(object) == {true, true, false, false, false, true, false}
+      {:ok, object} = AnalogOutput.create(7, "output", %{})
+      assert check.(object) == {true, true, true, true, false, true, false}
+
+      remote = %{
+        object
+        | _metadata: %{object._metadata | remote_object: 42, intrinsic_reporting: true}
+      }
+
+      assert check.(remote) == {true, true, true, true, true, false, true}
+    end
+
+    test "single and multiple responses can ignore missing property parsers" do
+      configure_type({:struct, MissingCodec})
+      single = %{read_ack(:present_value, {:unsigned_integer, 1}) | object_identifier: @vendor_id}
+
+      multiple = %ReadPropertyMultipleAck{
+        results: [
+          %ReadAccessResult{
+            object_identifier: @vendor_id,
+            results: [read_result(:present_value, {:unsigned_integer, 1})]
+          }
+        ]
+      }
+
+      for ack <- [single, multiple] do
+        assert {:error, {:missing_parse_fun, MissingCodec}} =
+                 ObjectsUtility.cast_read_properties_ack(@vendor_id, [ack])
+
+        assert {:ok, %{}} =
+                 ObjectsUtility.cast_read_properties_ack(@vendor_id, [ack],
+                   ignore_invalid_properties: true
+                 )
+      end
+    end
+
+    test "unexpected codec exceptions become errors and failed union alternatives fall through" do
+      configure_type({:struct, BrokenCodec})
+
+      assert {:error, {:invalid_property_value, {:present_value, %BrokenCodec{}}}} =
+               ObjectsUtility.cast_value_to_property(@vendor_id, :present_value, %BrokenCodec{
+                 value: :invalid
+               })
+
+      assert {:error, {:exception_during_casting, %RuntimeError{}, [_frame | _rest]}} =
+               ObjectsUtility.cast_value_to_property(@vendor_id, :present_value, %BrokenCodec{})
+
+      configure_type(:any, encode_as: {:struct, BrokenCodec})
+
+      assert {:error, {:exception_during_casting, %RuntimeError{}, [_frame | _rest]}} =
+               ObjectsUtility.cast_value_to_property(@vendor_id, :present_value, %BrokenCodec{})
+
+      configure_type(:unsigned_integer)
+
+      assert {:error, {:exception_during_casting, %FunctionClauseError{}, [_frame | _rest]}} =
+               ObjectsUtility.cast_property_to_value(@vendor_id, :present_value, [nil])
+
+      configure_type({:type_list, [{:struct, MissingCodec}, :unsigned_integer]})
+
+      assert {:ok, 42} =
+               ObjectsUtility.cast_property_to_value(
+                 @vendor_id,
+                 :present_value,
+                 Encoding.create!({:unsigned_integer, 42})
+               )
+
+      configure_type(:unsigned_integer, decoder: fn %Encoding{value: value} -> {:ok, value} end)
+
+      assert {:ok, 42} =
+               ObjectsUtility.cast_property_to_value(
+                 @vendor_id,
+                 :present_value,
+                 Encoding.create!({:unsigned_integer, 42})
+               )
+    end
+
+    test "grouped struct arrays decode elements and reject malformed members or wrong sizes" do
+      values = [
+        [Encoding.create!({:unsigned_integer, 1})],
+        [Encoding.create!({:unsigned_integer, 2})]
+      ]
+
+      for type <- [{:array, {:struct, ParsedValue}}, {:array, {:struct, ParsedValue}, 2}] do
+        configure_type(type)
+
+        expected =
+          BACnetArray.from_list(
+            [%ParsedValue{value: 1}, %ParsedValue{value: 2}],
+            tuple_size(type) == 3
+          )
+
+        assert {:ok, ^expected} =
+                 ObjectsUtility.cast_property_to_value(@vendor_id, :present_value, values)
+
+        invalid = [hd(values), [Encoding.create!({:character_string, "invalid"})]]
+
+        assert {:error, {:invalid_property_value, {:present_value, ^invalid}}} =
+                 ObjectsUtility.cast_property_to_value(@vendor_id, :present_value, invalid)
+      end
+
+      configure_type({:array, {:struct, ParsedValue}, 3})
+
+      assert {:error, {:bacnet_array_size_mismatch, {:present_value, ^values}}} =
+               ObjectsUtility.cast_property_to_value(@vendor_id, :present_value, values)
+    end
+
+    test "priority array casts reject a full response containing an invalid element" do
+      value = Encoding.create!({:enumerated, 1})
+
+      assert {:error, {:invalid_property_value, {:priority_array, ^value}}} =
+               ObjectsUtility.cast_property_to_value(
+                 %ObjectIdentifier{type: :binary_output, instance: 1},
+                 :priority_array,
+                 value
+               )
+
+      values = List.duplicate(value, 15) ++ [:invalid]
+
+      assert {:error, {:invalid_property_value, {:priority_array, ^values}}} =
+               ObjectsUtility.cast_property_to_value(
+                 %ObjectIdentifier{type: :binary_output, instance: 1},
+                 :priority_array,
+                 values
+               )
+
+      assert {:error, {:invalid_property_value, {:priority_array, :invalid}}} =
+               ObjectsUtility.cast_value_to_property(
+                 %ObjectIdentifier{type: :analog_output, instance: 1},
+                 :priority_array,
+                 %PriorityArray{priority_1: :invalid}
+               )
+    end
+  end
+
+  defp configure_type(type, annotations \\ []) do
+    Process.put({VendorObject, :types}, %{present_value: type})
+    Process.put({VendorObject, :annotations}, annotations)
+  end
+
+  defp read_ack(property, raw_value) do
+    %ReadPropertyAck{
+      object_identifier: @object_id,
+      property_identifier: property,
+      property_array_index: nil,
+      property_value: Encoding.create!(raw_value)
+    }
+  end
+
+  defp read_result(property, raw_value) do
+    %ReadResult{
+      property_identifier: property,
+      property_array_index: nil,
+      property_value: Encoding.create!(raw_value),
+      error: nil
+    }
+  end
+
+  defp multiple_ack(results) do
+    %ReadPropertyMultipleAck{
+      results: [%ReadAccessResult{object_identifier: @object_id, results: results}]
+    }
   end
 
   defp get_read_property_multiple_ack_stub() do

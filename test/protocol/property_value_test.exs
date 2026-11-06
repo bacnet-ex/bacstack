@@ -283,6 +283,76 @@ defmodule BACnet.Protocol.PropertyValueTest do
              })
   end
 
+  test "encode and decode property value lists preserve order and nested values" do
+    for values <- [
+          [],
+          [unsigned_integer: 42],
+          [
+            unsigned_integer: 42,
+            character_string: "active",
+            constructed: {4, [boolean: true, null: nil], 0}
+          ]
+        ] do
+      property = %PropertyValue{
+        property_identifier: :present_value,
+        property_array_index: 0,
+        property_value: Enum.map(values, &Encoding.create!/1),
+        priority: 16
+      }
+
+      tags = [
+        tagged: {0, <<85>>, 1},
+        tagged: {1, <<0>>, 1},
+        constructed: {2, values, 0},
+        tagged: {3, <<16>>, 1}
+      ]
+
+      assert {:ok, ^tags} = PropertyValue.encode(property)
+      assert {:ok, {^property, []}} = PropertyValue.parse(tags)
+      assert {:ok, ^tags} = PropertyValue.encode_all([property])
+      assert {:ok, [^property]} = PropertyValue.parse_all(tags)
+      assert PropertyValue.valid?(property)
+    end
+  end
+
+  test "encode property value list propagates encoder errors and stops at the failed value" do
+    failing_value =
+      Encoding.create!({:unsigned_integer, 42},
+        encoder: fn _value -> {:error, :value_unavailable} end
+      )
+
+    trailing_value =
+      Encoding.create!({:unsigned_integer, 99},
+        encoder: fn _value -> flunk("must not encode values after an error") end
+      )
+
+    for prefix <- [[], [Encoding.create!({:boolean, true})]] do
+      property = %PropertyValue{
+        property_identifier: :present_value,
+        property_array_index: nil,
+        property_value: prefix ++ [failing_value, trailing_value],
+        priority: nil
+      }
+
+      assert {:error, :value_unavailable} = PropertyValue.encode(property)
+      assert {:error, :value_unavailable} = PropertyValue.encode_all([property])
+    end
+  end
+
+  test "encode property value propagates a single value encoder error" do
+    property = %PropertyValue{
+      property_identifier: :present_value,
+      property_array_index: nil,
+      property_value:
+        Encoding.create!({:unsigned_integer, 42},
+          encoder: fn _value -> {:error, :value_unavailable} end
+        ),
+      priority: nil
+    }
+
+    assert {:error, :value_unavailable} = PropertyValue.encode(property)
+  end
+
   test "encode all property values" do
     assert {:ok,
             [
@@ -471,5 +541,18 @@ defmodule BACnet.Protocol.PropertyValueTest do
                property_value: Encoding.create!({:enumerated, 1}),
                priority: :hello_there
              })
+  end
+
+  test "invalid property value list with non-encoding elements" do
+    encoding = Encoding.create!({:enumerated, 1})
+
+    for values <- [[nil], [{:enumerated, 1}], [encoding, :invalid], [:invalid, encoding]] do
+      refute PropertyValue.valid?(%PropertyValue{
+               property_identifier: :present_value,
+               property_array_index: nil,
+               property_value: values,
+               priority: nil
+             })
+    end
   end
 end

@@ -123,7 +123,7 @@ defmodule BACnet.Protocol.FaultParameters do
        {:constructed,
         {3,
          [
-           constructed: {0, fault_values, 0},
+           constructed: {0, Enum.reverse(fault_values), 0},
            constructed: {1, mode, 0}
          ], 0}}}
     else

@@ -46,7 +46,61 @@ defmodule BACnet.Protocol.FaultParametersTest do
              FaultParameters.FaultCharacterString.to_app_encoding(params)
   end
 
-  # TODO: Fault Parameters 2+3
+  test "fault extended preserves vendor parameters at the vendor ID boundaries" do
+    for {vendor_id, vendor_bytes, parameters} <- [
+          {0, <<0>>, []},
+          {65_535, <<255, 255>>, [unsigned_integer: 42, character_string: "vendor", null: nil]}
+        ] do
+      params = %FaultParameters.FaultExtended{
+        vendor_id: vendor_id,
+        extended_fault_type: 256,
+        parameters: parameters
+      }
+
+      tag =
+        {:constructed,
+         {2,
+          [
+            tagged: {0, vendor_bytes, byte_size(vendor_bytes)},
+            tagged: {1, <<1, 0>>, 2},
+            constructed: {2, parameters, 0}
+          ], 0}}
+
+      assert {:ok, ^tag} = FaultParameters.encode(params)
+      assert {:ok, ^tag} = FaultParameters.FaultExtended.to_app_encoding(params)
+      assert {:ok, ^params} = FaultParameters.parse(tag)
+      assert {:ok, ^params} = FaultParameters.FaultExtended.from_app_encoding([tag])
+      assert FaultParameters.valid?(params)
+      refute FaultParameters.valid?(%{params | vendor_id: 65_536})
+    end
+  end
+
+  test "fault life safety preserves fault values and the mode reference" do
+    params = %FaultParameters.FaultLifeSafety{
+      mode: %DeviceObjectPropertyRef{
+        object_identifier: %ObjectIdentifier{type: :analog_input, instance: 1},
+        property_identifier: :present_value,
+        property_array_index: nil,
+        device_identifier: nil
+      },
+      fault_values: [:fault, :fault_alarm]
+    }
+
+    tag =
+      {:constructed,
+       {3,
+        [
+          constructed: {0, [enumerated: 3, enumerated: 5], 0},
+          constructed: {1, [tagged: {0, <<0, 0, 0, 1>>, 4}, tagged: {1, <<85>>, 1}], 0}
+        ], 0}}
+
+    assert {:ok, ^params} = FaultParameters.parse(tag)
+    assert {:ok, ^params} = FaultParameters.FaultLifeSafety.from_app_encoding([tag])
+    assert {:ok, ^tag} = FaultParameters.encode(params)
+    assert {:ok, ^tag} = FaultParameters.FaultLifeSafety.to_app_encoding(params)
+    assert FaultParameters.valid?(params)
+    refute FaultParameters.valid?(%{params | fault_values: [:unknown]})
+  end
 
   test "decode fault state" do
     tag = {:constructed, {4, {:constructed, {0, {:tagged, {0, <<1>>, 1}}, 0}}, 0}}
@@ -238,9 +292,6 @@ defmodule BACnet.Protocol.FaultParametersTest do
                {:constructed, {1, {:constructed, {0, {:unsigned_integer, 1}, 0}}, 0}}
              )
   end
-
-  # TODO: Fault Parameters 2+3 happy path
-  # Failure paths for types without BTL-verified happy path payloads:
 
   test "encode fault extended invalid params" do
     assert {:error, :invalid_params} =

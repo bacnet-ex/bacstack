@@ -388,7 +388,66 @@ defmodule BACnet.Protocol.EventParametersTest do
     assert {:ok, ^expected} = EventParameters.OutOfRange.to_app_encoding(params)
   end
 
-  # TODO: Event Parameter 8+9 (6 = Complex Event Type, 7 unused)
+  test "change of life safety preserves both alarm lists and the mode reference" do
+    params = %EventParameters.ChangeOfLifeSafety{
+      mode: %DeviceObjectPropertyRef{
+        object_identifier: %ObjectIdentifier{type: :analog_input, instance: 1},
+        property_identifier: :present_value,
+        property_array_index: nil,
+        device_identifier: nil
+      },
+      life_safety_alarm_values: [:alarm, :fault_alarm],
+      alarm_values: [:quiet, :pre_alarm],
+      time_delay: 300,
+      time_delay_normal: nil
+    }
+
+    tag =
+      {:constructed,
+       {8,
+        [
+          tagged: {0, <<1, 44>>, 2},
+          constructed: {1, [enumerated: 2, enumerated: 5], 0},
+          constructed: {2, [enumerated: 0, enumerated: 1], 0},
+          constructed: {3, [tagged: {0, <<0, 0, 0, 1>>, 4}, tagged: {1, <<85>>, 1}], 0}
+        ], 0}}
+
+    assert {:ok, ^params} = EventParameters.parse(tag)
+    assert {:ok, ^params} = EventParameters.ChangeOfLifeSafety.from_app_encoding([tag])
+    assert {:ok, ^tag} = EventParameters.encode(params)
+    assert {:ok, ^tag} = EventParameters.ChangeOfLifeSafety.to_app_encoding(params)
+    assert EventParameters.valid?(params)
+    refute EventParameters.valid?(%{params | life_safety_alarm_values: [:unknown]})
+  end
+
+  test "extended preserves vendor parameters at the vendor ID boundaries" do
+    for {vendor_id, vendor_bytes, parameters} <- [
+          {0, <<0>>, []},
+          {65_535, <<255, 255>>, [unsigned_integer: 42, character_string: "vendor", null: nil]}
+        ] do
+      params = %EventParameters.Extended{
+        vendor_id: vendor_id,
+        extended_event_type: 256,
+        parameters: parameters
+      }
+
+      tag =
+        {:constructed,
+         {9,
+          [
+            tagged: {0, vendor_bytes, byte_size(vendor_bytes)},
+            tagged: {1, <<1, 0>>, 2},
+            constructed: {2, parameters, 0}
+          ], 0}}
+
+      assert {:ok, ^tag} = EventParameters.encode(params)
+      assert {:ok, ^tag} = EventParameters.Extended.to_app_encoding(params)
+      assert {:ok, ^params} = EventParameters.parse(tag)
+      assert {:ok, ^params} = EventParameters.Extended.from_app_encoding([tag])
+      assert EventParameters.valid?(params)
+      refute EventParameters.valid?(%{params | vendor_id: 65_536})
+    end
+  end
 
   test "decode event buffer ready" do
     tag = {:constructed, {10, [tagged: {0, <<192>>, 1}, tagged: {1, <<0>>, 1}], 0}}
@@ -536,6 +595,88 @@ defmodule BACnet.Protocol.EventParametersTest do
 
     assert {:ok, ^expected} = EventParameters.encode(params)
     assert {:ok, ^expected} = EventParameters.SignedOutOfRange.to_app_encoding(params)
+  end
+
+  test "unsigned out of range supports zero and multibyte unsigned values" do
+    params = %EventParameters.UnsignedOutOfRange{
+      low_limit: 0,
+      high_limit: 65_536,
+      deadband: 256,
+      time_delay: 300,
+      time_delay_normal: nil
+    }
+
+    tag =
+      {:constructed,
+       {16,
+        [
+          tagged: {0, <<1, 44>>, 2},
+          tagged: {1, <<0>>, 1},
+          tagged: {2, <<1, 0, 0>>, 3},
+          tagged: {3, <<1, 0>>, 2}
+        ], 0}}
+
+    assert {:ok, ^tag} = EventParameters.encode(params)
+    assert {:ok, ^tag} = EventParameters.UnsignedOutOfRange.to_app_encoding(params)
+    assert {:ok, ^params} = EventParameters.parse(tag)
+    assert {:ok, ^params} = EventParameters.UnsignedOutOfRange.from_app_encoding([tag])
+    assert EventParameters.valid?(params)
+    refute EventParameters.valid?(%{params | deadband: -1})
+  end
+
+  test "change of character string preserves null, empty, and Unicode alarm values" do
+    for {alarm_values, encoded_values} <- [
+          {[], []},
+          {[nil, "", "Überhitzung", "alarm"],
+           [
+             null: nil,
+             character_string: "",
+             character_string: "Überhitzung",
+             character_string: "alarm"
+           ]}
+        ] do
+      params = %EventParameters.ChangeOfCharacterString{
+        alarm_values: alarm_values,
+        time_delay: 0,
+        time_delay_normal: nil
+      }
+
+      tag =
+        {:constructed, {17, [tagged: {0, <<0>>, 1}, constructed: {1, encoded_values, 0}], 0}}
+
+      assert {:ok, ^tag} = EventParameters.encode(params)
+      assert {:ok, ^tag} = EventParameters.ChangeOfCharacterString.to_app_encoding(params)
+      assert {:ok, ^params} = EventParameters.parse(tag)
+      assert {:ok, ^params} = EventParameters.ChangeOfCharacterString.from_app_encoding([tag])
+      assert EventParameters.valid?(params)
+      refute EventParameters.valid?(%{params | alarm_values: [123]})
+    end
+  end
+
+  test "change of status flags preserves each flag independently" do
+    for {flags, bits} <- [
+          {{false, false, false, false}, 0x00},
+          {{true, false, false, false}, 0x80},
+          {{false, true, false, false}, 0x40},
+          {{false, false, true, false}, 0x20},
+          {{false, false, false, true}, 0x10},
+          {{true, true, true, true}, 0xF0}
+        ] do
+      params = %EventParameters.ChangeOfStatusFlags{
+        selected_flags: StatusFlags.from_bitstring(flags),
+        time_delay: 0,
+        time_delay_normal: nil
+      }
+
+      tag = {:constructed, {18, [tagged: {0, <<0>>, 1}, tagged: {1, <<4, bits>>, 2}], 0}}
+
+      assert {:ok, ^tag} = EventParameters.encode(params)
+      assert {:ok, ^tag} = EventParameters.ChangeOfStatusFlags.to_app_encoding(params)
+      assert {:ok, ^params} = EventParameters.parse(tag)
+      assert {:ok, ^params} = EventParameters.ChangeOfStatusFlags.from_app_encoding([tag])
+      assert EventParameters.valid?(params)
+      refute EventParameters.valid?(%{params | selected_flags: flags})
+    end
   end
 
   # --- Failure / error paths ---
@@ -892,9 +1033,6 @@ defmodule BACnet.Protocol.EventParametersTest do
                  ], 0}}
              )
   end
-
-  # TODO: Event Parameter 8+9 (6 = Complex Event Type, 7 unused) happy path
-  # Failure paths for types without BTL-verified happy path payloads:
 
   test "encode change of life safety invalid params" do
     assert {:error, :invalid_params} =

@@ -294,8 +294,8 @@ defmodule BACnet.Protocol.EventParameters do
         {8,
          [
            tagged: {0, time_delay, byte_size(time_delay)},
-           constructed: {1, ls_alarm_values, 0},
-           constructed: {2, alarm_values, 0},
+           constructed: {1, Enum.reverse(ls_alarm_values), 0},
+           constructed: {2, Enum.reverse(alarm_values), 0},
            constructed: {3, mode, 0}
          ], 0}}}
     else

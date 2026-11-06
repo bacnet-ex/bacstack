@@ -537,7 +537,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
     truncate_floats_object(object, resolution, mode)
   end
 
-  defp truncate_floats_object(%name{} = object, precision, mode) do
+  defp truncate_floats_object(%_name{} = object, precision, mode) do
     object
     |> Map.from_struct()
     |> Enum.reduce(object, fn
@@ -550,7 +550,6 @@ defmodule BACnet.Protocol.ObjectsUtility do
       _pair, acc ->
         acc
     end)
-    |> then(&struct(name, &1))
   end
 
   defp truncate_floats(float, precision, :round), do: Float.round(float, precision)
@@ -1048,24 +1047,23 @@ defmodule BACnet.Protocol.ObjectsUtility do
         {:ok, %{ack.property_identifier => value}}
 
       {:error, {:invalid_property_value, _prop}} when ignore_invalid_properties ->
-        {:cont, {:ok, %{}}}
+        {:ok, %{}}
 
       {:error, {:missing_parse_fun, _prop}} when ignore_invalid_properties ->
-        {:cont, {:ok, %{}}}
+        {:ok, %{}}
 
       {:error, {:unknown_property, _prop}} when allow_unknown_properties != false ->
-        {:cont,
-         {:ok,
-          %{
-            ack.property_identifier =>
-              unpack_unknown_properties_if_primitive(ack.property_value, allow_unknown_properties)
-          }}}
+        {:ok,
+         %{
+           ack.property_identifier =>
+             unpack_unknown_properties_if_primitive(ack.property_value, allow_unknown_properties)
+         }}
 
       {:error, {:unknown_property, _prop}} when ignore_unknown_properties ->
-        {:cont, {:ok, %{}}}
+        {:ok, %{}}
 
       {:error, _err} = err ->
-        {:halt, err}
+        err
     end
   end
 

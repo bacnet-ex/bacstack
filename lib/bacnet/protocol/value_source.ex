@@ -1,6 +1,6 @@
 defmodule BACnet.Protocol.ValueSource do
   @moduledoc """
-  The Value Source Identifies the source of a value.
+  The Value Source identifies the source of a value.
 
   In building control systems, an object may be manipulated by a number of entities,
   and it may be important to know which entity is the current source of the current value.
