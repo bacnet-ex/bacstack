@@ -6,12 +6,14 @@ defmodule BACnet.Stack.TrendLogger.PollSchedule do
   # applicable boundary (second, minute, hour, or day).
   @day_hundredths 8_640_000
 
+  @doc false
   @spec interval(non_neg_integer()) :: pos_integer()
   def interval(0), do: 1000
   def interval(hundredths), do: hundredths * 10
 
   # A nil phase means ordinary, relative polling. The standard does not specify
   # an alignment boundary for intervals that do not divide any of the four units.
+  @doc false
   @spec alignment(map()) :: non_neg_integer() | nil
   def alignment(object)
 
@@ -22,6 +24,7 @@ defmodule BACnet.Stack.TrendLogger.PollSchedule do
 
   def alignment(_object), do: nil
 
+  @doc false
   @spec delay(map(), DateTime.t()) :: pos_integer()
   def delay(%{log_interval: interval} = object, %DateTime{} = now) do
     case alignment(object) do
