@@ -3,9 +3,13 @@ defmodule BACnet.Protocol.ObjectsMacro do
   This is an internal module for defining BACnet objects.
 
   If you're a library user, there's no need for you to ever deal with this module.
-  Object behaviour is implemented in `BACnet.Protocol.ObjectOperations`. This module
+  Object property operations are implemented in `BACnet.Protocol.ObjectOperations`. This module
   builds a `BACnet.Protocol.ObjectsContract` for the object type and delegates to it.
   Hooks such as `inhibit_object_check/1` stay overridable in the object module.
+
+  Every object implements `BACnet.Protocol.ObjectsBehaviour` and
+  `BACnet.Protocol.ObjectsProtocol`. The generated `execute/2` preserves the object
+  and runtime state and can be overridden to implement object-specific execution logic.
 
   If you want to store the BACnet object definition AST as a persistent module
   attribute (`:bacobj_ast`) in each BACnet object module, you can set the key `:store_bacobj_ast`
@@ -425,6 +429,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
   - `add_property/3`
   - `create/4`
   - `cov_reporting?/1`
+  - `execute/2`
   - `get_object_identifier/1`
   - `get_properties/1`
   - `has_property?/2`
@@ -432,6 +437,11 @@ defmodule BACnet.Protocol.ObjectsMacro do
   - `property_writable?/2`
   - `remove_property/2`
   - `update_property/3`
+
+  Override `execute/2` after the `bac_object/2` block to implement one execution step.
+  The default returns an ok-result preserving the object and context state.
+  See `BACnet.Protocol.ObjectsBehaviour` for
+  the execution contract and `BACnet.Protocol.ObjectsProtocol` for generic dispatch.
 
   The `property_writable/2` function should be overridden by modules to set certain
   properties writable only during certain conditions, if this is required by the object.
@@ -983,6 +993,26 @@ defmodule BACnet.Protocol.ObjectsMacro do
       alias BACnet.Protocol.ObjectsUtility
       require Constants
 
+      @behaviour BACnet.Protocol.ObjectsBehaviour
+
+      @doc """
+      Runs one execution step for this object.
+
+      The default implementation returns an ok-result preserving the object and
+      context state, without invoking host callbacks. Object modules can override
+      this function to implement execution logic. The caller owns execution timing
+      and must retain the returned object and runtime state.
+      See `BACnet.Protocol.ObjectsBehaviour` for the execution contract.
+      """
+      @impl BACnet.Protocol.ObjectsBehaviour
+      @spec execute(t(), BACnet.Protocol.ObjectExecution.Context.t()) ::
+              {:ok, BACnet.Protocol.ObjectExecution.Result.t(t())} | {:error, term()}
+      def execute(%__MODULE__{} = object, %BACnet.Protocol.ObjectExecution.Context{} = context) do
+        {:ok, %BACnet.Protocol.ObjectExecution.Result{object: object, state: context.state}}
+      end
+
+      defoverridable execute: 2
+
       # Implement Access Behaviour function fetch/2 for convenience
       @doc false
       defdelegate fetch(object, key), to: Map
@@ -1432,6 +1462,12 @@ defmodule BACnet.Protocol.ObjectsMacro do
       """
       @spec get_properties_type_map() :: map()
       def get_properties_type_map(), do: @object_tables.type_map
+
+      defimpl BACnet.Protocol.ObjectsProtocol do
+        @spec execute(@for.t(), BACnet.Protocol.ObjectExecution.Context.t()) ::
+                {:ok, BACnet.Protocol.ObjectExecution.Result.t(@for.t())} | {:error, term()}
+        def execute(object, context), do: @for.execute(object, context)
+      end
 
       defimpl Inspect do
         def inspect(object, opts) do

@@ -228,6 +228,44 @@ The struct `BACnet.Protocol.Device.ServicesSupported` is automatically adjusted 
 
 ## Status of BACnet objects implementation
 
+Every object type exposes an overridable `execute/2` function, defined by the object
+module. Use `BACnet.Protocol.ObjectsProtocol.execute(object, context)` to execute
+objects without knowing their modules. All objects share the same execution context
+and result contract; the default preserves the object and runtime state.
+
+```elixir
+alias BACnet.Protocol.ObjectExecution.Context
+alias BACnet.Protocol.ObjectExecution.Result
+alias BACnet.Protocol.ObjectsProtocol
+
+context = %Context{
+  now: DateTime.utc_now(), # Supply device-local time for time-based behaviour.
+  monotonic_time: System.monotonic_time(:millisecond),
+  trigger: :periodic,
+  state: previous_state # nil on the first execution of this object instance
+}
+
+{:ok, %Result{object: updated_object, state: next_state}} =
+  ObjectsProtocol.execute(object, context)
+```
+
+The caller retains `updated_object` and passes `next_state` in the next context for
+that same object instance, with fresh clock values. Runtime state is separate from
+BACnet properties and is owned by the object module. Optional context callbacks
+provide object lookup and property reads/writes on local or remote objects. Writes
+are synchronous and are not rolled back on errors. The caller controls execution
+timing, including calls triggered by property or clock changes.
+Use `context.trigger` to distinguish periodic execution, initialization, clock
+changes, and successful property writes (including repeated writes of the same value).
+
+Object modules implement execution logic by overriding `execute/2` after their
+`bac_object/2` block. See `BACnet.Protocol.ObjectsBehaviour` and
+`BACnet.Protocol.ObjectExecution.Context` for callback signatures and failure handling.
+
+The Execute column below tracks implemented operational behaviour, such as Schedule
+evaluation and target writes. The common execution interface alone does not provide
+that behaviour.
+
 | Object Type                  | Representation | Execute | Intrinsic Reporting |
 |------------------------------|----------------|---------|---------------------|
 | Accumulator                  |    135-2012    |    -    |          -          |

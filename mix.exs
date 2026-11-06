@@ -30,6 +30,7 @@ defmodule BACstack.MixProject do
           ~r"Inspect\..+",
           ~r"BACnet\.Protocol\.Constants\..+",
           BACnet.Protocol.ObjectsUtility.Internal.ReadPropertyAckTransformOptions,
+          BACnet.Protocol.ObjectsProtocol,
           BACnet.Protocol.Services.Protocol,
           BACnet.Stack.EncoderProtocol,
           ~r"BACnet\.Test\..+",
@@ -238,6 +239,14 @@ defmodule BACstack.MixProject do
           BACnet.Protocol.Device.ObjectTypesSupported,
           BACnet.Protocol.Device.ServicesSupported
         ],
+        "Protocol: Objects Behaviour/Protocol": [
+          ~r"Protocol\.ObjectExecution\..+",
+          BACnet.Protocol.ObjectOperations,
+          BACnet.Protocol.ObjectsBehaviour,
+          BACnet.Protocol.ObjectsProtocol,
+          BACnet.Protocol.ObjectsContract,
+          BACnet.Protocol.ObjectsMacro
+        ],
         "Protocol: Services": [~r"Protocol\.Services\.(?!Behaviour|Common|Protocol)"],
         "Protocol: Alarm & Event Subscription": [
           ~r"Protocol\.EventAlgorithms",
@@ -254,9 +263,6 @@ defmodule BACstack.MixProject do
         Stack: [~r"Stack\.[^.]+$", ~r"Stack\.Transport\.[^.]+$"],
         "BACstack Internals": [
           BACnet.BeamTypes,
-          BACnet.Protocol.ObjectOperations,
-          BACnet.Protocol.ObjectsContract,
-          BACnet.Protocol.ObjectsMacro,
           BACnet.Protocol.Services.Behaviour,
           BACnet.Protocol.Services.Common,
           BACnet.Protocol.Services.Protocol,
