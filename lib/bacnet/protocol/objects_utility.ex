@@ -320,10 +320,17 @@ defmodule BACnet.Protocol.ObjectsUtility do
 
   @doc """
   Get the list of properties the object has.
+
+  This function excludes `object_name` and `object_instance`,
+  so it can be used as the `property_list` property (as `BACnet.Protocol.BACnetArray`).
+  The properties `object_type` and `object_identifier` are not present,
+  so they do not need to be excluded.
   """
   @spec get_properties(bacnet_object()) :: [Constants.property_identifier()]
   def get_properties(%{_metadata: %{properties_list: list}} = _object) do
-    list
+    Enum.reject(list, fn item ->
+      item in [:object_name, :object_instance]
+    end)
   end
 
   @doc """
