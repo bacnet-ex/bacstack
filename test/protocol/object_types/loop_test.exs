@@ -1201,7 +1201,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.LoopTest do
     Context.new(trigger, Keyword.merge(defaults, options))
   end
 
-  defp initial(object \\ object(), reading \\ 19.0) do
+  defp initial(object, reading \\ 19.0) do
     ctx = context(:initialization, read_property: fn _reference -> {:ok, reading} end)
     {:ok, stored} = Loop.execute(object, ctx)
     {:ok, stored} = continue(stored, ctx)

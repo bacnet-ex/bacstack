@@ -737,12 +737,4 @@ defmodule BACnet.Test.Protocol.ObjectTypes.GroupTest do
       property_value: value,
       error: nil
     }
-
-  defp failure(property, error),
-    do: %ReadResult{
-      property_identifier: property,
-      property_array_index: nil,
-      property_value: nil,
-      error: error
-    }
 end

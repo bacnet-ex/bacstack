@@ -1550,7 +1550,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.ScheduleTest do
       options: []
     }
 
-  defp start(object, targets \\ []) do
+  defp start(object, targets) do
     host = Host.new(Enum.map([object | targets], &{&1, []}), @now, 0)
 
     for target <- targets,

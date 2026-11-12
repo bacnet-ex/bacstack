@@ -7,7 +7,7 @@ defmodule BACstack.MixProject do
     [
       app: :bacstack,
       version: "0.1.0-dev.2",
-      elixir: "~> 1.15",
+      elixir: "~> 1.16",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: [tracers: add_compilation_tracer()],
       # This is the cause for unknown protocol __impl__/1 for built-in types
