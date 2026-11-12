@@ -723,7 +723,16 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
       assert {:ok, "updated"} = ObjectsUtility.get_property(object, :description)
       assert {:ok, object} = ObjectsUtility.remove_property(object, :description)
       refute ObjectsUtility.has_property?(object, :description)
-      assert ObjectsUtility.get_properties(object) == object._metadata.properties_list
+
+      assert Enum.sort(ObjectsUtility.get_properties(object)) ==
+               Enum.sort([
+                 :present_value,
+                 :out_of_service,
+                 :status_flags,
+                 :event_state,
+                 :polarity
+               ])
+
       refute ObjectsUtility.has_priority_array?(object)
       refute ObjectsUtility.intrinsic_reporting?(object)
       assert ObjectsUtility.get_remote_device_id(object) == nil

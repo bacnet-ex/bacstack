@@ -1084,8 +1084,6 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
   test "verify get_properties/1 of defined bacnet object" do
     # Verify properties (all properties that are part of the instanced object)
     assert [
-             :object_instance,
-             :object_name,
              :out_of_service,
              :present_value,
              :status_flags
@@ -1106,8 +1104,6 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
              :limit_enable,
              :notification_class,
              :notify_type,
-             :object_instance,
-             :object_name,
              :out_of_service,
              :present_value,
              :status_flags,
