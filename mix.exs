@@ -243,7 +243,11 @@ defmodule BACstack.MixProject do
         ],
         "Protocol: Objects Behaviour/Protocol": [
           BACnet.Protocol.ObjectExecution.Context,
+          BACnet.Protocol.ObjectExecution.EventReporting,
+          BACnet.Protocol.ObjectExecution.IntrinsicReporting,
           BACnet.Protocol.ObjectExecution.Lifecycle,
+          BACnet.Protocol.ObjectExecution.LogLifecycle,
+          BACnet.Protocol.ObjectExecution.Reliability,
           BACnet.Protocol.ObjectExecution.Result,
           BACnet.Protocol.ObjectExecution.Wakeup,
           BACnet.Protocol.ObjectOperations,
