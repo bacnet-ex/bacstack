@@ -8,6 +8,8 @@ defmodule BACnet.Stack.TrendLogger.PollSchedule do
 
   @doc false
   @spec interval(non_neg_integer()) :: pos_integer()
+  def interval(hundredths)
+
   def interval(0), do: 1000
   def interval(hundredths), do: hundredths * 10
 

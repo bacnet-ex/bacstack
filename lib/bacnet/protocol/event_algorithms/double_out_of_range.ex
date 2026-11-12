@@ -35,8 +35,9 @@ defmodule BACnet.Protocol.EventAlgorithms.DoubleOutOfRange do
   @dialyzer {:nowarn_function, to_struct: 1}
   @dialyzer {:no_opaque, new: 3}
   @dialyzer {:no_return, new: 3}
-  @dialyzer {:no_opaque, execute: 1}
+  @dialyzer {:no_opaque, execute: 2}
   @dialyzer {:no_return, execute: 1}
+  @dialyzer {:no_return, execute: 2}
   @dialyzer {:no_opaque, update: 2}
   @dialyzer {:no_return, update: 2}
 
@@ -85,6 +86,8 @@ defmodule BACnet.Protocol.EventAlgorithms.DoubleOutOfRange do
   however to ensure the Status Flags have an overall correct status,
   the user has to make sure all bits are correctly.
 
+  The optional clock sample determines when delays start and expire.
+
   ASHRAE 135:
   > The conditions evaluated by this event algorithm are:
   >
@@ -116,11 +119,11 @@ defmodule BACnet.Protocol.EventAlgorithms.DoubleOutOfRange do
   > (h) If pCurrentState is LOW_LIMIT, and pMonitoredValue is greater than (pLowLimit + pDeadband)
   > for pTimeDelayNormal, then indicate a transition to the NORMAL event state.
   """
-  @spec execute(t()) ::
+  @spec execute(t(), DateTime.t()) ::
           {:event, new_state :: t(), Notify.t()}
           | {:delayed_event | :no_event, new_state :: t()}
-  def execute(%__MODULE__{} = state) do
-    case BaseImpl.execute(to_base_struct(state)) do
+  def execute(%__MODULE__{} = state, %DateTime{} = now \\ get_dt()) do
+    case BaseImpl.execute(to_base_struct(state), now) do
       {type, new_state} -> {type, to_struct(new_state)}
       {type, new_state, notify} -> {type, to_struct(new_state), to_notify(notify)}
     end
@@ -160,4 +163,7 @@ defmodule BACnet.Protocol.EventAlgorithms.DoubleOutOfRange do
   @spec to_struct(BaseImpl.t()) :: t()
   defp to_struct(state),
     do: %{state | __struct__: __MODULE__, parameters: to_params(state.parameters)}
+
+  @spec get_dt() :: DateTime.t()
+  defp get_dt(), do: DateTime.now!(Application.get_env(:bacstack, :default_timezone, "Etc/UTC"))
 end

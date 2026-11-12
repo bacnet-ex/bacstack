@@ -30,7 +30,7 @@ defmodule BACnet.Protocol.Services.LifeSafetyOperation do
   'Error Type' parameter.
 
   The 'Error Class' and 'Error Code' are per Clause 18. The service procedure specifically validates the 'Request' and (if
-  present) the 'Object Identifier' parameter; invalid values result in an appropriate error from Clause 18.
+  present) the 'Object Identifier' parameter - invalid values result in an appropriate error from Clause 18.
   """
 
   alias BACnet.Protocol

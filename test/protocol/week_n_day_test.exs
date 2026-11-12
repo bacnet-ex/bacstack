@@ -48,7 +48,7 @@ defmodule BACnet.Protocol.WeekNDayTest do
   end
 
   test "decode week n day with week of month out of range" do
-    assert {:error, :invalid_tags} = WeekNDay.parse(octet_string: <<1, 7, 7>>)
+    assert {:error, :invalid_tags} = WeekNDay.parse(octet_string: <<1, 10, 7>>)
   end
 
   test "decode week n day with weekday out of range" do
@@ -92,7 +92,7 @@ defmodule BACnet.Protocol.WeekNDayTest do
   end
 
   test "valid week n day" do
-    for month <- 1..12, wom <- 1..6, weekday <- 1..7 do
+    for month <- 1..12, wom <- 1..9, weekday <- 1..7 do
       assert true ==
                WeekNDay.valid?(%WeekNDay{
                  month: month,
@@ -144,6 +144,25 @@ defmodule BACnet.Protocol.WeekNDayTest do
              })
   end
 
+  test "all supported week forms round-trip and invalid encoding never truncates octets" do
+    for week <- [1, 6, 7, 8, 9, :unspecified] do
+      pattern = %WeekNDay{month: :even, week_of_month: week, weekday: :unspecified}
+      assert {:ok, tags} = WeekNDay.encode(pattern)
+      assert {:ok, {^pattern, []}} = WeekNDay.parse(tags)
+    end
+
+    for {key, value} <- [
+          month: 256,
+          week_of_month: 10,
+          week_of_month: 257,
+          weekday: 8,
+          weekday: 256
+        ] do
+      pattern = Map.put(%WeekNDay{month: 1, week_of_month: 1, weekday: 1}, key, value)
+      assert {:error, :invalid_value} = WeekNDay.encode(pattern)
+    end
+  end
+
   test "invalid week n day" do
     assert false ==
              WeekNDay.valid?(%WeekNDay{
@@ -169,7 +188,7 @@ defmodule BACnet.Protocol.WeekNDayTest do
     assert false ==
              WeekNDay.valid?(%WeekNDay{
                month: 12,
-               week_of_month: 7,
+               week_of_month: 10,
                weekday: 7
              })
 

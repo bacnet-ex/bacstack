@@ -44,12 +44,12 @@ defmodule BACnet.Protocol.BvlcResult do
       iex> res.result_code
       :successful_completion
 
-  In normal operation you rarely construct `BACnet.Protocol.BvlcResult` values yourself; they
-  arrive via `BACnet.Protocol.decode_bvll/3` when a remote device replies to a
+  In normal operation you rarely construct `BACnet.Protocol.BvlcResult` values yourself -
+  they arrive via `BACnet.Protocol.decode_bvll/3` when a remote device replies to a
   management request you (or the BBMD) sent. `BACnet.Stack.BBMD` interprets the
   code to decide whether a BDT/FDT update or foreign registration succeeded.
 
-  ## See Also
+  ### See Also
 
   - `BACnet.Protocol` - the `decode_bvll/3` entry point that materialises `BACnet.Protocol.BvlcResult` values
   - `BACnet.Protocol.BvlcFunction` - the management requests that produce these results

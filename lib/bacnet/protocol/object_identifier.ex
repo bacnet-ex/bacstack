@@ -23,13 +23,13 @@ defmodule BACnet.Protocol.ObjectIdentifier do
   ### BACnet Specification References
 
   - **Encoding** (Clause 20.2.14): Primitive, four contents octets. The 10-bit
-    type occupies the high bits; the 22-bit instance the low bits. The encoding
+    type occupies the high bits - the 22-bit instance the low bits. The encoding
     is big-endian within the 32-bit word.
   - **ASN.1** (Clause 21):
     `BACnetObjectIdentifier ::= [APPLICATION 12] BIT STRING { ... }` (the
     production also references the `BACnetObjectType` enumeration).
   - **Constraints**: Instance numbers 0 and 4_194_302 are reserved in some
-    contexts; the library accepts the full 0 … `max_instance_and_property_id`
+    contexts - the library accepts the full 0 … `max_instance_and_property_id`
     range.
   - **Uniqueness**: The (type, instance) pair **shall** be unique within a device
     (Clause 12 introduction and many object-type clauses).

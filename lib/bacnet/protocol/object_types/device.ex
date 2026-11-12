@@ -1,9 +1,8 @@
 defmodule BACnet.Protocol.ObjectTypes.Device do
   @moduledoc """
-  The Device object is the single, mandatory root object that represents an entire
-  BACnet device on the network. Every BACnet device contains exactly one Device
-  object whose `object_identifier` is also used as the device's unique address within
-  the BACnet internetwork.
+  A Device object identifies a BACnet device and exposes its capabilities and
+  operating state. Its object identifier distinguishes the device from other
+  devices on the BACnet internetwork.
 
   The object advertises protocol conformance (`protocol_services_supported`,
   `protocol_object_types_supported`, `segmentation_support`, etc.), vendor and model
@@ -22,191 +21,160 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
 
   ### Behaviour and Operation
 
-  The Device object is the single source of truth for everything a remote BACnet
-  client needs to know about this device and is the only object that must exist in
-  every BACnet device. It is the target of Who-Is/I-Am, the source of the object
-  list(s), protocol capability flags, and many operational parameters.
+  The Device object describes a BACnet device's identity, capabilities, object database,
+  and operating state. Remote Device objects are snapshots, such as those returned by
+  `BACnet.Stack.ClientHelper.read_object/4`.
 
-  Most properties are maintained by a combination of:
-  - static configuration (vendor name, model, protocol revision, etc.)
-  - dynamic state maintained by the stack (`database_revision`, `last_restart_reason`,
-    active COV subscriptions, etc.)
-  - time-keeping and OS services (local time, `utc_offset`, daylight savings status)
-  - the application / device server (`object_list`, `structured_object_list`, backup/restore
-    state, many configuration properties).
+  #### Lifecycle
 
-  Several properties have side effects or must be kept in sync with lower layers
-  (APDU timeouts, MS/TP token parameters, time synchronisation settings, etc.).
-  Many of its properties are writable and changes must be acted upon by the device server.
+  The [object execution host](BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host)
+  supplies the device's current local time in the `now` field of
+  `BACnet.Protocol.ObjectExecution.Context`.
 
-  ### Developer Implementation Notes (geared to device server / application authors)
+  `local_date`, `local_time`, `utc_offset` and `daylight_savings_status` are sampled
+  on demand. The offset uses standard time in minutes west of UTC. The daylight
+  savings status reflects the separate daylight saving adjustment.
+  For each requested property, the host can call
+  `BACnet.Protocol.ObjectExecution.Lifecycle.prepare_read/2` with its
+  `:property_read` trigger and use `get_property/2` on the returned object. The host
+  can reuse the same `now` sample when reading several clock properties together.
+  Hosts that read without lifecycle execution can invoke the existing
+  `:on_read_function` callbacks for `local_date` and `local_time`. Those callbacks
+  sample the system clock using the stored `utc_offset`.
 
-  The generated code handles storage + basic mechanics (validation, implicit_relationships,
-  readonly annotations as hints to your server, etc.). **You must drive "special" live
-  properties and side effects yourself** via `update_property/3` (never direct mutation).
-  Read notes below + generated tables for details.
+  To record a database change, restore or restart, the host needs to execute with
+  `:periodic` and pass a `t:device_event/0` as the `:device_event` context option.
+  The host supplies each event once, after the corresponding operation succeeds.
+  Database events and completed restores increment `database_revision`.
+  Creating or deleting temporary configuration files during backup or restore leaves
+  the revision unchanged. Ordinary property writes also leave it unchanged.
+  A completed restore updates `last_restore_time` when selected.
 
-  **Special / live properties and expected developer behaviour**
+  A completed restart updates `last_restart_reason` and `time_of_device_restart`
+  when selected. With `supports_restart: true`, the recipient list defaults to a
+  local broadcast. An empty list suppresses the notification. The host needs to
+  supply the final `system_status` before calling
+  `restart_notification/1` on the updated object. It can then send the returned
+  notification to the listed recipients. MS/TP slave devices cannot send this
+  notification.
 
-  The Device has many "global live" properties that must be kept in sync with the
-  running stack, OS, config, etc. (more than any other object).
+  #### Periodic time synchronization
 
-  - `local_time`, `local_date`:
-    **Dev must**: Ensure your read path call the annotation functions, which return
-    current wall time (respect utc_offset, DST).
+  A positive `time_synchronization_interval` and at least one nonempty recipient
+  list enable periodic synchronization. The interval is measured in minutes. With
+  `align_intervals` enabled, intervals that divide an hour or a day align to local
+  clock boundaries, shifted by `interval_offset` modulo the interval. Other intervals
+  use elapsed time.
 
-  - `utc_offset`, `daylight_savings_status`:
-    Writes to `utc_offset` / `daylight_savings_status` must be pushed
-    to OS or time sync layer.
+  The host needs to retain each execution result's state and use its wakeup for
+  timer delivery. It needs to provide the device's timezone database and deliver
+  `:clock_change` when changing the local clock or timezone. At each due `:timer`
+  or `:periodic` execution, `time_synchronization_requests/1` returns the requests
+  prepared for that step. The host needs to send them once after committing that
+  result. It resolves the recipient addresses and handles any delivery failures.
 
-  - `database_revision`: Bumped on object db changes.
-    **Dev must**: Every time you add/remove object, change an object's name,
-    change an object's identifier, or a restore is performed, increment this.
-    The creation and deletion of temporary configuration files during a restore,
-    does not change this property.
+  #### Device-wide responsibilities
 
-  - `active_cov_subscriptions`: Live subscription state.
-    **Dev must**: Your COV subscription manager (on SubscribeCOV success/expire,
-    resub etc.) must add/remove entries here via `update_property/3`.
+  The host owns the device clock, including initialization when no clock is available,
+  and applies incoming `BACnet.Protocol.Services.TimeSynchronization` and
+  `BACnet.Protocol.Services.UtcTimeSynchronization` requests to it. It also owns
+  the object registry, address bindings and COV subscriptions. It needs to keep
+  `object_list`, `structured_object_list` and `active_cov_subscriptions` current
+  and commit database events with the corresponding registry changes.
 
-  - `apdu_timeout`, `number_of_apdu_retries`, MS/TP properties (`max_info_frames`, etc.),
-    time sync properties, backup/restore state machine properties, `object_list`, etc.:
-    Many are readonly or have side effects.
-    **Dev must**: On writes (where allowed), propagate to the APDU layer, MS/TP
-    driver, time sync engine, flash/backup routines.
+  The host carries out reinitialization and the backup and restore procedures, including
+  authentication and persistence. It also needs to apply changes to live settings such
+  as APDU timeouts, retry counts and MS/TP parameters to the corresponding stack or transport
+  components. For MS/TP, it needs to mirror `max_master` and `max_info_frames`
+  from the enabled MS/TP Network Port with the lowest instance number.
 
-  - `last_restart_reason`, `time_of_device_restart`, `restart_notification_*`:
-    **Dev must**: Set by reinitialize/powerup code. Can emit notifications.
-
-  - Vendor/model, protocol version/revision, max APDU etc.: Mostly static, set at
-    startup from your build/config.
-
-  - `time_synchronization_interval` etc. + recipients: For periodic time sync.
-    **Dev must**: Your time sync task uses these.
-
-  See the "You are the 'god object'" section and specific bullets below (backup/restore,
-  object_list, special write propagation, COV subs, restart, on_read for time, etc).
-
-  The Device object is special: it is both a normal BACnet object *and* the
-  container for a huge amount of device-wide state and configuration that the
-  rest of the stack (APDU timers, BVLL, MS/TP token passing, time, backup/restore,
-  COV subscription database, etc.) needs.
-
-  **You are the "god object" for the device**: Almost every interesting piece of
-  global state eventually appears as a property on the Device object (or is
-  reachable from its `object_list` / `structured_object_list`). Your device server
-  must keep these properties in sync with the lower layers:
-
-  - `apdu_timeout`, `number_of_apdu_retries` - changes must be propagated to the
-    `BACnet.Stack.Client` and `BACnet.Stack.Segmentator` and partially to
-    `BACnet.Stack.SegmentsStore`.
-  - `max_info_frames`, `max_master` (for MS/TP) - changes must be propagated to the
-    `BACnet.Stack.Transport.MstpTransport`. Properties must not be present if no
-    MS/TP transport is used.
-  - `auto_slave_discovery`, `slave_proxy_enable`, `manual_slave_address_binding`,
-    `slave_address_binding` - used for a slave proxy (must be implemented by the user).
-    These properties are prohibited on local objects created with `revision: 19` or higher,
-    since slave proxy functionality was removed in ASHRAE 135-2016.
-  - All the time-related properties (`utc_offset`, `daylight_savings_status`) -
-    Writes to `utc_offset` or DST status usually have to be pushed into
-    the OS or into the time-sync state machine.
-  - `active_cov_subscriptions` - this is a live list that the COV manager
-    appends to / removes from when SubscribeCOV / SubscribeCOVProperty
-    operations succeed or subscriptions expire.
-  - `database_revision` - you must bump it every time the set of objects or
-    their configuration changes.
-  - Backup/restore properties (see Clause 19.1) - the whole state machine
-    (backup_state, backup_preparation_time, restore_preparation_time,
-    backup_and_restore_state, last_restore_time, …) must be driven by your
-    backup/restore service implementation.
-  - `object_list` and `structured_object_list` - Must be kept up to date with
-    all "live" objects in the device.
-
-  **Special write propagation**: When a client writes certain Device properties
-  your write handler must not only store the new value in the object but also
-  push the value into the running system.
-
-  **last_restart_reason, time_of_device_restart, restart_notification**: These
-  are written by the reinitialize / power-up code. A cold boot or a
-  ReinitializeDevice "warmstart" / "coldstart" must update them and emits an
-  unconfirmed COV notification on the Device object, if the property list
-  `restart_notification_recipients` is not empty. See Clause 19.3.
-
-  **COV subscriptions on the Device object itself**: Because so many global
-  things (database_revision, active_cov_subscriptions, time, etc.) live here,
-  clients often subscribe to COVs on the Device object to be told when
-  "something interesting about the whole device changed".
-
-  **Remote Device objects**: When you discover another device you can create a
-  "shadow" Device object (done by `BACnet.Stack.ClientHelper.read_object/4`)
-  that reflects what you last read from it.
-
-  **The `object_list` / `structured_object_list` are special**: When a new object
-  is created or deleted, you must make sure that any cached view is invalidated
-  and that `database_revision` is bumped.
-
-  **ReinitializeDevice service**: This service is the official way to ask a
-  device to reboot. Your handler for it will typically:
-  1. Validate the password, if one is configured on the Device object.
-  2. Set the appropriate `last_restart_reason`.
-  3. Persist any "about to restart" state.
-  4. Actually restart the Erlang VM / the device itself / etc.
-
-  The long list under "Special Considerations for Device Server Implementors"
-  in this moduledoc (and the corresponding tables in the generated part) is
-  deliberately there to remind you of all the places where a write to the
-  Device object has to do something outside the object store.
-
-  See also the various service modules (TimeSynchronization,
-  DeviceCommunicationControl, ReinitializeDevice, Backup/Restore support, …) -
-  they all ultimately read or write properties that live on the Device object.
-
-  ### Special Considerations for Device Server Implementors
-
-  Several Device properties require special handling by the BACnet device server
-  (or the application using this library) on write:
-
-  - `active_cov_subscriptions`
-  - `apdu_timeout` (propagation on write)
-  - `auto_slave_discovery`
-  - `daylight_savings_status` (auto update on DST and propagation to `utc_offset`)
-  - `device_address_binding`
-  - `manual_slave_address_binding`
-  - `max_info_frames` (marked readonly; recommended default `1` for MS/TP)
-  - `max_master` (marked readonly; recommended default `127` for MS/TP)
-  - `number_of_apdu_retries` (propagation on write)
-  - `object_list`
-  - `slave_address_binding`
-  - `slave_proxy_enable`
-  - `structured_object_list`
-  - `utc_offset` (when handling UTC time synchronisation)
-  - All Backup/Restore related properties (Clause 19.1)
-  - All (UTC) Time Synchronisation related properties
-
-  Propagation of certain values (e.g. MS/TP parameters to the transport layer)
-  is the responsibility of the device server or application code.
+  Slave proxy properties are available on local objects created with a revision below 19.
+  A host supporting them needs to implement the proxy functionality.
 
   ### Examples
 
-  Creating a basic local Device object:
+  Creating a basic local Device object.
 
       iex> {:ok, dev} = BACnet.Protocol.ObjectTypes.Device.create(123, "My BACnet Device", %{
       ...>   vendor_name: "Example Inc.",
       ...>   vendor_identifier: 999,
       ...>   model_name: "Demo Controller",
       ...>   segmentation_supported: :no_segmentation
-      ...> }); dev.object_name
+      ...> })
+      iex> dev.object_name
       "My BACnet Device"
 
-  Enabling restart support (the option makes additional properties required/available):
+  Sampling the clock before serving a read, then recording a committed object creation.
 
-      iex> {:ok, dev} = BACnet.Protocol.ObjectTypes.Device.create(1, "Dev1", %{
+      iex> alias BACnet.Protocol.ObjectExecution.{Context, Lifecycle}
+      iex> alias BACnet.Protocol.ObjectTypes.Device
+      iex> {:ok, device} = Device.create(1, "Controller", %{
+      ...>   vendor_identifier: 999,
+      ...>   segmentation_supported: :no_segmentation
+      ...> })
+      iex> now = ~U[2026-06-01 12:15:00Z]
+      iex> read = Context.new({:property_read, :local_time, nil}, now: now)
+      iex> {:ok, refreshed} = Lifecycle.prepare_read(device, read)
+      iex> {:ok, time} = Device.get_property(refreshed.object, :local_time)
+      iex> time.hour
+      12
+      iex> created = Context.new(:periodic,
+      ...>   now: now, state: refreshed.state,
+      ...>   options: [device_event: {:database_change, :object_created}]
+      ...> )
+      iex> {:ok, changed} = Lifecycle.execute(refreshed.object, created)
+      iex> changed.object.database_revision == device.database_revision + 1
+      true
+
+  Recording a completed restart when notifications are disabled.
+
+      iex> alias BACnet.Protocol.ObjectExecution.{Context, Lifecycle}
+      iex> alias BACnet.Protocol.ObjectTypes.Device
+      iex> {:ok, device} = Device.create(1, "Controller", %{
       ...>   vendor_identifier: 999,
       ...>   restart_notification_recipients: [],
       ...>   segmentation_supported: :no_segmentation
       ...> }, supports_restart: true)
-      iex> is_list(dev.restart_notification_recipients)
-      true
+      iex> restart = Context.new(:periodic,
+      ...>   now: ~U[2026-06-01 12:15:00Z],
+      ...>   options: [device_event: {:restart_completed, :warmstart}]
+      ...> )
+      iex> {:ok, restarted} = Lifecycle.execute(device, restart)
+      iex> Device.get_property(restarted.object, :last_restart_reason)
+      {:ok, :warmstart}
+      iex> Device.restart_notification(restarted.object)
+      {:ok, nil}
+
+  Driving periodic synchronization from a monotonic deadline. The second context
+  represents timer delivery after the host has committed the initialization result.
+  See `BACnet.Protocol.ObjectExecution.Lifecycle` for timer management examples.
+
+      iex> alias BACnet.Protocol.{ObjectIdentifier, Recipient}
+      iex> alias BACnet.Protocol.ObjectExecution.{Context, Lifecycle}
+      iex> alias BACnet.Protocol.ObjectTypes.Device
+      iex> recipient = %Recipient{
+      ...>   type: :device, device: %ObjectIdentifier{type: :device, instance: 42}, address: nil
+      ...> }
+      iex> {:ok, device} = Device.create(1, "Controller", %{
+      ...>   vendor_identifier: 999,
+      ...>   segmentation_supported: :no_segmentation,
+      ...>   time_synchronization_interval: 5,
+      ...>   time_synchronization_recipients: [recipient]
+      ...> })
+      iex> start = Context.new(:initialization,
+      ...>   now: ~U[2026-06-01 12:00:00Z], monotonic_time: 0
+      ...> )
+      iex> {:ok, initialized} = Lifecycle.execute(device, start)
+      iex> initialized.next_execution.monotonic_time
+      300000
+      iex> timer = Context.new(:timer,
+      ...>   now: ~U[2026-06-01 12:05:00Z], monotonic_time: 300_000, state: initialized.state
+      ...> )
+      iex> {:ok, due} = Lifecycle.execute(initialized.object, timer)
+      iex> [{^recipient, %BACnet.Protocol.Services.TimeSynchronization{time: time}}] =
+      ...>   Device.time_synchronization_requests(due)
+      iex> time.minute
+      5
 
   ### See Also
   - `BACnet.Protocol.Services.ReinitializeDevice`
@@ -222,16 +190,26 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.BACnetArray
   alias BACnet.Protocol.BACnetDate
+  alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.BACnetTime
   alias BACnet.Protocol.BACnetTimestamp
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.CovSubscription
   alias BACnet.Protocol.Device.ObjectTypesSupported
   alias BACnet.Protocol.Device.ServicesSupported
+  alias BACnet.Protocol.ObjectExecution.Context
+  alias BACnet.Protocol.ObjectExecution.Result
+  alias BACnet.Protocol.ObjectExecution.Wakeup
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.ObjectsMacro
+  alias BACnet.Protocol.ObjectsUtility
   alias BACnet.Protocol.ObjectsUtility.Internal
+  alias BACnet.Protocol.PropertyValue
   alias BACnet.Protocol.Recipient
+  alias BACnet.Protocol.RecipientAddress
+  alias BACnet.Protocol.Services.TimeSynchronization
+  alias BACnet.Protocol.Services.UnconfirmedCovNotification
+  alias BACnet.Protocol.Services.UtcTimeSynchronization
 
   require Constants
   use ObjectsMacro
@@ -241,7 +219,7 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
 
   In addition to the common options, Device supports:
   - `supports_backup_restore` - Enables the full set of backup/restore properties.
-  - `supports_restart` - Enables restart notification recipient properties.
+  - `supports_restart` - Selects the restart reason, timestamp, and recipient properties.
   """
   @type object_opts ::
           {:supports_backup_restore, boolean()}
@@ -249,8 +227,38 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
           | common_object_opts()
 
   @typedoc """
-  Represents a Device object. All keys should be treated as read-only,
-  all updates should go only through `update_property/3`.
+  A change reported by the host after the corresponding operation completes.
+  """
+  @type device_event ::
+          {:database_change,
+           :object_created
+           | :object_deleted
+           | :object_name_changed
+           | :object_identifier_changed
+           | :temporary_configuration_file_created
+           | :temporary_configuration_file_deleted}
+          | :restore_completed
+          | {:restart_completed, Constants.restart_reason()}
+
+  @typedoc """
+  A recipient and the time synchronization service request to send to it.
+  """
+  @type time_sync_request ::
+          {recipient :: Recipient.t(),
+           request :: TimeSynchronization.t() | UtcTimeSynchronization.t()}
+
+  @typep time_sync_schedule ::
+           {interval_ms :: pos_integer(), offset_minutes :: non_neg_integer() | nil}
+
+  @typep time_sync_state :: %{
+           schedule: time_sync_schedule(),
+           wakeup: Wakeup.t(),
+           requests: [time_sync_request()]
+         }
+
+  @typedoc """
+  Represents a Device object. Treat struct fields as read-only. Use the object module's
+  property functions to build updates.
 
   UTC Offset is positive for western hemisphere and negative for eastern hemisphere in minutes,
   i.e. UTC+2 is -120.
@@ -393,18 +401,27 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
     field(:last_restart_reason, Constants.restart_reason(),
       readonly: true,
       default: :unknown,
-      implicit_relationship: :time_of_device_restart
+      implicit_relationship: :time_of_device_restart,
+      annotation: [required_when: &restart_properties_required?/2]
     )
 
     field(:time_of_device_restart, BACnetTimestamp.t(),
       readonly: true,
       default: ObjectsMacro.get_default_bacnet_timestamp(),
-      implicit_relationship: :restart_notification_recipients
+      annotation: [required_when: &restart_properties_required?/2]
     )
 
     field(:restart_notification_recipients, [Recipient.t()],
-      default: [],
-      annotation: [required_when: &(is_map(&1) and &2[:supports_restart] == true)]
+      default: fn ->
+        [
+          %Recipient{
+            type: :address,
+            device: nil,
+            address: %RecipientAddress{network: 0, address: :broadcast}
+          }
+        ]
+      end,
+      annotation: [required_when: {:opts, :supports_restart}]
     )
 
     # Properties for execution of backup and restore procedure (Clause 19.1)
@@ -489,6 +506,383 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
     # :active_vt_sessions, [BACnetVtSession.t()]
   end
 
+  @database_changes [
+    :object_created,
+    :object_deleted,
+    :object_name_changed,
+    :object_identifier_changed
+  ]
+
+  @temporary_file_changes [
+    :temporary_configuration_file_created,
+    :temporary_configuration_file_deleted
+  ]
+
+  @impl BACnet.Protocol.ObjectsBehaviour
+  @spec validate_execution(t(), Context.t()) :: :ok | {:error, term()}
+  def validate_execution(object, context)
+
+  def validate_execution(%__MODULE__{_metadata: %{remote_object: remote}}, %Context{})
+      when not is_nil(remote), do: :ok
+
+  def validate_execution(%__MODULE__{} = object, %Context{} = context) do
+    with {:ok, event} <- execution_event(context) do
+      validate_clock(object, context, event)
+    end
+  end
+
+  @impl BACnet.Protocol.ObjectsBehaviour
+  @spec execute(t(), Context.t()) :: {:ok, Result.t(t())} | {:error, term()}
+  def execute(object, context)
+
+  def execute(%__MODULE__{_metadata: %{remote_object: remote}} = object, %Context{} = context)
+      when not is_nil(remote), do: super(object, context)
+
+  def execute(%__MODULE__{} = object, %Context{} = context) do
+    with {:ok, event} <- execution_event(context),
+         :ok <- validate_clock(object, context, event),
+         {:ok, state} <- time_sync_step(object, context, time_sync_schedule(object)) do
+      updated =
+        object
+        |> refresh_clock(context)
+        |> apply_device_event(event, context.now)
+
+      {:ok, %Result{object: updated, state: state, next_execution: state && state.wakeup}}
+    end
+  end
+
+  @doc """
+  Builds the Clause 19.3 notification and recipient list from the completed restart state.
+
+  Returns `{:ok, nil}` if the recipient property is absent or empty. The host needs
+  to call this after the restart and final system status update, and send the request
+  to each returned recipient. Calling this function performs no network I/O.
+  """
+  @spec restart_notification(t()) ::
+          {:ok, {recipients :: [Recipient.t()], notification :: UnconfirmedCovNotification.t()}}
+          | {:ok, nil}
+          | {:error, term()}
+  def restart_notification(object)
+
+  def restart_notification(%__MODULE__{_metadata: %{remote_object: remote}})
+      when not is_nil(remote),
+      do: {:error, :operation_not_available_for_remote_objects}
+
+  def restart_notification(%__MODULE__{restart_notification_recipients: recipients})
+      when recipients in [nil, []], do: {:ok, nil}
+
+  def restart_notification(%__MODULE__{} = object) do
+    identifier = get_object_identifier(object)
+
+    with {:ok, status} <- notification_value(object, identifier, :system_status),
+         {:ok, time} <- notification_value(object, identifier, :time_of_device_restart),
+         {:ok, reason} <- notification_value(object, identifier, :last_restart_reason) do
+      {:ok,
+       {object.restart_notification_recipients,
+        %UnconfirmedCovNotification{
+          process_identifier: 0,
+          initiating_device: identifier,
+          monitored_object: identifier,
+          time_remaining: 0,
+          property_values: [status, time, reason]
+        }}}
+    end
+  end
+
+  @doc """
+  Returns the time synchronization requests produced by a single execution result.
+
+  Only a due timer or periodic step produces requests. The returned service
+  structures contain the local or UTC date and time sampled for that step.
+  """
+  @spec time_synchronization_requests(Result.t(t())) :: [time_sync_request()]
+  def time_synchronization_requests(result)
+
+  def time_synchronization_requests(%Result{
+        object: %__MODULE__{_metadata: %{remote_object: nil}},
+        state: %{requests: requests}
+      }),
+      do: requests
+
+  def time_synchronization_requests(%Result{object: %__MODULE__{}}), do: []
+
+  @spec time_sync_schedule(t()) :: time_sync_schedule() | nil
+  defp time_sync_schedule(object) do
+    interval = object[:time_synchronization_interval]
+
+    if is_integer(interval) and interval > 0 and
+         (object[:time_synchronization_recipients] not in [nil, []] or
+            object[:utc_time_synchronization_recipients] not in [nil, []]) do
+      offset =
+        if object[:align_intervals] == true and rem(1440, interval) == 0,
+          do: rem(object[:interval_offset] || 0, interval)
+
+      {interval * 60_000, offset}
+    end
+  end
+
+  @spec time_sync_step(t(), Context.t(), time_sync_schedule() | nil) ::
+          {:ok, time_sync_state() | nil} | {:error, term()}
+  defp time_sync_step(object, context, schedule)
+
+  defp time_sync_step(_object, _context, nil), do: {:ok, nil}
+
+  defp time_sync_step(
+         object,
+         %Context{state: %{schedule: schedule, wakeup: %Wakeup{} = wakeup}} = context,
+         schedule
+       )
+       when context.trigger != :initialization do
+    cond do
+      context.trigger == :clock_change and wakeup.wall_time != nil ->
+        schedule_time_sync(context, schedule, [])
+
+      context.trigger in [:timer, :periodic] and Wakeup.due?(wakeup, context) ->
+        with {:ok, requests} <- build_time_sync_requests(object, context.now) do
+          schedule_time_sync(context, schedule, requests)
+        end
+
+      true ->
+        {:ok, %{schedule: schedule, wakeup: wakeup, requests: []}}
+    end
+  end
+
+  defp time_sync_step(_object, context, schedule), do: schedule_time_sync(context, schedule, [])
+
+  @spec schedule_time_sync(Context.t(), time_sync_schedule(), [time_sync_request()]) ::
+          {:ok, time_sync_state()} | {:error, term()}
+  defp schedule_time_sync(context, schedule, requests)
+
+  defp schedule_time_sync(context, {interval_ms, nil} = schedule, requests) do
+    wakeup = %Wakeup{wall_time: nil, monotonic_time: context.monotonic_time + interval_ms}
+    {:ok, %{schedule: schedule, wakeup: wakeup, requests: requests}}
+  end
+
+  defp schedule_time_sync(context, {interval_ms, offset_minutes} = schedule, requests) do
+    period_us = interval_ms * 1_000
+    offset_us = offset_minutes * 60_000_000
+
+    with {:ok, wall_time} <-
+           next_aligned_time(context.now, context.timezone_database, period_us, offset_us) do
+      wakeup = %Wakeup{wall_time: wall_time, monotonic_time: nil}
+      {:ok, %{schedule: schedule, wakeup: wakeup, requests: requests}}
+    end
+  end
+
+  @spec next_aligned_time(DateTime.t(), module(), pos_integer(), non_neg_integer()) ::
+          {:ok, DateTime.t()} | {:error, term()}
+  defp next_aligned_time(now, database, period_us, offset_us) do
+    delay_us = period_us - Integer.mod(time_of_day_us(now) - offset_us, period_us)
+    target = NaiveDateTime.add(DateTime.to_naive(now), delay_us, :microsecond)
+
+    case DateTime.from_naive(target, now.time_zone, database) do
+      {:ok, time} ->
+        {:ok, time}
+
+      {:ambiguous, first, second} ->
+        {:ok, if(DateTime.compare(first, now) == :gt, do: first, else: second)}
+
+      {:gap, _before_gap, after_gap} ->
+        # The target is in a skipped part of local time. Include the first
+        # representable instant after the gap if it is itself a boundary.
+        if Integer.mod(time_of_day_us(after_gap) - offset_us, period_us) == 0 do
+          {:ok, after_gap}
+        else
+          next_aligned_time(after_gap, database, period_us, offset_us)
+        end
+
+      {:error, reason} ->
+        {:error, {:invalid_device_clock, reason}}
+    end
+  end
+
+  @spec time_of_day_us(DateTime.t()) :: non_neg_integer()
+  defp time_of_day_us(now) do
+    (now.hour * 3600 + now.minute * 60 + now.second) * 1_000_000 + elem(now.microsecond, 0)
+  end
+
+  @spec build_time_sync_requests(t(), DateTime.t()) ::
+          {:ok, [time_sync_request()]} | {:error, term()}
+  defp build_time_sync_requests(object, now) do
+    local = object[:time_synchronization_recipients] || []
+    utc = object[:utc_time_synchronization_recipients] || []
+    utc_now = DateTime.from_unix!(DateTime.to_unix(now, :microsecond), :microsecond)
+
+    cond do
+      local != [] and now.year not in 1900..2154 ->
+        {:error, {:invalid_device_clock, :local_date}}
+
+      utc != [] and utc_now.year not in 1900..2154 ->
+        {:error, {:invalid_device_clock, :utc_date}}
+
+      true ->
+        {:ok,
+         synchronization_requests(local, now, TimeSynchronization) ++
+           synchronization_requests(utc, utc_now, UtcTimeSynchronization)}
+    end
+  end
+
+  @spec synchronization_requests([Recipient.t()], DateTime.t(), module()) :: [time_sync_request()]
+  defp synchronization_requests(recipients, now, service)
+
+  defp synchronization_requests([], _now, _service), do: []
+
+  defp synchronization_requests(recipients, now, service) do
+    request =
+      struct!(service,
+        date: BACnetDate.from_date(DateTime.to_date(now)),
+        time: BACnetTime.from_time(DateTime.to_time(now))
+      )
+
+    Enum.map(recipients, &{&1, request})
+  end
+
+  @spec restart_properties_required?(map(), map()) :: boolean()
+  defp restart_properties_required?(properties, metadata) do
+    metadata.other[:supports_restart] == true or
+      Map.get(properties, :restart_notification_recipients) != nil
+  end
+
+  @spec notification_value(t(), ObjectIdentifier.t(), Constants.property_identifier()) ::
+          {:ok, PropertyValue.t()} | {:error, term()}
+  defp notification_value(object, identifier, property) do
+    with {:ok, value} <- get_property(object, property),
+         {:ok, encoding} <- ObjectsUtility.cast_value_to_property(identifier, property, value) do
+      {:ok,
+       %PropertyValue{
+         property_identifier: property,
+         property_array_index: nil,
+         property_value: encoding,
+         priority: nil
+       }}
+    end
+  end
+
+  @spec execution_event(Context.t()) ::
+          {:ok, device_event() | nil} | {:error, :invalid_device_event}
+  defp execution_event(context)
+
+  defp execution_event(%Context{trigger: :periodic, options: options}) do
+    case Keyword.get(options, :device_event) do
+      nil ->
+        {:ok, nil}
+
+      {:database_change, change} = event
+      when change in @database_changes or change in @temporary_file_changes ->
+        {:ok, event}
+
+      :restore_completed ->
+        {:ok, :restore_completed}
+
+      {:restart_completed, reason} = event when is_atom(reason) ->
+        if match?({:ok, _code}, Constants.by_name(:restart_reason, reason)),
+          do: {:ok, event},
+          else: {:error, :invalid_device_event}
+
+      _event ->
+        {:error, :invalid_device_event}
+    end
+  end
+
+  defp execution_event(%Context{}), do: {:ok, nil}
+
+  @spec validate_clock(t(), Context.t(), device_event() | nil) :: :ok | {:error, term()}
+  defp validate_clock(object, %Context{now: now, trigger: trigger}, event) do
+    needs_date =
+      (trigger == {:property_read, :local_date, nil} and has_property?(object, :local_date)) or
+        (event == :restore_completed and has_property?(object, :last_restore_time)) or
+        (match?({:restart_completed, _reason}, event) and
+           has_property?(object, :time_of_device_restart))
+
+    cond do
+      needs_date and now.year not in 1900..2154 ->
+        {:error, {:invalid_device_clock, :local_date}}
+
+      trigger == {:property_read, :utc_offset, nil} and has_property?(object, :utc_offset) and
+          (now.utc_offset not in -86_400..86_400 or rem(now.utc_offset, 60) != 0) ->
+        {:error, {:invalid_device_clock, :utc_offset}}
+
+      true ->
+        :ok
+    end
+  end
+
+  @spec refresh_clock(t(), Context.t()) :: t()
+  defp refresh_clock(object, %Context{now: now, trigger: trigger}) do
+    case trigger do
+      {:property_read, :local_date, nil} ->
+        refresh_timestamp_property(
+          object,
+          :local_date,
+          now,
+          &BACnetDate.from_date(DateTime.to_date(&1))
+        )
+
+      {:property_read, :local_time, nil} ->
+        refresh_timestamp_property(
+          object,
+          :local_time,
+          now,
+          &BACnetTime.from_time(DateTime.to_time(&1))
+        )
+
+      {:property_read, :utc_offset, nil} ->
+        put_selected(object, :utc_offset, -div(now.utc_offset, 60))
+
+      {:property_read, :daylight_savings_status, nil} ->
+        put_selected(object, :daylight_savings_status, now.std_offset != 0)
+
+      _other ->
+        object
+    end
+  end
+
+  @spec apply_device_event(t(), device_event() | nil, DateTime.t()) :: t()
+  defp apply_device_event(object, event, now)
+
+  defp apply_device_event(object, {:database_change, change}, _now)
+       when change in @database_changes do
+    %{object | database_revision: object.database_revision + 1}
+  end
+
+  defp apply_device_event(object, :restore_completed, now) do
+    revised = %{object | database_revision: object.database_revision + 1}
+    refresh_timestamp_property(revised, :last_restore_time, now, &timestamp/1)
+  end
+
+  defp apply_device_event(object, {:restart_completed, reason}, now) do
+    object
+    |> put_selected(:last_restart_reason, reason)
+    |> refresh_timestamp_property(:time_of_device_restart, now, &timestamp/1)
+  end
+
+  defp apply_device_event(object, _event, _now), do: object
+
+  @spec refresh_timestamp_property(
+          t(),
+          Constants.property_identifier(),
+          DateTime.t(),
+          (DateTime.t() -> BACnetDate.t() | BACnetTime.t() | BACnetTimestamp.t())
+        ) :: t()
+  defp refresh_timestamp_property(object, property, now, convert) do
+    if has_property?(object, property), do: %{object | property => convert.(now)}, else: object
+  end
+
+  @spec put_selected(t(), Constants.property_identifier(), term()) :: t()
+  defp put_selected(object, property, value) do
+    if has_property?(object, property), do: %{object | property => value}, else: object
+  end
+
+  @spec timestamp(DateTime.t()) :: BACnetTimestamp.t()
+  defp timestamp(now) do
+    %BACnetTimestamp{
+      type: :datetime,
+      time: nil,
+      sequence_number: nil,
+      datetime: BACnetDateTime.from_datetime(now)
+    }
+  end
+
   @external_resource BACstack.MixProject.get_vendor_ids_csv_file()
   @vendor_ids BACstack.MixProject.get_vendor_ids()
 
@@ -545,8 +939,13 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
     )
   end
 
-  @spec inhibit_object_check(t()) :: {:ok, t()}
-  defp inhibit_object_check(obj) do
+  @spec inhibit_object_check(
+          t(),
+          t() | nil,
+          ObjectOperations.property_operation(),
+          ObjectOperations.property_operation_args()
+        ) :: {:ok, t()}
+  defp inhibit_object_check(obj, _original, _operation, _args) do
     # Only patch vendor name if empty
     if obj.vendor_name == "" do
       new_obj = %{obj | vendor_name: map_vendor_to_name(obj.vendor_identifier)}

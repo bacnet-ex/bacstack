@@ -64,7 +64,17 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityObjectsTest do
         @tag String.to_atom("bacnet_property_#{prop_identifier}")
         @tag String.to_atom("bacnet_property_from_raw_#{prop_identifier}")
         test "cast property to value #{description} [Encoding -> Elixir]" do
-          assert unquote(Macro.escape(pattern_match)) =
+          pattern_match = unquote(Macro.escape(pattern_match))
+
+          # Fix "warning: pattern matching on 0.0 is equivalent to matching only on +0.0 from Erlang/OTP 27+"
+          pattern_match =
+            if pattern_match == 0.0 do
+              +0.0
+            else
+              pattern_match
+            end
+
+          assert ^pattern_match =
                    ObjectsUtility.cast_property_to_value(
                      %ObjectIdentifier{type: unquote(object_type), instance: 1},
                      unquote(prop_identifier),
@@ -124,7 +134,17 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityObjectsTest do
                   term
               end
 
-            assert unquote(Macro.escape(pattern_match2)) = actual_value
+            pattern_match2 = unquote(Macro.escape(pattern_match2))
+
+            # Fix "warning: pattern matching on 0.0 is equivalent to matching only on +0.0 from Erlang/OTP 27+"
+            pattern_match2 =
+              if pattern_match2 == {:ok, 0.0} do
+                {:ok, +0.0}
+              else
+                pattern_match2
+              end
+
+            assert ^pattern_match2 = actual_value
           end
         end
       end

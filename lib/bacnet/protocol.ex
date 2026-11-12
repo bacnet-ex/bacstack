@@ -27,7 +27,7 @@ defmodule BACnet.Protocol do
 
   For Application Data Unit (APDU), see the `BACnet.Protocol.APDU` module.
 
-  ## See Also
+  ### See Also
 
   - `BACnet.Protocol.APDU`
   - `BACnet.Protocol.BroadcastDistributionTableEntry`

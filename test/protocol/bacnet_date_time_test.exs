@@ -47,19 +47,8 @@ defmodule BACnet.Protocol.BACnetDateTimeTest do
   end
 
   test "from datetime" do
-    dt = DateTime.utc_now()
+    dt = ~U[2026-11-09 12:34:56.123456Z]
     weekday = Date.day_of_week(DateTime.to_date(dt))
-
-    hundredth =
-      case dt.microsecond do
-        {_value, 0} -> 0
-        {value, 1} -> value * 10
-        {value, 2} -> value
-        {value, 3} -> Integer.floor_div(value, 10)
-        {value, 4} -> Integer.floor_div(value, 100)
-        {value, 5} -> Integer.floor_div(value, 1000)
-        {value, 6} -> Integer.floor_div(value, 10_000)
-      end
 
     assert %BACnetDateTime{
              date: %BACnetDate{
@@ -72,25 +61,14 @@ defmodule BACnet.Protocol.BACnetDateTimeTest do
                hour: dt.hour,
                minute: dt.minute,
                second: dt.second,
-               hundredth: hundredth
+               hundredth: 12
              }
            } == BACnetDateTime.from_datetime(dt)
   end
 
   test "from naive datetime" do
-    dt = NaiveDateTime.utc_now()
+    dt = ~N[2026-11-09 12:34:56.123456]
     weekday = Date.day_of_week(NaiveDateTime.to_date(dt))
-
-    hundredth =
-      case dt.microsecond do
-        {_value, 0} -> 0
-        {value, 1} -> value * 10
-        {value, 2} -> value
-        {value, 3} -> Integer.floor_div(value, 10)
-        {value, 4} -> Integer.floor_div(value, 100)
-        {value, 5} -> Integer.floor_div(value, 1000)
-        {value, 6} -> Integer.floor_div(value, 10_000)
-      end
 
     assert %BACnetDateTime{
              date: %BACnetDate{
@@ -103,9 +81,18 @@ defmodule BACnet.Protocol.BACnetDateTimeTest do
                hour: dt.hour,
                minute: dt.minute,
                second: dt.second,
-               hundredth: hundredth
+               hundredth: 12
              }
            } == BACnetDateTime.from_naive_datetime(dt)
+  end
+
+  test "datetime conversions preserve millisecond times at BACnet hundredth resolution" do
+    datetime = BACnetDateTime.from_datetime(~U[2026-11-09 12:34:56.334Z])
+    naive = BACnetDateTime.from_naive_datetime(~N[2026-11-09 12:34:56.334])
+
+    assert datetime == naive
+    assert datetime.time == %BACnetTime{hour: 12, minute: 34, second: 56, hundredth: 33}
+    assert BACnetDateTime.valid?(datetime)
   end
 
   test "to datetime" do

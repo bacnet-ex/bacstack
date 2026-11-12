@@ -16,6 +16,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.BACnetArray
+  alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.ObjectOperations
@@ -261,7 +262,8 @@ defmodule BACnet.Protocol.ObjectsUtility do
 
   See also `get_object_type_mappings/0` for more information.
   """
-  @spec put_many_object_type_mapping([{Constants.object_type(), module()}]) :: :ok
+  @spec put_many_object_type_mapping([{Constants.object_type(), object_module :: module()}]) ::
+          :ok
   def put_many_object_type_mapping(mappings) when is_list(mappings) do
     unless Enum.all?(mappings, fn
              {type, mod} -> is_atom(type) and is_atom(mod)
@@ -617,7 +619,8 @@ defmodule BACnet.Protocol.ObjectsUtility do
           Constants.property_identifier() | non_neg_integer(),
           Encoding.t() | [Encoding.t()],
           [cast_property_to_value_option()]
-        ) :: {:ok, term()} | {:error, {atom(), term()}} | {:error, term()}
+        ) ::
+          {:ok, term()} | {:error, {error_kind :: atom(), details :: term()}} | {:error, term()}
   def cast_property_to_value(objectid, property_identifier, value, opts \\ [])
 
   def cast_property_to_value(
@@ -699,7 +702,9 @@ defmodule BACnet.Protocol.ObjectsUtility do
           %{optional(Constants.property_identifier() | atom() | non_neg_integer()) => term()},
           [cast_properties_to_object_option()]
         ) ::
-          {:ok, bacnet_object()} | {:error, {atom(), term()}} | {:error, term()}
+          {:ok, bacnet_object()}
+          | {:error, {error_kind :: atom(), details :: term()}}
+          | {:error, term()}
   def cast_properties_to_object(object_id, properties, opts)
 
   def cast_properties_to_object(
@@ -789,7 +794,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
         ) ::
           {:ok,
            %{optional(Constants.property_identifier() | atom() | non_neg_integer()) => term()}}
-          | {:error, {atom(), term()}}
+          | {:error, {error_kind :: atom(), details :: term()}}
           | {:error, term()}
   def cast_read_properties_ack(
         %ObjectIdentifier{type: type_mod} = obj_id,
@@ -852,7 +857,10 @@ defmodule BACnet.Protocol.ObjectsUtility do
           Constants.property_identifier(),
           term() | [term()],
           [cast_value_to_property_option()]
-        ) :: {:ok, Encoding.t() | [Encoding.t()]} | {:error, {atom(), term()}} | {:error, term()}
+        ) ::
+          {:ok, Encoding.t() | [Encoding.t()]}
+          | {:error, {error_kind :: atom(), details :: term()}}
+          | {:error, term()}
   def cast_value_to_property(objectid, property_identifier, value, opts \\ [])
 
   def cast_value_to_property(
@@ -909,7 +917,7 @@ defmodule BACnet.Protocol.ObjectsUtility do
 
   The list is sorted in ascending order by the property name.
   """
-  @spec to_list(bacnet_object()) :: [{Constants.property_identifier(), term()}]
+  @spec to_list(bacnet_object()) :: [{Constants.property_identifier(), value :: term()}]
   def to_list(%_bac{} = object) when is_object_loose(object) do
     object
     |> to_map()
@@ -1619,6 +1627,15 @@ defmodule BACnet.Protocol.ObjectsUtility do
          {:struct, PriorityArray},
          :priority_array,
          %Encoding{} = value,
+         %{allow_partial: true, properties_type_map: %{present_value: {:struct, BACnetDateTime}}}
+       ) do
+    decode_priority_slot({:struct, BACnetDateTime}, value)
+  end
+
+  defp cast_value_to_type(
+         {:struct, PriorityArray},
+         :priority_array,
+         %Encoding{} = value,
          %{allow_partial: true} = opts
        ) do
     cast_value_to_type(
@@ -1643,26 +1660,20 @@ defmodule BACnet.Protocol.ObjectsUtility do
   defp cast_value_to_type({:struct, PriorityArray}, :priority_array, value, opts)
        when is_list(value) do
     pv_type = get_in(opts, [:properties_type_map, :present_value])
-    is_boolean = pv_type == :boolean
 
-    raw_values =
-      Enum.map(value, fn
-        %Encoding{type: :enumerated, value: value} when is_boolean and value in [0, 1] ->
-          value == 1
-
-        %Encoding{} = encoding ->
-          encoding.value
-
-        term ->
-          term
-      end)
-
-    # Count the elements and make sure we have 16 elements
-    if Enum.count_until(raw_values, fn _val -> true end, 17) == 16 and
-         Enum.all?(raw_values, &(&1 == nil or BeamTypes.check_type(pv_type, &1))) do
-      {:ok, PriorityArray.from_list(raw_values)}
+    with 16 <- Enum.count_until(value, 17),
+         {:ok, slots} <-
+           Enum.reduce_while(value, {:ok, []}, fn raw, {:ok, acc} ->
+             with {:ok, slot} <- decode_priority_slot(pv_type, raw),
+                  true <- is_nil(slot) or BeamTypes.check_type(pv_type, slot) do
+               {:cont, {:ok, [slot | acc]}}
+             else
+               _invalid -> {:halt, {:error, :invalid_value}}
+             end
+           end) do
+      {:ok, PriorityArray.from_list(Enum.reverse(slots))}
     else
-      {:error, {:invalid_property_value, {:priority_array, value}}}
+      _invalid -> {:error, {:invalid_property_value, {:priority_array, value}}}
     end
   end
 
@@ -1895,18 +1906,13 @@ defmodule BACnet.Protocol.ObjectsUtility do
          opts
        ) do
     pv_type = get_in(opts, [:properties_type_map, :present_value])
-    is_boolean = pv_type == :boolean
     sub_opts = %{opts | allow_nil: true}
 
-    case Enum.reduce_while(PriorityArray.to_list(value), {:ok, []}, fn
-           value, {:ok, acc} when is_boolean(value) and is_boolean ->
-             {:cont, {:ok, [{:enumerated, if(value, do: 1, else: 0)} | acc]}}
-
-           value, {:ok, acc} ->
-             case cast_value_to_encoding(pv_type, :present_value, value, sub_opts) do
-               {:ok, enc} -> {:cont, {:ok, [enc | acc]}}
-               term -> {:halt, term}
-             end
+    case Enum.reduce_while(PriorityArray.to_list(value), {:ok, []}, fn slot, {:ok, acc} ->
+           case encode_priority_slot(pv_type, slot, sub_opts) do
+             {:ok, encoding} -> {:cont, {:ok, [encoding | acc]}}
+             {:error, _reason} = error -> {:halt, error}
+           end
          end) do
       {:ok, values} ->
         {:ok, Enum.reverse(values)}
@@ -1914,6 +1920,16 @@ defmodule BACnet.Protocol.ObjectsUtility do
       {:error, _err} = err ->
         err
     end
+  end
+
+  defp cast_value_to_encoding(
+         {:struct, PriorityArray},
+         :priority_array,
+         value,
+         %{allow_partial: true, properties_type_map: %{present_value: {:struct, BACnetDateTime}}} =
+           opts
+       ) do
+    encode_priority_slot({:struct, BACnetDateTime}, value, opts)
   end
 
   # Handle partial property value here (partial as we only read a specific index of an array and not the whole array)
@@ -2135,6 +2151,59 @@ defmodule BACnet.Protocol.ObjectsUtility do
 
   defp cast_value_to_encoding(_type, property, value, opts),
     do: {:error, {:invalid_property_value, {opts[:original_property] || property, value}}}
+
+  # The BACnetPriorityValue choice wraps DateTime's DATE and TIME in tag [1].
+  @spec decode_priority_slot(BeamTypes.typechecker_types(), term()) ::
+          {:ok, term()} | {:error, :invalid_value}
+  defp decode_priority_slot(type, encoding)
+
+  defp decode_priority_slot(
+         {:struct, BACnetDateTime},
+         %Encoding{encoding: :primitive, type: :null, value: nil}
+       ),
+       do: {:ok, nil}
+
+  defp decode_priority_slot(
+         {:struct, BACnetDateTime},
+         %Encoding{encoding: :constructed, type: nil, value: tags, extras: extras}
+       )
+       when is_list(tags) do
+    with 1 <- Keyword.get(extras, :tag_number),
+         {:ok, {datetime, []}} <- BACnetDateTime.parse(tags) do
+      {:ok, datetime}
+    else
+      _invalid -> {:error, :invalid_value}
+    end
+  end
+
+  defp decode_priority_slot({:struct, BACnetDateTime}, %Encoding{}),
+    do: {:error, :invalid_value}
+
+  defp decode_priority_slot(:boolean, %Encoding{type: :enumerated, value: value})
+       when value in [0, 1],
+       do: {:ok, value == 1}
+
+  defp decode_priority_slot(_type, %Encoding{value: value}), do: {:ok, value}
+  defp decode_priority_slot(_type, value), do: {:ok, value}
+
+  @spec encode_priority_slot(BeamTypes.typechecker_types(), term(), map()) ::
+          {:ok, term()} | {:error, term()}
+  defp encode_priority_slot(type, value, opts)
+
+  defp encode_priority_slot(_type, nil, _opts), do: {:ok, {:null, nil}}
+
+  defp encode_priority_slot(:boolean, value, _opts) when is_boolean(value),
+    do: {:ok, {:enumerated, if(value, do: 1, else: 0)}}
+
+  defp encode_priority_slot({:struct, BACnetDateTime} = type, value, opts) do
+    with {:ok, tags} <- cast_value_to_encoding(type, :present_value, value, opts) do
+      {:ok, {:constructed, {1, tags, 0}}}
+    end
+  end
+
+  defp encode_priority_slot(type, value, opts) do
+    cast_value_to_encoding(type, :present_value, value, opts)
+  end
 
   @compile {:inline, cast_value_struct_to_encoding: 2}
   @spec cast_value_struct_to_encoding(module(), term()) ::

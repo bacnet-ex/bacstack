@@ -9,6 +9,8 @@ defmodule BACnet.Protocol.ApplicationTags do
   floating point number representation, such as `0.3` -> `0.3000000004` or `6.9` -> `6.900000095367432`.
   By default, if more than 3 consecutive numbers are the same, the float will be truncated to the first non-repeating,
   such as `6.914000045` -> `6.914`.
+  For floats with only repeating numbers, such as `0.666666666`, they will be truncated to the truncate precision.
+  In this case, it would round to `0.67`.
   This behaviour can be configured at compile-time using the application environment `:bacstack`.
   Set `:app_tags_truncate_float32` to `false` to disable this behaviour entirely. To configure the precision (or minimum
   number of consecutive repeating numbers), configure `:app_tags_truncate_float32_precision` (defaults to `4`).
@@ -59,7 +61,8 @@ defmodule BACnet.Protocol.ApplicationTags do
     - if the data is constructed, the Length/Value/Type bits are set to `0b110` to declare an opening tag, the tags follow in complete application tags encoding,
       and the closing tag is encoded with the same tag number and class as the opening tag and the Length/Value/Type bits are set to `0b111` to declare a closing tag
 
-  Constructed data contains zero or more tagged elements. Each tagged element may be a constructed element itself; this does not result in ambiguous encoding because opening/closing tags are always paired.
+  Constructed data contains zero or more tagged elements. Each tagged element may be a constructed element itself -
+  this does not result in ambiguous encoding because opening/closing tags are always paired.
 
   ### Important Tagging Rules (Clause 20.2 + 21)
   - The BACnet ASN.1 module begins with `DEFINITIONS IMPLICIT TAGS ::= BEGIN`.
@@ -242,6 +245,13 @@ defmodule BACnet.Protocol.ApplicationTags do
 
       if num > 0 do
         precision = offset - num - 1
+
+        # For numbers like 0.6666666666666666 it would get truncated to 1.0,
+        # because all numbers are the same and repeating, thus in that case
+        # we instead round to the default precision -
+        # other cases such as 0.300001 are not changed
+        precision = if precision == 0, do: @precision_reduced, else: precision
+
         if precision > 15, do: float, else: Float.round(float, precision)
       else
         float
@@ -311,8 +321,8 @@ defmodule BACnet.Protocol.ApplicationTags do
   """
   @type encoding ::
           primitive_encoding()
-          | {:constructed, {tag_number :: byte(), value :: encoding() | [encoding()], 0}}
-          | {:tagged, {tag_number :: byte(), value :: binary(), length :: non_neg_integer()}}
+          | {:constructed, {tag_number :: 0..254, value :: encoding() | [encoding()], 0}}
+          | {:tagged, {tag_number :: 0..254, value :: binary(), length :: non_neg_integer()}}
 
   @typedoc """
   Linked list of BACnet application tag encoding.
@@ -500,8 +510,8 @@ defmodule BACnet.Protocol.ApplicationTags do
   def encode({:constructed, {tag_number, value, 0}}, opts) do
     {tagnum, tagnum_extension} =
       cond do
-        tag_number < 15 -> {tag_number, <<>>}
-        tag_number <= 255 -> {15, <<tag_number::size(8)>>}
+        tag_number in 0..14 -> {tag_number, <<>>}
+        tag_number in 15..254 -> {15, <<tag_number::size(8)>>}
         true -> raise ArgumentError, "Invalid tag number, got: #{inspect(tag_number)}"
       end
 
@@ -797,27 +807,9 @@ defmodule BACnet.Protocol.ApplicationTags do
      {<<Constants.macro_by_name(:application_tag, :time)::size(4)>>, 0, <<4::size(3)>>}}
   end
 
-  def encode_value({:time, %Time{hour: hour, minute: minute, second: second} = time}, _opts)
+  def encode_value({:time, %Time{hour: hour, minute: minute, second: second} = time}, opts)
       when is_valid_time(hour, minute, second, 0) do
-    hundredth =
-      case time.microsecond do
-        {_value, 0} -> 0
-        {value, 1} -> value * 10
-        {value, 2} -> value
-        {value, 3} -> Integer.floor_div(value, 10)
-        {value, 4} -> Integer.floor_div(value, 100)
-        {value, 5} -> Integer.floor_div(value, 1000)
-        {value, 6} -> Integer.floor_div(value, 10_000)
-      end
-
-    bachundredth = max(0, min(99, hundredth))
-
-    {:ok, <<hour::size(8), minute::size(8), second::size(8), bachundredth::size(8)>>,
-     {
-       <<Constants.macro_by_name(:application_tag, :time)::size(4)>>,
-       0,
-       <<4::size(3)>>
-     }}
+    encode_value({:time, Protocol.BACnetTime.from_time(time)}, opts)
   end
 
   def encode_value(
@@ -856,8 +848,8 @@ defmodule BACnet.Protocol.ApplicationTags do
   def encode_value({:tagged, {tag_number, bytes, tag_length}}, _opts) do
     {tagnum, tagnum_extension} =
       cond do
-        tag_number < 15 -> {tag_number, <<>>}
-        tag_number < 254 -> {15, <<tag_number::size(8)>>}
+        tag_number in 0..14 -> {tag_number, <<>>}
+        tag_number in 15..254 -> {15, <<tag_number::size(8)>>}
         true -> raise ArgumentError, "Invalid tag number, got: #{inspect(tag_number)}"
       end
 
@@ -1261,24 +1253,29 @@ defmodule BACnet.Protocol.ApplicationTags do
     end
   end
 
-  if "VENDORS/MICSFT/PC/CP850" in Codepagex.encoding_list() do
-    defp decode_character_string(
-           Constants.macro_by_name(:character_string_encoding, :microsoft_dbcs),
-           bytes
-         ) do
-      Codepagex.to_string(bytes, "VENDORS/MICSFT/PC/CP850")
-    end
-  else
-    print_compile_warning(
-      "Character encoding CP850 (DBCS) unavailable, defaulting to no conversion"
-    )
+  # Clause 20.2.9 prefixes DBCS text with a two-octet, big-endian codepage number
+  # Only select mappings that Codepagex actually compiled into the application
+  @dbcs_codepages Map.new(
+                    for encoding <- Codepagex.encoding_list(),
+                        [_full_match, codepage] <- [Regex.run(~r"/CP(\d+)$", encoding)],
+                        do: {String.to_integer(codepage), encoding}
+                  )
 
-    defp decode_character_string(
-           Constants.macro_by_name(:character_string_encoding, :microsoft_dbcs),
-           bytes
-         ) do
-      {:ok, bytes}
+  defp decode_character_string(
+         Constants.macro_by_name(:character_string_encoding, :microsoft_dbcs),
+         <<codepage::size(16), bytes::binary>>
+       ) do
+    case Map.fetch(@dbcs_codepages, codepage) do
+      {:ok, encoding} -> Codepagex.to_string(bytes, encoding)
+      :error -> {:error, :unknown_character_string_encoding}
     end
+  end
+
+  defp decode_character_string(
+         Constants.macro_by_name(:character_string_encoding, :microsoft_dbcs),
+         _bytes
+       ) do
+    {:error, :invalid_data}
   end
 
   if "VENDORS/MICSFT/WINDOWS/CP932" in Codepagex.encoding_list() do

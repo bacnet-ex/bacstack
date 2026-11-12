@@ -573,4 +573,25 @@ defmodule BACnet.Protocol.EventAlgorithms.ChangeOfCharacterStringTest do
 
     assert_raise ArgumentError, fn -> ChangeOfCharacterString.update(state, status_flags: nil) end
   end
+
+  test "execute/2 starts and expires the delay using the supplied sample" do
+    state =
+      ChangeOfCharacterString.new("hello", %Params{
+        alarm_values: ["high ground"],
+        time_delay: 1,
+        time_delay_normal: nil
+      })
+
+    new_state2 = %{state | monitored_value: "high ground"}
+    now = ~U[2026-01-01 12:00:00Z]
+    deadline = DateTime.add(now, 1, :second)
+
+    assert {:delayed_event, %{dt_offnormal: ^deadline} = pending} =
+             ChangeOfCharacterString.execute(new_state2, now)
+
+    assert {:delayed_event, ^pending} = ChangeOfCharacterString.execute(pending, now)
+
+    assert {:event, %{current_state: :offnormal}, _notification} =
+             ChangeOfCharacterString.execute(pending, deadline)
+  end
 end

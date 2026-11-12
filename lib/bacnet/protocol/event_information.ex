@@ -163,6 +163,8 @@ defmodule BACnet.Protocol.EventInformation do
   It only validates the struct is valid as per type specification.
   """
   @spec valid?(t()) :: boolean()
+  def valid?(event_information)
+
   def valid?(
         %__MODULE__{
           object_identifier: %ObjectIdentifier{} = obj_ref,

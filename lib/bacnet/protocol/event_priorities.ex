@@ -71,6 +71,8 @@ defmodule BACnet.Protocol.EventPriorities do
   It only validates the struct is valid as per type specification.
   """
   @spec valid?(t()) :: boolean()
+  def valid?(priorities)
+
   def valid?(
         %__MODULE__{
           to_offnormal: to_offnormal,

@@ -228,8 +228,11 @@ defmodule BACnet.Protocol.BACnetTime do
 
   def valid?(%__MODULE__{} = _t), do: false
 
+  @spec get_component(:hour | :minute | :second | :hundredth, t(), Time.t()) :: non_neg_integer()
+  defp get_component(component, time, reference_time)
+
   defp get_component(:hundredth, %__MODULE__{hundredth: :unspecified} = _time, %Time{} = utc_now) do
-    patch_microsecond(utc_now.microsecond)
+    patch_microsecond(utc_now.microsecond) * 10_000
   end
 
   defp get_component(:hundredth, %__MODULE__{hundredth: hundredth} = _time, _utc_now),
@@ -241,16 +244,6 @@ defmodule BACnet.Protocol.BACnetTime do
 
   defp get_component(component, %__MODULE__{} = time, _utc_now), do: Map.fetch!(time, component)
 
-  @spec patch_microsecond(Calendar.microsecond()) :: non_neg_integer()
-  defp patch_microsecond(microsecond_prec) do
-    case microsecond_prec do
-      {_value, 0} -> 0
-      {value, 1} -> value * 10
-      {value, 2} -> value
-      {value, 3} -> Integer.floor_div(value, 10)
-      {value, 4} -> Integer.floor_div(value, 100)
-      {value, 5} -> Integer.floor_div(value, 1000)
-      {value, 6} -> Integer.floor_div(value, 10_000)
-    end
-  end
+  @spec patch_microsecond(Calendar.microsecond()) :: 0..99
+  defp patch_microsecond({microsecond, _precision}), do: div(microsecond, 10_000)
 end

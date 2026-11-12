@@ -5,7 +5,7 @@ defmodule BACnet.Protocol.ObjectOperations do
   `BACnet.Protocol.ObjectsMacro` used to copy these functions into every object
   module. Object modules now delegate here and pass an `BACnet.Protocol.ObjectsContract`
   plus hook functions for the overridable steps (`add_defaults/2`,
-  `check_implicit_relationships/2`, `inhibit_object_check/1`).
+  `check_implicit_relationships/2`, `inhibit_object_check/4`).
 
   Nothing in this module runs as a process. The functions are pure aside from
   the hooks the caller supplies.
@@ -21,6 +21,10 @@ defmodule BACnet.Protocol.ObjectOperations do
 
   require Constants
 
+  @minimum_time_priority 6
+  @present_value_id Constants.macro_by_name(:property_identifier, :present_value)
+  @priority_array_id Constants.macro_by_name(:property_identifier, :priority_array)
+
   @typedoc """
   Object metadata stored under `_metadata`.
   """
@@ -34,13 +38,40 @@ defmodule BACnet.Protocol.ObjectOperations do
         }
 
   @typedoc """
+  The property operation that produced the candidate for the inhibit hook.
+  """
+  @type property_operation ::
+          :create | :add | :update | :remove | :set_priority | :set_minimum_time_hold
+
+  @typedoc """
+  The caller's inputs to the property operation.
+
+  Creation supplies `properties`. Adding and updating supply `property` and the
+  submitted `value`. Removal supplies `property`. Priority commands and
+  minimum-time holds supply `priority` and `value`.
+  """
+  @type property_operation_args ::
+          %{properties: map()}
+          | %{property: atom(), value: term()}
+          | %{property: atom() | non_neg_integer()}
+          | %{priority: 1..16, value: term()}
+
+  @typedoc """
   Overridable steps. Object modules pass captures of their own functions.
+
+  The inhibit hook receives the candidate, the original object (or `nil` on
+  creation), the operation and its arguments.
   """
   @type operation_hooks :: %{
           add_defaults: (map(), metadata() -> map() | {:error, term()}),
           check_implicit_relationships: (struct(), :add | :remove ->
                                            {:ok, struct()} | {:error, term()}),
-          inhibit_object_check: (struct() -> {:ok, struct()} | {:error, term()})
+          inhibit_object_check: (struct(),
+                                 struct()
+                                 | nil,
+                                 property_operation(),
+                                 property_operation_args() ->
+                                   update_result())
         }
 
   @typedoc """
@@ -52,7 +83,7 @@ defmodule BACnet.Protocol.ObjectOperations do
   Creates an object struct from an instance number, name, properties, and options.
 
   `hooks.add_defaults/2` runs instead of `add_defaults/3` directly.
-  For a local object, `hooks.inhibit_object_check/1` runs after property propagation.
+  For a local object, the inhibit hook runs after property propagation.
   Remote objects skip propagation and the inhibit hook.
   """
   @spec create(
@@ -86,8 +117,18 @@ defmodule BACnet.Protocol.ObjectOperations do
          :ok <- recheck_property_values(contract, props, opts),
          {:ok, obj} <- verify_property_requirements(contract, obj, obj._metadata) do
       case obj._metadata.remote_object do
-        nil -> validate_and_inhibit(contract, propagate_properties(contract, obj), hooks)
-        _remote -> {:ok, obj}
+        nil ->
+          validate_and_inhibit(
+            contract,
+            propagate_properties(contract, obj),
+            nil,
+            :create,
+            %{properties: properties},
+            hooks
+          )
+
+        _remote ->
+          {:ok, obj}
       end
     else
       {:ok, _val} ->
@@ -102,10 +143,13 @@ defmodule BACnet.Protocol.ObjectOperations do
   Adds an optional property.
 
   Remote objects are rejected. Intrinsic properties cannot be added.
+  A new priority array must leave slot 6 empty.
   On success, runs implicit relationships, propagation, and the inhibit hook.
   """
   @spec add_property(ObjectsContract.t(), struct(), atom(), term(), operation_hooks()) ::
           update_result()
+  def add_property(contract, object, property, value, hooks)
+
   def add_property(
         %ObjectsContract{} = _contract,
         %{_metadata: %{remote_object: remote}} = _object,
@@ -122,7 +166,8 @@ defmodule BACnet.Protocol.ObjectOperations do
     with :ok <- known_property(contract, property),
          :ok <- property_absent(object, property),
          :ok <- intrinsic_property_rejected_on_add(contract, property),
-         :ok <- check_property_value(contract, object, property, value, true, false) do
+         :ok <- check_property_value(contract, object, property, value, true, false),
+         :ok <- check_priority_array_write(object, property, value) do
       new_object = %{
         object
         | _metadata: %{
@@ -133,7 +178,14 @@ defmodule BACnet.Protocol.ObjectOperations do
 
       case hooks.check_implicit_relationships.(Map.put(new_object, property, value), :add) do
         {:ok, obj} ->
-          validate_and_inhibit(contract, propagate_properties(contract, obj), hooks)
+          validate_and_inhibit(
+            contract,
+            propagate_properties(contract, obj),
+            object,
+            :add,
+            %{property: property, value: value},
+            hooks
+          )
 
         other ->
           other
@@ -144,8 +196,8 @@ defmodule BACnet.Protocol.ObjectOperations do
   @doc """
   Removes an optional property. Removing a property that is not present succeeds.
 
-  Remote objects are rejected. Unknown numeric keys are dropped from
-  `_unknown_properties` and do not run hooks.
+  Remote objects are rejected. Removing a stored unknown numeric property
+  drops it from `_unknown_properties` and runs the inhibit hook.
   """
   @spec remove_property(
           ObjectsContract.t(),
@@ -154,6 +206,8 @@ defmodule BACnet.Protocol.ObjectOperations do
           operation_hooks()
         ) ::
           update_result()
+  def remove_property(contract, object, property, hooks)
+
   def remove_property(
         %ObjectsContract{} = _contract,
         %{_metadata: %{remote_object: remote}} = _object,
@@ -180,8 +234,11 @@ defmodule BACnet.Protocol.ObjectOperations do
       |> Map.put(property, nil)
       |> hooks.check_implicit_relationships.(:remove)
       |> case do
-        {:ok, obj} -> validate_and_inhibit(contract, obj, hooks)
-        other -> other
+        {:ok, obj} ->
+          validate_and_inhibit(contract, obj, object, :remove, %{property: property}, hooks)
+
+        other ->
+          other
       end
     else
       {:error, {:unknown_property, _property}} -> {:ok, object}
@@ -189,9 +246,18 @@ defmodule BACnet.Protocol.ObjectOperations do
     end
   end
 
-  def remove_property(%ObjectsContract{} = _contract, object, property, _hooks)
+  def remove_property(%ObjectsContract{} = contract, object, property, hooks)
       when is_integer(property) and property >= 0 do
-    {:ok, %{object | _unknown_properties: Map.delete(object._unknown_properties, property)}}
+    if Map.has_key?(object._unknown_properties, property) do
+      candidate = %{
+        object
+        | _unknown_properties: Map.delete(object._unknown_properties, property)
+      }
+
+      validate_and_inhibit(contract, candidate, object, :remove, %{property: property}, hooks)
+    else
+      {:ok, object}
+    end
   end
 
   @doc """
@@ -199,6 +265,7 @@ defmodule BACnet.Protocol.ObjectOperations do
 
   Remote objects skip the intrinsic-property check. Propagation and the inhibit
   hook still run. Commandable `present_value` writes are rejected.
+  Replacing a local priority array must preserve slot 6.
   """
   @spec update_property(ObjectsContract.t(), struct(), atom(), term(), operation_hooks()) ::
           update_result()
@@ -207,27 +274,39 @@ defmodule BACnet.Protocol.ObjectOperations do
     with :ok <- check_property_exists(object, property),
          :ok <- prevent_commandable_objects_write_pv(object, property),
          :ok <- maybe_check_intrinsic(contract, object, property, value),
-         :ok <- check_property_value(contract, object, property, value, true, false) do
-      object
-      |> Map.put(property, value)
-      |> then(&propagate_properties(contract, &1))
-      |> then(&validate_and_inhibit(contract, &1, hooks))
+         :ok <- check_property_value(contract, object, property, value, true, false),
+         :ok <- check_priority_array_write(object, property, value) do
+      candidate = propagate_properties(contract, Map.put(object, property, value))
+
+      validate_and_inhibit(
+        contract,
+        candidate,
+        object,
+        :update,
+        %{property: property, value: value},
+        hooks
+      )
     end
   end
 
   @doc """
   Writes one slot of the priority array and refreshes `present_value`.
 
-  A `nil` value clears the slot and is not type-checked. Feedback is copied
-  from the present value when `auto_write_feedback` is set. This does not run
-  the inhibit hook.
+  Local commands and relinquishments at priority 6 return
+  `{:error, :write_access_denied}`.
+  Pass `nil` to clear the slot. The inhibit hook runs after arbitration,
+  automatic feedback updates and validation.
   """
-  @spec set_priority(ObjectsContract.t(), struct(), 1..16, term()) :: update_result()
+  @spec set_priority(ObjectsContract.t(), struct(), 1..16, term(), operation_hooks()) ::
+          update_result()
+  def set_priority(contract, object, priority, value, hooks)
+
   def set_priority(
         %ObjectsContract{} = _contract,
         %{priority_array: nil} = _object,
         priority,
-        _value
+        _value,
+        _hooks
       )
       when priority in 1..16 do
     {:error, {:unknown_property, :priority_array}}
@@ -235,11 +314,127 @@ defmodule BACnet.Protocol.ObjectOperations do
 
   def set_priority(
         %ObjectsContract{} = contract,
-        %{priority_array: %PriorityArray{} = prio_array} = object,
+        %{priority_array: %PriorityArray{}} = object,
         priority,
-        value
+        value,
+        hooks
       )
       when priority in 1..16 do
+    with :ok <- check_priority_command(object, priority),
+         {:ok, candidate} <- put_priority(contract, object, priority, value) do
+      hooks.inhibit_object_check.(candidate, object, :set_priority, %{
+        priority: priority,
+        value: value
+      })
+    end
+  end
+
+  @doc """
+  Checks whether a local command targets the reserved priority.
+
+  Object modules with additional command validation can call this before
+  validating the command value.
+  """
+  @spec check_priority_command(struct(), 1..16) :: :ok | {:error, :write_access_denied}
+  def check_priority_command(object, priority)
+
+  def check_priority_command(
+        %{_metadata: %{remote_object: nil}, priority_array: %PriorityArray{}},
+        @minimum_time_priority
+      ),
+      do: {:error, :write_access_denied}
+
+  def check_priority_command(_object, _priority), do: :ok
+
+  @doc """
+  Checks a write trigger for a command or an indexed write to the reserved slot.
+
+  Accepts both atom and numeric property identifiers.
+  """
+  @spec check_priority_write(struct(), term()) :: :ok | {:error, :write_access_denied}
+  def check_priority_write(object, trigger)
+
+  def check_priority_write(object, {source, property, index, priority})
+      when source in [:property_write, :application_write] and
+             ((property in [:present_value, @present_value_id] and
+                 priority == @minimum_time_priority) or
+                (property in [:priority_array, @priority_array_id] and
+                   index == @minimum_time_priority)) do
+    check_priority_command(object, @minimum_time_priority)
+  end
+
+  def check_priority_write(_object, _trigger), do: :ok
+
+  @doc """
+  Checks that a proposed local write preserves the minimum-time hold.
+
+  Check the caller's candidate before the object callback prepares its own
+  hold changes.
+  """
+  @spec check_priority_array_change(struct(), struct()) ::
+          :ok | {:error, {:write_access_denied, :priority_array}}
+  def check_priority_array_change(original, candidate) do
+    check_priority_array_write(original, :priority_array, Map.get(candidate, :priority_array))
+  end
+
+  @doc """
+  Sets or releases the minimum-time hold on a local commandable object.
+
+  The object's Present_Value rules validate the hold value. Pass `nil` to
+  release it. `BACnet.Protocol.ObjectExecution.BinaryState` uses this operation
+  to maintain slot 6 on commandable Binary Output and Binary Value objects.
+  The inhibit hook runs when arbitration produces a changed object.
+  """
+  @spec set_minimum_time_hold(ObjectsContract.t(), struct(), term(), operation_hooks()) ::
+          update_result()
+  def set_minimum_time_hold(
+        %ObjectsContract{object_module: module} = contract,
+        %{__struct__: module, _metadata: %{remote_object: nil}, priority_array: %PriorityArray{}} =
+          object,
+        value,
+        hooks
+      ) do
+    with {:ok, candidate} <- put_priority(contract, object, @minimum_time_priority, value) do
+      if candidate === object do
+        {:ok, object}
+      else
+        hooks.inhibit_object_check.(candidate, object, :set_minimum_time_hold, %{
+          priority: @minimum_time_priority,
+          value: value
+        })
+      end
+    end
+  end
+
+  @spec check_priority_array_write(struct(), atom(), term()) ::
+          :ok | {:error, {:write_access_denied, :priority_array}}
+  defp check_priority_array_write(object, property, value)
+
+  defp check_priority_array_write(
+         %{_metadata: %{remote_object: nil}} = object,
+         :priority_array,
+         value
+       ) do
+    if minimum_time_hold(Map.get(object, :priority_array)) === minimum_time_hold(value),
+      do: :ok,
+      else: {:error, {:write_access_denied, :priority_array}}
+  end
+
+  defp check_priority_array_write(_object, _property, _value), do: :ok
+
+  @spec minimum_time_hold(term()) :: term()
+  defp minimum_time_hold(array)
+
+  defp minimum_time_hold(%PriorityArray{priority_6: hold}), do: hold
+  defp minimum_time_hold(_array), do: nil
+
+  @spec put_priority(ObjectsContract.t(), struct(), 1..16, term()) :: update_result()
+  defp put_priority(
+         contract,
+         %{priority_array: %PriorityArray{} = prio_array} = object,
+         priority,
+         value
+       ) do
     pv_check =
       if value == nil do
         :ok
@@ -280,11 +475,14 @@ defmodule BACnet.Protocol.ObjectOperations do
       when is_atom(property) and is_list(readonly) do
     if property_in_list?(object, property) do
       case property do
+        :event_state ->
+          not object._metadata.intrinsic_reporting and not Enum.member?(readonly, property)
+
         :event_algorithm_inhibit ->
           writable_event_algorithm_inhibit?(object)
 
         :present_value ->
-          writable_present_value?(object)
+          not Enum.member?(readonly, property) and writable_present_value?(object)
 
         _term ->
           not Enum.member?(readonly, property)
@@ -328,6 +526,20 @@ defmodule BACnet.Protocol.ObjectOperations do
     else
       {:error, {:unknown_property, property}}
     end
+  end
+
+  @doc """
+  Checks a retained Reliability value against the object's property contract.
+
+  A nil value represents an unselected or uninitialized Reliability input.
+  """
+  @spec valid_reliability?(ObjectsContract.t(), struct(), term()) :: boolean()
+  def valid_reliability?(contract, object, value)
+
+  def valid_reliability?(_contract, _object, nil), do: true
+
+  def valid_reliability?(contract, object, value) do
+    check_property_value(contract, object, :reliability, value, false, false) == :ok
   end
 
   @doc """
@@ -610,11 +822,13 @@ defmodule BACnet.Protocol.ObjectOperations do
 
   @spec process_property(
           ObjectsContract.t(),
-          {term(), term()},
-          {:ok, {map(), map(), boolean()}},
+          {property :: term(), value :: term()},
+          {:ok, {properties :: map(), unknown_properties :: map(), needs_recheck :: boolean()}},
           keyword()
         ) ::
-          {:cont, {:ok, {map(), map(), boolean()}}} | {:halt, {:error, term()}}
+          {:cont,
+           {:ok, {properties :: map(), unknown_properties :: map(), needs_recheck :: boolean()}}}
+          | {:halt, {:error, term()}}
   defp process_property(_contract, {_prop, nil}, acc, _opts), do: {:cont, acc}
 
   defp process_property(contract, {prop, val}, {:ok, {acc, unknown_acc, flag}}, opts) do
@@ -964,7 +1178,14 @@ defmodule BACnet.Protocol.ObjectOperations do
             {:error, _absent} ->
               case Map.fetch(contract.default_properties_all, name) do
                 {:ok, default_val} ->
-                  {:cont, {:ok, Map.put(properties, name, default_val)}}
+                  properties
+                  |> Map.put(name, default_val)
+                  |> then(
+                    &update_in(&1, [Access.key(:_metadata), :properties_list], fn list ->
+                      [name | list]
+                    end)
+                  )
+                  |> then(&{:cont, {:ok, &1}})
 
                 :error ->
                   {:halt, {:error, {:missing_required_property, name}}}
@@ -986,7 +1207,14 @@ defmodule BACnet.Protocol.ObjectOperations do
         if required? and not has_key do
           case Map.fetch(contract.default_properties_all, name) do
             {:ok, default_val} ->
-              {:cont, {:ok, Map.put(properties, name, default_val)}}
+              properties
+              |> Map.put(name, default_val)
+              |> then(
+                &update_in(&1, [Access.key(:_metadata), :properties_list], fn list ->
+                  [name | list]
+                end)
+              )
+              |> then(&{:cont, {:ok, &1}})
 
             _else ->
               if required_state == :optional do
@@ -1007,6 +1235,8 @@ defmodule BACnet.Protocol.ObjectOperations do
 
   @spec verify_properties_with_forbidden_when(ObjectsContract.t(), map(), metadata()) ::
           {:ok, map()} | {:error, {:property_not_allowed, atom()}}
+  defp verify_properties_with_forbidden_when(contract, properties, metadata)
+
   defp verify_properties_with_forbidden_when(_contract, properties, %{remote_object: remote})
        when remote != nil and remote != false do
     {:ok, properties}
@@ -1038,15 +1268,24 @@ defmodule BACnet.Protocol.ObjectOperations do
     end
   end
 
-  @spec validate_and_inhibit(ObjectsContract.t(), struct(), operation_hooks()) :: update_result()
-  defp validate_and_inhibit(contract, object, hooks) do
+  @spec validate_and_inhibit(
+          ObjectsContract.t(),
+          struct(),
+          struct() | nil,
+          property_operation(),
+          property_operation_args(),
+          operation_hooks()
+        ) :: update_result()
+  defp validate_and_inhibit(contract, candidate, original, operation, args, hooks) do
     with {:ok, object} <-
-           verify_properties_with_forbidden_when(contract, object, object._metadata) do
-      hooks.inhibit_object_check.(object)
+           verify_properties_with_forbidden_when(contract, candidate, candidate._metadata) do
+      hooks.inhibit_object_check.(object, original, operation, args)
     end
   end
 
-  @spec annotations_with(ObjectsContract.t(), atom()) :: [{atom(), term()}]
+  @spec annotations_with(ObjectsContract.t(), atom()) :: [
+          {property :: atom(), annotation :: term()}
+        ]
   defp annotations_with(contract, key) do
     Enum.reduce(contract.annotations, [], fn {name, key_annotations}, acc ->
       case Keyword.fetch(key_annotations, key) do
@@ -1236,7 +1475,7 @@ defmodule BACnet.Protocol.ObjectOperations do
     end
   end
 
-  @spec inspect_sort_key({atom(), term()}) :: String.t()
+  @spec inspect_sort_key({key :: atom(), value :: term()}) :: String.t()
   defp inspect_sort_key({key, _val}) do
     str = Atom.to_string(key)
 
@@ -1247,7 +1486,8 @@ defmodule BACnet.Protocol.ObjectOperations do
     end
   end
 
-  @spec to_assoc({term(), term()}, Inspect.Opts.t(), Inspect.Algebra.t()) :: Inspect.Algebra.t()
+  @spec to_assoc({key :: term(), value :: term()}, Inspect.Opts.t(), Inspect.Algebra.t()) ::
+          Inspect.Algebra.t()
   defp to_assoc({key, value}, opts, sep) do
     Inspect.Algebra.concat(
       Inspect.Algebra.concat(Inspect.Algebra.to_doc(key, opts), sep),

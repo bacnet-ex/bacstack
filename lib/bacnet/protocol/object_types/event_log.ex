@@ -1,10 +1,9 @@
 defmodule BACnet.Protocol.ObjectTypes.EventLog do
   @moduledoc """
-  The Event Log object captures `BACnet.Protocol.Services.ConfirmedEventNotification`
-  and `BACnet.Protocol.Services.UnconfirmedEventNotification` into a timestamped buffer,
-  so that alarm and event history can be retrieved later with the
-  `BACnet.Protocol.Services.ReadRange` service. It is the BACnet-native replacement
-  for a local alarm printer or syslog for events.
+  An Event Log stores timestamped
+  `BACnet.Protocol.Services.ConfirmedEventNotification` and
+  `BACnet.Protocol.Services.UnconfirmedEventNotification` records. Use
+  `BACnet.Protocol.Services.ReadRange` to retrieve the alarm and event history.
 
   Records contain the full event information (source object, event type, message text,
   priority, etc.). The log can be configured as a fixed-size circular buffer or a
@@ -19,56 +18,51 @@ defmodule BACnet.Protocol.ObjectTypes.EventLog do
 
   ### Behaviour and Operation
 
-  Event Log objects are buffers that receive copies of event notifications
-  (both confirmed and unconfirmed). The conditions by which events are forwarded
-  to a particular Event Log is not specified and is a local matter.
-  The local application is responsible for appending a record (containing
-  timestamp, source, event type, message text, etc.) to the log buffer whenever an
-  event notification is sent or received that matches the log's configuration.
+  The host selects which sent or received notifications go to each Event Log.
+  Submit selected notifications with `BACnet.Stack.TrendLogger.trigger_log/3`.
+  The logger timestamps each record in its configured timezone and applies
+  Enable, Start_Time and Stop_Time before collecting an event. The buffer
+  overwrites its oldest records or stops logging according to Stop_When_Full.
 
-  Records are retrieved by clients using the `ReadRange` service. The log can be
-  circular or append-only until full/stopped. `start_time` / `stop_time` and the
-  enable flag control when logging is active. When intrinsic reporting is enabled
-  the log itself can emit a BUFFER_READY event to notify a workstation that new
-  records are available for collection.
+  ### Lifecycle
 
-  ### Developer Implementation Notes (geared to device server / application authors)
+  The [object execution host](BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host)
+  needs to supply a running `t:BACnet.Stack.TrendLogger.server/0` as
+  `:trend_logger` in `BACnet.Protocol.ObjectExecution.Context` options. Execute
+  with `:initialization` to register the local object. If that log is already
+  registered, initialization reads its existing runtime state. Use the same
+  logger throughout the lifetime of the object, and call
+  `BACnet.Stack.TrendLogger.remove_object/2` when removing the object.
 
-  The generated code handles storage + basic mechanics (validation, implicit_relationships,
-  readonly annotations as hints to your server, etc.). **You must drive "special" live
-  properties and side effects yourself**, via `update_property/3` (never direct mutation).
-  Read notes below + generated tables for details.
+  Execution reads Enable and the record counters together from the logger.
+  Refresh before serving live properties and before preparing a write that
+  depends on the buffer state. Use
+  `BACnet.Protocol.ObjectExecution.Lifecycle.prepare_write/3` and then execute
+  each committed write, including repeated writes of the same value. A zero
+  write to Record_Count purges the log and adds a buffer-purged status record.
+  An Enable write that would start a full stop-when-full log returns
+  `{:error, :log_buffer_full}`. The logger also checks this condition when
+  applying the write. The host needs to return `OBJECT/LOG_BUFFER_FULL` at the
+  service boundary and refresh the object if the logger rejected the commit.
 
-  **Special / live properties and expected developer behaviour**
-
-  Similar to TrendLog but for event notifications (ConfirmedEventNotification etc).
-
-  - `log_buffer`: History of event notifications.
-    **Dev must**: Your event notification handler (when you emit or receive
-    notifications that should be logged) must construct EventLogRecord (with
-    timestamp, the notification params, status) and append via update on the
-    buffer (respect buffer_size, stop_when_full, enable, start/stop times).
-
-  - `record_count`, `total_record_count`:
-    **Dev must**: Manage counts on appends; for BUFFER_READY when intrinsic, track
-    records since last notify and emit when threshold crossed.
-
-  - `start_time`/`stop_time`, `enable`, `stop_when_full`, `buffer_size`:
-    Config for logging window.
-    **Dev must**: Your logger respects the times/enable when deciding to log a
-    notification. `buffer_size` writes restricted when enabled.
-
-  - `status_flags`, `reliability`.
-    **Dev must**: Update on problems logging or with event sources. Note `in_alarm`/
-    `fault`/`out_of_service` bits of `status_flags` are automatically managed by the
-    object.
-
-  The object is passive storage + config; you drive the logging of events into it.
+  The logger owns the history and the time checks. The local object's
+  `log_buffer` list stays empty during execution. To serve
+  `BACnet.Protocol.Services.ReadRange` for Log_Buffer, use
+  `BACnet.Stack.TrendLogger.get_snapshot/2` and take the records and sequence
+  information from that same snapshot. The object requests no wakeups.
+  Remote snapshots execute passively.
 
   ### Intrinsic Reporting
 
-  When `intrinsic_reporting: true` is passed to `create/4`, additional event
-  reporting properties become active for the log itself.
+  With `intrinsic_reporting: true`, the log's lifecycle evaluates BUFFER_READY
+  against the current counters and reporting settings. Configure the
+  `notification_receiver` described by `BACnet.Stack.TrendLogger.start_link/1`
+  and schedule a `:periodic` execution of the current log when the receiver
+  gets an `:intrinsic_reporting` message. The execution consumes the threshold
+  when it records a NORMAL transition for Log_Buffer. Collection continues
+  during reporting inhibition, with the threshold pending for reevaluation.
+  The host retrieves the transition after commit with
+  `BACnet.Protocol.ObjectExecution.EventReporting.transition/1`.
 
   ### Examples
 
@@ -76,6 +70,26 @@ defmodule BACnet.Protocol.ObjectTypes.EventLog do
 
       iex> {:ok, el} = BACnet.Protocol.ObjectTypes.EventLog.create(800, "EventHistory", %{buffer_size: 100}); el.object_name
       "EventHistory"
+
+  Registering an Event Log and obtaining the snapshot used for ReadRange:
+
+      iex> alias BACnet.Protocol.ObjectExecution.{Context, Lifecycle}
+      iex> alias BACnet.Protocol.ObjectTypes.EventLog
+      iex> alias BACnet.Stack.TrendLogger
+      iex> {:ok, logger} = TrendLogger.start_link(lookup_cb: fn _reference ->
+      ...>   {:error, %BACnet.Protocol.BACnetError{class: :object, code: :unknown_object}}
+      ...> end)
+      iex> {:ok, object} = EventLog.create(800, "Event history", %{buffer_size: 100})
+      iex> context = Context.new(:initialization, options: [trend_logger: logger])
+      iex> {:ok, stored} = Lifecycle.execute(object, context)
+      iex> {:ok, snapshot} = TrendLogger.get_snapshot(logger, stored.object)
+      iex> {stored.object.record_count, snapshot.total_record_count, stored.next_execution}
+      {0, 0, nil}
+      iex> {buffer_module, buffer} = snapshot.buffer
+      iex> buffer_module.read_range(buffer, 0, 10)
+      []
+      iex> GenServer.stop(logger)
+      :ok
 
   With intrinsic reporting:
 
@@ -91,9 +105,21 @@ defmodule BACnet.Protocol.ObjectTypes.EventLog do
   alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.EventLogRecord
+  alias BACnet.Protocol.ObjectExecution.Context
+  alias BACnet.Protocol.ObjectExecution.LogLifecycle
+  alias BACnet.Protocol.ObjectExecution.Result
 
   require Constants
   use BACnet.Protocol.ObjectsMacro
+
+  @logger_properties [:enable, :stop_when_full, :start_time, :stop_time, :notification_threshold]
+  @readonly_log_properties [
+    :buffer_size,
+    :log_buffer,
+    :total_record_count,
+    :records_since_notification,
+    :last_notify_record
+  ]
 
   @typedoc """
   Options accepted when creating or configuring an Event Log object.
@@ -106,11 +132,11 @@ defmodule BACnet.Protocol.ObjectTypes.EventLog do
           | common_object_opts()
 
   @typedoc """
-  Represents a Event Log object. All keys should be treated as read-only,
-  all updates should go only through `update_property/3`.
+  Represents an Event Log object. Treat struct fields as read-only. Use the object module's
+  property functions to build updates.
 
-  Properties which are for Intrinsic Reporting are nil, if disabled. If Intrinsic Reporting is enabled on the object,
-  then the properties can not be nil.
+  Create the object with `intrinsic_reporting: true` to select its intrinsic
+  reporting properties. The fields for those properties are `nil` when omitted.
   """
   bac_object Constants.macro_assert_name(:object_type, :event_log) do
     services(intrinsic: true)
@@ -132,6 +158,7 @@ defmodule BACnet.Protocol.ObjectTypes.EventLog do
 
     # Log_Buffer property can only be read through Read-Range service
     field(:log_buffer, [EventLogRecord.t()],
+      readonly: true,
       required: true,
       default: [],
       remote_default: true,
@@ -166,13 +193,72 @@ defmodule BACnet.Protocol.ObjectTypes.EventLog do
     )
 
     field(:records_since_notification, ApplicationTags.unsigned32(),
+      readonly: true,
       intrinsic: true,
       default: 0
     )
 
     field(:last_notify_record, ApplicationTags.unsigned32(),
+      readonly: true,
       intrinsic: true,
       default: 0
     )
+  end
+
+  @doc """
+  Checks the shape of the local log's `:trend_logger` execution option.
+  Remote snapshots pass preflight without a logger.
+  """
+  @impl BACnet.Protocol.ObjectsBehaviour
+  @spec validate_execution(t(), Context.t()) :: :ok | {:error, term()}
+  def validate_execution(object, context)
+
+  def validate_execution(%__MODULE__{_metadata: %{remote_object: remote}}, %Context{})
+      when not is_nil(remote),
+      do: :ok
+
+  def validate_execution(%__MODULE__{}, %Context{} = context) do
+    with {:ok, _logger} <- LogLifecycle.get_logger(context), do: :ok
+  end
+
+  @doc """
+  Checks access to logger-owned properties, zero-only Record_Count writes,
+  and Enable writes against a full stop-when-full buffer.
+  The logger applies the accepted write during execution.
+  """
+  @impl BACnet.Protocol.ObjectsBehaviour
+  @spec prepare_write(t(), t(), Context.t()) :: {:ok, t()} | {:error, term()}
+  def prepare_write(original, candidate, context)
+
+  def prepare_write(%__MODULE__{_metadata: %{remote_object: remote}}, _candidate, %Context{})
+      when not is_nil(remote),
+      do: {:error, :operation_not_available_for_remote_objects}
+
+  def prepare_write(
+        %__MODULE__{} = original,
+        %__MODULE__{} = candidate,
+        %Context{trigger: {source, _property, _index, _priority}} = context
+      )
+      when source in [:property_write, :application_write] do
+    LogLifecycle.prepare_write(original, candidate, context, @readonly_log_properties)
+  end
+
+  @doc """
+  Runs one log lifecycle step against the configured logger.
+
+  Initialization registers the log. Committed logger-property writes update
+  the logger, and a zero Record_Count write purges the buffer.
+  The result contains the latest counters and any recorded reporting transition.
+  """
+  @impl BACnet.Protocol.ObjectsBehaviour
+  @spec execute(t(), Context.t()) :: {:ok, Result.t(t())} | {:error, term()}
+  def execute(object, context)
+
+  def execute(%__MODULE__{_metadata: %{remote_object: remote}} = object, %Context{} = context)
+      when not is_nil(remote),
+      do: {:ok, %Result{object: object, state: context.state, next_execution: nil}}
+
+  def execute(%__MODULE__{} = object, %Context{} = context) do
+    LogLifecycle.execute(object, context, @logger_properties)
   end
 end

@@ -774,4 +774,42 @@ defmodule BACnet.Protocol.EventAlgorithms.CommandFailureTest do
 
     assert_raise ArgumentError, fn -> CommandFailure.update(state, status_flags: nil) end
   end
+
+  test "execute/2 starts and expires the delay using the supplied sample" do
+    state =
+      CommandFailure.new(
+        %Encoding{encoding: :primitive, type: :boolean, value: false, extras: []},
+        %Params{
+          feedback_value: %Encoding{
+            encoding: :primitive,
+            type: :boolean,
+            value: false,
+            extras: []
+          },
+          time_delay: 1,
+          time_delay_normal: nil
+        }
+      )
+
+    new_state2 = %{
+      state
+      | monitored_value: %Encoding{
+          encoding: :primitive,
+          type: :boolean,
+          value: true,
+          extras: []
+        }
+    }
+
+    now = ~U[2026-01-01 12:00:00Z]
+    deadline = DateTime.add(now, 1, :second)
+
+    assert {:delayed_event, %{dt_offnormal: ^deadline} = pending} =
+             CommandFailure.execute(new_state2, now)
+
+    assert {:delayed_event, ^pending} = CommandFailure.execute(pending, now)
+
+    assert {:event, %{current_state: :offnormal}, _notification} =
+             CommandFailure.execute(pending, deadline)
+  end
 end

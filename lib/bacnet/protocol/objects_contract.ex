@@ -16,7 +16,8 @@ defmodule BACnet.Protocol.ObjectsContract do
   The first function is the `bac_type` validator (`{:with_validator, type, fun}`).
   The second is the field's `validator_fun`. Either may be `nil`.
   """
-  @type property_validator :: {function() | nil, function() | nil}
+  @type property_validator ::
+          {type_validator :: function() | nil, field_validator :: function() | nil}
 
   @typedoc """
   Facts `BACnet.Protocol.ObjectOperations` needs for one object type.
@@ -43,7 +44,7 @@ defmodule BACnet.Protocol.ObjectsContract do
           remote_defaults: %{optional(atom()) => term()},
           init_funs: %{optional(atom()) => (-> term())},
           validators: %{optional(atom()) => property_validator()},
-          annotations: [{atom(), keyword()}],
+          annotations: [{property :: atom(), annotations :: keyword()}],
           supports_intrinsic: boolean(),
           default_cov_increment: term() | nil,
           has_priority_array: boolean(),

@@ -64,7 +64,7 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntry do
   Passing a mix of nil and integer values, or an out-of-range port, produces
   `{:error, :invalid_data}`.
 
-  ## See Also
+  ### See Also
 
   - `BACnet.Protocol` - BVLL decoding that materialises FDT entries via BvlcFunction
   - `BACnet.Protocol.BvlcFunction` - the Register, Read-FDT, Read-FDT-Ack and Delete operations that transport these entries

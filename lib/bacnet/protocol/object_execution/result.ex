@@ -1,15 +1,33 @@
 defmodule BACnet.Protocol.ObjectExecution.Result do
   @moduledoc """
-  Object and runtime state produced by one execution step.
+  Object, runtime state and next execution request produced by one lifecycle step.
 
-  The caller must retain `object` and pass `state` in the next
-  `BACnet.Protocol.ObjectExecution.Context` for that same object instance.
-  State is opaque to the caller and belongs to the object module; `nil` denotes
-  initial state. Changing an object's properties does not implicitly clear its
-  runtime state. The implementation must reconcile state with changed properties.
+  The [object execution host](BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host)
+  is the integrating application or higher-level BACnet stack that owns object instances and drives
+  their lifecycle. It needs to retain and act on this result as described below.
 
-  This result describes the executing object. Writes to other objects are
-  performed through the context's host callback and retained by the host.
+  Retain all three fields together for each instance. Use `object` for the next operation
+  and pass `state` in its `BACnet.Protocol.ObjectExecution.Context`. The object module
+  defines the shape of this state and reconciles it with changed properties. Supply
+  `state: nil` on initialization.
+
+  For a write to another object, retain the target's update in the host callback that performs
+  the write. This result belongs to the object that requested it.
+
+  `next_execution` replaces the previous request on every successful result. A
+  `BACnet.Protocol.ObjectExecution.Wakeup` requests a deadline. A `nil` request cancels
+  the preceding request. Keep the previous request on error. See the
+  [wakeup examples](BACnet.Protocol.ObjectExecution.Lifecycle.html#module-wakeups-continuations-and-restarts)
+  for arming and replacing timers.
+
+  For `:immediate`, the host needs to commit this result before calling execution again with the
+  `:continuation` trigger. This lets an object publish intermediate state, such as Command's busy
+  flag, before performing I/O in a subsequent step. The host needs to drain these continuations
+  before processing the next external operation on that object. Implementations must make progress
+  and eventually finish or request a future wakeup.
+
+  When constructing a result, supply all fields explicitly. Use `next_execution: nil`
+  when the step requests no further execution.
   """
 
   @typedoc """
@@ -17,7 +35,8 @@ defmodule BACnet.Protocol.ObjectExecution.Result do
   """
   @type t(object) :: %__MODULE__{
           object: object,
-          state: term()
+          state: term(),
+          next_execution: nil | :immediate | BACnet.Protocol.ObjectExecution.Wakeup.t()
         }
 
   @typedoc """
@@ -25,7 +44,7 @@ defmodule BACnet.Protocol.ObjectExecution.Result do
   """
   @type t :: t(struct())
 
-  @fields [:object, :state]
+  @fields [:object, :state, :next_execution]
   @enforce_keys @fields
   defstruct @fields
 end

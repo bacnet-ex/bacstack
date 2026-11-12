@@ -571,7 +571,7 @@ defmodule BACnet.Stack.Client do
       used to scope invoke ID allocation together with the transport destination.
       Set it to the same complete target used in `:destination` or `:npci.destination`
       when allocating invoke IDs independently for devices behind a router.
-      This option does not configure routing; omit it to share one invoke ID pool
+      This option does not configure routing - omit it to share one invoke ID pool
       for the transport destination.
       Please note, if wrongfully used, this may lead to collisions and invalid data -
       including  replies sent to requests that were never meant for that request.
@@ -667,7 +667,11 @@ defmodule BACnet.Stack.Client do
       |> Map.put_new(:npci_source, nil)
       |> Map.put_new(:segmented_rcv_window_overwrite, false)
 
-    receivers = opts |> Map.get(:notification_receiver, []) |> List.wrap() |> Enum.uniq()
+    receivers =
+      opts
+      |> Map.get(:notification_receiver, [])
+      |> List.wrap()
+      |> Enum.uniq()
 
     receiver_monitors =
       Map.new(for pid <- receivers, is_pid(pid), do: {pid, Process.monitor(pid)})

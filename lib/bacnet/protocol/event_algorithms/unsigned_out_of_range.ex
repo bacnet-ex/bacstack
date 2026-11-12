@@ -76,6 +76,8 @@ defmodule BACnet.Protocol.EventAlgorithms.UnsignedOutOfRange do
   however to ensure the Status Flags have an overall correct status,
   the user has to make sure all bits are correctly.
 
+  The optional clock sample determines when delays start and expire.
+
   ASHRAE 135:
   > The conditions evaluated by this event algorithm are:
   >
@@ -108,10 +110,10 @@ defmodule BACnet.Protocol.EventAlgorithms.UnsignedOutOfRange do
   > for pTimeDelayNormal, then indicate a transition to the NORMAL event state.
   """
   # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
-  @spec execute(t()) ::
+  @spec execute(t(), DateTime.t()) ::
           {:event, new_state :: t(), Notify.t()}
           | {:delayed_event | :no_event, new_state :: t()}
-  def execute(%__MODULE__{} = state) do
+  def execute(%__MODULE__{} = state, %DateTime{} = now \\ get_dt()) do
     current_normal = state.current_state == @const_normal
     current_high_limit = state.current_state == @const_high_limit
     current_low_limit = state.current_state == @const_low_limit
@@ -144,16 +146,18 @@ defmodule BACnet.Protocol.EventAlgorithms.UnsignedOutOfRange do
 
     offnormal_dt =
       if offnormal_event and state.parameters.time_delay > 0 do
-        state.dt_offnormal || get_dt(state.parameters.time_delay)
+        state.dt_offnormal || DateTime.add(now, state.parameters.time_delay, :second)
       end
 
     normal_dt =
       if normal_event and (state.parameters.time_delay_normal || state.parameters.time_delay) > 0 do
         state.dt_normal ||
-          get_dt(state.parameters.time_delay_normal || state.parameters.time_delay)
+          DateTime.add(
+            now,
+            state.parameters.time_delay_normal || state.parameters.time_delay,
+            :second
+          )
       end
-
-    current_dt = get_dt(0)
 
     offnormal_state =
       cond do
@@ -167,13 +171,13 @@ defmodule BACnet.Protocol.EventAlgorithms.UnsignedOutOfRange do
         offnormal_event and offnormal_dt == nil ->
           {true, offnormal_state}
 
-        offnormal_event and DateTime.compare(current_dt, offnormal_dt) != :lt ->
+        offnormal_event and DateTime.compare(now, offnormal_dt) != :lt ->
           {true, offnormal_state}
 
         normal_event and normal_dt == nil ->
           {true, Constants.macro_assert_name(:event_state, :normal)}
 
-        normal_event and DateTime.compare(current_dt, normal_dt) != :lt ->
+        normal_event and DateTime.compare(now, normal_dt) != :lt ->
           {true, Constants.macro_assert_name(:event_state, :normal)}
 
         true ->
@@ -291,7 +295,6 @@ defmodule BACnet.Protocol.EventAlgorithms.UnsignedOutOfRange do
 
   defp compute_return(false, _state, state), do: {:no_event, state}
 
-  @spec get_dt(non_neg_integer()) :: DateTime.t()
-  defp get_dt(0), do: DateTime.now!(Application.get_env(:bacstack, :default_timezone, "Etc/UTC"))
-  defp get_dt(offset), do: DateTime.add(get_dt(0), offset, :second)
+  @spec get_dt() :: DateTime.t()
+  defp get_dt(), do: DateTime.now!(Application.get_env(:bacstack, :default_timezone, "Etc/UTC"))
 end

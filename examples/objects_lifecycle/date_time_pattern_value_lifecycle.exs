@@ -1,0 +1,92 @@
+alias BACnet.Protocol.BACnetDate
+alias BACnet.Protocol.BACnetDateTime
+alias BACnet.Protocol.BACnetTime
+alias BACnet.Protocol.ObjectExecution.Context
+alias BACnet.Protocol.ObjectExecution.Lifecycle
+alias BACnet.Protocol.ObjectTypes.DateTimePatternValue
+
+any_date = %BACnetDate{
+  year: :unspecified,
+  month: :unspecified,
+  day: :unspecified,
+  weekday: :unspecified
+}
+
+even_month_end = %BACnetDateTime{
+  date: %{any_date | month: :even, day: :last},
+  time: BACnetTime.from_time(~T[17:00:00])
+}
+
+fallback = %BACnetDateTime{
+  date: any_date,
+  time: BACnetTime.from_time(~T[08:00:00])
+}
+
+unknown = %BACnetDateTime{
+  date: any_date,
+  time: %BACnetTime{
+    hour: :unspecified,
+    minute: :unspecified,
+    second: :unspecified,
+    hundredth: :unspecified
+  }
+}
+
+test_pattern = %{even_month_end | date: %{even_month_end.date | month: :odd}}
+
+{:ok, object} =
+  DateTimePatternValue.create(40, "Recurring deadline", %{
+    present_value: fallback,
+    relinquish_default: fallback,
+    is_utc: true,
+    reliability: :no_fault_detected
+  })
+
+{:ok, stored} = Lifecycle.execute(object, Context.new(:initialization))
+
+commit = fn stored, candidate, trigger ->
+  context = Context.new(trigger, state: stored.state)
+
+  with {:ok, candidate} <- candidate,
+       {:ok, prepared} <- Lifecycle.prepare_write(stored.object, candidate, context) do
+    Lifecycle.execute(prepared, context)
+  end
+end
+
+command = fn stored, value, origin, priority ->
+  candidate = DateTimePatternValue.set_priority(stored.object, priority || 16, value)
+  commit.(stored, candidate, {origin, :present_value, nil, priority})
+end
+
+write = fn stored, property, value, origin ->
+  candidate = DateTimePatternValue.update_property(stored.object, property, value)
+  commit.(stored, candidate, {origin, property, nil, nil})
+end
+
+{:ok, stored} = command.(stored, even_month_end, :application_write, nil)
+{:ok, stored} = command.(stored, unknown, :property_write, 8)
+^unknown = stored.object.present_value
+^even_month_end = stored.object.priority_array.priority_16
+
+{:ok, stored} = command.(stored, nil, :property_write, 8)
+^even_month_end = stored.object.present_value
+{:ok, stored} = command.(stored, nil, :property_write, 16)
+^fallback = stored.object.present_value
+
+{:ok, stored} = write.(stored, :out_of_service, true, :property_write)
+{:error, :out_of_service} = command.(stored, even_month_end, :application_write, nil)
+{:ok, stored} = command.(stored, test_pattern, :property_write, 8)
+
+{:ok, stored} = write.(stored, :reliability_evaluation_inhibit, true, :property_write)
+{:ok, stored} = write.(stored, :reliability, :process_error, :application_write)
+:process_error = stored.object.reliability
+true = stored.object.status_flags.fault
+
+{:ok, stored} = write.(stored, :out_of_service, false, :application_write)
+:no_fault_detected = stored.object.reliability
+false = stored.object.status_flags.fault
+
+read = Context.new({:property_read, :present_value, nil}, state: stored.state)
+{:ok, stored} = Lifecycle.prepare_read(stored.object, read)
+{:ok, ^test_pattern} = DateTimePatternValue.get_property(stored.object, :present_value)
+nil = stored.next_execution

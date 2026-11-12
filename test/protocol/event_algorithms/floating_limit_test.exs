@@ -972,9 +972,14 @@ defmodule BACnet.Protocol.EventAlgorithms.FloatingLimitTest do
     expired = %{pending | dt_offnormal: DateTime.add(DateTime.utc_now(), -60)}
 
     assert {:no_event, %{dt_offnormal: nil, dt_normal: nil} = cleared} =
-             expired |> algorithm.update(monitored_value: normal) |> algorithm.execute()
+             expired
+             |> algorithm.update(monitored_value: normal)
+             |> algorithm.execute()
 
-    result = cleared |> algorithm.update(monitored_value: high) |> algorithm.execute()
+    result =
+      cleared
+      |> algorithm.update(monitored_value: high)
+      |> algorithm.execute()
 
     assert {:delayed_event, %{current_state: :normal}} = result
   end
@@ -992,9 +997,14 @@ defmodule BACnet.Protocol.EventAlgorithms.FloatingLimitTest do
     expired = %{pending | dt_normal: DateTime.add(DateTime.utc_now(), -60)}
 
     assert {:no_event, %{dt_normal: nil} = interrupted} =
-             expired |> algorithm.update(monitored_value: high) |> algorithm.execute()
+             expired
+             |> algorithm.update(monitored_value: high)
+             |> algorithm.execute()
 
-    result = interrupted |> algorithm.update(monitored_value: normal) |> algorithm.execute()
+    result =
+      interrupted
+      |> algorithm.update(monitored_value: normal)
+      |> algorithm.execute()
 
     assert {:delayed_event, %{current_state: :high_limit}} = result
   end
@@ -1005,7 +1015,9 @@ defmodule BACnet.Protocol.EventAlgorithms.FloatingLimitTest do
     parameters = %{pending.parameters | time_delay: 0}
 
     assert {:event, finished, _notification} =
-             pending |> algorithm.update(parameters: parameters) |> algorithm.execute()
+             pending
+             |> algorithm.update(parameters: parameters)
+             |> algorithm.execute()
 
     assert finished.current_state == :high_limit
     assert finished.dt_offnormal == nil
@@ -1017,12 +1029,16 @@ defmodule BACnet.Protocol.EventAlgorithms.FloatingLimitTest do
     assert {:event, alarm, _notification} = algorithm.execute(state)
 
     assert {:delayed_event, pending} =
-             alarm |> algorithm.update(monitored_value: normal) |> algorithm.execute()
+             alarm
+             |> algorithm.update(monitored_value: normal)
+             |> algorithm.execute()
 
     parameters = %{pending.parameters | time_delay_normal: 0}
 
     assert {:event, finished, _notification} =
-             pending |> algorithm.update(parameters: parameters) |> algorithm.execute()
+             pending
+             |> algorithm.update(parameters: parameters)
+             |> algorithm.execute()
 
     assert finished.current_state == :normal
     assert finished.dt_offnormal == nil
@@ -1048,5 +1064,73 @@ defmodule BACnet.Protocol.EventAlgorithms.FloatingLimitTest do
     state = FloatingLimit.update(state, setpoint: 5.0)
 
     {FloatingLimit, state, 5.0, 11.0}
+  end
+
+  test "execute/2 starts and expires the delay using the supplied sample" do
+    state =
+      3.0
+      |> FloatingLimit.new(%Params{
+        setpoint: %DeviceObjectPropertyRef{
+          object_identifier: %ObjectIdentifier{type: :analog_value, instance: 0},
+          property_identifier: :present_value,
+          property_array_index: nil,
+          device_identifier: nil
+        },
+        low_diff_limit: 4.0,
+        high_diff_limit: 5.0,
+        deadband: 2.0,
+        time_delay: 1,
+        time_delay_normal: nil
+      })
+      |> FloatingLimit.update(setpoint: 2.0)
+
+    new_state = %{state | monitored_value: 7.1}
+    now = ~U[2026-01-01 12:00:00Z]
+    deadline = DateTime.add(now, 1, :second)
+
+    assert {:delayed_event, %{dt_offnormal: ^deadline} = pending} =
+             FloatingLimit.execute(new_state, now)
+
+    assert {:delayed_event, ^pending} = FloatingLimit.execute(pending, now)
+
+    assert {:event, %{current_state: :high_limit}, _notification} =
+             FloatingLimit.execute(pending, deadline)
+  end
+
+  test "a changing setpoint drives transitions while the monitored value is constant" do
+    state =
+      FloatingLimit.new(14.0, %Params{
+        setpoint: %DeviceObjectPropertyRef{
+          object_identifier: %ObjectIdentifier{type: :analog_value, instance: 0},
+          property_identifier: :present_value,
+          property_array_index: nil,
+          device_identifier: nil
+        },
+        low_diff_limit: 2.0,
+        high_diff_limit: 3.0,
+        deadband: 1.0,
+        time_delay: 0
+      })
+
+    now = ~U[2026-01-01 12:00:00Z]
+
+    changes = [
+      {10.0, :high_limit},
+      {13.0, :normal},
+      {17.0, :low_limit},
+      {14.0, :normal},
+      {10.0, :high_limit}
+    ]
+
+    Enum.reduce(changes, state, fn {setpoint, expected_state}, previous ->
+      updated = FloatingLimit.update(previous, setpoint: setpoint)
+
+      assert {:event, %{current_state: ^expected_state} = transitioned,
+              %Notify{reference_value: 14.0, setpoint_value: ^setpoint}} =
+               FloatingLimit.execute(updated, now)
+
+      assert {:no_event, ^transitioned} = FloatingLimit.execute(transitioned, now)
+      transitioned
+    end)
   end
 end

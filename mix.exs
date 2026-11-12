@@ -95,6 +95,7 @@ defmodule BACstack.MixProject do
       {:ex_doc, "~> 0.29", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.18", only: [:test], runtime: false},
       {:html_entities, "~> 0.5.2", only: [:dev, :test], optional: true, runtime: false},
+      {:hvac_pid, "~> 0.1.0"},
       {:junit_formatter, "~> 3.3", only: [:test], runtime: false},
       {:req, "~> 0.5.15", only: [:dev, :test], optional: true, runtime: false},
       {:telemetry, "~> 1.3", optional: true},
@@ -241,7 +242,10 @@ defmodule BACstack.MixProject do
           BACnet.Protocol.Device.ServicesSupported
         ],
         "Protocol: Objects Behaviour/Protocol": [
-          ~r"Protocol\.ObjectExecution\..+",
+          BACnet.Protocol.ObjectExecution.Context,
+          BACnet.Protocol.ObjectExecution.Lifecycle,
+          BACnet.Protocol.ObjectExecution.Result,
+          BACnet.Protocol.ObjectExecution.Wakeup,
           BACnet.Protocol.ObjectOperations,
           BACnet.Protocol.ObjectsBehaviour,
           BACnet.Protocol.ObjectsProtocol,
@@ -282,6 +286,11 @@ defmodule BACstack.MixProject do
           BACnet.Stack.SegmentsStore.State,
           BACnet.Stack.TrendLogger.Log,
           BACnet.Stack.TrendLogger.State
+        ],
+        "Protocol: Object Execution Internals": [
+          BACnet.Protocol.ObjectExecution.BinaryState,
+          BACnet.Protocol.ObjectExecution.ScheduleEvaluator,
+          BACnet.Protocol.ObjectExecution.ScheduleTargets
         ]
       ],
       nest_modules_by_prefix: [

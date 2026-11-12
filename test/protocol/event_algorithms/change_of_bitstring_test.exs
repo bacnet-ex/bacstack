@@ -495,4 +495,26 @@ defmodule BACnet.Protocol.EventAlgorithms.ChangeOfBitstringTest do
 
     assert_raise ArgumentError, fn -> ChangeOfBitstring.update(state, status_flags: nil) end
   end
+
+  test "execute/2 starts and expires the delay using the supplied sample" do
+    state =
+      ChangeOfBitstring.new({false, false}, %Params{
+        alarm_values: [{true, true}],
+        bitmask: {true, true},
+        time_delay: 1,
+        time_delay_normal: nil
+      })
+
+    new_state2 = %{state | monitored_value: {true, true}}
+    now = ~U[2026-01-01 12:00:00Z]
+    deadline = DateTime.add(now, 1, :second)
+
+    assert {:delayed_event, %{dt_offnormal: ^deadline} = pending} =
+             ChangeOfBitstring.execute(new_state2, now)
+
+    assert {:delayed_event, ^pending} = ChangeOfBitstring.execute(pending, now)
+
+    assert {:event, %{current_state: :offnormal}, _notification} =
+             ChangeOfBitstring.execute(pending, deadline)
+  end
 end

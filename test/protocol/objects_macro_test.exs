@@ -144,6 +144,54 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
     assert {:module, _modname, _bytecode, _more} = value
   end
 
+  test "bac_object supports an operation-aware inhibit hook and its default implementation" do
+    defmodule InhibitOperationStub do
+      use ObjectsMacro
+
+      @type object_opts :: common_object_opts()
+
+      bac_object :binary_input do
+        field(:description, String.t())
+        field(:present_value, boolean(), required: true, default: false)
+        field(:priority_array, PriorityArray.t(boolean()))
+        field(:relinquish_default, boolean(), default: false)
+      end
+
+      defp inhibit_object_check(candidate, original, operation, args)
+
+      defp inhibit_object_check(candidate, original, :update, %{
+             property: :description,
+             value: value
+           }) do
+        {:ok, %{candidate | description: original.description <> " -> " <> value}}
+      end
+
+      defp inhibit_object_check(_candidate, _original, :set_priority, %{priority: 8, value: true}),
+           do: {:error, {:value_failed_property_validation, :priority_array}}
+
+      defp inhibit_object_check(candidate, _original, :set_priority, %{value: nil}),
+        do: {:ok, %{candidate | description: "relinquished"}}
+
+      defp inhibit_object_check(candidate, original, operation, args),
+        do: super(candidate, original, operation, args)
+    end
+
+    assert {:ok, %{description: "initial"} = object} =
+             InhibitOperationStub.create(1, "Input", %{
+               description: "initial",
+               priority_array: %PriorityArray{}
+             })
+
+    assert {:ok, %{description: "initial -> updated"}} =
+             InhibitOperationStub.update_property(object, :description, "updated")
+
+    assert {:error, {:value_failed_property_validation, :priority_array}} =
+             InhibitOperationStub.set_priority(object, 8, true)
+
+    assert {:ok, %{description: "relinquished"}} =
+             InhibitOperationStub.set_priority(object, 8, nil)
+  end
+
   test "bac_object cov property" do
     value =
       defmodule BacObjectMinimalSingleFieldCovTestStub do
@@ -1406,6 +1454,31 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
              unquote(mod_name_protected_stub).set_priority(test_obj1, 16, true)
   end
 
+  test "generated set_priority/3 reserves slot six for local objects" do
+    {:ok, object} =
+      unquote(mod_name_protected_stub).create(1, "T", %{priority_array: %PriorityArray{}})
+
+    for value <- [false, nil] do
+      assert {:error, :write_access_denied} =
+               unquote(mod_name_protected_stub).set_priority(object, 6, value)
+    end
+
+    {:ok, remote} =
+      unquote(mod_name_protected_stub).create(
+        1,
+        "T",
+        %{
+          priority_array: %PriorityArray{priority_6: false},
+          feedback_value: false,
+          out_of_service: false,
+          present_value: false
+        },
+        remote_object: 42
+      )
+
+    assert remote.priority_array.priority_6 == false
+  end
+
   test "verify set_priority/3 works when out_of_service = false" do
     assert {:ok, %{present_value: false} = test_obj1} =
              unquote(mod_name_protected_stub).create(1, "T", %{priority_array: %PriorityArray{}})
@@ -1804,6 +1877,14 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
     assert {:ok, %{file_size: true}} = mod_name.create(1, "TEST", %{file_size: true}, ghi: -1)
   end
 
+  test "create/4 exposes the default of a conditionally required property" do
+    mod_name = unquote(mod_name_opt_required_stub)
+
+    assert {:ok, %{file_size: false} = object} = mod_name.create(1, "TEST", %{}, ghi: -1)
+    assert {:ok, false} = mod_name.get_property(object, :file_size)
+    assert mod_name.has_property?(object, :file_size)
+  end
+
   test "verify create/4 optionally required_when property skipped for remote object" do
     mod_name = unquote(mod_name_opt_required_stub)
 
@@ -2076,6 +2157,17 @@ defmodule BACnet.Test.Protocol.ObjectsMacroTest do
     assert {:ok, %{file_size: false}} = mod_name.create(1, "TEST", %{}, ghi: -1)
 
     assert {:ok, %{file_size: true}} = mod_name.create(1, "TEST", %{file_size: true}, ghi: -1)
+  end
+
+  test "create/4 exposes the default of a property selected by only_when" do
+    mod_name = unquote(mod_name_opt_only_stub)
+
+    assert {:ok, %{file_size: nil} = unselected} = mod_name.create(1, "TEST", %{}, ghi: 0)
+    refute mod_name.has_property?(unselected, :file_size)
+
+    assert {:ok, %{file_size: false} = object} = mod_name.create(1, "TEST", %{}, ghi: -1)
+    assert {:ok, false} = mod_name.get_property(object, :file_size)
+    assert mod_name.has_property?(object, :file_size)
   end
 
   test "verify create/4 optionally only_when fun/2 with :optional" do

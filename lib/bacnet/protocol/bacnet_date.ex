@@ -16,7 +16,7 @@ defmodule BACnet.Protocol.BACnetDate do
   - **Encoding**: ASHRAE 135-2012 Clause 20.2.12. Four contents octets:
     year-1900, month (January=1), day-of-month, weekday (Monday=1). Any octet may be
     0xFF to indicate "unspecified".
-  - **Special pattern values** (Clause 20.2.12): month 13=odd months, 14=even months;
+  - **Special pattern values** (Clause 20.2.12): month 13=odd months, 14=even months -
     day 32=last day of month, 33=odd days, 34=even days. These **shall not** be used
     when conveying an actual date (e.g. the Device object's `Local_Date` or a
     TimeSynchronization-Request).
@@ -179,7 +179,7 @@ defmodule BACnet.Protocol.BACnetDate do
 
   @doc """
   Checks whether the given BACnet Date is a specific date value
-  (every component is a numeric value; `day: :last` counts as specific).
+  (every component is a numeric value - `day: :last` counts as specific).
   """
   @spec specific?(t()) :: boolean()
   def specific?(%__MODULE__{} = time) do

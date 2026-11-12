@@ -484,4 +484,25 @@ defmodule BACnet.Protocol.EventAlgorithms.ChangeOfStateTest do
 
     assert_raise ArgumentError, fn -> ChangeOfState.update(state, status_flags: nil) end
   end
+
+  test "execute/2 starts and expires the delay using the supplied sample" do
+    state =
+      ChangeOfState.new(%PropertyState{type: :boolean_value, value: false}, %Params{
+        alarm_values: [%PropertyState{type: :boolean_value, value: true}],
+        time_delay: 1,
+        time_delay_normal: nil
+      })
+
+    new_state2 = %{state | monitored_value: %PropertyState{type: :boolean_value, value: true}}
+    now = ~U[2026-01-01 12:00:00Z]
+    deadline = DateTime.add(now, 1, :second)
+
+    assert {:delayed_event, %{dt_offnormal: ^deadline} = pending} =
+             ChangeOfState.execute(new_state2, now)
+
+    assert {:delayed_event, ^pending} = ChangeOfState.execute(pending, now)
+
+    assert {:event, %{current_state: :offnormal}, _notification} =
+             ChangeOfState.execute(pending, deadline)
+  end
 end

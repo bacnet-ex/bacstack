@@ -156,6 +156,8 @@
         {Credo.Check.Design.DuplicatedCode, false},
         {Credo.Check.Readability.AliasAs, false},
         {Credo.Check.Readability.MultiAlias, []},
+        {Credo.Check.Readability.OneArityFunctionInPipe, []},
+        {Credo.Check.Readability.OnePipePerLine, []},
         # disable for now (ErrorView.template_not_found raises dialyzer)
         {Credo.Check.Readability.Specs, false},
         {Credo.Check.Readability.SinglePipe, []},
@@ -261,6 +263,8 @@
         # ModuleDoc is covered by Doctor in a better way
         {Credo.Check.Readability.ModuleDoc, false},
         {Credo.Check.Readability.ModuleNames, []},
+        {Credo.Check.Readability.OneArityFunctionInPipe, []},
+        {Credo.Check.Readability.OnePipePerLine, []},
         {Credo.Check.Readability.ParenthesesInCondition, []},
         {Credo.Check.Readability.ParenthesesOnZeroArityDefs, parens: true},
         {Credo.Check.Readability.PredicateFunctionNames, []},

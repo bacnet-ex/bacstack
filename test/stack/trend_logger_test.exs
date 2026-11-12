@@ -4,10 +4,12 @@ defmodule BACnet.Stack.TrendLoggerTest do
   alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.BACnetError
   alias BACnet.Protocol.DeviceObjectPropertyRef
+  alias BACnet.Protocol.DeviceObjectRef
   alias BACnet.Protocol.EventLogRecord
   alias BACnet.Protocol.LogMultipleRecord
   alias BACnet.Protocol.LogRecord
   alias BACnet.Protocol.LogStatus
+  alias BACnet.Protocol.NotificationParameters.BufferReady
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.ObjectsMacro
   alias BACnet.Protocol.ObjectsUtility
@@ -584,6 +586,41 @@ defmodule BACnet.Stack.TrendLoggerTest do
            ] = LogBufferTree.to_list(snapshot)
   end
 
+  test "a snapshot retains the buffer, counters, and enable state together" do
+    server = start_logger(log_buffer_module: LogBufferTree)
+    object = %{event_log(1) | buffer_size: 2, stop_when_full: true}
+    assert {:error, :unknown_object} = TrendLogger.get_snapshot(server, object)
+    assert :ok = TrendLogger.add_object(server, object)
+
+    assert {:ok,
+            %{
+              buffer: {LogBufferTree, empty_buffer},
+              enable: true,
+              collecting: true,
+              record_count: 0,
+              total_record_count: 0,
+              records_since_notification: nil,
+              last_notify_record: nil
+            }} = TrendLogger.get_snapshot(server, object)
+
+    assert :ok = TrendLogger.trigger_log(server, object, event_notification())
+
+    assert {:ok,
+            %{
+              buffer: {LogBufferTree, full_buffer},
+              enable: false,
+              collecting: false,
+              record_count: 2,
+              total_record_count: 2
+            }} = TrendLogger.get_snapshot(server, object)
+
+    assert {:ok, {2, LogBufferTree, ^full_buffer}} = TrendLogger.get_buffer(server, object)
+    assert LogBufferTree.to_list(empty_buffer) == []
+
+    assert [%EventLogRecord{}, %EventLogRecord{log_datum: %LogStatus{log_disabled: true}}] =
+             LogBufferTree.to_list(full_buffer)
+  end
+
   test "the tree backend supports shrinking, growing and pruning a log buffer" do
     server = start_logger(log_buffer_module: LogBufferTree)
     object = unscheduled_trend(1, buffer_size: 4)
@@ -745,19 +782,36 @@ defmodule BACnet.Stack.TrendLoggerTest do
     end
   end
 
-  test "trend log multiple rejects COV logging and an uninitialized reference", %{server: server} do
+  test "trend log multiple rejects COV and records unavailable triggered samples", %{
+    server: server
+  } do
     cov = %{trend_multiple(5, [property_ref(analog(), nil)]) | logging_type: :cov}
     assert {:error, :invalid_logging_type} = TrendLogger.add_object(server, cov)
 
-    uninitialized = ObjectsMacro.get_default_dev_object_ref()
-    log = trend_multiple(6, [uninitialized])
+    source = analog()
+    ref = property_ref(source, nil)
+
+    log =
+      trend_multiple(6, [
+        %{ref | object_identifier: %{ref.object_identifier | instance: 2}},
+        %{ref | device_identifier: uninitialized_identifier(:device)},
+        ref,
+        ObjectsMacro.get_default_dev_object_ref()
+      ])
+
     assert :ok = TrendLogger.add_object(server, log)
-    assert :ok = TrendLogger.trigger_log(server, log, [analog()])
+    assert :ok = TrendLogger.trigger_log(server, log, [source])
 
-    assert {:ok, {_seq, LogBuffer, buffer}} = TrendLogger.get_buffer(server, log)
-
-    assert [%LogMultipleRecord{log_data: [%BACnetError{code: :no_property_specified}]}] =
-             LogBuffer.to_list(buffer)
+    assert [
+             %LogMultipleRecord{
+               log_data: [
+                 %BACnetError{class: :object, code: :unknown_object},
+                 %BACnetError{class: :property, code: :no_property_specified},
+                 %Encoding{type: :real, value: 12.5},
+                 %BACnetError{class: :property, code: :no_property_specified}
+               ]
+             }
+           ] = records(server, log)
   end
 
   test "a remote object without a device id is rejected", %{server: server} do
@@ -769,20 +823,20 @@ defmodule BACnet.Stack.TrendLoggerTest do
   test "enable, disable, and purge write status records", %{server: server} do
     log = %{trend(8) | enable: false}
     assert :ok = TrendLogger.add_object(server, log)
-    assert :ok = TrendLogger.trigger_log(server, log, :interrupted)
+    assert :ok = TrendLogger.trigger_log(server, log, analog())
     assert {:ok, {0, LogBuffer, buffer}} = TrendLogger.get_buffer(server, log)
     assert [] = LogBuffer.to_list(buffer)
 
     assert :ok = TrendLogger.change_log_state(server, log, :enable)
     assert {:ok, {1, LogBuffer, buffer}} = TrendLogger.get_buffer(server, log)
-    assert [%LogRecord{log_datum: %LogStatus{log_disabled: true}}] = LogBuffer.to_list(buffer)
+    assert [%LogRecord{log_datum: %LogStatus{log_disabled: false}}] = LogBuffer.to_list(buffer)
 
     assert :ok = TrendLogger.change_log_state(server, :global, :disable)
     assert {:ok, {2, LogBuffer, buffer}} = TrendLogger.get_buffer(server, log)
 
     assert [
-             %LogRecord{log_datum: %LogStatus{log_disabled: true}},
-             %LogRecord{log_datum: %LogStatus{log_disabled: false}}
+             %LogRecord{log_datum: %LogStatus{log_disabled: false}},
+             %LogRecord{log_datum: %LogStatus{log_disabled: true}}
            ] = LogBuffer.to_list(buffer)
 
     assert :ok = TrendLogger.prune_buffer(server, log)
@@ -800,6 +854,7 @@ defmodule BACnet.Stack.TrendLoggerTest do
     assert {:error, :unknown_object} = TrendLogger.change_log_state(server, missing, :enable)
     assert {:error, :unknown_object} = TrendLogger.prune_buffer(server, missing)
     assert {:error, :unknown_object} = TrendLogger.update_object(server, missing)
+    assert {:error, :unknown_object} = TrendLogger.update_object(server, missing, :enable)
   end
 
   test "update_object transfers the buffer and logs an enable change", %{server: server} do
@@ -812,7 +867,295 @@ defmodule BACnet.Stack.TrendLoggerTest do
 
     assert {:ok, {_seq, LogBuffer, buffer}} = TrendLogger.get_buffer(server, updated)
     records = LogBuffer.to_list(buffer)
-    assert [%LogRecord{log_datum: %LogStatus{log_disabled: false}}] = records
+    assert [%LogRecord{log_datum: %LogStatus{log_disabled: true}}] = records
+  end
+
+  test "explicit acquisition writes apply related settings and restrict buffer resizing", %{
+    server: server
+  } do
+    object = trend(11)
+    assert :ok = TrendLogger.add_object(server, object)
+    resized = %{object | buffer_size: 4, enable: false}
+
+    assert {:error, {:write_access_denied, :buffer_size}} =
+             TrendLogger.update_object(server, resized, :buffer_size)
+
+    assert :ok = TrendLogger.update_object(server, resized, :enable)
+    assert :ok = TrendLogger.update_object(server, resized, :buffer_size)
+    assert {:ok, {_sequence, LogBuffer, buffer}} = TrendLogger.get_buffer(server, object)
+    assert LogBuffer.get_max_size(buffer) == 4
+
+    configured = %{object | log_interval: 9_000, logging_type: :polled}
+    assert :ok = TrendLogger.update_object(server, configured, :log_interval)
+    alignment = %{configured | align_intervals: true, interval_offset: 100}
+    assert :ok = TrendLogger.update_object(server, alignment, :interval_offset)
+
+    assert %{
+             enable: false,
+             log_interval: 9_000,
+             logging_type: :polled,
+             align_intervals: true,
+             interval_offset: 100,
+             buffer_size: 4
+           } = :sys.get_state(server).logs[make_id(object)].object
+  end
+
+  test "sample acquires one value in triggered mode and skips disabled collection", %{
+    server: server
+  } do
+    object = trend(11)
+    assert {:error, :unknown_object} = TrendLogger.sample(server, object)
+    assert :ok = TrendLogger.add_object(server, object)
+
+    assert :ok = TrendLogger.sample(server, object)
+    assert_received {:lookup, %DeviceObjectRef{object_identifier: identifier}}
+    assert identifier == object.log_device_object_property.object_identifier
+
+    assert [%LogRecord{log_datum: %Encoding{type: :real, value: 12.5}}] =
+             records(server, object)
+
+    assert :ok = TrendLogger.update_object(server, %{object | enable: false}, :enable)
+    assert {:ok, before_sample} = TrendLogger.get_buffer(server, object)
+    assert :ok = TrendLogger.sample(server, object)
+    assert {:ok, ^before_sample} = TrendLogger.get_buffer(server, object)
+    refute_received {:lookup, _reference}
+
+    assert :ok = TrendLogger.update_object(server, %{object | logging_type: :cov}, :logging_type)
+    assert {:error, :not_configured_for_triggered_logging} = TrendLogger.sample(server, object)
+  end
+
+  test "sample stores one ordered Trend Log Multiple record with per-slot failures" do
+    source = analog()
+    reference = property_ref(source, nil)
+    failed = %{reference | object_identifier: %{reference.object_identifier | instance: 2}}
+    error = %BACnetError{class: :communication, code: :timeout}
+
+    server =
+      start_logger(
+        lookup_cb: fn %DeviceObjectRef{object_identifier: identifier} ->
+          case identifier.instance do
+            1 -> {:ok, source}
+            2 -> {:error, error}
+          end
+        end
+      )
+
+    object =
+      trend_multiple(11, [failed, ObjectsMacro.get_default_dev_object_ref(), reference])
+
+    assert :ok = TrendLogger.add_object(server, object)
+    trap_exit = Process.info(self(), :trap_exit)
+    assert :ok = TrendLogger.sample(server, object)
+    assert Process.info(self(), :trap_exit) == trap_exit
+
+    assert [
+             %LogMultipleRecord{
+               log_data: [
+                 ^error,
+                 %BACnetError{class: :property, code: :no_property_specified},
+                 %Encoding{type: :real, value: 12.5}
+               ]
+             }
+           ] = records(server, object)
+  end
+
+  test "reordering Trend Log Multiple references purges history and discards an in-flight sample" do
+    parent = self()
+    source = analog()
+    first = property_ref(source, nil)
+    second = %{first | object_identifier: %{first.object_identifier | instance: 2}}
+
+    server =
+      start_logger(
+        lookup_cb: fn %DeviceObjectRef{object_identifier: identifier} ->
+          if identifier.instance == 1 do
+            send(parent, {:lookup, self()})
+
+            receive do
+              :complete -> {:ok, source}
+            end
+          else
+            {:ok, source}
+          end
+        end
+      )
+
+    object = trend_multiple(11, [first, second])
+    assert :ok = TrendLogger.add_object(server, object)
+    assert :ok = TrendLogger.trigger_log(server, object, {:time_change, 1.0})
+
+    same_order = %{
+      object
+      | log_device_object_property: BACnetArray.from_list([first, second], true)
+    }
+
+    assert :ok = TrendLogger.update_object(server, same_order, :log_device_object_property)
+    assert [%LogMultipleRecord{log_data: {:time_change, 1.0}}] = records(server, object)
+
+    sample = Task.async(fn -> TrendLogger.sample(server, object) end)
+    assert_receive {:lookup, reader}
+
+    changed = %{object | log_device_object_property: BACnetArray.from_list([second, first])}
+    assert :ok = TrendLogger.update_object(server, changed, :log_device_object_property)
+    send(reader, :complete)
+    assert :ok = Task.await(sample)
+    assert {:ok, {2, LogBuffer, buffer}} = TrendLogger.get_buffer(server, object)
+
+    assert [%LogMultipleRecord{log_data: %LogStatus{buffer_purged: true}}] =
+             LogBuffer.to_list(buffer)
+
+    assert :ok = TrendLogger.update_object(server, object)
+    assert {:ok, {3, LogBuffer, buffer}} = TrendLogger.get_buffer(server, object)
+
+    assert [%LogMultipleRecord{log_data: %LogStatus{buffer_purged: true}}] =
+             LogBuffer.to_list(buffer)
+  end
+
+  test "explicit COV settings update the active subscription independently" do
+    parent = self()
+    device = %ObjectIdentifier{type: :device, instance: 17}
+    reference = property_ref(analog(), device)
+
+    server =
+      start_logger(
+        cov_cb: fn _server, ref, operation, lifetime, increment ->
+          send(parent, {:cov, ref, operation, lifetime, increment})
+          :ok
+        end
+      )
+
+    object =
+      unscheduled_trend(11,
+        logging_type: :cov,
+        log_device_object_property: reference,
+        cov_resubscription_interval: 60,
+        client_cov_increment: 0.5
+      )
+
+    assert :ok = TrendLogger.add_object(server, object)
+    assert_receive {:cov, ^reference, :sub, 120, 0.5}
+
+    assert :ok =
+             TrendLogger.update_object(
+               server,
+               %{object | cov_resubscription_interval: 90},
+               :cov_resubscription_interval
+             )
+
+    assert_receive {:cov, ^reference, :sub, 180, 0.5}
+
+    assert :ok =
+             TrendLogger.update_object(
+               server,
+               %{object | client_cov_increment: 2.0},
+               :client_cov_increment
+             )
+
+    assert_receive {:cov, ^reference, :sub, 180, 2.0}
+  end
+
+  test "a changed Trend Log reference purges records and discards an in-flight sample" do
+    parent = self()
+    object = trend(11)
+    original_id = object.log_device_object_property.object_identifier
+    new_id = %{original_id | instance: original_id.instance + 1}
+    error = %BACnetError{class: :property, code: :read_access_denied}
+
+    server =
+      start_logger(
+        lookup_cb: fn
+          %DeviceObjectRef{object_identifier: ^original_id} ->
+            send(parent, {:lookup, self()})
+
+            receive do
+              :complete -> {:ok, analog()}
+            end
+
+          %DeviceObjectRef{object_identifier: ^new_id} ->
+            {:error, error}
+        end
+      )
+
+    assert :ok = TrendLogger.add_object(server, object)
+    assert :ok = TrendLogger.trigger_log(server, object, analog())
+    assert :ok = TrendLogger.update_object(server, object, :log_device_object_property)
+    assert {:ok, {1, LogBuffer, _buffer}} = TrendLogger.get_buffer(server, object)
+
+    sample = Task.async(fn -> TrendLogger.sample(server, object) end)
+    assert_receive {:lookup, reader}
+
+    reference = %{object.log_device_object_property | object_identifier: new_id}
+    changed = %{object | log_device_object_property: reference}
+    assert :ok = TrendLogger.update_object(server, changed, :log_device_object_property)
+
+    send(reader, :complete)
+    assert :ok = Task.await(sample)
+    assert {:ok, {2, LogBuffer, buffer}} = TrendLogger.get_buffer(server, object)
+    assert [%LogRecord{log_datum: %LogStatus{buffer_purged: true}}] = LogBuffer.to_list(buffer)
+
+    assert :ok = TrendLogger.sample(server, changed)
+
+    assert [%LogRecord{log_datum: %LogStatus{buffer_purged: true}}, %LogRecord{log_datum: ^error}] =
+             records(server, object)
+  end
+
+  test "explicit Stop_When_Full writes record a stop on a full buffer", %{server: server} do
+    object = %{event_log(11) | buffer_size: 2}
+    first = event_notification()
+    second = %{first | process_identifier: 2}
+
+    assert :ok = TrendLogger.add_object(server, object)
+    assert :ok = TrendLogger.trigger_log(server, object, first)
+    assert :ok = TrendLogger.trigger_log(server, object, second)
+
+    updated = %{object | stop_when_full: true}
+    assert :ok = TrendLogger.update_object(server, updated, :stop_when_full)
+
+    assert {:ok, %{enable: false, record_count: 2, total_record_count: 3} = stopped} =
+             TrendLogger.get_snapshot(server, object)
+
+    assert [
+             %EventLogRecord{log_datum: ^second},
+             %EventLogRecord{log_datum: %LogStatus{log_disabled: true}}
+           ] = records(server, object)
+
+    assert {:error, :log_buffer_full} = TrendLogger.update_object(server, object, :enable)
+    assert {:ok, ^stopped} = TrendLogger.get_snapshot(server, object)
+
+    assert :ok = TrendLogger.update_object(server, %{updated | enable: false}, :stop_when_full)
+
+    assert {:ok, %{enable: false, record_count: 2, total_record_count: 4}} =
+             TrendLogger.get_snapshot(server, object)
+
+    assert [
+             %EventLogRecord{log_datum: %LogStatus{log_disabled: true}},
+             %EventLogRecord{log_datum: %LogStatus{log_disabled: true}}
+           ] = records(server, object)
+  end
+
+  test "explicit window writes apply both bounds and retain the logger's Enable value", %{
+    server: server
+  } do
+    object = event_log(11)
+    past = BACnetDateTime.from_datetime(~U[2000-01-01 00:00:00Z])
+    future = BACnetDateTime.from_datetime(~U[2100-01-01 00:00:00Z])
+    closed = %{object | start_time: past, stop_time: past, enable: false}
+
+    assert :ok = TrendLogger.add_object(server, object)
+    assert :ok = TrendLogger.update_object(server, closed, :stop_time)
+
+    assert {:ok, %{enable: true, collecting: false, total_record_count: 1}} =
+             TrendLogger.get_snapshot(server, object)
+
+    assert :ok = TrendLogger.update_object(server, %{closed | stop_time: future}, :start_time)
+
+    assert {:ok, %{enable: true, collecting: true, total_record_count: 2}} =
+             TrendLogger.get_snapshot(server, object)
+
+    assert [
+             %EventLogRecord{log_datum: %LogStatus{log_disabled: true}},
+             %EventLogRecord{log_datum: %LogStatus{log_disabled: false}}
+           ] = records(server, object)
   end
 
   test "a full buffer notifies the receiver and stop_when_full disables logging" do
@@ -828,8 +1171,62 @@ defmodule BACnet.Stack.TrendLoggerTest do
                     %{event: :buffer_full, intrinsic_reporting: nil}}
 
     assert :ok = TrendLogger.trigger_log(logger, log, analog())
-    assert {:ok, {2, _buffer_module, buffer}} = TrendLogger.get_buffer(logger, log)
-    assert length(LogBuffer.to_list(buffer)) == 1
+    assert {:ok, {1, LogBuffer, buffer}} = TrendLogger.get_buffer(logger, log)
+    assert [%LogRecord{log_datum: %LogStatus{log_disabled: true}}] = LogBuffer.to_list(buffer)
+  end
+
+  test "enabling Stop_When_Full on a full Event Log discards its oldest record", %{server: server} do
+    object = %{event_log(12) | buffer_size: 2, enable: true}
+    first = event_notification()
+    second = %{first | process_identifier: 2}
+
+    assert :ok = TrendLogger.add_object(server, object)
+    assert :ok = TrendLogger.trigger_log(server, object, first)
+    assert :ok = TrendLogger.trigger_log(server, object, second)
+    assert {:ok, {2, LogBuffer, _buffer}} = TrendLogger.get_buffer(server, object)
+
+    updated = %{object | stop_when_full: true}
+    assert :ok = TrendLogger.update_object(server, updated)
+    assert {:ok, {3, LogBuffer, buffer}} = TrendLogger.get_buffer(server, object)
+
+    assert [
+             %EventLogRecord{log_datum: ^second},
+             %EventLogRecord{log_datum: %LogStatus{log_disabled: true}}
+           ] = LogBuffer.to_list(buffer)
+
+    refute :sys.get_state(server).logs[make_id(object)].object.enable
+    assert {:error, :log_buffer_full} = TrendLogger.change_log_state(server, object, :enable)
+
+    other = trend(13, enable: false)
+    assert :ok = TrendLogger.add_object(server, other)
+    assert {:error, :log_buffer_full} = TrendLogger.change_log_state(server, :global, :enable)
+    assert records(server, other) == []
+    refute :sys.get_state(server).logs[make_id(other)].object.enable
+
+    assert {:error, :log_buffer_full} = TrendLogger.update_object(server, updated)
+    assert {:ok, {3, LogBuffer, ^buffer}} = TrendLogger.get_buffer(server, object)
+
+    assert :ok = TrendLogger.prune_buffer(server, object)
+    assert :ok = TrendLogger.change_log_state(server, object, :enable)
+    assert {:ok, {5, LogBuffer, buffer}} = TrendLogger.get_buffer(server, object)
+
+    assert [
+             %EventLogRecord{log_datum: %LogStatus{buffer_purged: true}},
+             %EventLogRecord{log_datum: %LogStatus{log_disabled: true}}
+           ] =
+             LogBuffer.to_list(buffer)
+  end
+
+  test "purging a one-slot log records both the purge and the automatic stop", %{server: server} do
+    object = trend(12, buffer_size: 1, stop_when_full: true)
+    assert :ok = TrendLogger.add_object(server, object)
+    assert :ok = TrendLogger.prune_buffer(server, object)
+    assert {:ok, {1, LogBuffer, buffer}} = TrendLogger.get_buffer(server, object)
+
+    assert [%LogRecord{log_datum: %LogStatus{buffer_purged: true, log_disabled: true}}] =
+             LogBuffer.to_list(buffer)
+
+    refute :sys.get_state(server).logs[make_id(object)].object.enable
   end
 
   test "aligned Trend Log and Trend Log Multiple timers retain their phase after lookup" do
@@ -1054,14 +1451,15 @@ defmodule BACnet.Stack.TrendLoggerTest do
     assert parent == self()
   end
 
-  test "a failed lookup does not append a record" do
-    lookup = fn _ref -> {:error, :down} end
-    {:ok, server} = TrendLogger.start_link(lookup_cb: lookup)
+  test "a polled trend log preserves the remote BACnet error" do
+    error = %BACnetError{class: :property, code: :read_access_denied}
+    server = start_logger(lookup_cb: fn _ref -> {:error, error} end)
     log = trend(14, logging_type: :polled, log_interval: 6_000)
+
     assert :ok = TrendLogger.add_object(server, log)
     fire_poll(server, log)
-    Process.sleep(50)
-    assert [] = records(server, log)
+
+    assert [%LogRecord{log_datum: ^error}] = await_records(server, log, 1)
   end
 
   test "COV notification and resubscription use the callback", %{server: _server} do
@@ -1106,7 +1504,7 @@ defmodule BACnet.Stack.TrendLoggerTest do
     parent = self()
 
     cov_cb = fn _server, _ref, op, _lifetime, _increment ->
-      send(parent, {:cov, op})
+      send(parent, {:cov, op, self()})
       {:error, :busy}
     end
 
@@ -1123,10 +1521,16 @@ defmodule BACnet.Stack.TrendLoggerTest do
       )
 
     assert :ok = TrendLogger.add_object(logger, log)
-    assert_receive {:cov, :sub}, 500
+    assert_receive {:cov, :sub, subscriber}, 500
+    monitor = Process.monitor(subscriber)
+    assert_receive {:DOWN, ^monitor, :process, ^subscriber, _reason}, 500
 
-    send(logger, {:cov_resub, make_id(log)})
-    assert_receive {:cov, :sub}, 500
+    id = make_id(log)
+    timer = :sys.get_state(logger).cov_subscriptions[id].timer
+    assert is_reference(timer)
+    send(logger, {:timeout, timer, {:cov_resub, id}})
+    assert_receive {:cov, :sub, _retry}, 500
+    assert Process.read_timer(timer) == false
 
     other = cov_notification(%ObjectIdentifier{type: :analog_input, instance: 99}, real(1.0))
     assert :ok = TrendLogger.notify(logger, other)
@@ -1134,14 +1538,89 @@ defmodule BACnet.Stack.TrendLoggerTest do
     assert [] = LogBuffer.to_list(buffer)
   end
 
+  test "a reference change retires an in-flight COV subscription before subscribing again" do
+    parent = self()
+    device = %ObjectIdentifier{type: :device, instance: 17}
+    previous = property_ref(analog(), device)
+    replacement = %{previous | property_identifier: :status_flags}
+
+    cov_cb = fn _server, reference, operation, _lifetime, _increment ->
+      send(parent, {:cov, operation, reference, self()})
+
+      if operation == :sub do
+        receive do
+          :finish_subscription -> :ok
+        end
+      else
+        :ok
+      end
+    end
+
+    server = start_logger(cov_cb: cov_cb)
+
+    log =
+      unscheduled_trend(1,
+        logging_type: :cov,
+        cov_resubscription_interval: 60,
+        log_device_object_property: previous
+      )
+
+    assert :ok = TrendLogger.add_object(server, log)
+    assert_receive {:cov, :sub, ^previous, subscriber}, 500
+
+    assert :ok =
+             TrendLogger.update_object(server, %{log | log_device_object_property: replacement})
+
+    assert [%LogRecord{log_datum: %LogStatus{buffer_purged: true}}] = records(server, log)
+    send(subscriber, :finish_subscription)
+
+    assert_receive {:cov, operation, reference, _task}, 500
+    assert {operation, reference} == {:unsub, previous}
+    assert_receive {:cov, :sub, ^replacement, replacement_task}, 500
+
+    id = make_id(log)
+    subscription = :sys.get_state(server).cov_subscriptions[id]
+    send(server, {:timeout, make_ref(), {:cov_resub, id}})
+    assert :sys.get_state(server).cov_subscriptions[id] == subscription
+
+    send(replacement_task, :finish_subscription)
+  end
+
+  test "leaving COV mode cancels the subscription to the previous reference" do
+    parent = self()
+    reference = property_ref(analog(), %ObjectIdentifier{type: :device, instance: 18})
+
+    cov_cb = fn _server, monitored, operation, lifetime, _increment ->
+      send(parent, {:cov, operation, monitored, lifetime})
+      :ok
+    end
+
+    server = start_logger(cov_cb: cov_cb)
+
+    log =
+      unscheduled_trend(1,
+        logging_type: :cov,
+        cov_resubscription_interval: 60,
+        log_device_object_property: reference
+      )
+
+    assert :ok = TrendLogger.add_object(server, log)
+    assert_receive {:cov, :sub, ^reference, 120}, 500
+    assert :ok = TrendLogger.update_object(server, %{log | logging_type: :triggered})
+    assert_receive {:cov, :unsub, ^reference, 0}, 500
+  end
+
   test "check_time disables a log once the stop time is in the past", %{server: server} do
-    log = trend(17)
+    log = trend(17, start_time: ObjectsMacro.get_default_bacnet_datetime())
     assert :ok = TrendLogger.add_object(server, log)
     assert :sys.get_state(server).logs[make_id(log)].enabled
     assert {:ok, {0, _buffer_module, buffer}} = TrendLogger.get_buffer(server, log)
     assert [] = LogBuffer.to_list(buffer)
 
-    past = DateTime.utc_now() |> DateTime.add(-3_600) |> BACnetDateTime.from_datetime()
+    past =
+      DateTime.utc_now()
+      |> DateTime.add(-3_600)
+      |> BACnetDateTime.from_datetime()
 
     # Move the stored window across its stop boundary without a clock change
     # or a timing-dependent sleep, then exercise the periodic clock check.
@@ -1152,20 +1631,30 @@ defmodule BACnet.Stack.TrendLoggerTest do
     send(server, :check_time)
 
     assert {:ok, {1, _buffer_module, buffer}} = TrendLogger.get_buffer(server, log)
-    refute :sys.get_state(server).logs[make_id(log)].enabled
-    assert [%LogRecord{log_datum: %LogStatus{}}] = LogBuffer.to_list(buffer)
-    assert :ok = TrendLogger.trigger_log(server, log, :interrupted)
+    stored = :sys.get_state(server).logs[make_id(log)]
+    refute stored.enabled
+    assert stored.object.enable
+    assert [%LogRecord{log_datum: %LogStatus{log_disabled: true}}] = LogBuffer.to_list(buffer)
+    assert :ok = TrendLogger.trigger_log(server, log, analog())
     assert {:ok, {1, _buffer_module, ^buffer}} = TrendLogger.get_buffer(server, log)
   end
 
   test "check_time enables a log once its start time has passed", %{server: server} do
     now = DateTime.utc_now()
-    future = now |> DateTime.add(3_600) |> BACnetDateTime.from_datetime()
-    log = trend(17, start_time: future)
+
+    future =
+      now
+      |> DateTime.add(3_600)
+      |> BACnetDateTime.from_datetime()
+
+    log = trend(17, start_time: future, stop_time: ObjectsMacro.get_default_bacnet_datetime())
     assert :ok = TrendLogger.add_object(server, log)
     refute :sys.get_state(server).logs[make_id(log)].enabled
 
-    past = now |> DateTime.add(-3_600) |> BACnetDateTime.from_datetime()
+    past =
+      now
+      |> DateTime.add(-3_600)
+      |> BACnetDateTime.from_datetime()
 
     :sys.replace_state(server, fn state ->
       put_in(state.logs[make_id(log)].object.start_time, past)
@@ -1173,7 +1662,8 @@ defmodule BACnet.Stack.TrendLoggerTest do
 
     send(server, :check_time)
 
-    assert {:ok, {1, _buffer_module, _buffer}} = TrendLogger.get_buffer(server, log)
+    assert {:ok, {1, _buffer_module, buffer}} = TrendLogger.get_buffer(server, log)
+    assert [%LogRecord{log_datum: %LogStatus{log_disabled: false}}] = LogBuffer.to_list(buffer)
     assert :sys.get_state(server).logs[make_id(log)].enabled
     assert :ok = TrendLogger.trigger_log(server, log, :interrupted)
     assert {:ok, {2, _buffer_module, buffer}} = TrendLogger.get_buffer(server, log)
@@ -1201,7 +1691,7 @@ defmodule BACnet.Stack.TrendLoggerTest do
     assert [%LogRecord{log_datum: %LogStatus{buffer_purged: true}}] = LogBuffer.to_list(buffer)
   end
 
-  test "intrinsic reporting notifies the receiver" do
+  test "Buffer Ready identifies the log's Log_Buffer property" do
     {:ok, server} =
       TrendLogger.start_link(lookup_cb: &ok_lookup/1, notification_receiver: self())
 
@@ -1211,10 +1701,249 @@ defmodule BACnet.Stack.TrendLoggerTest do
     assert :ok = TrendLogger.trigger_log(server, log, :interrupted)
     assert {:ok, _buffer} = TrendLogger.get_buffer(server, log)
 
-    assert_receive {:bacnet_trend_logger, nil, %TrendLog{},
-                    %{event: :intrinsic_reporting, intrinsic_reporting: notify}}
+    id = id_of(log)
 
-    assert notify != nil
+    assert_received {:bacnet_trend_logger, nil, ^log,
+                     %{
+                       event: :intrinsic_reporting,
+                       intrinsic_reporting: %BufferReady{
+                         buffer_property: %DeviceObjectPropertyRef{
+                           object_identifier: ^id,
+                           property_identifier: :log_buffer,
+                           property_array_index: nil,
+                           device_identifier: nil
+                         }
+                       }
+                     }}
+  end
+
+  test "standalone Buffer Ready keeps collecting while detection is disabled" do
+    server = start_logger(notification_receiver: self())
+
+    log =
+      trend(40, [notification_threshold: 1, event_detection_enable: false],
+        intrinsic_reporting: true
+      )
+
+    assert :ok = TrendLogger.add_object(server, log)
+    assert :ok = TrendLogger.trigger_log(server, log, :interrupted)
+
+    assert {:ok, %{last_notify_record: 0, records_since_notification: 1}} =
+             TrendLogger.get_snapshot(server, log)
+
+    refute_received {:bacnet_trend_logger, _, _, %{event: :intrinsic_reporting}}
+
+    enabled = %{log | event_detection_enable: true}
+    assert :ok = TrendLogger.update_object(server, enabled, :event_detection_enable)
+
+    assert {:ok, %{last_notify_record: 1, records_since_notification: 0}} =
+             TrendLogger.get_snapshot(server, log)
+
+    assert_received {:bacnet_trend_logger, _, _, %{event: :intrinsic_reporting}}
+  end
+
+  test "lifecycle Buffer Ready coalesces receiver signals and consumes the current count once" do
+    server = start_logger(notification_receiver: self())
+    log = trend(40, [notification_threshold: 2], intrinsic_reporting: true)
+    assert :ok = TrendLogger.add_object(server, log, :lifecycle)
+    assert :ok = TrendLogger.trigger_log(server, log, :interrupted)
+
+    assert {:ok, %{last_notify_record: 0, records_since_notification: 1}} =
+             TrendLogger.get_snapshot(server, log)
+
+    refute_received {:bacnet_trend_logger, _, _, %{event: :intrinsic_reporting}}
+
+    assert :ok = TrendLogger.trigger_log(server, log, :interrupted)
+    assert :ok = TrendLogger.trigger_log(server, log, :interrupted)
+
+    assert {:ok, %{last_notify_record: 0, records_since_notification: 3}} =
+             TrendLogger.get_snapshot(server, log)
+
+    assert_received {:bacnet_trend_logger, _, _, %{event: :intrinsic_reporting}}
+    refute_received {:bacnet_trend_logger, _, _, %{event: :intrinsic_reporting}}
+
+    inhibited = %{log | event_algorithm_inhibit: true}
+
+    assert {:ok, %{last_notify_record: 0, records_since_notification: 3}, nil} =
+             TrendLogger.evaluate_buffer_ready(server, inhibited)
+
+    assert {:ok, %{last_notify_record: 3, records_since_notification: 0},
+            %BufferReady{previous_notification: 0, current_notification: 3}} =
+             TrendLogger.evaluate_buffer_ready(server, log)
+
+    assert {:ok, %{last_notify_record: 3, records_since_notification: 0}, nil} =
+             TrendLogger.evaluate_buffer_ready(server, log)
+
+    assert :ok = TrendLogger.trigger_log(server, log, :interrupted)
+    assert :ok = TrendLogger.trigger_log(server, log, :interrupted)
+    assert {:ok, %{last_notify_record: 3}} = TrendLogger.get_snapshot(server, log)
+    assert_received {:bacnet_trend_logger, _, _, %{event: :intrinsic_reporting}}
+  end
+
+  test "registering a standalone log in lifecycle mode preserves its buffer and counters" do
+    server = start_logger()
+    log = trend(40, [notification_threshold: 1], intrinsic_reporting: true)
+
+    assert {:error, :unknown_object} = TrendLogger.evaluate_buffer_ready(server, log)
+    assert :ok = TrendLogger.add_object(server, log, :standalone)
+    assert :ok = TrendLogger.trigger_log(server, log, :interrupted)
+
+    assert {:ok, %{last_notify_record: 1, record_count: 1} = snapshot, nil} =
+             TrendLogger.evaluate_buffer_ready(server, log)
+
+    assert :ok = TrendLogger.add_object(server, log, :lifecycle)
+    assert {:ok, ^snapshot} = TrendLogger.get_snapshot(server, log)
+    assert :ok = TrendLogger.trigger_log(server, log, :interrupted)
+    assert :ok = TrendLogger.add_object(server, log, :lifecycle)
+
+    assert {:ok, %{last_notify_record: 1, record_count: 2, records_since_notification: 1}} =
+             TrendLogger.get_snapshot(server, log)
+
+    assert {:ok, %{last_notify_record: 2, record_count: 2, records_since_notification: 0},
+            %BufferReady{previous_notification: 1, current_notification: 2}} =
+             TrendLogger.evaluate_buffer_ready(server, log)
+  end
+
+  test "restored lifecycle logs retain an unconsumed threshold across sequence rollover" do
+    server = start_logger()
+    previous_count = 4_294_967_294
+
+    log =
+      trend(
+        40,
+        [
+          notification_threshold: 2,
+          total_record_count: previous_count,
+          last_notify_record: previous_count
+        ],
+        intrinsic_reporting: true
+      )
+
+    assert :ok = TrendLogger.add_object(server, log, :lifecycle)
+
+    :sys.replace_state(server, fn state ->
+      put_in(state.logs[make_id(log)].seq_number, previous_count)
+    end)
+
+    assert :ok = TrendLogger.trigger_log(server, log, :interrupted)
+    assert :ok = TrendLogger.trigger_log(server, log, :interrupted)
+    saved = :sys.get_state(server)
+
+    restored =
+      start_supervised!(
+        {TrendLogger, lookup_cb: &ok_lookup/1, notification_receiver: self(), state: saved},
+        id: :restored_lifecycle_logger
+      )
+
+    assert {:ok,
+            %{
+              total_record_count: 1,
+              last_notify_record: ^previous_count,
+              records_since_notification: 2
+            }} = TrendLogger.get_snapshot(restored, log)
+
+    assert_received {:bacnet_trend_logger, _, _, %{event: :intrinsic_reporting}}
+
+    assert {:ok, %{last_notify_record: 1, records_since_notification: 0},
+            %BufferReady{previous_notification: ^previous_count, current_notification: 1}} =
+             TrendLogger.evaluate_buffer_ready(restored, log)
+  end
+
+  test "Buffer Ready uses Log_Buffer after restoring a legacy reference" do
+    server = start_logger()
+    log = trend(40, [notification_threshold: 2], intrinsic_reporting: true)
+    assert :ok = TrendLogger.add_object(server, log)
+    assert :ok = TrendLogger.trigger_log(server, log, :interrupted)
+
+    state = :sys.get_state(server)
+
+    legacy =
+      update_in(state.logs[make_id(log)].intrinsic_reporting, fn algorithm ->
+        %{
+          algorithm
+          | log_buffer: %{algorithm.log_buffer | property_identifier: :log_device_object_property}
+        }
+      end)
+
+    restored =
+      start_supervised!(
+        {TrendLogger, lookup_cb: &ok_lookup/1, state: legacy, notification_receiver: self()},
+        id: :restored_logger
+      )
+
+    assert :ok = TrendLogger.trigger_log(restored, log, :interrupted)
+    assert {:ok, %{last_notify_record: 2}} = TrendLogger.get_snapshot(restored, log)
+    id = id_of(log)
+
+    assert_received {:bacnet_trend_logger, nil, ^log,
+                     %{
+                       event: :intrinsic_reporting,
+                       intrinsic_reporting: %BufferReady{
+                         buffer_property: %DeviceObjectPropertyRef{
+                           object_identifier: ^id,
+                           property_identifier: :log_buffer
+                         },
+                         previous_notification: 0,
+                         current_notification: 2
+                       }
+                     }}
+  end
+
+  test "a snapshot tracks notification counts across a notification, purge, and restart" do
+    server = start_logger(notification_receiver: self())
+    object = trend(40, [buffer_size: 1, notification_threshold: 3], intrinsic_reporting: true)
+    assert :ok = TrendLogger.add_object(server, object)
+
+    assert :ok = TrendLogger.trigger_log(server, object, analog())
+
+    assert {:ok, %{records_since_notification: 1, last_notify_record: 0}} =
+             TrendLogger.get_snapshot(server, object)
+
+    assert :ok = TrendLogger.trigger_log(server, object, analog())
+    assert :ok = TrendLogger.trigger_log(server, object, analog())
+    assert_receive {:bacnet_trend_logger, nil, %TrendLog{}, %{event: :intrinsic_reporting}}
+
+    assert {:ok,
+            %{
+              record_count: 1,
+              total_record_count: 3,
+              records_since_notification: 0,
+              last_notify_record: 3
+            }} =
+             TrendLogger.get_snapshot(server, object)
+
+    assert :ok = TrendLogger.trigger_log(server, object, analog())
+
+    assert {:ok, %{records_since_notification: 1, last_notify_record: 3}} =
+             TrendLogger.get_snapshot(server, object)
+
+    legacy_state = :sys.get_state(server)
+
+    legacy_state =
+      update_in(legacy_state.logs[make_id(object)], &Map.delete(&1, :records_since_notification))
+
+    {:ok, legacy} = TrendLogger.start_link(lookup_cb: &ok_lookup/1, state: legacy_state)
+
+    assert {:ok, %{records_since_notification: 1, last_notify_record: 3}} =
+             TrendLogger.get_snapshot(legacy, object)
+
+    assert :ok = TrendLogger.prune_buffer(server, object)
+
+    assert {:ok,
+            %{
+              buffer: {LogBuffer, buffer},
+              record_count: 1,
+              total_record_count: 5,
+              records_since_notification: 0,
+              last_notify_record: 3
+            } = snapshot} = TrendLogger.get_snapshot(server, object)
+
+    assert [%LogRecord{log_datum: %LogStatus{buffer_purged: true}}] = LogBuffer.to_list(buffer)
+
+    {:ok, restored} =
+      TrendLogger.start_link(lookup_cb: &ok_lookup/1, state: :sys.get_state(server))
+
+    assert {:ok, ^snapshot} = TrendLogger.get_snapshot(restored, object)
   end
 
   test "resubscribe_cov global and removal unsubscribe a remote log" do
@@ -1251,32 +1980,60 @@ defmodule BACnet.Stack.TrendLoggerTest do
     assert_receive {:cov, :unsub}, 500
   end
 
-  test "a polled trend log multiple collects one value per reference" do
-    {:ok, server} = TrendLogger.start_link(lookup_cb: &ok_lookup/1)
+  test "a polled trend log multiple stores successes and failures in reference order" do
+    parent = self()
     source = analog()
+    first_device = %ObjectIdentifier{type: :device, instance: 41}
+    failing_device = %ObjectIdentifier{type: :device, instance: 42}
+    last_device = %ObjectIdentifier{type: :device, instance: 43}
+    error = %BACnetError{class: :property, code: :read_access_denied}
+    unspecified = %BACnetError{class: :property, code: :no_property_specified}
 
-    log =
-      trend_multiple(90, [property_ref(source, nil)],
-        logging_type: :polled,
-        log_interval: 6_000
+    server =
+      start_logger(
+        lookup_cb: fn ref ->
+          send(parent, {:lookup, ref})
+
+          case ref.device_identifier do
+            ^first_device -> {:ok, %{source | present_value: 1.0}}
+            ^failing_device -> {:error, error}
+            ^last_device -> {:ok, %{source | present_value: 3.0}}
+          end
+        end
       )
 
-    log = %{
-      log
-      | log_device_object_property:
-          BACnetArray.from_list([
-            %{
-              property_ref(source, nil)
-              | object_identifier: uninitialized_identifier(:analog_input)
-            },
-            property_ref(source, nil)
-          ])
-    }
+    references = [
+      property_ref(source, first_device),
+      %{property_ref(source, nil) | object_identifier: uninitialized_identifier(:analog_input)},
+      property_ref(source, failing_device),
+      property_ref(source, uninitialized_identifier(:device)),
+      property_ref(source, last_device)
+    ]
 
+    log = trend_multiple(90, references, logging_type: :polled, log_interval: 6_000)
     assert :ok = TrendLogger.add_object(server, log)
     fire_poll(server, log)
-    assert [%LogMultipleRecord{log_data: data}] = await_records(server, log, 1)
-    assert length(data) == 2
+
+    assert [
+             %LogMultipleRecord{
+               log_data: [
+                 %Encoding{type: :real, value: 1.0},
+                 ^unspecified,
+                 ^error,
+                 ^unspecified,
+                 %Encoding{type: :real, value: 3.0}
+               ]
+             }
+           ] = await_records(server, log, 1)
+
+    object_id = id_of(source)
+
+    for device <- [first_device, failing_device, last_device] do
+      assert_received {:lookup,
+                       %DeviceObjectRef{device_identifier: ^device, object_identifier: ^object_id}}
+    end
+
+    refute_received {:lookup, _ref}
   end
 
   test "a supervised polled trend log multiple collects the referenced value" do
@@ -1297,32 +2054,27 @@ defmodule BACnet.Stack.TrendLoggerTest do
              await_records(server, log, 1)
   end
 
-  test "lookup results that are not objects become internal errors and are discarded" do
-    error = %BACnetError{class: :device, code: :other}
-
-    for result <- [{:ok, :nope}, {:error, error}, :weird] do
-      lookup = fn _ref -> result end
+  test "invalid lookup results and thrown errors are logged as internal errors" do
+    for lookup <- [
+          fn _ref -> {:ok, :nope} end,
+          fn _ref -> {:error, :down} end,
+          fn _ref -> :weird end,
+          fn _ref -> throw(:boom) end
+        ] do
       {:ok, server} = TrendLogger.start_link(lookup_cb: lookup)
       log = trend(43, logging_type: :polled, log_interval: 6_000)
       assert :ok = TrendLogger.add_object(server, log)
       fire_poll(server, log)
-      Process.sleep(40)
-      assert [] = records(server, log)
-    end
 
-    lookup = fn _ref -> throw(:boom) end
-    {:ok, server} = TrendLogger.start_link(lookup_cb: lookup)
-    log = trend(44, logging_type: :polled, log_interval: 6_000)
-    assert :ok = TrendLogger.add_object(server, log)
-    fire_poll(server, log)
-    Process.sleep(40)
-    assert [] = records(server, log)
+      assert [%LogRecord{log_datum: %BACnetError{class: :device, code: :internal_error}}] =
+               await_records(server, log, 1)
+    end
   end
 
   test "COV notifications accept the plain encoding types and a status flag" do
     {:ok, server} = TrendLogger.start_link(lookup_cb: &ok_lookup/1)
     source = analog()
-    log = trend(45, log_device_object_property: property_ref(source, nil))
+    log = trend(45, logging_type: :cov, log_device_object_property: property_ref(source, nil))
     assert :ok = TrendLogger.add_object(server, log)
 
     for value <- [
@@ -1419,7 +2171,7 @@ defmodule BACnet.Stack.TrendLoggerTest do
       )
 
     assert :ok = TrendLogger.add_object(server, log)
-    send(server, {:cov_resub, make_id(log)})
+    assert :ok = TrendLogger.resubscribe_cov(server, log)
     assert :ok = TrendLogger.change_log_state(server, log, :disable)
     assert {:ok, _buffer} = TrendLogger.get_buffer(server, log)
 
@@ -1450,7 +2202,7 @@ defmodule BACnet.Stack.TrendLoggerTest do
       )
 
     assert :ok = TrendLogger.add_object(server, log)
-    send(server, {:cov_resub, make_id(log)})
+    assert :ok = TrendLogger.resubscribe_cov(server, log)
     assert {:ok, _buffer} = TrendLogger.get_buffer(server, log)
     refute_receive {:cov, _}, 40
   end
@@ -1481,7 +2233,7 @@ defmodule BACnet.Stack.TrendLoggerTest do
     log = trend(62, buffer_size: 1, stop_when_full: true)
     assert :ok = TrendLogger.add_object(server, log)
     assert :ok = TrendLogger.trigger_log(server, log, analog())
-    assert {:ok, {2, _buffer_module, buffer}} = TrendLogger.get_buffer(server, log)
+    assert {:ok, {1, _buffer_module, buffer}} = TrendLogger.get_buffer(server, log)
     assert Enum.any?(LogBuffer.to_list(buffer), &match?(%LogRecord{log_datum: %LogStatus{}}, &1))
   end
 
@@ -1516,7 +2268,7 @@ defmodule BACnet.Stack.TrendLoggerTest do
     assert [%LogRecord{log_datum: %Encoding{type: :real, value: 4.0}}] = records(server, log)
   end
 
-  test "a trend log multiple can subscribe each remote reference" do
+  test "a trend log multiple update cannot activate remote COV subscriptions" do
     parent = self()
 
     cov_cb = fn _server, ref, op, _life, _inc ->
@@ -1535,11 +2287,26 @@ defmodule BACnet.Stack.TrendLoggerTest do
     }
 
     assert :ok = TrendLogger.add_object(server, %{log | logging_type: :triggered})
-    assert :ok = TrendLogger.update_object(server, log)
-    assert_receive {:cov, :sub, 12}, 500
+    assert {:error, :invalid_logging_type} = TrendLogger.update_object(server, log)
+    assert {:error, :invalid_logging_type} = TrendLogger.update_object(server, log, :logging_type)
+    assert :sys.get_state(server).cov_subscriptions == %{}
+
+    polled = %{log | logging_type: :polled, log_interval: 90_000}
+    assert :ok = TrendLogger.update_object(server, polled, :log_interval)
+
+    alignment = %{log | align_intervals: true, interval_offset: 3_000}
+    assert :ok = TrendLogger.update_object(server, alignment, :interval_offset)
+
+    assert %{
+             log_interval: 90_000,
+             logging_type: :polled,
+             align_intervals: true,
+             interval_offset: 3_000
+           } =
+             :sys.get_state(server).logs[make_id(log)].object
 
     assert :ok = TrendLogger.remove_object(server, log)
-    assert_receive {:cov, :unsub, 12}, 500
+    refute_received {:cov, _, _}
   end
 
   test "an uninitialized monitored reference is ignored by the poll" do
@@ -1558,7 +2325,7 @@ defmodule BACnet.Stack.TrendLoggerTest do
 
     assert :ok = TrendLogger.add_object(server, log)
     fire_poll(server, log)
-    send(server, {:cov_resub, make_id(log)})
+    assert :ok = TrendLogger.resubscribe_cov(server, log)
     send(server, {:maybe_notify_receiver, {:trend_log, 404}})
     assert {:ok, {0, _buffer_module, buffer}} = TrendLogger.get_buffer(server, log)
     assert [] = LogBuffer.to_list(buffer)
@@ -1646,27 +2413,56 @@ defmodule BACnet.Stack.TrendLoggerTest do
              records(server, log)
   end
 
-  test "a lookup that exits is recorded as an internal error" do
-    lookup = fn _ref -> exit(:kill) end
-    {:ok, server} = TrendLogger.start_link(lookup_cb: lookup)
+  test "a polled trend log multiple records task exits and timeouts in their own slots" do
     source = analog()
+    ref = property_ref(source, nil)
+
+    server =
+      start_logger(
+        lookup_cb: fn %DeviceObjectRef{object_identifier: id} ->
+          case id.instance do
+            1 ->
+              {:ok, source}
+
+            2 ->
+              Process.exit(self(), :kill)
+
+            3 ->
+              receive do
+                :complete -> {:ok, source}
+              end
+          end
+        end
+      )
+
+    references =
+      for instance <- [2, 3, 1],
+          do: %{ref | object_identifier: %{ref.object_identifier | instance: instance}}
 
     log =
-      trend_multiple(92, [property_ref(source, nil)],
+      trend_multiple(92, references,
         logging_type: :polled,
-        log_interval: 6_000
+        log_interval: 30
       )
 
     assert :ok = TrendLogger.add_object(server, log)
     fire_poll(server, log)
 
-    assert [%LogMultipleRecord{log_data: [nil]}] = await_records(server, log, 1)
+    assert [
+             %LogMultipleRecord{
+               log_data: [
+                 %BACnetError{class: :device, code: :internal_error},
+                 %BACnetError{class: :communication, code: :timeout},
+                 %Encoding{type: :real, value: 12.5}
+               ]
+             }
+           ] = await_records(server, log, 1)
   end
 
   test "an unconfirmed COV notification is stored" do
     {:ok, server} = TrendLogger.start_link(lookup_cb: &ok_lookup/1)
     source = analog()
-    log = trend(93, log_device_object_property: property_ref(source, nil))
+    log = trend(93, logging_type: :cov, log_device_object_property: property_ref(source, nil))
     assert :ok = TrendLogger.add_object(server, log)
 
     note =
@@ -1714,8 +2510,30 @@ defmodule BACnet.Stack.TrendLoggerTest do
     server = start_logger()
     assert :ok = TrendLogger.add_object(server, object)
     refute :sys.get_state(server).logs[make_id(object)].enabled
-    assert :ok = TrendLogger.trigger_log(server, object, :interrupted)
+    assert :ok = TrendLogger.trigger_log(server, object, analog())
     assert records(server, object) == []
+  end
+
+  test "unspecified logging time bounds are independently unbounded", %{server: server} do
+    unspecified = ObjectsMacro.get_default_bacnet_datetime()
+    now = DateTime.utc_now()
+    past = BACnetDateTime.from_datetime(DateTime.add(now, -3_600))
+    future = BACnetDateTime.from_datetime(DateTime.add(now, 3_600))
+
+    for {{start, stop, enabled}, instance} <-
+          Enum.with_index([
+            {unspecified, unspecified, true},
+            {past, unspecified, true},
+            {unspecified, future, true},
+            {future, unspecified, false},
+            {unspecified, past, false}
+          ]) do
+      object = trend(instance, start_time: start, stop_time: stop)
+      assert :ok = TrendLogger.add_object(server, object)
+      assert :ok = TrendLogger.trigger_log(server, object, analog())
+      assert :sys.get_state(server).logs[make_id(object)].enabled == enabled
+      assert length(records(server, object)) == if(enabled, do: 1, else: 0)
+    end
   end
 
   test "logging is enabled inside its time window" do
@@ -1746,8 +2564,17 @@ defmodule BACnet.Stack.TrendLoggerTest do
     server = start_logger()
     assert :ok = TrendLogger.add_object(server, object)
     refute :sys.get_state(server).logs[make_id(object)].enabled
-    assert :ok = TrendLogger.trigger_log(server, object, :interrupted)
+    assert :ok = TrendLogger.trigger_log(server, object, analog())
     assert records(server, object) == []
+  end
+
+  test "an interruption status is recorded when logging is disabled", %{server: server} do
+    object = trend(1, enable: false)
+    assert :ok = TrendLogger.add_object(server, object)
+    assert :ok = TrendLogger.trigger_log(server, object, :interrupted)
+
+    assert [%LogRecord{log_datum: %LogStatus{log_disabled: true, log_interrupted: true}}] =
+             records(server, object)
   end
 
   test "one confirmed COV notification appends to every matching log" do
@@ -1760,6 +2587,47 @@ defmodule BACnet.Stack.TrendLoggerTest do
 
     assert [%LogRecord{log_datum: %Encoding{type: :real, value: 3.0}}] = records(server, first)
     assert [%LogRecord{log_datum: %Encoding{type: :real, value: 3.0}}] = records(server, second)
+  end
+
+  test "matching COV notifications reach only Trend Logs in COV mode" do
+    server = start_logger()
+    reference = property_ref(analog(), nil)
+    cov = unscheduled_trend(1, logging_type: :cov, log_device_object_property: reference)
+
+    polled =
+      unscheduled_trend(2,
+        logging_type: :polled,
+        log_interval: 6_000,
+        log_device_object_property: reference
+      )
+
+    triggered = unscheduled_trend(3, log_device_object_property: reference)
+    multiple = trend_multiple(4, [reference])
+
+    for log <- [cov, polled, triggered, multiple] do
+      assert :ok = TrendLogger.add_object(server, log)
+    end
+
+    confirmed = cov_notification(reference.object_identifier, real(3.0))
+
+    unconfirmed =
+      struct!(
+        UnconfirmedCovNotification,
+        Map.from_struct(cov_notification(reference.object_identifier, real(4.0)))
+      )
+
+    assert :ok = TrendLogger.notify(server, confirmed)
+    assert :ok = TrendLogger.notify(server, unconfirmed)
+
+    assert [
+             %LogRecord{log_datum: %Encoding{type: :real, value: 3.0}},
+             %LogRecord{log_datum: %Encoding{type: :real, value: 4.0}}
+           ] = records(server, cov)
+
+    for log <- [polled, triggered, multiple] do
+      assert {:ok, {0, LogBuffer, buffer}} = TrendLogger.get_buffer(server, log)
+      assert LogBuffer.to_list(buffer) == []
+    end
   end
 
   test "unconfirmed COV fanout preserves existing records and unrelated logs" do
@@ -1842,20 +2710,22 @@ defmodule BACnet.Stack.TrendLoggerTest do
            ] = records(server, active)
   end
 
-  test "a log past its stop time ignores matching unconfirmed COV notifications" do
+  test "COV checks the stop time before the next periodic time check" do
     now = DateTime.utc_now()
 
     object =
       trend(1,
         logging_type: :cov,
         start_time: BACnetDateTime.from_datetime(DateTime.add(now, -7_200)),
-        stop_time: BACnetDateTime.from_datetime(DateTime.add(now, -3_600))
+        stop_time: BACnetDateTime.from_datetime(DateTime.add(now, 3_600))
       )
 
     server = start_logger()
     assert :ok = TrendLogger.add_object(server, object)
-    assert object.enable
-    refute :sys.get_state(server).logs[make_id(object)].enabled
+    assert :sys.get_state(server).logs[make_id(object)].enabled
+
+    past = BACnetDateTime.from_datetime(DateTime.add(now, -3_600))
+    :sys.replace_state(server, &put_in(&1.logs[make_id(object)].object.stop_time, past))
 
     notification =
       struct!(
@@ -1864,8 +2734,10 @@ defmodule BACnet.Stack.TrendLoggerTest do
       )
 
     assert :ok = TrendLogger.notify(server, notification)
-    assert {:ok, {0, LogBuffer, buffer}} = TrendLogger.get_buffer(server, object)
-    assert LogBuffer.to_list(buffer) == []
+    assert [%LogRecord{log_datum: %LogStatus{log_disabled: true}}] = records(server, object)
+    stored = :sys.get_state(server).logs[make_id(object)]
+    assert stored.object.enable
+    refute stored.enabled
   end
 
   test "a log stopped by a full buffer ignores further COV data" do
@@ -1953,7 +2825,7 @@ defmodule BACnet.Stack.TrendLoggerTest do
              %LogRecord{log_datum: %LogStatus{log_disabled: true}}
            ] = before
 
-    assert :ok = TrendLogger.trigger_log(server, object, :interrupted)
+    assert :ok = TrendLogger.trigger_log(server, object, analog())
     assert records(server, object) == before
   end
 
@@ -1985,7 +2857,7 @@ defmodule BACnet.Stack.TrendLoggerTest do
     assert_receive {:bacnet_trend_logger, nil, %TrendLog{enable: false},
                     %{event: :intrinsic_reporting}}
 
-    assert :ok = TrendLogger.trigger_log(server, object, :interrupted)
+    assert :ok = TrendLogger.trigger_log(server, object, analog())
     assert records(server, object) == before
   end
 
@@ -2180,7 +3052,7 @@ defmodule BACnet.Stack.TrendLoggerTest do
              %LogRecord{log_datum: %LogStatus{log_disabled: true}}
            ] = LogBuffer.to_list(buffer)
 
-    assert :ok = TrendLogger.trigger_log(server, object, :interrupted)
+    assert :ok = TrendLogger.trigger_log(server, object, analog())
     assert {:ok, {1, LogBuffer, ^buffer}} = TrendLogger.get_buffer(server, object)
   end
 

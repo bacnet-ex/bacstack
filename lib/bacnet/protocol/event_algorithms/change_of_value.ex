@@ -79,6 +79,8 @@ defmodule BACnet.Protocol.EventAlgorithms.ChangeOfValue do
   however to ensure the Status Flags have an overall correct status,
   the user has to make sure all bits are correctly.
 
+  The optional clock sample determines when delays start and expire.
+
   ASHRAE 135:
   > The conditions evaluated by this event algorithm, for a monitored value of type REAL, are:
   >
@@ -91,10 +93,10 @@ defmodule BACnet.Protocol.EventAlgorithms.ChangeOfValue do
   > (a) If pCurrentState is NORMAL, and any of the significant bits of pMonitoredValue change state
   > and remain changed for pTimeDelayNormal, then indicate a transition to the NORMAL event state.
   """
-  @spec execute(t()) ::
+  @spec execute(t(), DateTime.t()) ::
           {:event, new_state :: t(), Notify.t()}
           | {:delayed_event | :no_event, new_state :: t()}
-  def execute(%__MODULE__{} = state) do
+  def execute(%__MODULE__{} = state, %DateTime{} = now \\ get_dt()) do
     normal_event =
       state.current_state == Constants.macro_assert_name(:event_state, :normal) and
         state.last_value != state.monitored_value and
@@ -104,7 +106,11 @@ defmodule BACnet.Protocol.EventAlgorithms.ChangeOfValue do
       cond do
         normal_event and (state.parameters.time_delay_normal || state.parameters.time_delay) > 0 ->
           state.dt_normal ||
-            get_dt(state.parameters.time_delay_normal || state.parameters.time_delay)
+            DateTime.add(
+              now,
+              state.parameters.time_delay_normal || state.parameters.time_delay,
+              :second
+            )
 
         normal_event ->
           state.dt_normal
@@ -118,7 +124,7 @@ defmodule BACnet.Protocol.EventAlgorithms.ChangeOfValue do
         normal_event and normal_dt == nil ->
           true
 
-        normal_event and DateTime.compare(get_dt(0), normal_dt) != :lt ->
+        normal_event and DateTime.compare(now, normal_dt) != :lt ->
           true
 
         true ->
@@ -219,9 +225,8 @@ defmodule BACnet.Protocol.EventAlgorithms.ChangeOfValue do
 
   defp compute_return(false, _state, state), do: {:no_event, state}
 
-  @spec get_dt(non_neg_integer()) :: DateTime.t()
-  defp get_dt(0), do: DateTime.now!(Application.get_env(:bacstack, :default_timezone, "Etc/UTC"))
-  defp get_dt(offset), do: DateTime.add(get_dt(0), offset, :second)
+  @spec get_dt() :: DateTime.t()
+  defp get_dt(), do: DateTime.now!(Application.get_env(:bacstack, :default_timezone, "Etc/UTC"))
 
   @spec tuple_to_int(tuple()) :: non_neg_integer()
   defp tuple_to_int(tuple) when is_tuple(tuple) do

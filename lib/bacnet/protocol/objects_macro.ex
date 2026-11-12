@@ -2,14 +2,22 @@ defmodule BACnet.Protocol.ObjectsMacro do
   @moduledoc """
   This is an internal module for defining BACnet objects.
 
-  If you're a library user, there's no need for you to ever deal with this module.
-  Object property operations are implemented in `BACnet.Protocol.ObjectOperations`. This module
-  builds a `BACnet.Protocol.ObjectsContract` for the object type and delegates to it.
-  Hooks such as `inhibit_object_check/1` stay overridable in the object module.
+  Use the functions on each object module to work with properties and
+  `BACnet.Protocol.ObjectExecution.Lifecycle` to run the object's behaviour. When defining
+  an object type, this macro builds its `BACnet.Protocol.ObjectsContract` and generates
+  functions that delegate property operations to `BACnet.Protocol.ObjectOperations`.
+  The object module can override hooks such as `inhibit_object_check/4`.
 
   Every object implements `BACnet.Protocol.ObjectsBehaviour` and
   `BACnet.Protocol.ObjectsProtocol`. The generated `execute/2` preserves the object
-  and runtime state and can be overridden to implement object-specific execution logic.
+  and runtime state and requests no further execution. The generated preflight returns
+  `:ok`, and write preparation returns the supplied candidate. Object modules can override
+  all three callbacks. See `BACnet.Protocol.ObjectsBehaviour` for their contracts.
+
+  The integrating application needs to provide the
+  [object execution host](BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host)
+  that owns object instances and drives their lifecycle. The linked contract defines the host
+  responsibilities referred to by the generated callback documentation.
 
   If you want to store the BACnet object definition AST as a persistent module
   attribute (`:bacobj_ast`) in each BACnet object module, you can set the key `:store_bacobj_ast`
@@ -22,11 +30,12 @@ defmodule BACnet.Protocol.ObjectsMacro do
   - Check the properties types map - 99% should be covered by this (1% is covered by annotations)
   - Custom decoding/encoding by hand for special properties (not yet supported properties/objects)
 
-  BACnet device server implementations need to make sure to support `on_read_function` annotation,
-  which should always be called (single arity - the object itself and returns an ok-tuple object),
-  when another BACnet user is reading the property with such an annotation before returning
-  property value. Use cases are for example the BACnet device local time,
-  which should always be returned up to date and not a stale value.
+  Follow the object module's documented read path for computed properties. For example,
+  `BACnet.Protocol.ObjectTypes.Device` refreshes its clock properties through
+  `BACnet.Protocol.ObjectExecution.Lifecycle.prepare_read/2`. Applications that read
+  Device Local_Date and Local_Time without lifecycle execution can call the property's
+  `:on_read_function` annotation with the object. Read the value from the object in its
+  `{:ok, object}` return.
 
   Some properties need to be handled in a special way in the BACnet device server
   for both reading and writing the property, no such annotation exists though.
@@ -437,6 +446,8 @@ defmodule BACnet.Protocol.ObjectsMacro do
   - `create/4`
   - `cov_reporting?/1`
   - `execute/2`
+  - `validate_execution/2`
+  - `prepare_write/3`
   - `get_object_identifier/1`
   - `get_properties/1`
   - `has_property?/2`
@@ -447,6 +458,9 @@ defmodule BACnet.Protocol.ObjectsMacro do
 
   Override `execute/2` after the `bac_object/2` block to implement one execution step.
   The default returns an ok-result preserving the object and context state.
+  Override `validate_execution/2` for pure configuration/host-operation checks and
+  `prepare_write/3` for pre-commit validation and related updates. Use
+  `BACnet.Protocol.ObjectExecution.Lifecycle` to orchestrate these callbacks.
   See `BACnet.Protocol.ObjectsBehaviour` for
   the execution contract and `BACnet.Protocol.ObjectsProtocol` for generic dispatch.
 
@@ -525,17 +539,27 @@ defmodule BACnet.Protocol.ObjectsMacro do
   The `OVERRIDDEN` member stays untouched and updating it is a local matter of the user.
 
   Implementors using this macro can "inhibit" an object and verify or mutate the object,
-  but also return an error. For that a private function can be overridden. The function is called
-  whenever `create`, `add_property`, `remove_property` (excluding unknown propertes)
-  and `update_property` is used.
+  but also return an error.
+  Override the private `inhibit_object_check(candidate, original, operation, args)`
+  hook to check the candidate or return related property changes together.
+  The candidate has passed the operation's validation and any applicable property
+  propagation. Return `{:ok, candidate}` to accept the object, or `{:error, reason}`
+  to reject the operation.
 
-  The following private function can be overriden and used a hook:
+  | Operation | Original | Arguments |
+  | --- | --- | --- |
+  | `:add`, `:update` | Object before the operation | `%{property: property, value: submitted_value}` |
+  | `:create` | `nil` | `%{properties: submitted_properties}` |
+  | `:remove` | Object before the operation | `%{property: property}` |
+  | `:set_minimum_time_hold` | Object before arbitration | `%{priority: 6, value: hold_value}` |
+  | `:set_priority` | Object before the command | `%{priority: priority, value: submitted_value}` |
 
-  ```ex
-  inhibit_object_check(t()) :: {:ok, t()} | {:error, term()}
-  ```
-
-  It receives the object struct and should return an ok or error tuple.
+  The arguments preserve the caller's inputs before defaults, implicit
+  relationships or propagation. The default hook accepts the candidate as
+  received. Priority mutations pass the effective Present_Value and any
+  automatic Feedback_Value update to the hook. A minimum-time hold runs the
+  hook when arbitration changes the object. Remote snapshot creation and
+  removal of an absent property skip the hook.
 
   ### Annotations
 
@@ -826,6 +850,11 @@ defmodule BACnet.Protocol.ObjectsMacro do
         {nil, {:term, [], []}}
       end
 
+    priority_value_typespec =
+      if pv_ex_type in [:real, :double] and match?({:float, _meta, []}, pv_typespec),
+        do: quote(do: BACnet.Protocol.ApplicationTags.ieee_float()),
+        else: pv_typespec
+
     # Create map of property_name to their type
     properties_type_map =
       @basic_properties_to_type_map
@@ -1025,20 +1054,58 @@ defmodule BACnet.Protocol.ObjectsMacro do
       @doc """
       Runs one execution step for this object.
 
-      The default implementation returns an ok-result preserving the object and
-      context state, without invoking host callbacks. Object modules can override
-      this function to implement execution logic. The caller owns execution timing
-      and must retain the returned object and runtime state.
-      See `BACnet.Protocol.ObjectsBehaviour` for the execution contract.
+      Use `BACnet.Protocol.ObjectExecution.Lifecycle.execute/2` to run this callback with
+      lifecycle preflight and remote-snapshot handling. The
+      [object execution host](BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host)
+      needs to retain the complete result and handle its next execution request.
       """
       @impl BACnet.Protocol.ObjectsBehaviour
       @spec execute(t(), BACnet.Protocol.ObjectExecution.Context.t()) ::
               {:ok, BACnet.Protocol.ObjectExecution.Result.t(t())} | {:error, term()}
       def execute(%__MODULE__{} = object, %BACnet.Protocol.ObjectExecution.Context{} = context) do
-        {:ok, %BACnet.Protocol.ObjectExecution.Result{object: object, state: context.state}}
+        {:ok,
+         %BACnet.Protocol.ObjectExecution.Result{
+           object: object,
+           state: context.state,
+           next_execution: nil
+         }}
       end
 
-      defoverridable execute: 2
+      @doc """
+      Checks configuration and capabilities without host I/O or state changes.
+
+      See `BACnet.Protocol.ObjectsBehaviour` for the preflight contract.
+      Required host operations are supplied by the integrating application described in the
+      [object execution host contract](BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host).
+      """
+      @impl BACnet.Protocol.ObjectsBehaviour
+      @spec validate_execution(t(), BACnet.Protocol.ObjectExecution.Context.t()) ::
+              :ok | {:error, term()}
+      def validate_execution(
+            %__MODULE__{} = object,
+            %BACnet.Protocol.ObjectExecution.Context{} = context
+          ),
+          do: :ok
+
+      @doc """
+      Prepares a property-write candidate without host I/O or state changes.
+
+      Use `BACnet.Protocol.ObjectExecution.Lifecycle.prepare_write/3` for the
+      complete pre-commit phase, including execution preflight.
+      The [object execution host](BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host)
+      needs to retain the accepted candidate and perform the post-commit execution step.
+      """
+      @impl BACnet.Protocol.ObjectsBehaviour
+      @spec prepare_write(t(), t(), BACnet.Protocol.ObjectExecution.Context.t()) ::
+              {:ok, t()} | {:error, term()}
+      def prepare_write(
+            %__MODULE__{} = object,
+            %__MODULE__{} = candidate,
+            %BACnet.Protocol.ObjectExecution.Context{}
+          ),
+          do: {:ok, candidate}
+
+      defoverridable execute: 2, validate_execution: 2, prepare_write: 3
 
       # Implement Access Behaviour function fetch/2 for convenience
       @doc false
@@ -1120,14 +1187,16 @@ defmodule BACnet.Protocol.ObjectsMacro do
         or integer as property identifier, you can only remove numeric unknown property identifiers from an object.
         Property identifiers of type `atom` are only accepted, if it is a remote object (object implementation is only
         enforced if it is a local object). Numeric property identifiers are accepted regardless of remote object or not.
-        For remote objects, this means you have to write "raw values" (usually `Encoding` structs).
+        For remote objects, this means you have to write "raw values"
+        (usually `BACnet.Protocol.ApplicationTags.Encoding` structs).
       - `ignore_unknown_properties` - Properties that are unknown to the object implementation are usually rejected.
         With this option, unknown properties get ignored, as if they were not specified.
       - `revision` - The BACnet protocol revision used for required properties and annotation
         conditions. Accepts a non-negative protocol revision number (for example, `19`)
         or a name from `t:BACnet.Protocol.Constants.protocol_revision/0`.
         Optional properties remain available unless an annotation prohibits them.
-        Selecting a revision does not imply full support for that revision of the standard.
+        Default required annotations use ASHRAE 135-2012 (revision 14), or the
+        addendum/revision that introduced a later object type.
       - `skip_property_validation_remote_object` - Skips property validation for remote objects.
         Sometimes it is possible that the value is invalid as per BACnet specification
         (i.e. value 0 for a multistate object), but you still want those to be represented.
@@ -1168,8 +1237,14 @@ defmodule BACnet.Protocol.ObjectsMacro do
         )
       end
 
-      @spec inhibit_object_check(t()) :: {:ok, t()} | {:error, term()}
-      defp inhibit_object_check(obj), do: {:ok, obj}
+      @spec inhibit_object_check(
+              t(),
+              t() | nil,
+              ObjectOperations.property_operation(),
+              ObjectOperations.property_operation_args()
+            ) :: {:ok, t()} | {:error, term()}
+      defp inhibit_object_check(candidate, _original, _operation, _args),
+        do: {:ok, candidate}
 
       @spec check_property_exists(map(), Constants.property_identifier()) ::
               :ok | property_update_error()
@@ -1179,14 +1254,14 @@ defmodule BACnet.Protocol.ObjectsMacro do
 
       defoverridable add_defaults: 2,
                      check_implicit_relationships: 2,
-                     inhibit_object_check: 1
+                     inhibit_object_check: 4
 
       @spec operation_hooks() :: ObjectOperations.operation_hooks()
       defp operation_hooks() do
         %{
           add_defaults: &add_defaults/2,
           check_implicit_relationships: &check_implicit_relationships/2,
-          inhibit_object_check: &inhibit_object_check/1
+          inhibit_object_check: &inhibit_object_check/4
         }
       end
 
@@ -1394,11 +1469,18 @@ defmodule BACnet.Protocol.ObjectsMacro do
         end
 
         @doc """
-        Sets the given priority in the priority array of an object.
-        This function also updates the present value.
+        Commands a priority slot and updates the effective present value.
+
+        Pass `nil` to relinquish the slot. Local commands and relinquishments
+        at priority 6 are denied. The object module's inhibit hook runs after
+        arbitration and any automatic feedback update. For a local object,
+        prepare and execute the candidate with the actual write origin using
+        `BACnet.Protocol.ObjectExecution.Lifecycle`.
         """
-        @spec set_priority(t(), 1..16, unquote(pv_typespec) | nil) ::
-                {:ok, t()} | property_update_error()
+        @spec set_priority(t(), 1..16, unquote(priority_value_typespec) | nil) ::
+                {:ok, t()} | {:error, :write_access_denied} | property_update_error()
+        def set_priority(object, priority, value)
+
         def set_priority(%__MODULE__{priority_array: nil} = _object, _priority, _value) do
           {:error, {:unknown_property, :priority_array}}
         end
@@ -1413,7 +1495,8 @@ defmodule BACnet.Protocol.ObjectsMacro do
             object_contract(),
             object,
             priority,
-            value
+            value,
+            operation_hooks()
           )
         end
 
@@ -1496,9 +1579,19 @@ defmodule BACnet.Protocol.ObjectsMacro do
         @spec execute(@for.t(), BACnet.Protocol.ObjectExecution.Context.t()) ::
                 {:ok, BACnet.Protocol.ObjectExecution.Result.t(@for.t())} | {:error, term()}
         def execute(object, context), do: @for.execute(object, context)
+
+        @spec validate_execution(@for.t(), BACnet.Protocol.ObjectExecution.Context.t()) ::
+                :ok | {:error, term()}
+        def validate_execution(object, context), do: @for.validate_execution(object, context)
+
+        @spec prepare_write(@for.t(), @for.t(), BACnet.Protocol.ObjectExecution.Context.t()) ::
+                {:ok, @for.t()} | {:error, term()}
+        def prepare_write(object, candidate, context),
+          do: @for.prepare_write(object, candidate, context)
       end
 
       defimpl Inspect do
+        @spec inspect(@for.t(), Inspect.Opts.t()) :: Inspect.Algebra.t()
         def inspect(object, opts) do
           ObjectOperations.inspect_object(object, opts)
         end

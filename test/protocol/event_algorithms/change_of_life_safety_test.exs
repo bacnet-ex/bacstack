@@ -1593,4 +1593,32 @@ defmodule BACnet.Protocol.EventAlgorithms.ChangeOfLifeSafetyTest do
 
     assert_raise ArgumentError, fn -> ChangeOfLifeSafety.update(state, status_flags: nil) end
   end
+
+  test "execute/2 starts and expires the delay using the supplied sample" do
+    state =
+      ChangeOfLifeSafety.new(:quiet, :off, :none, %Params{
+        mode: %DeviceObjectPropertyRef{
+          object_identifier: %ObjectIdentifier{type: :life_safety_point, instance: 0},
+          property_identifier: :present_value,
+          property_array_index: nil,
+          device_identifier: nil
+        },
+        alarm_values: [:alarm, :holdup],
+        life_safety_alarm_values: [:fault, :local_alarm],
+        time_delay: 1,
+        time_delay_normal: nil
+      })
+
+    new_state2 = %{state | monitored_value: :alarm}
+    now = ~U[2026-01-01 12:00:00Z]
+    deadline = DateTime.add(now, 1, :second)
+
+    assert {:delayed_event, %{dt_offnormal: ^deadline} = pending} =
+             ChangeOfLifeSafety.execute(new_state2, now)
+
+    assert {:delayed_event, ^pending} = ChangeOfLifeSafety.execute(pending, now)
+
+    assert {:event, %{current_state: :offnormal}, _notification} =
+             ChangeOfLifeSafety.execute(pending, deadline)
+  end
 end

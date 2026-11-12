@@ -128,7 +128,7 @@ defmodule BACnet.Protocol.BvlcFunction do
   The encode side is used when a client or BBMD needs to emit a management
   request or response over a `BACnet.Stack.Transport.IPv4Transport`.
 
-  ## See Also
+  ### See Also
 
   - `BACnet.Protocol` - top-level `bvlc()` union type and `decode_bvll/3` dispatcher
   - `BACnet.Protocol.BroadcastDistributionTableEntry` - rows stored in BDT payloads

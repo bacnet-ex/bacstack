@@ -123,6 +123,14 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
     |> Map.drop([:object_instance, :object_name, :status_flags])
     # Post-processing
     |> then(fn
+      # Command action codes must select an existing Action slot (or zero).
+      obj when mod == BACnet.Protocol.ObjectTypes.Command ->
+        %{obj | present_value: min(obj.present_value, obj.action.size), in_process: false}
+
+      # Program creation derives out_of_service from the program state.
+      %{program_state: state} = obj when mod == Program ->
+        %{obj | out_of_service: state in [:idle, :loading]}
+
       # Segmentation requires some additional properties on the Device object (drop it here)
       %{segmentation_supported: _val} = obj ->
         %{obj | segmentation_supported: :no_segmentation}
@@ -521,19 +529,35 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
         nil
       end
 
+    reserved_priority_tests =
+      for {label, value} <- [{"command", pa_value5}, {"relinquishment", nil}] do
+        call =
+          quote location: :keep do
+            unquote(mod).set_priority(
+              unquote(Macro.escape(pa_object1)),
+              6,
+              unquote(Macro.escape(value))
+            )
+          end
+
+        {"function test set_priority/3 denies priority 6 #{label}", call,
+         {:error, :write_access_denied}, appendum_code}
+      end
+
     [
       {"function test set_priority/3 priority 16", code_call1, pattern_match1, appendum_code},
       {"function test set_priority/3 priority 5", code_call2, pattern_match2, appendum_code},
       {"function test set_priority/3 priority 5 to nil", code_call3, pattern_match3,
        appendum_code}
       # This test is optional and only for modules with optional priority_array
-      | if(function_exported?(mod, :has_priority_array?, 1),
-          do: [
-            {"function test set_priority/3 fails when no priority array", code_call4,
-             pattern_match4, appendum_code}
-          ],
-          else: []
-        )
+      | reserved_priority_tests ++
+          if(function_exported?(mod, :has_priority_array?, 1),
+            do: [
+              {"function test set_priority/3 fails when no priority array", code_call4,
+               pattern_match4, appendum_code}
+            ],
+            else: []
+          )
     ]
   end
 
@@ -1019,6 +1043,54 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
        Encoding.create!({:boolean, false}), false,
        {:error, {:invalid_tags, {property, Encoding.create!({:boolean, false})}}}, []}
     ]
+  end
+
+  # Analog Interface_Value uses REAL or NULL for an unknown physical observation.
+  def generate_cast_tests(
+        :analog_input,
+        ObjectTypes.AnalogInput,
+        _property_types_map,
+        {:interface_value, _type}
+      ) do
+    for {native, encoded} <- [
+          {0.0, {:real, 0.0}},
+          {23.5, {:real, 23.5}},
+          {:undefined, {:null, nil}}
+        ] do
+      {"analog_input interface_value successful cast #{inspect(encoded)} (optional real)",
+       :analog_input, :interface_value, Encoding.create!(encoded), native, {:ok, native}, []}
+    end
+  end
+
+  # Multistate Interface_Value uses Unsigned or NULL for an unknown physical observation.
+  def generate_cast_tests(
+        obj_type,
+        mod,
+        _property_types_map,
+        {:interface_value, _type}
+      )
+      when mod in [ObjectTypes.MultistateInput, ObjectTypes.MultistateOutput] do
+    for {native, encoded} <- [{2, {:unsigned_integer, 2}}, {:undefined, {:null, nil}}] do
+      {"#{obj_type} interface_value successful cast #{inspect(encoded)} (optional unsigned)",
+       obj_type, :interface_value, Encoding.create!(encoded), native, {:ok, native}, []}
+    end
+  end
+
+  # Interface_Value uses enumerated binary values or NULL for an unknown input.
+  def generate_cast_tests(
+        :binary_input,
+        ObjectTypes.BinaryInput,
+        _property_types_map,
+        {:interface_value, _type}
+      ) do
+    for {native, encoded} <- [
+          {false, {:enumerated, 0}},
+          {true, {:enumerated, 1}},
+          {:undefined, {:null, nil}}
+        ] do
+      {"binary_input interface_value successful cast #{inspect(encoded)} (optional binary)",
+       :binary_input, :interface_value, Encoding.create!(encoded), native, {:ok, native}, []}
+    end
   end
 
   # Special handling for boolean present_value properties - they are in fact encoded as :enumerated
@@ -1738,11 +1810,6 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
             out_of_service: oos
         }
     }
-  end
-
-  # out_of_service of Program object is automatically updated depending on the program state
-  defp amend_struct_spec_for_cause(%Program{} = struct, _cause) do
-    %{struct | out_of_service: struct.program_state == :idle}
   end
 
   # vmac length is limited to 6 bytes

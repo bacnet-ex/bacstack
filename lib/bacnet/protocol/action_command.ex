@@ -25,14 +25,16 @@ defmodule BACnet.Protocol.ActionCommand do
   Represents a single action command within an Action List of a Command object.
 
   It describes a property write operation, including optional priority,
-  post-delay, and quit-on-failure behavior.
+  post-delay in seconds, and quit-on-failure behavior. `property_value` accepts one
+  encoding or a list of encodings for a structured or multi-value property. An empty
+  list can represent an empty array or list value. NULL is an ordinary NULL encoding.
   """
   @type t :: %__MODULE__{
           device_identifier: ObjectIdentifier.t() | nil,
           object_identifier: ObjectIdentifier.t(),
           property_identifier: Constants.property_identifier() | non_neg_integer(),
           property_array_index: non_neg_integer() | nil,
-          property_value: ApplicationTags.Encoding.t(),
+          property_value: ApplicationTags.Encoding.t() | [ApplicationTags.Encoding.t()],
           priority: 1..16 | nil,
           post_delay: non_neg_integer() | nil,
           quit_on_failure: boolean(),
@@ -60,8 +62,7 @@ defmodule BACnet.Protocol.ActionCommand do
           {:ok, ApplicationTags.encoding_list()} | {:error, term()}
   def encode(
         %__MODULE__{
-          object_identifier: %ObjectIdentifier{},
-          property_value: %ApplicationTags.Encoding{}
+          object_identifier: %ObjectIdentifier{}
         } = cmd,
         opts \\ []
       ) do
@@ -84,7 +85,7 @@ defmodule BACnet.Protocol.ActionCommand do
             else
               {:ok, nil, nil}
             end),
-         {:ok, property_value} <- ApplicationTags.Encoding.to_encoding(cmd.property_value),
+         {:ok, property_value} <- encode_property_value(cmd.property_value),
          {:ok, priority, _header} <-
            (if cmd.priority do
               ApplicationTags.encode_value({:unsigned_integer, cmd.priority}, opts)
@@ -143,14 +144,15 @@ defmodule BACnet.Protocol.ActionCommand do
          {:ok, quit, rest} <-
            pattern_extract_tags(rest, {:tagged, {7, _t, _l}}, :unsigned_integer, false),
          {:ok, write_successful, rest} <-
-           pattern_extract_tags(rest, {:tagged, {8, _t, _l}}, :unsigned_integer, false) do
+           pattern_extract_tags(rest, {:tagged, {8, _t, _l}}, :unsigned_integer, false),
+         {:ok, property_value} <- decode_property_value(property_value) do
       cmd = %__MODULE__{
         device_identifier: device_identifier,
         object_identifier: object_identifier,
         property_identifier:
           Constants.by_value(:property_identifier, property_identifier, property_identifier),
         property_array_index: property_array_index,
-        property_value: ApplicationTags.Encoding.create!(property_value),
+        property_value: property_value,
         priority: priority,
         post_delay: post_delay,
         quit_on_failure: quit == 1,
@@ -170,13 +172,15 @@ defmodule BACnet.Protocol.ActionCommand do
   It only validates the struct is valid as per type specification.
   """
   @spec valid?(t()) :: boolean()
+  def valid?(command)
+
   def valid?(
         %__MODULE__{
           device_identifier: dev_ref,
           object_identifier: %ObjectIdentifier{} = obj_ref,
           property_identifier: prop_identifier,
           property_array_index: array_index,
-          property_value: %ApplicationTags.Encoding{},
+          property_value: property_value,
           priority: priority,
           post_delay: post_delay,
           quit_on_failure: quit_on_failure,
@@ -193,9 +197,57 @@ defmodule BACnet.Protocol.ActionCommand do
       (is_nil(array_index) or (is_integer(array_index) and array_index >= 0)) and
       (is_nil(priority) or priority in 1..16) and
       (is_nil(post_delay) or (is_integer(post_delay) and post_delay >= 0)) and
+      valid_property_value?(property_value) and
       is_boolean(quit_on_failure) and
       is_boolean(write_successful)
   end
 
   def valid?(%__MODULE__{} = _t), do: false
+
+  @spec encode_property_value(ApplicationTags.Encoding.t() | [ApplicationTags.Encoding.t()]) ::
+          {:ok, ApplicationTags.encoding() | ApplicationTags.encoding_list()} | {:error, term()}
+  defp encode_property_value(value)
+
+  defp encode_property_value(%ApplicationTags.Encoding{} = value),
+    do: ApplicationTags.Encoding.to_encoding(value)
+
+  defp encode_property_value(values) when is_list(values) do
+    map_encodings(values, &ApplicationTags.Encoding.to_encoding/1)
+  end
+
+  @spec decode_property_value(ApplicationTags.encoding() | ApplicationTags.encoding_list()) ::
+          {:ok, ApplicationTags.Encoding.t() | [ApplicationTags.Encoding.t()]} | {:error, term()}
+  defp decode_property_value(value)
+
+  defp decode_property_value(values) when is_list(values),
+    do: map_encodings(values, &ApplicationTags.Encoding.create/1)
+
+  defp decode_property_value(value), do: ApplicationTags.Encoding.create(value)
+
+  @spec map_encodings([term()], (term() -> {:ok, term()} | {:error, term()})) ::
+          {:ok, [term()]} | {:error, term()}
+  defp map_encodings(values, mapper) do
+    result =
+      Enum.reduce_while(values, {:ok, []}, fn value, {:ok, acc} ->
+        case mapper.(value) do
+          {:ok, encoded} -> {:cont, {:ok, [encoded | acc]}}
+          {:error, _reason} = error -> {:halt, error}
+        end
+      end)
+
+    case result do
+      {:ok, reversed} -> {:ok, Enum.reverse(reversed)}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  @spec valid_property_value?(term()) :: boolean()
+  defp valid_property_value?(value)
+
+  defp valid_property_value?(%ApplicationTags.Encoding{}), do: true
+
+  defp valid_property_value?(values) when is_list(values),
+    do: Enum.all?(values, &is_struct(&1, ApplicationTags.Encoding))
+
+  defp valid_property_value?(_value), do: false
 end

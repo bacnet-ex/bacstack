@@ -29,7 +29,7 @@ defmodule BACnet.Protocol.BvlcForwardedNPDU do
 
   ## Construction & Gotchas
 
-  The struct only ever holds the source address; the actual NPDU bytes travel
+  The struct only ever holds the source address - the actual NPDU bytes travel
   alongside it in the surrounding BVLL frame.
 
       iex> alias BACnet.Protocol.BvlcForwardedNPDU
@@ -41,7 +41,7 @@ defmodule BACnet.Protocol.BvlcForwardedNPDU do
       {:ok, <<192, 168, 1, 99, 186, 192>>}
 
   The port must be in 1..65535 (the guard in `encode/1` enforces this). IP
-  tuples must be 4-tuples of 0..255 values; anything else yields
+  tuples must be 4-tuples of 0..255 values - anything else yields
   `{:error, :invalid_ip}`.
 
   ## Usage Contexts
@@ -54,7 +54,7 @@ defmodule BACnet.Protocol.BvlcForwardedNPDU do
   these messages from its BBMD and treats the originating address as the true
   source for replies.
 
-  ## See Also
+  ### See Also
 
   - `BACnet.Protocol` - `decode_bvll/3` and the `bvlc()` union that includes this type
   - `BACnet.Protocol.BvlcFunction` - the other (management) BVLC payloads

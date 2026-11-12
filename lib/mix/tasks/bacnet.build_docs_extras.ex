@@ -24,6 +24,7 @@ defmodule Mix.Tasks.Bacnet.BuildDocsExtras do
   use Mix.Task
 
   @impl Mix.Task
+  @spec run([String.t()]) :: :ok
   def run(args) do
     main_dir = Path.dirname(Mix.ProjectStack.project_file())
     extras_dir = Path.join(main_dir, "extras")

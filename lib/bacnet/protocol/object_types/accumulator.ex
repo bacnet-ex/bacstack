@@ -1,17 +1,10 @@
 defmodule BACnet.Protocol.ObjectTypes.Accumulator do
   @moduledoc """
-  The Accumulator object provides a standardised representation for pulse-counting
-  measurement devices such as utility meters (electricity, water, gas, etc.). Pulses
-  are accumulated into the readonly `present_value` using the `prescale` (pulses per
-  unit) and `scale` factors so the exposed value matches the meter's register as
-  closely as possible, including proper rollover behaviour at `max_present_value`
-  (defaults to 32-bit unsigned max). Additional properties expose the instantaneous
-  `pulse_rate` over a configurable `limit_monitoring_interval`, allow presetting the
-  counter via `value_set`, and record change timestamps.
-
-  The object supports COV reporting on the present value. When `intrinsic_reporting:
-  true` is passed to `create/4`, the UNSIGNED_RANGE event algorithm and associated
-  high/low limit properties are activated for alarming on count thresholds.
+  The Accumulator counts pulses from equipment such as an electricity, water or gas
+  meter. Present_Value holds the running count. Prescale controls how many input
+  pulses contribute to it, and Max_Pres_Value sets the rollover point. Optional
+  properties report the pulse rate, record when the count was preset, or capture
+  a sample for a logger.
 
   ### Object Description (ASHRAE 135)
 
@@ -21,220 +14,108 @@ defmodule BACnet.Protocol.ObjectTypes.Accumulator do
   >
   > Accumulator objects that support intrinsic reporting shall apply the UNSIGNED_RANGE event algorithm.
 
-  ### Behaviour and Operation
+  ### Count pulses
 
-  Accumulator objects are pulse totalizer / measurement objects. The `present_value`
-  (a non-negative integer) is maintained by the local application or pulse counting
-  hardware/driver. The application is responsible for incrementing the count (or
-  writing the accumulated total) as pulses arrive, applying the `prescale` and `scale`
-  factors so that the value matches the engineering units expected by the meter
-  register as closely as possible. Rollover occurs at `max_present_value` (normally
-  2^32-1; the default is set in the struct but can be overridden at creation to higher values).
+  Initialize the restored object with
+  `BACnet.Protocol.ObjectExecution.Lifecycle.execute/2` and an
+  `:initialization` context. Deliver raw input pulse batches with
+  `record_pulses/3` and the prior result's state. The host needs to submit each
+  batch once and retain the whole successful result before another operation.
+  This module applies Prescale using integer arithmetic and carries the
+  fractional remainder between batches. The divisor must be greater than
+  zero. The count wraps modulo Max_Pres_Value plus one.
 
-  The object also exposes `pulse_rate` (when intrinsic or limit monitoring is active),
-  `value_change_time` / `value_before_change` for detecting manual presets, and
-  `value_set` which the local logic can use to preset the counter. The optional
-  `logging_record` / `logging_object` pair supports atomic snapshot acquisition by
-  a local logger (see Developer notes).
+  An adapter that already maintains the absolute count can report it through
+  `update_property/3` with an `:application_write` trigger. Use a 1:1 Prescale
+  when submitting batches of already prescaled pulses. Scale describes the
+  engineering-unit conversion for clients reading Present_Value. The lifecycle
+  leaves the count in its unsigned representation.
 
-  `present_value` is declared readonly in the object definition; writes normally come
-  only from the local pulse source. `out_of_service` allows the input pulses to be
-  ignored while a test total is forced. No priority array is present.
+  Initialization preserves the supplied count and starts fresh runtime state.
+  A new lifecycle, a changed Prescale or a Value_Set write starts a fresh
+  fractional remainder.
 
-  When `intrinsic_reporting: true`, UNSIGNED_RANGE high/low limit alarming on the
-  accumulated count becomes available.
+  ### Measure the pulse rate
 
-  ### Developer Implementation Notes (geared to device server / application authors)
+  Select Pulse_Rate or Limit_Monitoring_Interval to enable both properties.
+  Intrinsic reporting also selects the pair. The interval is in seconds and
+  must be positive. Pulse_Rate is the number of input pulses in the most
+  recently completed fixed window, before prescaling. The host needs to supply
+  a batch's acquisition time in the monotonic clock domain. A batch at the
+  window boundary belongs to the new window. A completed window without
+  pulses reports zero.
 
-  The object definition (via `ObjectsMacro`) provides the struct, `create`/`update_property`
-  etc., type safety, defaults, implicit relationships, validators, and `readonly`/`protected`
-  annotations (the latter are *hints*; your device server read/write handlers must enforce
-  BACnet-side write protection for readonly properties and inputs).
+  The [object execution host](BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host)
+  needs to arm the returned monotonic wakeup and deliver it with a `:timer`
+  context. Replace the previous deadline after each successful step. An
+  interval change starts a fresh window. The lifecycle also completes overdue
+  windows on ordinary operations.
 
-  **Special / live properties and expected developer behaviour**
+  ### Preset the count and simulate inputs
 
-  These are the properties that are not just passive configuration or simple data. The
-  object struct + macro provide storage, type checks, some implicit side effects, and
-  advisory flags. You (device server / driver / app author) must implement the live
-  semantics and keep them consistent with the real world / hardware. Always use
-  `update_property/3` (or helpers) to change them; direct map updates bypass logic.
+  When Value_Set is present, a write to it replaces Present_Value, stores the
+  previous visible count in Value_Before_Change and stamps Value_Change_Time
+  using the supplied device-local clock. This also happens when the same
+  preset is written again. Value_Set is writable in either service state.
+  Value_Before_Change and Value_Change_Time are read-only.
 
-  - `present_value`: The current accumulated total, after applying prescale + scale
-    and rollover at `max_present_value`. This is the primary "live" input property
-    (analog to other input objects' present_value).
-    **Dev must**: From your pulse counting hardware/driver/polling task, call
-    `update_property(obj, :present_value, new_total)` on pulse arrival or periodic
-    batch. Handle rollover yourself or let the update do it if within max. This drives
-    COV, intrinsic events (UNSIGNED_RANGE), status, etc.
+  Construct property candidates with `update_property/3`, call
+  `BACnet.Protocol.ObjectExecution.Lifecycle.prepare_write/3` and execute the
+  prepared candidate with the same context and prior state. The host needs to
+  preserve the write origin, enforce service access and serialize operations.
+  Rejection leaves the previous result in storage.
 
-  - `out_of_service`: When `true`, pulses are ignored; PV can be forced for
-    testing/commissioning.
-    **Dev must**: Suspend normal pulse processing / driver updates while `true`. Allow
-    (in your write handler) writes to `present_value` / `value_set` only when `true`.
-    Resume on `false`.
+  Present_Value and Pulse_Rate are writable to BACnet clients while out of
+  service. Incoming pulse batches are ignored and the rate timer is cancelled
+  while isolated. Returning to service restores the retained count, including
+  any Value_Set preset, and opens a new rate window.
 
-  - `reliability` (with implicit `reliability_evaluation_inhibit`): Current fault status
-    (no_fault_detected, over_range, etc.).
-    **Dev must**: Update it based on your pulse source health (e.g. comms loss to
-    remote counter, sensor error). When changed, re-eval events if intrinsic.
+  The host supplies Reliability from its input adapter. Inhibition exposes
+  NO_FAULT_DETECTED while retaining the physical report. While out of service,
+  either write origin can supply an alternate simulated Reliability. Refresh
+  physical reports held only in runtime state after restarting.
 
-  - `value_set`: The "preset" input. Writing here is how you (or a client when allowed)
-    set a new total (e.g. after meter replacement).
-    **Dev must**: Your code around `update_property/3` should treat a write to `value_set`
-    as a preset: snapshot the old present_value into `value_before_change`,
-    set `value_change_time` to now, then apply the new value to `present_value` (or let subsequent logic).
-    The change properties are side-effect outputs for observers to detect manual presets.
-    Note: server write protection applies similar to `present_value` when `!out_of_service`.
+  ### Qualified reads of Logging_Record
 
-  - `value_change_time` / `value_before_change` (readonly): Timestamp and prior value
-    for the last preset.
-    **Dev must**: Populate them (as described for `value_set`) so that clients and
-    your own logic can detect when/how the accumulator was manually adjusted.
+  Logging_Record holds the latest snapshot of the meter. It captures the
+  acquisition time, the count at that time, the accumulated count since the
+  preceding acquisition, and the status of that interval. The native property
+  value is a one-element list containing a `BACnet.Protocol.AccumulatorRecord`.
+  A host that needs a history can store each acquired snapshot separately.
 
-  - `logging_record` + `logging_object`: Support for atomic historical sampling by
-    a co-resident logger (e.g. Trend Log in same device).
-    **Dev must** (the key acquire-on-read contract): If `logging_object` is set,
-    when that object (or any reader) reads `logging_record`, your read path  must:
-    1. Capture a *stable, atomic* snapshot from the underlying pulse/accumulated
-       state (per spec: not mid-increment of PV vs accumulated_value).
-    2. Build `%AccumulatorRecord{timestamp: now, present_value: ..., accumulated_value: ..., ...}`.
-    3. Append the new record to the `logging_record` property and `update_property/3`.
-    4. Return the fresh value.
-    Before first acquire (or if never), use wildcard timestamp + zeros + status `:starting`.
-    See `BACnet.Protocol.AccumulatorRecord` for the struct. This is analogous to `present_value`
-    maintenance but triggered by reads instead of pulses.
+  A *qualified read* of Logging_Record acquires a new snapshot and starts the
+  next accumulation interval. Select Logging_Object when one local object
+  should control those intervals. For example, an hourly logger can measure
+  consumption between its samples while a dashboard or maintenance client
+  reads the last hourly record at any time. Those readers see the retained
+  timestamp and counts, and their reads leave the logger's interval intact.
+  Without Logging_Object, every Logging_Record read acquires a new snapshot.
 
-  - `pulse_rate` + `limit_monitoring_interval` (intrinsic related): pulse_rate is the
-    count of pulses in the recent interval.
-    **Dev must**: Depending on implementation, either maintain pulse_rate yourself
-    (from hardware) or ensure the limit monitoring logic (your event engine) has
-    what it needs. The object links it via implicit to the interval.
+  Selecting Logging_Object also selects Logging_Record. Use
+  `BACnet.Protocol.ObjectExecution.Lifecycle.prepare_read/2` before getting the
+  property. When a local object initiates a read, the host supplies its
+  identifier as `:reader_identifier` in the
+  `BACnet.Protocol.ObjectExecution.Context` options. A read qualifies when
+  that identifier matches Logging_Object. Leave the option unset for network
+  clients. Retain the successful result so the next read uses the same
+  snapshot and interval state.
 
-  - Intrinsic properties (`high_limit`, `low_limit`, ... + full event set when enabled):
-    **Dev must**: After any `present_value` or `reliability` update, your event
-    processing code must re-run the UNSIGNED_RANGE algorithm using the limits on
-    this object, update `event_state`/timestamps etc., and emit notifications via the
-    `notification_class` if transitions require it. The object stores state; you drive
-    the machine.
+  Before the first acquisition, readers see STARTING with an unspecified
+  timestamp and zero counts. The first qualified read captures the current
+  time and count, with zero accumulated value, and establishes the baseline.
+  Later acquisitions report the modular count delta. A Value_Set write is
+  excluded from the delta and marks the interval RECOVERED when otherwise
+  healthy. A delivered clock change marks the interval ABNORMAL. An exposed
+  fault marks it FAILED and the acquired record reports zero delta. Changing
+  Logging_Object or initializing the object starts a fresh baseline.
 
-  - `cov_increment`: Affects when COV notifications are sent for `present_value` changes.
+  With `intrinsic_reporting: true`, UNSIGNED_RANGE evaluates Pulse_Rate. The
+  next wakeup includes rate sampling and reporting deadlines. After retaining
+  the result, the host retrieves transitions with
+  `BACnet.Protocol.ObjectExecution.EventReporting.transition/1`. Remote
+  snapshots remain passive.
 
-  General: After any `update_property/3` that returns `:ok`, store the returned object (it
-  may have had computed/side effects). Your write handlers must respect readonly
-  (use `get_readonly_properties/0`) and `out_of_service` rules for conformance.
-
-  **Creation and initialisation**: Use `create/4`. Required properties in the map
-  include at minimum `:units`, `:scale`, `:prescale` (and `:max_present_value` if you
-  want something other than the 32-bit max default).
-  If `intrinsic_reporting: true` is passed in `opts`, the limit fields
-  (`high_limit`, `low_limit`, `pulse_rate`, `limit_monitoring_interval`)
-  plus the full intrinsic set (`event_enable`, etc.) become active and non-nil.
-
-  **Maintaining present_value at runtime**: Your sensor/pulse driver or I/O polling task
-  MUST keep the value up to date by calling `update_property(obj, :present_value, new_count)`
-  (or the equivalent in your device server abstraction) whenever a pulse arrives or
-  a batch is processed. Direct struct mutation (`%{obj | present_value: val}`) bypasses
-  validators, implicit relationships, the type's inhibit_object_check,
-  and any side-effect logic. After a successful update the
-  returned object should be stored back in your object database / registry.
-
-  **Write protection for inputs (critical for BACnet conformance)**: Unlike commandable
-  output/value objects (where the library itself protects `:present_value` in
-  `update_property/3` and `set_priority/3` unless `out_of_service`), input-style
-  objects like Accumulator provide no automatic protection. The *device server* layer
-  (your WriteProperty / WritePropertyMultiple handler, or the code that receives
-  BACnet writes) is responsible for rejecting attempts to write `:present_value`
-  (or `:value_set`) when `out_of_service == false`. Typical error is
-  `{:error, :write_access_denied}` or a BACnet error constructed from it. Local
-  application code (your driver) is allowed to "write" via the internal path. See
-  the macro documentation in `BACnet.Protocol.ObjectsMacro` for the exact note on
-  input objects.
-
-  **out_of_service semantics**: Setting it `true` (via network write or local) signals
-  that pulses should be ignored; you can then force a synthetic total by writing
-  `:present_value` (now allowed) for testing, simulation, or commissioning. The
-  pulse_rate / limit logic should typically be suspended. When you set it back to
-  `false`, the physical source resumes.
-
-  **Presets and change tracking**: To preset the accumulator (e.g. after a meter
-  replacement), write the desired total to `:value_set`. Your driver should monitor
-  the side-effect properties (`value_change_time`, `value_before_change`) that the
-  object populates on such updates.
-
-  **Logging_Record and Logging_Object (special acquire-on-read properties)**: These
-  optional properties enable atomic historical sampling by a co-located logger
-  (commonly a Trend Log in the same device) without the logger needing direct access
-  to the pulse hardware or risking inconsistent reads of present_value vs. the
-  internal accumulated total.
-
-  `logging_object` (when present) identifies the logger object that will "acquire"
-  records from this accumulator. Its presence changes the required behaviour of
-  `logging_record`.
-
-  `logging_record` holds the most recently acquired atomic sample.
-  Each `BACnet.Protocol.AccumulatorRecord` carries a timestamp, the `present_value`
-  and `accumulated_value` at sample time, plus an `accumulator_status`.
-
-  Per ASHRAE 135: the values must be acquired and returned "atomically". If
-  `logging_object` is set and no acquisition has occurred yet, the record must use a
-  fully-wildcard timestamp, zero for the two value fields, and status `:starting`.
-  Acquisition must occur when the underlying system is in a stable state (example
-  from the spec: not between a PV pulse increment and the corresponding
-  accumulated-value update).
-
-  **What the developer must do (analogous to maintaining present_value)**: The
-  library never auto-populates `logging_record`; it is entirely your responsibility
-  (your pulse driver, meter interface, or a logging coordinator). Exactly as you
-  drive present_value from the physical source via `update_property/3`, you must
-  supply fresh records to logging_record via the same call when acquisition is
-  triggered.
-
-  - Network writes to `logging_record` (and usually `logging_object` only by
-    privileged local logic) must be rejected by your device server's WriteProperty
-    handler using the readonly annotation (`get_readonly_properties/0`) or explicit
-    checks. Internal/driver code may write.
-  - On every *read* of `logging_record` (BACnet ReadProperty or internal read by
-    the logger that owns `logging_object`): your read path must trigger acquisition
-    of a stable snapshot from the real counter, build the `AccumulatorRecord`,
-    `update_property(obj, :logging_record, [record])`, then return the value. This
-    is the key "special property" contract.
-  - Because acquisition logic is instance- and hardware-specific, most
-    implementors handle the special case for accumulator+logging_record centrally
-    in their property read dispatcher rather than (or in addition to) wiring an
-    annotation on the field definition.
-
-  After acquisition the just-captured record stays visible to subsequent reads
-  until the next acquisition. This lets a local Trend Log treat the accumulator's
-  logging_record as a "sample source" that always yields a consistent point-in-time
-  total when read.
-
-  **Intrinsic / event processing**: When intrinsic is enabled the object carries the
-  full event state machine fields. After you update `:present_value` (or
-  `:reliability`), your event engine (or the code that calls into event detection)
-  must re-evaluate the UNSIGNED_RANGE algorithm using the high/low/deadband params
-  present on the object, update `:event_state`, manage `:event_timestamps` etc., and
-  emit ConfirmedEventNotification / Unconfirmed... via the referenced
-  `notification_class` when transitions occur. The object itself does not auto-emit;
-  that is a server responsibility.
-
-  **Remote objects**: If `_metadata.remote_object` is set (populated by
-  `BACnet.Protocol.ObjectsUtility` when reading from a remote device), all mutation
-  operations (`update_property`, `add_property`, `set_priority`, etc.) will be rejected
-  by the generated code. You can only read remote accumulators.
-
-  **Reliability and status**: Your driver must keep `:reliability` current (e.g.
-  `:no_fault_detected`, `:over_range`, `:communication_failure` for a remote pulse
-  source). The `status_flags.fault` (and `in_alarm`, `out_of_service`) bits are
-  automatically kept in sync by the object based on `reliability`, `event_state` and
-  `out_of_service`. The `overridden` bit is a local matter.
-
-  See the generated moduledoc tables for which fields are
-  readonly, required, have init_funs, validators, or implicit_relationships.
-
-  ### Intrinsic Reporting
-
-  When `intrinsic_reporting: true` is passed to `create/4`, the UNSIGNED_RANGE event
-  algorithm and related properties become active.
+  The runnable walkthrough is `examples/objects_lifecycle/accumulator_lifecycle.exs`.
 
   ### Examples
 
@@ -252,7 +133,13 @@ defmodule BACnet.Protocol.ObjectTypes.Accumulator do
   alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.Constants
+  alias BACnet.Protocol.EventAlgorithms
+  alias BACnet.Protocol.ObjectExecution.Context
+  alias BACnet.Protocol.ObjectExecution.IntrinsicReporting
+  alias BACnet.Protocol.ObjectExecution.Result
+  alias BACnet.Protocol.ObjectExecution.Wakeup
   alias BACnet.Protocol.ObjectIdentifier
+  alias BACnet.Protocol.ObjectOperations
   alias BACnet.Protocol.ObjectsMacro
   alias BACnet.Protocol.Prescale
 
@@ -265,8 +152,8 @@ defmodule BACnet.Protocol.ObjectTypes.Accumulator do
   @type object_opts :: common_object_opts()
 
   @typedoc """
-  Represents an Accumulator object. All keys should be treated as read-only,
-  all updates should go only through `update_property/3`.
+  Represents an Accumulator object. Treat struct fields as read-only. Use the object module's
+  property functions to build updates.
 
   The `max_present_value` property defaults to `2^32-1` and can be manually
   set to a higher value, if desired and/or needed.
@@ -279,7 +166,7 @@ defmodule BACnet.Protocol.ObjectTypes.Accumulator do
     field(:event_state, Constants.event_state(), required: true)
     field(:status_flags, BACnet.Protocol.StatusFlags.t(), required: true, readonly: true)
     field(:out_of_service, boolean(), required: true)
-    field(:present_value, non_neg_integer(), required: true, readonly: true, default: 0)
+    field(:present_value, non_neg_integer(), required: true, default: 0)
 
     field(:reliability, Constants.reliability(),
       implicit_relationship: :reliability_evaluation_inhibit
@@ -331,18 +218,25 @@ defmodule BACnet.Protocol.ObjectTypes.Accumulator do
 
     field(:value_change_time, BACnetDateTime.t(),
       readonly: true,
+      annotation: [required_when: {:property, :value_set}],
       init_fun: &ObjectsMacro.get_default_bacnet_datetime/0
     )
 
     field(:value_before_change, non_neg_integer(),
       readonly: true,
       default: 0,
+      annotation: [required_when: {:property, :value_set}],
       implicit_relationship: :value_change_time
     )
 
     field(:value_set, non_neg_integer())
 
-    field(:logging_record, [AccumulatorRecord.t()], readonly: true)
+    field(:logging_record, [AccumulatorRecord.t()],
+      readonly: true,
+      default: [],
+      annotation: [required_when: {:property, :logging_object}]
+    )
+
     field(:logging_object, ObjectIdentifier.t())
 
     # Intrinsic Reporting
@@ -350,10 +244,553 @@ defmodule BACnet.Protocol.ObjectTypes.Accumulator do
     field(:low_limit, non_neg_integer(), intrinsic: true, default: 0)
 
     field(:pulse_rate, non_neg_integer(),
-      intrinsic: true,
+      default: 0,
+      annotation: [required_when: {:opts, :intrinsic_reporting}],
       implicit_relationship: :limit_monitoring_interval
     )
 
-    field(:limit_monitoring_interval, non_neg_integer(), intrinsic: true, default: 1)
+    field(:limit_monitoring_interval, non_neg_integer(),
+      default: 1,
+      annotation: [required_when: {:opts, :intrinsic_reporting}]
+    )
+  end
+
+  @typep reliability_value :: Constants.reliability() | non_neg_integer() | nil
+
+  @typep rate_window :: %{
+           period: pos_integer(),
+           deadline: integer(),
+           pulses: non_neg_integer()
+         }
+
+  @typep logging_state :: %{
+           reader: ObjectIdentifier.t() | nil,
+           acquired: boolean(),
+           accumulated: non_neg_integer(),
+           status: :normal | :recovered | :abnormal | :failed
+         }
+
+  @typep execution_state :: %{
+           identifier: ObjectIdentifier.t(),
+           monotonic_time: integer(),
+           present_value: non_neg_integer(),
+           retained_count: non_neg_integer(),
+           prescale: Prescale.t(),
+           remainder: non_neg_integer(),
+           out_of_service: boolean(),
+           rate_window: rate_window() | nil,
+           logging: logging_state() | nil,
+           physical_reliability: reliability_value(),
+           manual_reliability: reliability_value()
+         }
+
+  @doc """
+  Records a batch of raw input pulses using the supplied clocks and retained runtime state.
+
+  Initialize the object first. Each batch belongs to the fixed rate window containing
+  the supplied monotonic time. While out of service, the batch is ignored. Retain the
+  entire result before submitting another batch or exposing a property operation.
+  """
+  @spec record_pulses(t(), non_neg_integer(), Context.t()) ::
+          {:ok, Result.t(t())} | {:error, term()}
+  def record_pulses(object, pulses, context)
+
+  def record_pulses(%__MODULE__{_metadata: %{remote_object: remote}}, _pulses, %Context{})
+      when not is_nil(remote), do: {:error, :operation_not_available_for_remote_objects}
+
+  def record_pulses(%__MODULE__{} = object, pulses, %Context{} = context)
+      when is_integer(pulses) and pulses >= 0 do
+    step(object, %{context | trigger: :periodic}, pulses)
+  end
+
+  def record_pulses(%__MODULE__{}, _pulses, %Context{}), do: {:error, :invalid_pulse_count}
+
+  @doc """
+  Reports Present_Value and Pulse_Rate as writable to BACnet clients while out of service.
+  """
+  @spec property_writable?(t(), Constants.property_identifier()) :: boolean()
+  def property_writable?(object, property)
+
+  def property_writable?(%__MODULE__{} = object, property)
+      when property in [:present_value, :pulse_rate] do
+    object.out_of_service == true and has_property?(object, property)
+  end
+
+  def property_writable?(%__MODULE__{} = object, property), do: super(object, property)
+
+  @impl BACnet.Protocol.ObjectsBehaviour
+  @spec validate_execution(t(), Context.t()) :: :ok | {:error, term()}
+  def validate_execution(object, context)
+
+  def validate_execution(%__MODULE__{_metadata: %{remote_object: remote}}, %Context{})
+      when not is_nil(remote), do: :ok
+
+  def validate_execution(%__MODULE__{} = object, %Context{} = context) do
+    with :ok <- validate_configuration(object),
+         :ok <- validate_state(object, context) do
+      validate_retained_count(object, Context.previous_state(context))
+    end
+  end
+
+  @impl BACnet.Protocol.ObjectsBehaviour
+  @spec prepare_write(t(), t(), Context.t()) :: {:ok, t()} | {:error, term()}
+  def prepare_write(original, candidate, context)
+
+  def prepare_write(%__MODULE__{_metadata: %{remote_object: remote}}, _candidate, %Context{})
+      when not is_nil(remote), do: {:error, :operation_not_available_for_remote_objects}
+
+  def prepare_write(%__MODULE__{} = original, %__MODULE__{} = candidate, %Context{} = context) do
+    with :ok <- validate_execution(original, context),
+         :ok <- validate_execution(candidate, context),
+         :ok <- validate_write(original, candidate, context) do
+      prepare_adjustment(candidate, context)
+    end
+  end
+
+  @impl BACnet.Protocol.ObjectsBehaviour
+  @spec execute(t(), Context.t()) :: {:ok, Result.t(t())} | {:error, term()}
+  def execute(object, context)
+
+  def execute(%__MODULE__{_metadata: %{remote_object: remote}} = object, %Context{} = context)
+      when not is_nil(remote),
+      do: {:ok, %Result{object: object, state: context.state, next_execution: nil}}
+
+  def execute(%__MODULE__{} = object, %Context{} = context), do: step(object, context, 0)
+
+  @spec step(t(), Context.t(), non_neg_integer()) :: {:ok, Result.t(t())} | {:error, term()}
+  defp step(object, context, pulses) do
+    previous = Context.previous_state(context)
+
+    with :ok <- validate_execution(object, context),
+         :ok <- validate_write(object, object, context),
+         {:ok, adjusted} <- prepare_adjustment(object, context),
+         {:ok, reliable, reliability_state} <- reconcile_reliability(adjusted, context) do
+      {counted, count, remainder} = update_count(reliable, previous, context, pulses)
+      {measured, window} = update_rate(counted, previous, context.monotonic_time, pulses)
+
+      with {:ok, updated, logging} <- update_logging(measured, previous, context) do
+        state =
+          Map.merge(reliability_state, %{
+            identifier: get_object_identifier(updated),
+            monotonic_time: context.monotonic_time,
+            present_value: updated.present_value,
+            retained_count: count,
+            prescale: updated.prescale,
+            remainder: remainder,
+            out_of_service: updated.out_of_service,
+            rate_window: window,
+            logging: logging
+          })
+
+        wakeup = if window, do: %Wakeup{wall_time: nil, monotonic_time: window.deadline}
+        result = %Result{object: updated, state: state, next_execution: wakeup}
+
+        {:ok,
+         IntrinsicReporting.evaluate(result, context, EventAlgorithms.UnsignedRange, [
+           :pulse_rate,
+           :present_value
+         ])}
+      end
+    end
+  end
+
+  @spec validate_configuration(t()) :: :ok | {:error, term()}
+  defp validate_configuration(object) do
+    cond do
+      object.prescale.modulo_divide <= 0 ->
+        {:error, {:invalid_configuration, :prescale}}
+
+      object.present_value > object.max_present_value ->
+        {:error, {:property_out_of_range, :present_value}}
+
+      has_property?(object, :pulse_rate) and
+          (is_nil(object.limit_monitoring_interval) or object.limit_monitoring_interval == 0) ->
+        {:error, {:invalid_configuration, :limit_monitoring_interval}}
+
+      true ->
+        :ok
+    end
+  end
+
+  @spec validate_retained_count(t(), execution_state() | nil) :: :ok | {:error, term()}
+  defp validate_retained_count(object, previous) do
+    if previous && (object.out_of_service or previous.out_of_service) &&
+         previous.retained_count > object.max_present_value do
+      {:error, {:property_out_of_range, :max_present_value}}
+    else
+      :ok
+    end
+  end
+
+  @spec validate_state(t(), Context.t()) :: :ok | {:error, term()}
+  defp validate_state(object, context)
+
+  defp validate_state(_object, %Context{trigger: :initialization}), do: :ok
+
+  defp validate_state(object, %Context{state: state, monotonic_time: now}) do
+    case state do
+      %{
+        identifier: %ObjectIdentifier{} = identifier,
+        monotonic_time: previous_time,
+        present_value: present_value,
+        retained_count: retained_count,
+        prescale: %Prescale{modulo_divide: divisor} = prescale,
+        remainder: remainder,
+        out_of_service: out_of_service,
+        rate_window: window,
+        logging: logging,
+        physical_reliability: physical,
+        manual_reliability: manual
+      }
+      when is_integer(previous_time) and is_integer(present_value) and present_value >= 0 and
+             is_integer(retained_count) and retained_count >= 0 and is_integer(remainder) and
+             remainder >= 0 and remainder < divisor and is_boolean(out_of_service) ->
+        cond do
+          identifier != get_object_identifier(object) or not Prescale.valid?(prescale) or
+            not valid_window?(window) or not valid_logging?(logging) or
+            not ObjectOperations.valid_reliability?(object_contract(), object, physical) or
+              not ObjectOperations.valid_reliability?(object_contract(), object, manual) ->
+            {:error, :invalid_execution_state}
+
+          now < previous_time ->
+            {:error, :monotonic_time_went_backwards}
+
+          true ->
+            :ok
+        end
+
+      _invalid ->
+        {:error, :invalid_execution_state}
+    end
+  end
+
+  @spec valid_window?(term()) :: boolean()
+  defp valid_window?(window)
+
+  defp valid_window?(nil), do: true
+
+  defp valid_window?(%{period: period, deadline: deadline, pulses: pulses})
+       when is_integer(period) and period > 0 and is_integer(deadline) and is_integer(pulses) and
+              pulses >= 0,
+       do: true
+
+  defp valid_window?(_window), do: false
+
+  @spec valid_logging?(term()) :: boolean()
+  defp valid_logging?(logging)
+
+  defp valid_logging?(nil), do: true
+
+  defp valid_logging?(%{reader: reader, acquired: acquired, accumulated: delta, status: status})
+       when (is_nil(reader) or is_struct(reader, ObjectIdentifier)) and is_boolean(acquired) and
+              is_integer(delta) and delta >= 0 and
+              status in [:normal, :recovered, :abnormal, :failed],
+       do: true
+
+  defp valid_logging?(_logging), do: false
+
+  @spec validate_write(t(), t(), Context.t()) :: :ok | {:error, term()}
+  defp validate_write(original, candidate, context) do
+    property = Context.written_property(context)
+    simulated = original.out_of_service and candidate.out_of_service
+
+    cond do
+      property in [:logging_record, :value_before_change, :value_change_time] ->
+        {:error, :write_access_denied}
+
+      property == :pulse_rate and not simulated ->
+        {:error, :write_access_denied}
+
+      property == :present_value and not simulated and
+          match?({:property_write, _property, _index, _priority}, context.trigger) ->
+        {:error, :write_access_denied}
+
+      property == :value_set and is_nil(candidate.value_set) ->
+        {:error, {:unknown_property, :value_set}}
+
+      property == :value_set and candidate.value_set > candidate.max_present_value ->
+        {:error, {:property_out_of_range, :value_set}}
+
+      true ->
+        :ok
+    end
+  end
+
+  @spec prepare_adjustment(t(), Context.t()) :: {:ok, t()} | {:error, term()}
+  defp prepare_adjustment(object, context) do
+    if Context.written_property(context) == :value_set do
+      with {:ok, timestamp} <- timestamp(context),
+           {:ok, configured} <- ensure_adjustment_properties(object) do
+        {:ok,
+         %{
+           configured
+           | present_value: configured.value_set,
+             value_before_change: context.state.present_value,
+             value_change_time: timestamp
+         }}
+      end
+    else
+      {:ok, object}
+    end
+  end
+
+  @spec ensure_adjustment_properties(t()) :: {:ok, t()} | {:error, term()}
+  defp ensure_adjustment_properties(object) do
+    if has_property?(object, :value_change_time) do
+      {:ok, object}
+    else
+      add_property(object, :value_change_time, ObjectsMacro.get_default_bacnet_datetime())
+    end
+  end
+
+  @spec update_count(t(), execution_state() | nil, Context.t(), non_neg_integer()) ::
+          {object :: t(), count :: non_neg_integer(), remainder :: non_neg_integer()}
+  defp update_count(object, previous, context, pulses) do
+    remainder =
+      if previous && previous.prescale == object.prescale, do: previous.remainder, else: 0
+
+    cond do
+      Context.written_property(context) == :value_set ->
+        {object, object.present_value, 0}
+
+      object.out_of_service ->
+        count = if previous, do: previous.retained_count, else: object.present_value
+        {object, count, remainder}
+
+      true ->
+        baseline =
+          if previous && previous.out_of_service &&
+               Context.written_property(context) != :present_value,
+             do: previous.retained_count,
+             else: object.present_value
+
+        prescale = object.prescale
+        numerator = remainder + pulses * prescale.multiplier
+        count = modulo_count(object, baseline + div(numerator, prescale.modulo_divide))
+        {%{object | present_value: count}, count, rem(numerator, prescale.modulo_divide)}
+    end
+  end
+
+  @spec update_rate(t(), execution_state() | nil, integer(), non_neg_integer()) ::
+          {object :: t(), window :: rate_window() | nil}
+  defp update_rate(object, previous, now, pulses) do
+    if not object.out_of_service and has_property?(object, :pulse_rate) do
+      period = object.limit_monitoring_interval * 1000
+      window = if previous, do: previous.rate_window
+
+      case window do
+        %{period: ^period, deadline: deadline, pulses: pending} when now >= deadline ->
+          elapsed = div(now - deadline, period)
+          rate = if elapsed == 0, do: pending, else: 0
+          next = deadline + (elapsed + 1) * period
+          {%{object | pulse_rate: rate}, %{window | deadline: next, pulses: pulses}}
+
+        %{period: ^period, pulses: pending} ->
+          {object, %{window | pulses: pending + pulses}}
+
+        _new_window ->
+          measured =
+            if previous && previous.out_of_service, do: %{object | pulse_rate: 0}, else: object
+
+          {measured, %{period: period, deadline: now + period, pulses: pulses}}
+      end
+    else
+      {object, nil}
+    end
+  end
+
+  @spec update_logging(t(), execution_state() | nil, Context.t()) ::
+          {:ok, object :: t(), logging :: logging_state() | nil} | {:error, term()}
+  defp update_logging(object, previous, context) do
+    if has_property?(object, :logging_record) or has_property?(object, :logging_object) do
+      with {:ok, object, logging} <- logging_baseline(object, previous) do
+        logging = track_logging(object, logging, previous, context)
+
+        if qualified_read?(object, context) do
+          acquire_record(object, logging, context)
+        else
+          {:ok, object, logging}
+        end
+      end
+    else
+      {:ok, object, nil}
+    end
+  end
+
+  @spec logging_baseline(t(), execution_state() | nil) ::
+          {:ok, object :: t(), logging :: logging_state()} | {:error, term()}
+  defp logging_baseline(object, previous) do
+    case previous do
+      %{logging: %{reader: reader} = logging} when reader == object.logging_object ->
+        {:ok, object, logging}
+
+      _new_logging ->
+        record = [starting_record()]
+
+        result =
+          if has_property?(object, :logging_record),
+            do: update_property(object, :logging_record, record),
+            else: add_property(object, :logging_record, record)
+
+        with {:ok, initialized} <- result do
+          {:ok, initialized,
+           %{reader: object.logging_object, acquired: false, accumulated: 0, status: :normal}}
+        end
+    end
+  end
+
+  @spec track_logging(t(), logging_state(), execution_state() | nil, Context.t()) ::
+          logging_state()
+  defp track_logging(object, logging, previous, context) do
+    adjustment = Context.written_property(context) == :value_set
+
+    delta =
+      cond do
+        is_nil(previous) or adjustment ->
+          0
+
+        previous.out_of_service and not object.out_of_service ->
+          object.present_value - previous.retained_count
+
+        true ->
+          object.present_value - previous.present_value
+      end
+
+    status =
+      cond do
+        object.reliability not in [nil, :no_fault_detected] or logging.status == :failed ->
+          :failed
+
+        context.trigger == :clock_change or logging.status == :abnormal ->
+          :abnormal
+
+        adjustment or logging.status == :recovered ->
+          :recovered
+
+        true ->
+          :normal
+      end
+
+    %{logging | accumulated: modulo_count(object, logging.accumulated + delta), status: status}
+  end
+
+  @spec qualified_read?(t(), Context.t()) :: boolean()
+  defp qualified_read?(object, context)
+
+  defp qualified_read?(object, %Context{
+         trigger: {:property_read, property, nil},
+         options: options
+       }) do
+    property_name(property) == :logging_record and
+      (is_nil(object.logging_object) or
+         object.logging_object == Keyword.get(options, :reader_identifier))
+  end
+
+  defp qualified_read?(_object, _context), do: false
+
+  @spec acquire_record(t(), logging_state(), Context.t()) ::
+          {:ok, object :: t(), logging :: logging_state()} | {:error, term()}
+  defp acquire_record(object, logging, context) do
+    with {:ok, timestamp} <- timestamp(context) do
+      status = if logging.acquired, do: logging.status, else: :starting
+      accumulated = if status in [:starting, :failed], do: 0, else: logging.accumulated
+
+      record = %AccumulatorRecord{
+        timestamp: timestamp,
+        present_value: object.present_value,
+        accumulated_value: accumulated,
+        status: status
+      }
+
+      with {:ok, updated} <- update_property(object, :logging_record, [record]) do
+        {:ok, updated, %{logging | acquired: true, accumulated: 0, status: :normal}}
+      end
+    end
+  end
+
+  @spec starting_record() :: AccumulatorRecord.t()
+  defp starting_record() do
+    %AccumulatorRecord{
+      timestamp: ObjectsMacro.get_default_bacnet_datetime(),
+      present_value: 0,
+      accumulated_value: 0,
+      status: :starting
+    }
+  end
+
+  @spec timestamp(Context.t()) :: {:ok, BACnetDateTime.t()} | {:error, :invalid_wall_time}
+  defp timestamp(context) do
+    if context.now.year in 1900..2154,
+      do: {:ok, BACnetDateTime.from_datetime(context.now)},
+      else: {:error, :invalid_wall_time}
+  end
+
+  @spec modulo_count(t(), integer()) :: non_neg_integer()
+  defp modulo_count(object, count), do: Integer.mod(count, object.max_present_value + 1)
+
+  @spec property_name(Constants.property_identifier() | non_neg_integer()) ::
+          Constants.property_identifier() | nil
+  defp property_name(property)
+
+  defp property_name(property) when is_integer(property),
+    do: Constants.by_value(:property_identifier, property, nil)
+
+  defp property_name(property), do: property
+
+  @spec reconcile_reliability(t(), Context.t()) ::
+          {:ok, t(),
+           %{physical_reliability: reliability_value(), manual_reliability: reliability_value()}}
+          | {:error, term()}
+  defp reconcile_reliability(object, context) do
+    previous = Context.previous_state(context)
+
+    if has_property?(object, :reliability) do
+      physical =
+        cond do
+          not object.out_of_service and
+              (Context.written_property(context) == :reliability or is_nil(previous)) ->
+            object.reliability
+
+          previous ->
+            previous.physical_reliability
+
+          true ->
+            nil
+        end
+
+      manual =
+        cond do
+          not object.out_of_service ->
+            nil
+
+          is_nil(previous) or Context.written_property(context) == :reliability ->
+            object.reliability
+
+          previous.out_of_service ->
+            previous.manual_reliability
+
+          true ->
+            nil
+        end
+
+      base =
+        if not object.out_of_service and not is_nil(physical),
+          do: physical,
+          else: object.reliability
+
+      value =
+        if object.reliability_evaluation_inhibit,
+          do: manual || :no_fault_detected,
+          else: base
+
+      with {:ok, updated} <- update_property(object, :reliability, value) do
+        {:ok, updated, %{physical_reliability: physical, manual_reliability: manual}}
+      end
+    else
+      with {:ok, updated} <-
+             update_property(object, :status_flags, %{object.status_flags | fault: false}) do
+        {:ok, updated, %{physical_reliability: nil, manual_reliability: nil}}
+      end
+    end
   end
 end

@@ -21,7 +21,7 @@ defmodule BACnet.Protocol.CalendarEntry do
         weekNDay   BACnetWeekNDay
     }
     ```
-  - **Calendar object** (12.9): `date_list` property is `BACnetARRAY` of `BACnet.Protocol.CalendarEntry`.
+  - **Calendar object** (12.9): `date_list` property is a `BACnetLIST` of entries.
   - **Schedule object** (12.24): `exception_schedule` contains `BACnet.Protocol.SpecialEvent`
     whose `period` can be a `BACnet.Protocol.CalendarEntry` or an object identifier referencing
     a Calendar object.
@@ -217,4 +217,128 @@ defmodule BACnet.Protocol.CalendarEntry do
   end
 
   def valid?(%__MODULE__{} = _t), do: false
+
+  @doc """
+  Validates an entry's date-matching semantics.
+
+  Unlike structural `valid?/1`, this enforces the CHOICE's unused fields being
+  nil and the range endpoint rules: each endpoint is fully unspecified or an
+  actual fully specified date, with start no later than end. Special date values
+  and partial wildcards belong in the date alternative, not range endpoints.
+  Endpoint weekdays do not affect range ordering - inconsistent endpoint weekdays
+  are accepted using their year/month/day (the local-matter policy of 20.2.12).
+
+  """
+  @spec valid_for_matching?(t()) :: boolean()
+  def valid_for_matching?(entry) do
+    case entry do
+      %__MODULE__{type: :date, date: %BACnetDate{} = date, date_range: nil, week_n_day: nil} ->
+        BACnetDate.valid?(date)
+
+      %__MODULE__{type: :date_range, date: nil, date_range: %DateRange{} = range, week_n_day: nil} ->
+        valid_range?(range)
+
+      %__MODULE__{type: :week_n_day, date: nil, date_range: nil, week_n_day: %WeekNDay{} = week} ->
+        WeekNDay.valid?(week)
+
+      _other ->
+        false
+    end
+  end
+
+  @doc """
+  Matches an entry against an explicitly supplied ISO calendar date.
+
+  All specified date/pattern fields must match - Sunday is weekday 7. Impossible
+  date patterns never match and are not clamped to month-end. Ranges are inclusive
+  and support fully unspecified/open endpoints. WeekNDay's numbered weeks start
+  at day 1 - weeks 6..9 are seven-day blocks counted backwards from month-end.
+
+  Returns false for entries that fail `valid_for_matching?/1`. Uses only the
+  supplied entry and date.
+  """
+  @spec matches_date?(t(), Date.t()) :: boolean()
+  def matches_date?(%__MODULE__{} = entry, %Date{calendar: Calendar.ISO} = date) do
+    valid_for_matching?(entry) and match_entry?(entry, date)
+  end
+
+  @spec match_entry?(t(), Date.t()) :: boolean()
+  defp match_entry?(entry, date)
+
+  defp match_entry?(%__MODULE__{type: :date, date: pattern}, date) do
+    component_matches?(pattern.year, date.year) and
+      component_matches?(pattern.month, date.month) and
+      day_matches?(pattern.day, date) and
+      component_matches?(pattern.weekday, Date.day_of_week(date))
+  end
+
+  defp match_entry?(%__MODULE__{type: :date_range, date_range: range}, date) do
+    (unspecified_date?(range.start_date) or
+       Date.compare(date, endpoint_date!(range.start_date)) != :lt) and
+      (unspecified_date?(range.end_date) or
+         Date.compare(date, endpoint_date!(range.end_date)) != :gt)
+  end
+
+  defp match_entry?(%__MODULE__{type: :week_n_day, week_n_day: week}, date) do
+    component_matches?(week.month, date.month) and
+      week_matches?(week.week_of_month, date) and
+      component_matches?(week.weekday, Date.day_of_week(date))
+  end
+
+  @spec component_matches?(integer() | :unspecified | :odd | :even, integer()) :: boolean()
+  defp component_matches?(expected, actual)
+
+  defp component_matches?(:unspecified, _actual), do: true
+  defp component_matches?(:odd, actual), do: rem(actual, 2) == 1
+  defp component_matches?(:even, actual), do: rem(actual, 2) == 0
+  defp component_matches?(expected, actual), do: expected == actual
+
+  @spec day_matches?(1..31 | :unspecified | :odd | :even | :last, Date.t()) :: boolean()
+  defp day_matches?(day, date)
+
+  defp day_matches?(:last, date), do: date.day == Date.days_in_month(date)
+  defp day_matches?(expected, date), do: component_matches?(expected, date.day)
+
+  @spec week_matches?(1..9 | :unspecified, Date.t()) :: boolean()
+  defp week_matches?(week, date)
+
+  defp week_matches?(:unspecified, _date), do: true
+  defp week_matches?(week, date) when week in 1..5, do: div(date.day - 1, 7) + 1 == week
+
+  defp week_matches?(week, date) when week in 6..9,
+    do: div(Date.days_in_month(date) - date.day, 7) == week - 6
+
+  @spec unspecified_date?(term()) :: boolean()
+  defp unspecified_date?(date)
+
+  defp unspecified_date?(%BACnetDate{
+         year: :unspecified,
+         month: :unspecified,
+         day: :unspecified,
+         weekday: :unspecified
+       }),
+       do: true
+
+  defp unspecified_date?(_date), do: false
+
+  @spec valid_endpoint?(term()) :: boolean()
+  defp valid_endpoint?(date)
+
+  defp valid_endpoint?(%BACnetDate{year: year, month: month, day: day} = date)
+       when is_integer(year) and is_integer(month) and is_integer(day) do
+    BACnetDate.valid?(date) and is_integer(date.weekday) and
+      match?({:ok, _date}, Date.new(year, month, day))
+  end
+
+  defp valid_endpoint?(date), do: unspecified_date?(date)
+
+  @spec endpoint_date!(BACnetDate.t()) :: Date.t()
+  defp endpoint_date!(date), do: Date.new!(date.year, date.month, date.day)
+
+  @spec valid_range?(DateRange.t()) :: boolean()
+  defp valid_range?(range) do
+    valid_endpoint?(range.start_date) and valid_endpoint?(range.end_date) and
+      (unspecified_date?(range.start_date) or unspecified_date?(range.end_date) or
+         Date.compare(endpoint_date!(range.start_date), endpoint_date!(range.end_date)) != :gt)
+  end
 end

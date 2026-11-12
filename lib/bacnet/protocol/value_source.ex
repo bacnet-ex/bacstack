@@ -13,13 +13,13 @@ defmodule BACnet.Protocol.ValueSource do
 
   - `:none`: no source is specified.
   - `:object`: the `object` field contains a `BACnet.Protocol.DeviceObjectRef`.
-    Its optional device identifier qualifies a remote object; without it the
+    Its optional device identifier qualifies a remote object - without it the
     object is local.
   - `:address`: the `address` field contains a `BACnet.Protocol.RecipientAddress`.
     Network number 0 denotes the local network.
 
   The nested structures reuse the existing reference and address types. All
-  fields must be supplied when constructing a source; unused fields should be
+  fields must be supplied when constructing a source - unused fields should be
   `nil`. Encoding and validation use the field selected by `type`. Parsing sets
   unused fields to `nil`.
 
@@ -29,7 +29,7 @@ defmodule BACnet.Protocol.ValueSource do
   for Life Safety objects). For commandable properties, it follows the entry in
   `value_source_array` at the priority supplying the current value. If all
   priorities are relinquished and `relinquish_default` supplies the value, the
-  source is `none`. For non-commandable properties, it records the last writer;
+  source is `none`. For non-commandable properties, it records the last writer -
   there is no `value_source_array`.
 
   A write or command normally records the originating device's Device object
@@ -41,7 +41,7 @@ defmodule BACnet.Protocol.ValueSource do
   writing `value_source`, using the same priority for a commandable property.
   Such a refinement does not update `last_command_time`. Subscriptions to
   `value_source` also report source changes according to Clause 19.5.2. This
-  module represents the datatype; priority selection, write authorization, and
+  module represents the datatype - priority selection, write authorization, and
   COV reporting are responsibilities of the objects using it.
 
   ### ASN.1 (ASHRAE 135-2016)
@@ -89,7 +89,7 @@ defmodule BACnet.Protocol.ValueSource do
   The representative type for a value source.
 
   The `type` discriminator selects context tag 0 (`:none`), 1 (`:object`), or
-  2 (`:address`). The selected source is stored in the matching field; unused
+  2 (`:address`). The selected source is stored in the matching field - unused
   fields are normally `nil`. All fields are enforced when constructing a struct.
   """
   @type t :: %__MODULE__{

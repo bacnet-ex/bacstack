@@ -134,7 +134,7 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
         check_implicit_relationships: fn object, operation ->
           ObjectOperations.check_implicit_relationships(contract, object, operation)
         end,
-        inhibit_object_check: fn object -> {:ok, object} end
+        inhibit_object_check: fn candidate, _original, _operation, _args -> {:ok, candidate} end
       },
       overrides
     )
@@ -286,9 +286,10 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
              )
 
     assert {:error, {:property_not_allowed, :description}} =
-             ObjectOperations.set_priority(contract, object, 8, true)
+             ObjectOperations.set_priority(contract, object, 8, true, hooks(contract))
 
-    assert {:ok, _object} = ObjectOperations.set_priority(contract, object, 8, false)
+    assert {:ok, _object} =
+             ObjectOperations.set_priority(contract, object, 8, false, hooks(contract))
   end
 
   test "creation evaluates prohibitions against the final propagated values" do
@@ -458,7 +459,9 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
 
     assert {:ok, remote} =
              create(contract, %{present_value: true}, [remote_object: 3], %{
-               inhibit_object_check: fn _object -> raise "inhibit" end
+               inhibit_object_check: fn _candidate, _original, _operation, _args ->
+                 flunk("remote creation called the inhibit hook")
+               end
              })
 
     assert remote.note == nil
@@ -491,7 +494,9 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
   test "inhibit and add_defaults hooks are honored" do
     assert {:ok, object} =
              create(contract(), %{}, [], %{
-               inhibit_object_check: fn object -> {:ok, %{object | description: "patched"}} end
+               inhibit_object_check: fn candidate, _original, _operation, _args ->
+                 {:ok, %{candidate | description: "patched"}}
+               end
              })
 
     assert object.description == "patched"
@@ -510,6 +515,102 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
                      add_defaults: fn _props, _metadata -> {:ok, %{}} end
                    })
                  end
+  end
+
+  test "the inhibit hook receives the candidate, original object and submitted arguments" do
+    contract =
+      contract(
+        has_status_flags: true,
+        has_out_of_service: true,
+        implicit_relationships: %{note: :gadget}
+      )
+
+    hook = fn candidate, original, operation, args ->
+      send(self(), {:inhibit, candidate, original, operation, args})
+      {:ok, candidate}
+    end
+
+    submitted = %{out_of_service: false, status_flags: flags(out_of_service: true)}
+    hook_overrides = %{inhibit_object_check: hook}
+    hooks = hooks(contract, hook_overrides)
+
+    assert {:ok, object} = create(contract, submitted, [], hook_overrides)
+    assert_received {:inhibit, ^object, nil, :create, %{properties: ^submitted}}
+    assert object.present_value == false
+    assert object.status_flags.out_of_service == false
+
+    assert {:ok, added} = ObjectOperations.add_property(contract, object, :note, "Fan", hooks)
+    assert_received {:inhibit, ^added, ^object, :add, %{property: :note, value: "Fan"}}
+    assert added.gadget == "gadget"
+
+    submitted_flags = flags(out_of_service: true, overridden: true)
+
+    assert {:ok, updated} =
+             ObjectOperations.update_property(
+               contract,
+               added,
+               :status_flags,
+               submitted_flags,
+               hooks
+             )
+
+    assert_received {:inhibit, ^updated, ^added, :update,
+                     %{property: :status_flags, value: ^submitted_flags}}
+
+    assert updated.status_flags == flags(overridden: true)
+
+    assert {:ok, removed} = ObjectOperations.remove_property(contract, updated, :note, hooks)
+    assert_received {:inhibit, ^removed, ^updated, :remove, %{property: :note}}
+    assert removed.note == nil
+    refute :gadget in removed._metadata.properties_list
+  end
+
+  test "the inhibit hook can reject a candidate and is skipped on invalid or absent writes" do
+    contract = contract()
+    {:ok, object} = create(contract, %{note: "Fan"}, [], %{})
+
+    hooks =
+      hooks(contract, %{
+        inhibit_object_check: fn candidate, original, operation, args ->
+          send(self(), {:inhibit, candidate, original, operation, args})
+          {:error, {:rejected, :note}}
+        end
+      })
+
+    assert {:error, {:rejected, :note}} =
+             ObjectOperations.update_property(contract, object, :note, "Pump", hooks)
+
+    assert_received {:inhibit, %{note: "Pump"}, ^object, :update,
+                     %{property: :note, value: "Pump"}}
+
+    assert {:error, {:invalid_property_type, :note}} =
+             ObjectOperations.update_property(contract, object, :note, 42, hooks)
+
+    assert {:ok, ^object} =
+             ObjectOperations.remove_property(contract, object, :description, hooks)
+
+    assert {:ok, ^object} = ObjectOperations.remove_property(contract, object, 1234, hooks)
+    refute_received {:inhibit, _, _, _, _}
+  end
+
+  test "removing a stored numeric property runs the inhibit hook" do
+    contract = contract()
+    {:ok, object} = create(contract, %{}, [], %{})
+    object = %{object | _unknown_properties: %{1234 => "Vendor data", 1235 => "Keep"}}
+
+    hooks =
+      hooks(contract, %{
+        inhibit_object_check: fn candidate, original, operation, args ->
+          send(self(), {:inhibit, candidate, original, operation, args})
+          {:ok, candidate}
+        end
+      })
+
+    assert {:ok, updated} = ObjectOperations.remove_property(contract, object, 1234, hooks)
+    assert updated._unknown_properties == %{1235 => "Keep"}
+    assert_received {:inhibit, ^updated, ^object, :remove, %{property: 1234}}
+    assert {:ok, ^updated} = ObjectOperations.remove_property(contract, updated, 1234, hooks)
+    refute_received {:inhibit, _, _, _, _}
   end
 
   test "update enforces protected, intrinsic, commandable, and status propagation" do
@@ -608,23 +709,207 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
                %{}
              )
 
-    assert {:ok, updated} =
-             ObjectOperations.set_priority(priority, object, 8, true)
+    hooks =
+      hooks(priority, %{
+        inhibit_object_check: fn candidate, original, operation, args ->
+          send(self(), {:inhibit, candidate, original, operation, args})
+          {:ok, candidate}
+        end
+      })
+
+    assert {:ok, updated} = ObjectOperations.set_priority(priority, object, 8, true, hooks)
+    assert_received {:inhibit, ^updated, ^object, :set_priority, %{priority: 8, value: true}}
 
     assert updated.present_value == true
     assert updated.feedback_value == true
     assert updated.priority_array.priority_8 == true
 
-    assert {:ok, cleared} = ObjectOperations.set_priority(priority, updated, 8, nil)
+    assert {:ok, cleared} = ObjectOperations.set_priority(priority, updated, 8, nil, hooks)
+    assert_received {:inhibit, ^cleared, ^updated, :set_priority, %{priority: 8, value: nil}}
     assert cleared.present_value == false
 
     assert {:error, {:invalid_property_type, :priority_array}} =
-             ObjectOperations.set_priority(priority, object, 8, "bad")
+             ObjectOperations.set_priority(priority, object, 8, "bad", hooks)
 
     empty = %{object | priority_array: nil}
 
     assert {:error, {:unknown_property, :priority_array}} =
-             ObjectOperations.set_priority(priority, empty, 1, true)
+             ObjectOperations.set_priority(priority, empty, 1, true, hooks)
+
+    assert {:error, :write_access_denied} =
+             ObjectOperations.set_priority(priority, object, 6, false, hooks)
+
+    refute_received {:inhibit, _, _, _, _}
+  end
+
+  test "command and lifecycle checks reserve priority six on local commandable objects" do
+    contract = contract(has_priority_array: true)
+    {:ok, object} = create(contract, %{priority_array: %PriorityArray{}}, [], %{})
+
+    for value <- [true, false, nil] do
+      assert {:error, :write_access_denied} =
+               ObjectOperations.set_priority(contract, object, 6, value, hooks(contract))
+    end
+
+    assert {:error, :write_access_denied} = ObjectOperations.check_priority_command(object, 6)
+    assert :ok = ObjectOperations.check_priority_command(object, 5)
+
+    for source <- [:property_write, :application_write] do
+      for property <- [:present_value, 85] do
+        assert {:error, :write_access_denied} =
+                 ObjectOperations.check_priority_write(object, {source, property, nil, 6})
+      end
+
+      for property <- [:priority_array, 87] do
+        assert {:error, :write_access_denied} =
+                 ObjectOperations.check_priority_write(object, {source, property, 6, nil})
+      end
+    end
+
+    assert :ok = ObjectOperations.check_priority_write(object, {:property_write, :note, nil, 6})
+
+    assert :ok =
+             ObjectOperations.check_priority_write(object, {:property_read, :priority_array, 6})
+
+    empty = %{object | priority_array: nil}
+
+    assert {:error, {:unknown_property, :priority_array}} =
+             ObjectOperations.set_priority(contract, empty, 6, nil, hooks(contract))
+
+    assert :ok = ObjectOperations.check_priority_write(empty, {:property_write, 85, nil, 6})
+
+    remote = put_in(object._metadata.remote_object, 42)
+
+    assert {:ok, %{priority_array: %PriorityArray{priority_6: false}}} =
+             ObjectOperations.set_priority(contract, remote, 6, false, hooks(contract))
+  end
+
+  test "adding or replacing a local array preserves the reserved slot" do
+    contract = contract(has_priority_array: true)
+
+    {:ok, object} =
+      create(contract, %{priority_array: %PriorityArray{priority_6: false}}, [], %{})
+
+    hooks = hooks(contract)
+    replacement = %PriorityArray{priority_6: false, priority_8: true}
+    cleared = %{replacement | priority_6: nil}
+
+    assert {:ok, candidate} =
+             ObjectOperations.update_property(
+               contract,
+               object,
+               :priority_array,
+               replacement,
+               hooks
+             )
+
+    assert candidate.priority_array == replacement
+    assert :ok = ObjectOperations.check_priority_array_change(object, candidate)
+
+    assert {:error, {:write_access_denied, :priority_array}} =
+             ObjectOperations.update_property(contract, object, :priority_array, cleared, hooks)
+
+    assert {:error, {:write_access_denied, :priority_array}} =
+             ObjectOperations.check_priority_array_change(object, %{
+               candidate
+               | priority_array: cleared
+             })
+
+    assert {:ok, empty} = create(contract, %{}, [], %{})
+
+    assert {:error, {:write_access_denied, :priority_array}} =
+             ObjectOperations.add_property(contract, empty, :priority_array, replacement, hooks)
+
+    assert {:ok, %{priority_array: ^cleared}} =
+             ObjectOperations.add_property(contract, empty, :priority_array, cleared, hooks)
+
+    remote = put_in(object._metadata.remote_object, 42)
+
+    assert {:ok, %{priority_array: ^cleared}} =
+             ObjectOperations.update_property(contract, remote, :priority_array, cleared, hooks)
+  end
+
+  test "the binary hold operation reuses arbitration and feedback" do
+    contract =
+      contract(object_type: :binary_output, has_priority_array: true, has_feedback_value: true)
+
+    {:ok, object} =
+      create(
+        contract,
+        %{priority_array: %PriorityArray{priority_8: true}, relinquish_default: false},
+        [auto_write_feedback: true],
+        %{}
+      )
+
+    hooks =
+      hooks(contract, %{
+        inhibit_object_check: fn candidate, original, operation, args ->
+          send(self(), {:inhibit, candidate, original, operation, args})
+          {:ok, candidate}
+        end
+      })
+
+    assert {:ok, held} = ObjectOperations.set_minimum_time_hold(contract, object, false, hooks)
+
+    assert_received {:inhibit, ^held, ^object, :set_minimum_time_hold,
+                     %{priority: 6, value: false}}
+
+    assert held.priority_array.priority_6 == false
+    assert held.priority_array.priority_8 == true
+    assert held.present_value == false
+    assert held.feedback_value == false
+
+    assert {:ok, ^held} = ObjectOperations.set_minimum_time_hold(contract, held, false, hooks)
+    refute_received {:inhibit, _, _, _, _}
+
+    assert {:ok, released} = ObjectOperations.set_minimum_time_hold(contract, held, nil, hooks)
+
+    assert_received {:inhibit, ^released, ^held, :set_minimum_time_hold,
+                     %{priority: 6, value: nil}}
+
+    assert released.priority_array.priority_6 == nil
+    assert released.present_value == true
+    assert released.feedback_value == true
+  end
+
+  test "minimum-time holds validate non-boolean values against Present_Value" do
+    base = contract(object_type: :positive_integer_value, has_priority_array: true)
+
+    contract = %{
+      base
+      | type_map: %{
+          base.type_map
+          | present_value: :unsigned_integer,
+            relinquish_default: :unsigned_integer
+        }
+    }
+
+    {:ok, object} =
+      create(
+        contract,
+        %{
+          present_value: 0,
+          priority_array: %PriorityArray{priority_8: 20},
+          relinquish_default: 0
+        },
+        [],
+        %{}
+      )
+
+    assert {:error, {:invalid_property_type, :priority_array}} =
+             ObjectOperations.set_minimum_time_hold(contract, object, false, hooks(contract))
+
+    assert {:ok, held} =
+             ObjectOperations.set_minimum_time_hold(contract, object, 0, hooks(contract))
+
+    assert held.priority_array.priority_6 == 0
+    assert held.present_value == 0
+
+    assert {:ok, released} =
+             ObjectOperations.set_minimum_time_hold(contract, held, nil, hooks(contract))
+
+    assert released.priority_array.priority_6 == nil
+    assert released.present_value == 20
   end
 
   test "add_defaults fills relinquish_default from the minimum" do
@@ -664,6 +949,7 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
 
     service = %{object | out_of_service: true}
     assert ObjectOperations.property_writable?(service, :present_value, [])
+    refute ObjectOperations.property_writable?(service, :present_value, [:present_value])
   end
 
   test "inspect prints properties list keys" do
@@ -802,6 +1088,15 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
              )
   end
 
+  test "valid_reliability? checks retained values with the object's property contract" do
+    contract = contract()
+    {:ok, object} = create(contract, %{}, [], %{})
+
+    assert ObjectOperations.valid_reliability?(contract, object, nil)
+    assert ObjectOperations.valid_reliability?(contract, object, :process_error)
+    refute ObjectOperations.valid_reliability?(contract, object, :unknown_reliability)
+  end
+
   test "get_property reads struct fields and unknown numeric keys" do
     assert {:ok, object} = create(contract(), %{}, [], %{})
     assert {:ok, false} = ObjectOperations.get_property(object, :present_value)
@@ -862,7 +1157,7 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
       )
 
     assert {:error, {:unknown_type_for_property, :priority_array}} =
-             ObjectOperations.set_priority(bare, object, 1, true)
+             ObjectOperations.set_priority(bare, object, 1, true, hooks(bare))
   end
 
   test "validators, skipped remote validation, and physical input metadata" do
@@ -1019,6 +1314,21 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
     assert scheduled.note == "from-default"
   end
 
+  test "property_writable? protects event state when intrinsic reporting owns it" do
+    assert {:ok, object} = create(contract(), %{}, [], %{})
+
+    metadata = %{
+      object._metadata
+      | properties_list: [:event_state | object._metadata.properties_list]
+    }
+
+    passive = %{object | _metadata: metadata}
+    intrinsic = %{object | _metadata: %{metadata | intrinsic_reporting: true}}
+
+    assert ObjectOperations.property_writable?(passive, :event_state, [])
+    refute ObjectOperations.property_writable?(intrinsic, :event_state, [])
+  end
+
   test "property_writable? covers commandable and event inhibit rules" do
     assert {:ok, object} = create(contract(), %{}, [], %{})
     assert ObjectOperations.property_writable?(object, :present_value, [])
@@ -1121,7 +1431,9 @@ defmodule BACnet.Test.Protocol.ObjectOperationsTest do
                %{}
              )
 
-    assert {:ok, updated} = ObjectOperations.set_priority(priority, object, 3, true)
+    assert {:ok, updated} =
+             ObjectOperations.set_priority(priority, object, 3, true, hooks(priority))
+
     assert updated.present_value == true
     assert updated.feedback_value == nil
   end

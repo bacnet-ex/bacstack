@@ -10,7 +10,7 @@ defmodule BACnet.Protocol.BACnetArray do
     (as an Unsigned). Index 0 is **never** writable via the normal array access rules.
   - Arrays may be **fixed-size** (e.g. `Priority_Array` is always exactly 16 entries)
     or **variable-size** (most log buffers, lists of recipients, etc.).
-  - Fixed-size arrays are declared with a maximum size; attempts to grow them beyond
+  - Fixed-size arrays are declared with a maximum size - attempts to grow them beyond
     that size are errors. Variable-size arrays can grow and shrink (subject to
     device limits).
 
@@ -97,7 +97,7 @@ defmodule BACnet.Protocol.BACnetArray do
     fixed-size arrays (e.g. 16 for `Priority_Array`).
   - `size`: current number of elements (for fixed-size arrays this is always
     equal to `fixed_size`).
-  - Indexing is 1-based for real elements; index 0 is the special "array length"
+  - Indexing is 1-based for real elements - index 0 is the special "array length"
     pseudo-element defined by BACnet.
   """
   @type t(subtype, fixed_size) :: %__MODULE__{

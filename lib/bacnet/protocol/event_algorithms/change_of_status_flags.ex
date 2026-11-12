@@ -67,6 +67,8 @@ defmodule BACnet.Protocol.EventAlgorithms.ChangeOfStatusFlags do
   however to ensure the Status Flags have an overall correct status,
   the user has to make sure all bits are correctly.
 
+  The optional clock sample determines when delays start and expire.
+
   ASHRAE 135:
   > The conditions evaluated by this event algorithm are:
   >
@@ -85,10 +87,10 @@ defmodule BACnet.Protocol.EventAlgorithms.ChangeOfStatusFlags do
   > to the OFFNORMAL event state.
   """
   # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
-  @spec execute(t()) ::
+  @spec execute(t(), DateTime.t()) ::
           {:event, new_state :: t(), Notify.t()}
           | {:delayed_event | :no_event, new_state :: t()}
-  def execute(%__MODULE__{} = state) do
+  def execute(%__MODULE__{} = state, %DateTime{} = now \\ get_dt()) do
     current_normal = state.current_state == Constants.macro_assert_name(:event_state, :normal)
 
     offnormal =
@@ -100,7 +102,7 @@ defmodule BACnet.Protocol.EventAlgorithms.ChangeOfStatusFlags do
     offnormal_dt =
       cond do
         offnormal_event and state.parameters.time_delay > 0 ->
-          state.dt_offnormal || get_dt(state.parameters.time_delay)
+          state.dt_offnormal || DateTime.add(now, state.parameters.time_delay, :second)
 
         current_normal ->
           state.dt_offnormal
@@ -113,7 +115,11 @@ defmodule BACnet.Protocol.EventAlgorithms.ChangeOfStatusFlags do
       cond do
         normal_event and (state.parameters.time_delay_normal || state.parameters.time_delay) > 0 ->
           state.dt_normal ||
-            get_dt(state.parameters.time_delay_normal || state.parameters.time_delay)
+            DateTime.add(
+              now,
+              state.parameters.time_delay_normal || state.parameters.time_delay,
+              :second
+            )
 
         not current_normal ->
           state.dt_normal
@@ -122,20 +128,18 @@ defmodule BACnet.Protocol.EventAlgorithms.ChangeOfStatusFlags do
           nil
       end
 
-    current_dt = get_dt(0)
-
     {event, new_event_state} =
       cond do
         offnormal_event and offnormal_dt == nil ->
           {true, Constants.macro_assert_name(:event_state, :offnormal)}
 
-        offnormal_event and DateTime.compare(current_dt, offnormal_dt) != :lt ->
+        offnormal_event and DateTime.compare(now, offnormal_dt) != :lt ->
           {true, Constants.macro_assert_name(:event_state, :offnormal)}
 
         normal_event and normal_dt == nil ->
           {true, Constants.macro_assert_name(:event_state, :normal)}
 
-        normal_event and DateTime.compare(current_dt, normal_dt) != :lt ->
+        normal_event and DateTime.compare(now, normal_dt) != :lt ->
           {true, Constants.macro_assert_name(:event_state, :normal)}
 
         true ->
@@ -219,9 +223,8 @@ defmodule BACnet.Protocol.EventAlgorithms.ChangeOfStatusFlags do
 
   defp compute_return(false, _state, state), do: {:no_event, state}
 
-  @spec get_dt(non_neg_integer()) :: DateTime.t()
-  defp get_dt(0), do: DateTime.now!(Application.get_env(:bacstack, :default_timezone, "Etc/UTC"))
-  defp get_dt(offset), do: DateTime.add(get_dt(0), offset, :second)
+  @spec get_dt() :: DateTime.t()
+  defp get_dt(), do: DateTime.now!(Application.get_env(:bacstack, :default_timezone, "Etc/UTC"))
 
   @spec sf_to_int(StatusFlags.t()) :: non_neg_integer()
   defp sf_to_int(%StatusFlags{} = flags) do

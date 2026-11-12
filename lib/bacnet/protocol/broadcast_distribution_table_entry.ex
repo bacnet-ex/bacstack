@@ -55,10 +55,10 @@ defmodule BACnet.Protocol.BroadcastDistributionTableEntry do
       iex> BroadcastDistributionTableEntry.encode(e)
       {:ok, <<192, 168, 0, 1, 186, 192, 255, 255, 255, 0>>}
 
-  The port must be a valid 16-bit integer; the IP and mask fields must be
+  The port must be a valid 16-bit integer - the IP and mask fields must be
   4-tuples. Invalid data produces `{:error, :invalid_data}` from encode.
 
-  ## See Also
+  ### See Also
 
   - `BACnet.Protocol` - central BVLL decoding that eventually yields BDT entries via BvlcFunction
   - `BACnet.Protocol.BvlcFunction` - the Write-BDT and Read-BDT-Ack messages that carry lists of these entries

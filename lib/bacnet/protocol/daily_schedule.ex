@@ -11,7 +11,7 @@ defmodule BACnet.Protocol.DailySchedule do
   ### BACnet Specification References
   - **ASN.1** (Clause 21): `BACnetDailySchedule ::= SEQUENCE { daySchedule SEQUENCE OF BACnetTimeValue }`
   - **Schedule object** (12.24): `weekly_schedule` is a `BACnetARRAY[7]` of
-    `BACnet.Protocol.DailySchedule`; `exception_schedule` is a list of `BACnet.Protocol.SpecialEvent` each
+    `BACnet.Protocol.DailySchedule` - `exception_schedule` is a list of `BACnet.Protocol.SpecialEvent` each
     containing a `BACnet.Protocol.DailySchedule` (in the `list` field).
   - Time values may be unspecified patterns in some contexts, but for normal
     schedule operation concrete times are expected.

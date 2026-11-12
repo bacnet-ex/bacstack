@@ -1,6 +1,9 @@
 defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
+  alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.BACnetArray
+  alias BACnet.Protocol.BACnetDate
+  alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.BACnetError
   alias BACnet.Protocol.EventParameters
   alias BACnet.Protocol.ObjectIdentifier
@@ -36,6 +39,11 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
     @moduledoc false
     defstruct [:value]
 
+    @spec from_app_encoding(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, {%__MODULE__{value: term()}, BACnet.Protocol.ApplicationTags.encoding_list()}}
+            | {:error, :invalid_value}
+    def from_app_encoding(tags)
+
     def from_app_encoding([{:unsigned_integer, value} | rest]),
       do: {:ok, {%__MODULE__{value: value}, rest}}
 
@@ -46,6 +54,11 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
     @moduledoc false
     defstruct [:value]
 
+    @spec parse(BACnet.Protocol.ApplicationTags.encoding_list()) ::
+            {:ok, {%__MODULE__{value: term()}, BACnet.Protocol.ApplicationTags.encoding_list()}}
+            | {:error, :invalid_value}
+    def parse(tags)
+
     def parse([{:unsigned_integer, value} | rest]),
       do: {:ok, {%__MODULE__{value: value}, rest}}
 
@@ -55,6 +68,9 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
   defmodule BrokenCodec do
     @moduledoc false
     defstruct [:value]
+    @spec valid?(term()) :: boolean()
+    def valid?(value)
+
     def valid?(%{value: :invalid}), do: raise("validation failed")
     def valid?(_value), do: true
     def to_app_encoding(_value), do: raise("encoding failed")
@@ -1308,6 +1324,30 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
                ObjectsUtility.cast_property_to_value(@vendor_id, :present_value, values)
     end
 
+    test "date priority arrays encode empty slots as NULL" do
+      object_id = %ObjectIdentifier{type: :date_value, instance: 1}
+      date = BACnetDate.from_date(~D[2026-11-09])
+      priorities = %PriorityArray{priority_8: date}
+      empty = Encoding.create!({:null, nil})
+      command = Encoding.create!({:date, date})
+      expected = List.duplicate(empty, 7) ++ [command] ++ List.duplicate(empty, 8)
+
+      assert {:ok, ^expected} =
+               ObjectsUtility.cast_value_to_property(object_id, :priority_array, priorities)
+    end
+
+    test "binary priority arrays encode true and false as enumerated values" do
+      object_id = %ObjectIdentifier{type: :binary_output, instance: 1}
+      priorities = %PriorityArray{priority_1: true, priority_16: false}
+      active = Encoding.create!({:enumerated, 1})
+      inactive = Encoding.create!({:enumerated, 0})
+      empty = Encoding.create!({:null, nil})
+      expected = [active] ++ List.duplicate(empty, 14) ++ [inactive]
+
+      assert {:ok, ^expected} =
+               ObjectsUtility.cast_value_to_property(object_id, :priority_array, priorities)
+    end
+
     test "priority array casts reject a full response containing an invalid element" do
       value = Encoding.create!({:enumerated, 1})
 
@@ -1333,6 +1373,173 @@ defmodule BACnet.Test.Protocol.ObjectsUtilityTest do
                  :priority_array,
                  %PriorityArray{priority_1: :invalid}
                )
+    end
+  end
+
+  describe "DateTime priority array wire format" do
+    test "encodes a DateTime command in one constructed slot" do
+      object_id = %ObjectIdentifier{type: :datetime_value, instance: 1}
+      datetime = BACnetDateTime.from_datetime(~U[2026-11-09 07:30:15.25Z])
+
+      priorities = %PriorityArray{
+        priority_1: nil,
+        priority_2: nil,
+        priority_3: nil,
+        priority_4: nil,
+        priority_5: nil,
+        priority_6: nil,
+        priority_7: nil,
+        priority_8: datetime,
+        priority_9: nil,
+        priority_10: nil,
+        priority_11: nil,
+        priority_12: nil,
+        priority_13: nil,
+        priority_14: nil,
+        priority_15: nil,
+        priority_16: nil
+      }
+
+      empty = Encoding.create!({:null, nil})
+      {:ok, tags} = BACnetDateTime.encode(datetime)
+      command = Encoding.create!({:constructed, {1, tags, 0}})
+
+      encodings = [
+        empty,
+        empty,
+        empty,
+        empty,
+        empty,
+        empty,
+        empty,
+        command,
+        empty,
+        empty,
+        empty,
+        empty,
+        empty,
+        empty,
+        empty,
+        empty
+      ]
+
+      assert {:ok, ^encodings} =
+               ObjectsUtility.cast_value_to_property(object_id, :priority_array, priorities)
+    end
+
+    test "decodes a constructed DateTime command without shifting its priority" do
+      object_id = %ObjectIdentifier{type: :datetime_value, instance: 1}
+      datetime = BACnetDateTime.from_datetime(~U[2026-11-09 07:30:15.25Z])
+      empty = Encoding.create!({:null, nil})
+      {:ok, tags} = BACnetDateTime.encode(datetime)
+      command = Encoding.create!({:constructed, {1, tags, 0}})
+
+      encodings = [
+        empty,
+        empty,
+        empty,
+        empty,
+        empty,
+        empty,
+        empty,
+        command,
+        empty,
+        empty,
+        empty,
+        empty,
+        empty,
+        empty,
+        empty,
+        empty
+      ]
+
+      priorities = %PriorityArray{
+        priority_1: nil,
+        priority_2: nil,
+        priority_3: nil,
+        priority_4: nil,
+        priority_5: nil,
+        priority_6: nil,
+        priority_7: nil,
+        priority_8: datetime,
+        priority_9: nil,
+        priority_10: nil,
+        priority_11: nil,
+        priority_12: nil,
+        priority_13: nil,
+        priority_14: nil,
+        priority_15: nil,
+        priority_16: nil
+      }
+
+      assert {:ok, ^priorities} =
+               ObjectsUtility.cast_property_to_value(object_id, :priority_array, encodings)
+    end
+
+    test "indexed DateTime slots round-trip as tag [1] in both DateTime object types" do
+      datetime = BACnetDateTime.from_datetime(~U[2026-11-09 07:30:15.25Z])
+      {:ok, tags} = BACnetDateTime.encode(datetime)
+      bare_encodings = Enum.map(tags, &Encoding.create!/1)
+
+      for type <- [:datetime_value, :datetime_pattern_value] do
+        object_id = %ObjectIdentifier{type: type, instance: 1}
+
+        assert {:ok, ^bare_encodings} =
+                 ObjectsUtility.cast_value_to_property(object_id, :present_value, datetime)
+
+        assert {:ok, %Encoding{} = command} =
+                 ObjectsUtility.cast_value_to_property(object_id, :priority_array, datetime,
+                   allow_partial: true
+                 )
+
+        assert {:ok, <<0x1E, 0xA4, 126, 11, 9, 1, 0xB4, 7, 30, 15, 25, 0x1F>> = wire} =
+                 ApplicationTags.encode(Encoding.to_encoding!(command))
+
+        assert {:ok, decoded, <<>>} = ApplicationTags.decode(wire)
+
+        assert {:ok, ^datetime} =
+                 ObjectsUtility.cast_property_to_value(
+                   object_id,
+                   :priority_array,
+                   Encoding.create!(decoded),
+                   allow_partial: true
+                 )
+      end
+    end
+
+    test "indexed DateTime slots preserve NULL" do
+      object_id = %ObjectIdentifier{type: :datetime_value, instance: 1}
+      empty = Encoding.create!({:null, nil})
+
+      assert {:ok, ^empty} =
+               ObjectsUtility.cast_value_to_property(object_id, :priority_array, nil,
+                 allow_partial: true
+               )
+
+      assert {:ok, nil} =
+               ObjectsUtility.cast_property_to_value(object_id, :priority_array, empty,
+                 allow_partial: true
+               )
+    end
+
+    test "indexed DateTime slots reject the wrong tag and malformed payloads" do
+      object_id = %ObjectIdentifier{type: :datetime_value, instance: 1}
+      datetime = BACnetDateTime.from_datetime(~U[2026-11-09 07:30:15.25Z])
+      {:ok, [date, time]} = BACnetDateTime.encode(datetime)
+
+      for {tag, tags} <- [
+            {0, [date, time]},
+            {1, [date]},
+            {1, [time, date]},
+            {1, [date, time, {:null, nil}]}
+          ] do
+        malformed = Encoding.create!({:constructed, {tag, tags, 0}})
+
+        assert {:error, {:invalid_property_value, {:priority_array, ^malformed}}} =
+                 ObjectsUtility.cast_property_to_value(object_id, :priority_array, malformed,
+                   allow_partial: true
+                 )
+      end
     end
   end
 

@@ -344,7 +344,7 @@ defmodule BACnet.Stack.Segmentator do
   transport module, portal, peer address and complete NPCI target used by `create_sequence/7`.
   A transport address alone is supported for compatibility only when exactly one sequence
   matches that address, invoke ID, and local role indicated by the APDU. The sender/server
-  flag on SegmentACK and Abort selects the opposite local role; Error and Reject select
+  flag on SegmentACK and Abort selects the opposite local role - Error and Reject select
   the local requester. Ambiguous address-only calls do nothing.
 
   Received `Abort`, `Error`, `Reject` and `SegmentACK` APDUs need to be piped into this module using this function.

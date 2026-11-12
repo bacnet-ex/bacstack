@@ -4,7 +4,7 @@ defmodule BACnet.Stack.SegmentationEndpoint do
 
   Both segmentation components use this identity together with the local transaction role
   (`:requester` or `:responder`) and invoke ID. The transport
-  module and portal distinguish local links; `address` identifies the transport peer and
+  module and portal distinguish local links - `address` identifies the transport peer and
   `npci` contains the complete routed network/address pair, when present.
 
   Construct the endpoint with the same transport send options used to create the sequence.
@@ -75,7 +75,7 @@ defmodule BACnet.Stack.SegmentationEndpoint do
       when role in [:requester, :responder],
       do: {endpoint, role, invoke_id}
 
-  # Compatibility calls must identify one endpoint and role; never choose arbitrarily
+  # Compatibility calls must identify one endpoint and role - never choose arbitrarily
   def sequence_key(sequences, peer, invoke_id, role) do
     case Enum.take(
            Stream.filter(Map.keys(sequences), fn

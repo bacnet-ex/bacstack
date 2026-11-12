@@ -1,18 +1,17 @@
 defmodule BACnet.Protocol.ActionList do
   @moduledoc """
-  An Action List is an ordered collection of Action Command structures. It is
-  the executable content of a Command object. Each element of the list (accessed
-  by array index) represents one complete sequence that the Command object can
-  perform when it is triggered at that index.
+  An Action List is an ordered collection of `BACnet.Protocol.ActionCommand` entries.
+  Each element of a Command object's Action array contains one such list, representing
+  the sequence selected when that array index is written to the Command's `present_value`.
 
   The Command object type was designed to let a single object act as a
   programmable "macro" or "batch" controller. By writing different values to
-  the Present_Value property (or by using Write Property to individual array
-  elements of the Action property), a client can select which pre-defined
-  sequence of operations should be executed. This is heavily used in
-  life-safety, chiller plant optimization, lighting scenes, and any situation
-  where a coordinated set of actions must be performed atomically from the
-  viewpoint of the operator.
+  the present_value property, a client selects which pre-defined
+  sequence of operations should be executed. This is used in life-safety,
+  chiller plant optimization, lighting scenes and coordinated operating-mode changes.
+  Execution is ordered and individual writes can fail - earlier successful writes
+  are not rolled back. Updating the Action array configures a sequence - writing
+  the Command's `present_value` triggers it.
 
   Because the list can contain dozens of individual Action Commands and each
   command can target a different object and property, the encoding of an
@@ -70,30 +69,25 @@ defmodule BACnet.Protocol.ActionList do
           | {:error, term()}
   def parse(tags) when is_list(tags) do
     case tags do
-      [{:constructed, {0, tags, _len}} | rest] ->
-        case Enum.reduce_while(1..100_000//1, {:ok, {[], tags}}, fn
-               _ind, {:ok, {acc, []}} ->
-                 {:halt, {:ok, {acc, []}}}
-
-               _ind, {:ok, {acc, tags}} ->
-                 case ActionCommand.parse(tags) do
-                   {:ok, {cmd, rest}} -> {:cont, {:ok, {[cmd | acc], rest}}}
-                   {:error, _err} = err -> {:halt, err}
-                 end
-             end) do
-          {:ok, {actions, _rest}} ->
-            list = %__MODULE__{
-              actions: Enum.reverse(actions)
-            }
-
-            {:ok, {list, rest}}
-
-          {:error, _err} = err ->
-            err
+      [{:constructed, {0, commands, _length}} | rest] when is_list(commands) ->
+        with {:ok, actions} <- parse_actions(commands, []) do
+          {:ok, {%__MODULE__{actions: actions}, rest}}
         end
 
       _term ->
         {:error, :invalid_tags}
+    end
+  end
+
+  @spec parse_actions(ApplicationTags.encoding_list(), [ActionCommand.t()]) ::
+          {:ok, [ActionCommand.t()]} | {:error, term()}
+  defp parse_actions(tags, reversed)
+
+  defp parse_actions([], reversed), do: {:ok, Enum.reverse(reversed)}
+
+  defp parse_actions(tags, reversed) do
+    with {:ok, {command, rest}} <- ActionCommand.parse(tags) do
+      parse_actions(rest, [command | reversed])
     end
   end
 
@@ -103,6 +97,8 @@ defmodule BACnet.Protocol.ActionList do
   It only validates the struct is valid as per type specification.
   """
   @spec valid?(t()) :: boolean()
+  def valid?(list)
+
   def valid?(
         %__MODULE__{
           actions: actions

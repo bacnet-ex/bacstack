@@ -251,7 +251,7 @@ defmodule BACnet.Stack.SegmentsStore do
   Pass a `BACnet.Stack.SegmentationEndpoint` as the second argument to select the complete
   endpoint. A transport address alone is supported for compatibility only when exactly one
   sequence matches that address, invoke ID, and local role. Received APDUs determine the local
-  role: a server Abort, Error, Reject, or SimpleACK selects the requester; a client Abort
+  role: a server Abort, Error, Reject, or SimpleACK selects the requester - a client Abort
   selects the responder. An integer invoke ID selects a sequence only when the role is
   unambiguous, even with a complete endpoint. Use `cancel/4` to select a role explicitly.
   Ambiguous calls do nothing.

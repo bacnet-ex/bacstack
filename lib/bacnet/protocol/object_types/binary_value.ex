@@ -1,16 +1,14 @@
 defmodule BACnet.Protocol.ObjectTypes.BinaryValue do
   @moduledoc """
-  The Binary Value object holds a two-state (Boolean) parameter that lives entirely in
-  the device's memory rather than being bound to physical I/O. It is the binary
-  counterpart to Analog Value and Multistate Value and is commonly used for operating
-  mode flags, enable/disable commands, alarm latches, or any calculated Boolean result
-  that needs to be visible and writable over the network.
+  A Binary Value holds an application flag such as an enable command, an
+  alarm latch or a calculated Boolean result. BACnet clients can read and, where
+  permitted, write its logical state. The object can also track transitions,
+  active time and minimum on/off durations.
 
   The value is optionally fully commandable via a priority array (with relinquish default)
   so that schedules, operators, and control logic can arbitrate control.
-  COV reporting for state changes is supported. When `intrinsic_reporting: true` is passed
-  to `create/4`, the CHANGE_OF_STATE intrinsic algorithm (and optional FAULT_STATE) are
-  activated.
+  Its core lifecycle maintains optional transition history, elapsed active time and
+  minimum on/off protection and intrinsic CHANGE_OF_STATE evaluation.
 
   ### Object Description (ASHRAE 135)
 
@@ -23,58 +21,108 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryValue do
   ### Behaviour and Operation
 
   Binary Value objects are in-memory two-state parameters (mode flags, enable bits,
-  calculated booleans, etc.). When no priority array is present, `present_value` may
-  be written directly by the local application or over BACnet.
+  calculated booleans, etc.). A non-commandable instance accepts `present_value` updates
+  through `update_property/3`. When `priority_array` and `relinquish_default` are present,
+  use `set_priority/3` - the existing priority mechanism computes `present_value`.
+  Text properties describe the intended meaning of the two states. Status flags continue
+  to follow the related event state, reliability and out-of-service properties.
 
-  If the object was created with (or later given) a `priority_array` and
-  `relinquish_default`, it becomes commandable: `present_value` is then computed from
-  the priority array and direct writes are blocked. Use `set_priority/3` to change it.
+  ### Lifecycle and host contract
 
-  `out_of_service` allows forcing a test value while the logical consumer of the flag
-  should treat the object as disconnected. The object supports CHANGE_OF_STATE
-  intrinsic alarming (when enabled at creation) and COV on state changes.
-  Local writes should be blocked and only BACnet writes should be allowed.
+  The [object execution host](BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host)
+  is the integrating application or higher-level stack that retains objects and runtime
+  state, serializes operations and delivers triggers and requested wakeups. This object
+  starts no process, reads no clock and performs no host I/O.
 
-  ### Developer Implementation Notes (geared to device server / application authors)
+  Initialize with `BACnet.Protocol.ObjectExecution.Lifecycle.execute/2`, supplying
+  `:initialization` and fresh clocks in `BACnet.Protocol.ObjectExecution.Context`.
+  Keep the returned object, state and wakeup together. Initialization establishes a baseline
+  without inventing a transition or changing reset timestamps. A previously stored priority-6
+  hold starts its full applicable minimum duration again - elapsed time from another VM
+  cannot be reconstructed. With no stored hold, initialization starts no minimum duration.
+  Existing totals are retained, and any actual value change while reconciling an obsolete
+  hold is recorded as a transition.
 
-  The generated code handles storage + basic mechanics (validation, implicit_relationships,
-  readonly annotations as hints to your server, etc.). **You must drive "special" live
-  properties and side effects yourself**, analogous to maintaining `present_value` on
-  inputs via `update_property/3` (never direct mutation). Read notes below + generated
-  tables for details.
+  For every write, build a candidate through the property API, call
+  `BACnet.Protocol.ObjectExecution.Lifecycle.prepare_write/3`, commit the returned candidate
+  and execute with the same context and previous runtime state before serving another operation.
+  Use `{:property_write, property, array_index, priority}` for BACnet writes and
+  `{:application_write, property, array_index, priority}` for local application writes.
+  A local application `present_value` write is rejected with `{:error, :out_of_service}`
+  while the object is out of service. BACnet writes, arbitration, timers and history
+  accounting continue. Raw property setters have no source or clock information and do not
+  perform this orchestration. Supply atomic write triggers even when the value is unchanged.
 
-  **Special / live properties and expected developer behaviour**
+  Preparation computes priority holds and reset timestamps without changing runtime state
+  or invoking I/O. Execution publishes transition history and active seconds and advances
+  the retained runtime state before another operation may observe the object.
+  Application writes use the same preparation and commit order as BACnet writes.
+  Numeric property identifiers are accepted in triggers. Priority 6 is reserved for the
+  module's minimum-time mechanism - `set_priority/3` and lifecycle preparation reject commands
+  using it. Direct client writes to the read-only priority array remain a host access check.
 
-  - `present_value`: The current value. If priority_array present, it is
-    derived/protected.
-    **Dev must**: For non-commandable: your app logic writes the value. For
-    commandable: use `set_priority/3` or PA writes; library derives PV. Your "user" of
-    the value reads it to act on it.
+  ### Transition history and active time
 
-  - `priority_array`, `relinquish_default`: Optional properties.
-    **Dev must**: Manage via APIs; when present PV is protected.
+  The optional `change_of_state_time`, `change_of_state_count` and
+  `time_of_state_count_reset` form one property group. Every actual effective
+  `present_value` transition increments the count and stamps device-local wall time.
+  Same-value writes and commands masked by a higher priority do not count as transitions.
+  A count of 4,294,967,295 wraps to zero on the next transition without stamping a reset.
 
-  - `status_flags`: The `in_alarm`/`fault`/`out_of_service` bits of `status_flags`
-    are auto-managed; `overridden` is local matter.
+  `elapsed_active_time` and `time_of_active_time_reset` form another optional group.
+  Execution accumulates monotonic milliseconds spent ACTIVE, publishes whole seconds and
+  retains the fractional remainder across inactive periods. Both groups operate while out
+  of service. Zero writes to either total stamp its reset time, including repeated zero
+  writes. Nonzero writes are accepted and leave the reset time unchanged. Reset timestamps
+  are writable. Writing an active-time total replaces the total and clears its fractional
+  remainder. The seconds total wraps modulo 2^32 without treating wraparound as a reset.
 
-  - `active_text` / `inactive_text`: Human strings.
-    **Dev must**: Set at init; changes are just data.
+  Service the returned monotonic wakeups, and refresh computed properties through
+  `BACnet.Protocol.ObjectExecution.Lifecycle.prepare_read/2` before reading them. Wall-clock
+  corrections affect timestamps, not elapsed durations. A backwards monotonic sample or
+  runtime state belonging to another instance returns `{:error, :invalid_execution_state}`.
+  Initialize again after a VM restart. Enabling a history group starts accounting at that
+  operation's supplied time - it does not reconstruct history from before the group existed.
 
-  - `change_of_state_count` etc. (with implicits), `elapsed_active_time` etc.: History.
-    **Dev must**: On PV (state) changes, maintain the counters and times (bump,
-    set times, accumulate). Similar to BinaryInput.
+  ### Minimum on/off times
 
-  - Intrinsic (`alarm_values` + event set for CHANGE_OF_STATE, optional fault):
-    **Dev must**: On PV change, re-eval the algorithms using the properties on the object;
-    drive `event_state` and notifications.
+  `min_on_time` and `min_off_time` select optional minimum durations in seconds.
+  For commandable instances, an effective transition places the new state in priority 6
+  for the applicable duration. Lower-priority commands are still stored. On expiry the
+  hold is cleared, priorities are reevaluated and a new hold starts if the value changes.
+  Priorities 1 through 5 may override a hold, and such transitions start a new hold too.
+  Changing a minimum duration reevaluates the hold from the last observed transition.
 
-  Value objects are the "in memory" variables; your application logic is the driver
-  that reads/writes them (or lets priority sources command them).
+  For non-commandable instances, the local mechanism rejects a conflicting value write
+  with `{:error, {:minimum_time_active, deadline}}` until the monotonic deadline.
+  It does not queue that rejected write or create a priority array. The caller may submit
+  a new write when the duration expires. Same-value writes succeed without restarting a hold.
 
-  ### Intrinsic Reporting
+  ### Complete write example
 
-  When `intrinsic_reporting: true` is passed to `create/4`, the CHANGE_OF_STATE event
-  algorithm and related properties are activated.
+  This example uses supplied clocks and retains each result in the caller. A running host
+  additionally needs to service returned wakeups as described in
+  `BACnet.Protocol.ObjectExecution.Lifecycle`. The runnable walkthrough
+  `examples/objects_lifecycle/binary_value_lifecycle.exs` also covers command holds and resets.
+
+      iex> alias BACnet.Protocol.ObjectExecution.{Context, Lifecycle}
+      iex> {:ok, object} = BACnet.Protocol.ObjectTypes.BinaryValue.create(22, "Enable", %{change_of_state_count: 0})
+      iex> start = Context.new(:initialization, now: ~U[2026-11-08 10:00:00Z], monotonic_time: 0)
+      iex> {:ok, stored} = Lifecycle.execute(object, start)
+      iex> write = Context.new({:application_write, :present_value, nil, nil}, now: ~U[2026-11-08 10:00:01Z], monotonic_time: 1000, state: stored.state)
+      iex> {:ok, candidate} = BACnet.Protocol.ObjectTypes.BinaryValue.update_property(stored.object, :present_value, true)
+      iex> {:ok, prepared} = Lifecycle.prepare_write(stored.object, candidate, write)
+      iex> {:ok, stored} = Lifecycle.execute(prepared, write)
+      iex> {stored.object.present_value, stored.object.change_of_state_count, stored.next_execution}
+      {true, 1, nil}
+
+  ### Capability boundaries
+
+  With `intrinsic_reporting: true`, CHANGE_OF_STATE evaluates the effective value
+  against Alarm_Value. The host retrieves transitions with
+  `BACnet.Protocol.ObjectExecution.EventReporting.transition/1` after retaining
+  the result. Rejected writes leave Reliability unchanged. Remote snapshots remain
+  passive and request no wakeup.
 
   ### Commandability and Priority Arrays
 
@@ -88,7 +136,7 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryValue do
       iex> {:ok, bv} = BACnet.Protocol.ObjectTypes.BinaryValue.create(20, "Mode", %{active_text: "Auto", inactive_text: "Manual"}); bv.active_text
       "Auto"
 
-  With intrinsic reporting enabled:
+  With the intrinsic reporting property group selected:
 
       iex> {:ok, bv} = BACnet.Protocol.ObjectTypes.BinaryValue.create(21, "Flag", %{}, intrinsic_reporting: true); bv.object_name
       "Flag"
@@ -101,6 +149,11 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryValue do
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.BACnetDateTime
   alias BACnet.Protocol.Constants
+  alias BACnet.Protocol.EventAlgorithms
+  alias BACnet.Protocol.ObjectExecution.BinaryState
+  alias BACnet.Protocol.ObjectExecution.Context
+  alias BACnet.Protocol.ObjectExecution.IntrinsicReporting
+  alias BACnet.Protocol.ObjectExecution.Result
   alias BACnet.Protocol.ObjectsMacro
   alias BACnet.Protocol.PriorityArray
 
@@ -111,22 +164,22 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryValue do
   Options accepted when creating or configuring a Binary Value object.
 
   In addition to the common options, Binary Value supports:
-  - `intrinsic_reporting` - Enables CHANGE_OF_STATE intrinsic reporting.
+  - `intrinsic_reporting` - Selects CHANGE_OF_STATE reporting and enables evaluation during execution.
   """
   @type object_opts ::
           {:intrinsic_reporting, boolean()} | common_object_opts()
 
   @typedoc """
-  Represents a Binary Value object. All keys should be treated as read-only,
-  all updates should go only through `update_property/3`.
+  Represents a Binary Value object. Treat struct fields as read-only. Use the object module's
+  property functions to build updates.
 
-  Properties which are for Intrinsic Reporting are nil, if disabled. If Intrinsic Reporting is enabled on the object,
-  then the properties can not be nil.
+  Create the object with `intrinsic_reporting: true` to select its intrinsic
+  reporting properties. The fields for those properties are `nil` when omitted.
 
-  The physical output decouples the present value and the polarity from the physical state.
-  The present value reflects the logical state of the object.
+  The present value reflects an in-memory logical state. No physical polarity is involved.
 
-  For commandable objects (objects with a priority array), the present value property is protected.
+  For a commandable instance, use `set_priority/3` to change the effective
+  Present_Value.
   """
   bac_object Constants.macro_assert_name(:object_type, :binary_value) do
     services(intrinsic: true)
@@ -160,9 +213,13 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryValue do
       default: ObjectsMacro.get_default_bacnet_datetime()
     )
 
-    field(:change_of_state_count, ApplicationTags.unsigned32(), default: 0)
+    field(:change_of_state_count, ApplicationTags.unsigned32(),
+      default: 0,
+      implicit_relationship: :time_of_state_count_reset
+    )
 
     field(:time_of_state_count_reset, BACnetDateTime.t(),
+      implicit_relationship: :change_of_state_time,
       default: ObjectsMacro.get_default_bacnet_datetime()
     )
 
@@ -184,5 +241,94 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryValue do
       default: true,
       annotation: {:encode_as, :enumerated}
     )
+  end
+
+  @spec check_implicit_relationships(t(), :add | :remove) :: {:ok, t()} | {:error, term()}
+  defp check_implicit_relationships(object, operation) do
+    # Close the three-property history group regardless of which member was supplied.
+    with {:ok, first} <- super(object, operation),
+         {:ok, second} <- super(first, operation) do
+      super(second, operation)
+    end
+  end
+
+  @doc """
+  Checks retained runtime state without I/O.
+
+  Local execution requires initialization first. Remote snapshots are accepted passively.
+  """
+  @impl BACnet.Protocol.ObjectsBehaviour
+  @spec validate_execution(t(), Context.t()) :: :ok | {:error, term()}
+  def validate_execution(object, context)
+
+  def validate_execution(%__MODULE__{_metadata: %{remote_object: remote}}, %Context{})
+      when not is_nil(remote), do: :ok
+
+  def validate_execution(%__MODULE__{} = object, %Context{} = context) do
+    BinaryState.validate(object, context)
+  end
+
+  @doc """
+  Prepares a BACnet or application write and its related history and timing updates.
+
+  The returned candidate and subsequent execution use the same clocks and previous runtime
+  state. Rejected writes leave that state and the previous object unchanged.
+  """
+  @impl BACnet.Protocol.ObjectsBehaviour
+  @spec prepare_write(t(), t(), Context.t()) :: {:ok, t()} | {:error, term()}
+  def prepare_write(original, candidate, context)
+
+  def prepare_write(%__MODULE__{_metadata: %{remote_object: remote}}, _candidate, %Context{})
+      when not is_nil(remote), do: {:error, :operation_not_available_for_remote_objects}
+
+  def prepare_write(%__MODULE__{} = original, %__MODULE__{} = candidate, %Context{} = context) do
+    with :ok <- validate_execution(original, context),
+         :ok <- validate_write(original, context),
+         :ok <- ObjectOperations.check_priority_array_change(original, candidate),
+         {:ok, prepared} <-
+           BinaryState.prepare_write(candidate, context, object_contract(), operation_hooks()),
+         :ok <- validate_write(prepared, context) do
+      {:ok, prepared}
+    end
+  end
+
+  @doc """
+  Maintains logical value history, active seconds and minimum-time protection.
+
+  Retain every successful result and honor its replacement monotonic wakeup.
+  Initialization establishes the history baseline and evaluates any configured alarm.
+  """
+  @impl BACnet.Protocol.ObjectsBehaviour
+  @spec execute(t(), Context.t()) :: {:ok, Result.t(t())} | {:error, term()}
+  def execute(object, context)
+
+  def execute(%__MODULE__{_metadata: %{remote_object: remote}} = object, %Context{} = context)
+      when not is_nil(remote),
+      do: {:ok, %Result{object: object, state: context.state, next_execution: nil}}
+
+  def execute(%__MODULE__{} = object, %Context{} = context) do
+    with :ok <- validate_execution(object, context),
+         :ok <- validate_write(object, context),
+         {:ok, result} <-
+           BinaryState.execute(object, context, object_contract(), operation_hooks()) do
+      {:ok,
+       IntrinsicReporting.evaluate(result, context, EventAlgorithms.ChangeOfState, [
+         :present_value
+       ])}
+    end
+  end
+
+  @spec validate_write(t(), Context.t()) :: :ok | {:error, term()}
+  defp validate_write(object, context) do
+    case {context.trigger, BinaryState.written_property(context)} do
+      {{:application_write, _property, _index, _priority}, property}
+      when object.out_of_service ->
+        if property == :present_value or object.present_value != context.state.value,
+          do: {:error, :out_of_service},
+          else: ObjectOperations.check_priority_write(object, context.trigger)
+
+      _other ->
+        ObjectOperations.check_priority_write(object, context.trigger)
+    end
   end
 end

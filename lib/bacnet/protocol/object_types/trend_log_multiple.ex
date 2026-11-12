@@ -1,16 +1,13 @@
 defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
   @moduledoc """
-  The Trend Log Multiple object extends Trend Log to record several properties at
-  once into each log entry. All monitored properties (listed in
-  `log_device_object_property`) are sampled on the same trigger
-  (periodic or explicit), producing a single record that contains the values
-  of every member at that instant. This makes it ideal for capturing correlated
-  data (e.g. supply/return temp + valve position + airflow at the same moment).
+  A Trend Log Multiple captures related readings in one record. For example,
+  sample supply temperature, return temperature, valve position and airflow
+  together. Each record has one timestamp and a value or failure for each
+  configured reference.
 
-  The object offers the same rich configuration as a regular Trend Log: clock-aligned
-  logging, time windows, buffer management, enable/disable, and optional
-  BUFFER_READY intrinsic reporting when `intrinsic_reporting: true`.
-  Buffer Retrieval is performed with the `BACnet.Protocol.Services.ReadRange` service.
+  The object supports clock alignment, a collection window, a bounded buffer and
+  optional BUFFER_READY intrinsic reporting. Clients retrieve history using
+  `BACnet.Protocol.Services.ReadRange`.
 
   ### Object Description (ASHRAE 135)
 
@@ -25,81 +22,74 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
 
   ### Behaviour and Operation
 
-  Trend Log Multiple objects are like Trend Log but log a multiple of properties on
-  each sample (all properties in `log_device_object_property` are captured).
-  This produces correlated snapshots useful for analyzing cause-effect relationships.
+  `log_device_object_property` is a `BACnet.Protocol.BACnetArray` of references
+  to local or remote properties. A sample holds the values and errors in the
+  same order as the references. An uninitialized slot produces
+  `PROPERTY/NO_PROPERTY_SPECIFIED` in that position.
 
-  The local logging engine must sample all referenced properties (local or remote)
-  at the same trigger instant (periodic or explicit trigger) and store a single
-  `BACnet.Protocol.LogMultipleRecord` containing the values.
+  `logging_type` selects periodic collection (`:polled`) or collection on a
+  false-to-true write to the optional `trigger` property (`:triggered`).
+  For a write of `:cov`, return `PROPERTY/VALUE_OUT_OF_RANGE` to the client.
+  In polled mode, `log_interval` is in hundredths of a second. The optional `align_intervals`
+  and `interval_offset` properties configure local clock alignment. The offset
+  is also in hundredths of a second. Supplying either property adds its
+  partner with a default of `align_intervals: false` or `interval_offset: 0`.
 
-  Retrieval, buffer management, clock alignment, start/stop windows, and
-  BUFFER_READY intrinsic reporting (when enabled) work the same as for a regular
-  Trend Log.
-  The alignment properties are optional and occur together. Supplying either one
-  adds its partner with a default of `align_intervals: false` or `interval_offset: 0`.
+  Collection requires `enable` and local time at or after `start_time` and
+  before `stop_time`. An unspecified bound leaves that side of the window
+  open. With `stop_when_full` false, new records overwrite the oldest when the
+  buffer reaches `buffer_size`. With `stop_when_full` true, the final slot
+  records that collection stopped and `enable` becomes false.
 
-  ### Developer Implementation Notes (geared to device server / application authors)
+  `record_count` is the number of records in the buffer. `total_record_count` is
+  the latest sequence number and wraps from the maximum unsigned 32-bit value
+  to 1. See `BACnet.Stack.TrendLogger` for acquisition and scheduling details.
 
-  The generated code handles storage + basic mechanics (validation, implicit_relationships,
-  readonly annotations as hints to your server, etc.). **You must drive "special" live
-  properties and side effects yourself**, analogous to maintaining `present_value` on
-  inputs via `update_property/3` (never direct mutation). Read notes below + generated
-  tables for details.
+  ### Lifecycle
 
-  **Special / live properties and expected developer behaviour**
+  The [object execution host](BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host)
+  supplies a running `t:BACnet.Stack.TrendLogger.server/0` as `:trend_logger`
+  in `BACnet.Protocol.ObjectExecution.Context` options. Execute with
+  `:initialization` to register or refresh a local log. Use the same logger for
+  subsequent steps and call `BACnet.Stack.TrendLogger.remove_object/2` when
+  removing the object. Remote snapshots execute passively.
 
-  (Very similar to TrendLog; see its notes for the full engine description.)
+  Refresh the object before serving live properties or preparing a write that
+  depends on the buffer state. Prepare writes through
+  `BACnet.Protocol.ObjectExecution.Lifecycle.prepare_write/3` and execute each
+  committed write. Buffer_Size is writable while Enable is false. Enabling a
+  full stop-when-full log returns `{:error, :log_buffer_full}`, which the host
+  maps to `OBJECT/LOG_BUFFER_FULL`.
 
-  - `log_device_object_property` (now a BACnetArray of refs for multiple): The
-    properties being trended (can be on local or remote devices).
-    **Dev must**: Your logging task(s) must periodically (polled) or on change (COV)
-    read all the referenced properties (issuing ReadProperty or using COV subs for
-    remotes) and produce LogMultipleRecord entries containing the array of values.
+  Write zero to Record_Count to clear the history. Changing the ordered
+  reference array also clears it. The logger starts the cleared buffer with
+  a purge record, advances Total_Record_Count and resets
+  Records_Since_Notification when present.
 
-  - `log_buffer` ([LogMultipleRecord.t()]): The history.
-    **Dev must**: Own the sampler: on timer or notification, read current values (with
-    status), build record with timestamp + the array of values + status, append or
-    overwrite per stop_when_full using update_property on the buffer (or manage
-    internally and write whole). Enforce buffer_size.
+  A true Trigger write in triggered mode returns Trigger true and requests an
+  immediate continuation. Commit that result before running the continuation.
+  The continuation requests one sample if collection is enabled. It clears
+  Trigger after the acquisition settles or is skipped. See
+  `BACnet.Stack.TrendLogger.sample/2` for the acquisition contract.
+  A true Trigger write in polled mode returns
+  `{:error, :not_configured_for_triggered_logging}`, which the host maps to
+  `PROPERTY/NOT_CONFIGURED_FOR_TRIGGERED_LOGGING`.
 
-  - `record_count`, `total_record_count` (some readonly): Counters.
-    **Dev must**: Increment record_count on appends; total is cumulative (never
-    resets). Special update overrides allow reset of record_count to 0 under
-    conditions.
-
-  - `trigger`: For logging_type :triggered.
-    **Dev must**: Your code writes true to trigger a sample on demand.
-
-  - `logging_type`, `log_interval`, `cov_resubscription_interval`, `client_cov_increment`:
-    Control sampling mode.
-    **Dev must**: Your engine reacts to changes (the object has overrides that e.g.
-    flip logging_type on log_interval 0/non0 for compat). Re-schedule your task or
-    COV subs accordingly. property_writable? prevents some changes while enabled.
-
-  - `buffer_size`, `stop_when_full`, `enable`, `start_time`/`stop_time`, `align_intervals` etc:
-    Config.
-    **Dev must**: Your writer must respect enable/stop/start windows, and for
-    aligned use proper next sample time calculation. buffer_size writes only
-    allowed when !enable (enforced by override).
-
-  - `notification_threshold` + intrinsic event fields (when enabled): BUFFER_READY.
-    **Dev must**: On appends, manage records_since_notification, emit when crosses
-    threshold.
-
-  - `reliability` etc: Source or buffer full issues.
-    **Dev must**: Set when a referenced prop can't be read, or buffer issues.
-
-  Your logging engine is responsible for all sampling and buffer management; the
-  object is the config + storage + enforcement container. See TrendLog notes for
-  more on clock aligned, remote sources, performance, etc.
-
-  The `BACnet.Stack.TrendLogger` module does a lot of this work.
+  The local object's `log_buffer` stays empty. To serve
+  `BACnet.Protocol.Services.ReadRange`, capture the sequence number and buffer
+  together with `get_log_buffer/2`.
 
   ### Intrinsic Reporting
 
-  When `intrinsic_reporting: true` is passed to `create/4`,
-  BUFFER_READY intrinsic reporting is enabled.
+  With `intrinsic_reporting: true`, the log's lifecycle evaluates BUFFER_READY
+  against the current counters and reporting settings. Configure the
+  `notification_receiver` described by `BACnet.Stack.TrendLogger.start_link/1`
+  and schedule a `:periodic` execution of the current log when the receiver
+  gets an `:intrinsic_reporting` message. The execution consumes the threshold
+  when it records a NORMAL transition for Log_Buffer. Collection continues
+  during reporting inhibition, with the threshold pending for reevaluation.
+  The host retrieves the transition after commit with
+  `BACnet.Protocol.ObjectExecution.EventReporting.transition/1`.
 
   ### Examples
 
@@ -117,6 +107,39 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
       iex> {:ok, tlm} = BACnet.Protocol.ObjectTypes.TrendLogMultiple.create(1001, "AlignedMulti", %{log_device_object_property: BACnetArray.from_list([ref]), buffer_size: 50, logging_type: :polled, log_interval: 90_000, align_intervals: true, interval_offset: 3_000}, intrinsic_reporting: true); tlm.object_name
       "AlignedMulti"
 
+  Acquiring a triggered sample:
+
+      iex> alias BACnet.Protocol.ObjectExecution.{Context, Lifecycle}
+      iex> alias BACnet.Protocol.ObjectTypes.TrendLogMultiple
+      iex> alias BACnet.Protocol.{BACnetArray, ObjectsMacro}
+      iex> alias BACnet.Stack.TrendLogger
+      iex> ref = ObjectsMacro.get_default_dev_object_ref()
+      iex> {:ok, logger} = TrendLogger.start_link(lookup_cb: fn _reference ->
+      ...>   {:error, %BACnet.Protocol.BACnetError{class: :object, code: :unknown_object}}
+      ...> end)
+      iex> {:ok, object} = TrendLogMultiple.create(1002, "Manual", %{
+      ...>   log_device_object_property: BACnetArray.from_list([ref]), buffer_size: 8,
+      ...>   logging_type: :triggered, log_interval: 0, trigger: false
+      ...> })
+      iex> context = Context.new(:initialization, options: [trend_logger: logger])
+      iex> {:ok, stored} = Lifecycle.execute(object, context)
+      iex> write = %{context | trigger: {:property_write, :trigger, nil, nil}, state: stored.state}
+      iex> {:ok, candidate} = TrendLogMultiple.update_property(stored.object, :trigger, true)
+      iex> {:ok, candidate} = Lifecycle.prepare_write(stored.object, candidate, write)
+      iex> {:ok, acquiring} = Lifecycle.execute(candidate, write)
+      iex> {acquiring.object.trigger, acquiring.next_execution}
+      {true, :immediate}
+      iex> continuation = %{context | trigger: :continuation, state: acquiring.state}
+      iex> {:ok, completed} = Lifecycle.execute(acquiring.object, continuation)
+      iex> {completed.object.trigger, completed.object.record_count}
+      {false, 1}
+      iex> {:ok, {1, module, buffer}} = TrendLogMultiple.get_log_buffer(completed.object, context)
+      iex> [record] = module.read_range(buffer, 0, 1)
+      iex> Enum.map(record.log_data, & &1.code)
+      [:no_property_specified]
+      iex> GenServer.stop(logger)
+      :ok
+
   ### See Also
   - `BACnet.Protocol.LogMultipleRecord`
   - `BACnet.Protocol.EventAlgorithms.BufferReady`
@@ -130,11 +153,35 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.DeviceObjectPropertyRef
   alias BACnet.Protocol.LogMultipleRecord
-  alias BACnet.Protocol.LogStatus
+  alias BACnet.Protocol.ObjectExecution.Context
+  alias BACnet.Protocol.ObjectExecution.LogLifecycle
+  alias BACnet.Protocol.ObjectExecution.Result
   alias BACnet.Protocol.ObjectsMacro
+  alias BACnet.Stack.LogBufferBehaviour
+  alias BACnet.Stack.TrendLogger
 
   require Constants
   use ObjectsMacro
+
+  @logger_properties [
+    :align_intervals,
+    :buffer_size,
+    :enable,
+    :interval_offset,
+    :log_device_object_property,
+    :log_interval,
+    :logging_type,
+    :notification_threshold,
+    :start_time,
+    :stop_time,
+    :stop_when_full
+  ]
+  @readonly_log_properties [
+    :log_buffer,
+    :total_record_count,
+    :records_since_notification,
+    :last_notify_record
+  ]
 
   @typedoc """
   Options accepted when creating or configuring a Trend Log Multiple object.
@@ -147,11 +194,11 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
           | common_object_opts()
 
   @typedoc """
-  Represents a Trend Log Multiple object. All keys should be treated as read-only,
-  all updates should go only through `update_property/3`.
+  Represents a Trend Log Multiple object. Treat struct fields as read-only. Use the object module's
+  property functions to build updates.
 
-  Properties which are for Intrinsic Reporting are nil, if disabled. If Intrinsic Reporting is enabled on the object,
-  then the properties can not be nil.
+  Create the object with `intrinsic_reporting: true` to select its intrinsic
+  reporting properties. The fields for those properties are `nil` when omitted.
   """
   bac_object Constants.macro_assert_name(:object_type, :trend_log_multiple) do
     services(intrinsic: true)
@@ -188,6 +235,7 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
 
     # Log_Buffer property can only be read through Read-Range service
     field(:log_buffer, [LogMultipleRecord.t()],
+      readonly: true,
       required: true,
       default: [],
       remote_default: true,
@@ -234,11 +282,13 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
     )
 
     field(:records_since_notification, ApplicationTags.unsigned32(),
+      readonly: true,
       intrinsic: true,
       default: 0
     )
 
     field(:last_notify_record, ApplicationTags.unsigned32(),
+      readonly: true,
       intrinsic: true,
       default: 0
     )
@@ -247,6 +297,7 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
   # Override property_writable?/2, to be able to override :buffer_size, :log_interval behaviour
   # (writable if logging_type != :triggered)
   # When writing buffer_size, it may only when trend_log is not enabled
+  @spec property_writable?(t(), Constants.property_identifier()) :: boolean()
   def property_writable?(%__MODULE__{} = object, property) when is_atom(property) do
     case property do
       :buffer_size ->
@@ -260,43 +311,21 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
     end
   end
 
-  # Override update_property/3, to flip logging_type on log_interval write (pre rev. 14 compatibility)
-  # When writing log_interval to 0, change logging_type to triggered
-  # When writing log_interval to non-0, change logging_type to polled
-  def update_property(%__MODULE__{} = object, :log_interval, value) do
-    with {:ok, object} <- super(object, :log_interval, value),
-         do:
-           update_property(
-             object,
-             :logging_type,
-             if(value == 0,
-               do: Constants.macro_assert_name(:logging_type, :triggered),
-               else: Constants.macro_assert_name(:logging_type, :polled)
-             )
-           )
+  @spec update_property(t(), Constants.property_identifier(), term()) ::
+          {:ok, t()} | {:error, term()}
+  def update_property(object, property, value)
+
+  # Preserve the mode selection for direct Log_Interval writes.
+  def update_property(%__MODULE__{} = object, :log_interval, value)
+      when is_integer(value) and value >= 0 do
+    mode = if value == 0, do: :triggered, else: :polled
+
+    with {:ok, configured} <- super(object, :logging_type, mode) do
+      super(configured, :log_interval, value)
+    end
   end
 
-  # When writing to record_count, a value of 0 will truncate the buffer
-  def update_property(%__MODULE__{} = object, :record_count, 0) do
-    {:ok,
-     %{
-       object
-       | log_buffer: [
-           %LogMultipleRecord{
-             timestamp: BACnetDateTime.utc_now(),
-             log_data: %LogStatus{
-               log_disabled: false,
-               buffer_purged: true,
-               log_interrupted: false
-             }
-           }
-         ],
-         record_count: 1,
-         records_since_notification: if(intrinsic_reporting?(object), do: 0, else: nil)
-     }}
-  end
-
-  def update_property(%__MODULE__{} = _object, :record_count, _value) do
+  def update_property(%__MODULE__{}, :record_count, value) when value != 0 do
     {:error, {:invalid_property_value, :record_count}}
   end
 
@@ -304,12 +333,119 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
     super(object, property, value)
   end
 
+  @doc """
+  Returns the logger's buffer for a registered local Trend Log Multiple.
+
+  Uses the `:trend_logger` option in the execution context and returns
+  `{:ok, {sequence_number, buffer_module, buffer}}`. Use the captured buffer
+  with its module's `c:BACnet.Stack.LogBufferBehaviour.read_range/3` callback.
+  The sequence number belongs to that same capture.
+
+  An unregistered log returns `{:error, :unknown_object}`. Remote snapshots
+  return `{:error, :operation_not_available_for_remote_objects}`.
+  """
+  @spec get_log_buffer(t(), Context.t()) ::
+          {:ok,
+           {sequence_number :: non_neg_integer(), buffer_module :: module(),
+            buffer :: LogBufferBehaviour.t()}}
+          | {:error, term()}
+  def get_log_buffer(object, context)
+
+  def get_log_buffer(%__MODULE__{_metadata: %{remote_object: remote}}, %Context{})
+      when not is_nil(remote),
+      do: {:error, :operation_not_available_for_remote_objects}
+
+  def get_log_buffer(%__MODULE__{} = object, %Context{} = context) do
+    with {:ok, logger} <- LogLifecycle.get_logger(context) do
+      TrendLogger.get_buffer(logger, object)
+    end
+  end
+
+  @doc """
+  Checks the shape of the local log's `:trend_logger` execution option.
+  Local Trend Log Multiple objects reject COV logging.
+  Remote snapshots pass preflight without a logger.
+  """
+  @impl BACnet.Protocol.ObjectsBehaviour
+  @spec validate_execution(t(), Context.t()) :: :ok | {:error, term()}
+  def validate_execution(object, context)
+
+  def validate_execution(%__MODULE__{_metadata: %{remote_object: remote}}, %Context{})
+      when not is_nil(remote), do: :ok
+
+  def validate_execution(%__MODULE__{logging_type: :cov}, %Context{}),
+    do: {:error, :invalid_logging_type}
+
+  def validate_execution(%__MODULE__{}, %Context{} = context) do
+    with {:ok, _logger} <- LogLifecycle.get_logger(context), do: :ok
+  end
+
+  @doc """
+  Checks access to logger-owned properties, zero-only Record_Count writes,
+  and Enable writes against a full stop-when-full buffer.
+  Also checks Buffer_Size and Log_Interval access and whether a triggered sample can start.
+  The logger applies the accepted write during execution.
+  """
+  @impl BACnet.Protocol.ObjectsBehaviour
+  @spec prepare_write(t(), t(), Context.t()) :: {:ok, t()} | {:error, term()}
+  def prepare_write(original, candidate, context)
+
+  def prepare_write(%__MODULE__{_metadata: %{remote_object: remote}}, _candidate, %Context{})
+      when not is_nil(remote), do: {:error, :operation_not_available_for_remote_objects}
+
+  def prepare_write(
+        %__MODULE__{} = original,
+        %__MODULE__{} = candidate,
+        %Context{trigger: {source, _property, _index, _priority}} = context
+      )
+      when source in [:property_write, :application_write] do
+    LogLifecycle.prepare_write(original, candidate, context, @readonly_log_properties)
+  end
+
+  @doc """
+  Runs one log lifecycle step against the configured logger.
+
+  Initialization registers the log. Committed logger-property writes update
+  the logger, and a zero Record_Count write purges the buffer.
+  An accepted Trigger write requests an immediate sampling continuation.
+  The result contains the latest counters and any recorded reporting transition.
+  """
+  @impl BACnet.Protocol.ObjectsBehaviour
+  @spec execute(t(), Context.t()) :: {:ok, Result.t(t())} | {:error, term()}
+  def execute(object, context)
+
+  def execute(%__MODULE__{_metadata: %{remote_object: remote}} = object, %Context{} = context)
+      when not is_nil(remote), do: super(object, context)
+
+  def execute(%__MODULE__{} = object, %Context{} = context) do
+    LogLifecycle.execute(object, context, @logger_properties)
+  end
+
   # Patch invalid log_interval values for the logging_type
-  defp inhibit_object_check(%{logging_type: :polled, log_interval: 0} = object),
-    do: {:ok, %{object | log_interval: 1}}
+  @spec inhibit_object_check(
+          t(),
+          t() | nil,
+          ObjectOperations.property_operation(),
+          ObjectOperations.property_operation_args()
+        ) :: {:ok, t()}
+  defp inhibit_object_check(object, original, operation, args)
 
-  defp inhibit_object_check(%{logging_type: :triggered, log_interval: log} = object) when log > 0,
-    do: {:ok, %{object | log_interval: 0}}
+  defp inhibit_object_check(
+         %{logging_type: :polled, log_interval: 0} = object,
+         _original,
+         _operation,
+         _args
+       ),
+       do: {:ok, %{object | log_interval: 1}}
 
-  defp inhibit_object_check(object), do: {:ok, object}
+  defp inhibit_object_check(
+         %{logging_type: :triggered, log_interval: log} = object,
+         _original,
+         _operation,
+         _args
+       )
+       when log > 0,
+       do: {:ok, %{object | log_interval: 0}}
+
+  defp inhibit_object_check(object, _original, _operation, _args), do: {:ok, object}
 end

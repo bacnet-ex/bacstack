@@ -195,6 +195,35 @@ defmodule BACnet.Protocol.ActionCommandTest do
     assert {:error, :unknown_tag_encoding} = ActionCommand.parse(tagged: {1, <<>>, 0})
   end
 
+  test "multi-encoding, empty and constructed property values round-trip" do
+    for value <- [
+          [],
+          [
+            Encoding.create!({:unsigned_integer, 7}),
+            Encoding.create!({:character_string, "value"})
+          ],
+          Encoding.create!({:constructed, {2, [unsigned_integer: 7, null: nil], 0}})
+        ] do
+      command = command_with_value(value)
+      assert ActionCommand.valid?(command)
+      assert {:ok, encoded} = ActionCommand.encode(command)
+      assert {:ok, {^command, []}} = ActionCommand.parse(encoded)
+      # Verify the actual BACnet wire round-trip of an ActionList wrapper as well.
+      list = %BACnet.Protocol.ActionList{actions: [command]}
+      {:ok, [wrapper]} = BACnet.Protocol.ActionList.encode(list)
+      {:ok, bytes} = BACnet.Protocol.ApplicationTags.encode(wrapper)
+      {:ok, decoded, <<>>} = BACnet.Protocol.ApplicationTags.decode(bytes)
+      assert {:ok, {^list, []}} = BACnet.Protocol.ActionList.parse([decoded])
+    end
+  end
+
+  test "property-value decoding reports invalid encodings instead of raising" do
+    {:ok, tags} = ActionCommand.encode(command_with_value(Encoding.create!({:null, nil})))
+    invalid = List.keyreplace(tags, :constructed, 0, {:constructed, {4, [invalid: :tag], 0}})
+    assert {:error, _reason} = ActionCommand.parse(invalid)
+    refute ActionCommand.valid?(command_with_value([:invalid]))
+  end
+
   test "encode action command" do
     assert {:ok,
             [
@@ -664,5 +693,19 @@ defmodule BACnet.Protocol.ActionCommandTest do
                quit_on_failure: true,
                write_successful: nil
              })
+  end
+
+  defp command_with_value(value) do
+    %ActionCommand{
+      device_identifier: nil,
+      object_identifier: %ObjectIdentifier{type: :device, instance: 7},
+      property_identifier: :object_list,
+      property_array_index: nil,
+      property_value: value,
+      priority: nil,
+      post_delay: 2,
+      quit_on_failure: false,
+      write_successful: true
+    }
   end
 end

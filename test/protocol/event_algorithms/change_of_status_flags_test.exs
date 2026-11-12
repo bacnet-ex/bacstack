@@ -1192,4 +1192,48 @@ defmodule BACnet.Protocol.EventAlgorithms.ChangeOfStatusFlagsTest do
 
     assert_raise ArgumentError, fn -> ChangeOfStatusFlags.update(state, present_value: true) end
   end
+
+  test "execute/2 starts and expires the delay using the supplied sample" do
+    state =
+      ChangeOfStatusFlags.new(
+        %StatusFlags{
+          in_alarm: false,
+          fault: false,
+          out_of_service: false,
+          overridden: false
+        },
+        nil,
+        %Params{
+          selected_flags: %StatusFlags{
+            in_alarm: true,
+            fault: false,
+            out_of_service: true,
+            overridden: false
+          },
+          time_delay: 1,
+          time_delay_normal: nil
+        }
+      )
+
+    new_state2 = %{
+      state
+      | monitored_value: %StatusFlags{
+          in_alarm: true,
+          fault: false,
+          out_of_service: false,
+          overridden: false
+        }
+    }
+
+    now = ~U[2026-01-01 12:00:00Z]
+    deadline = DateTime.add(now, 1, :second)
+
+    assert {:delayed_event, %{dt_offnormal: ^deadline} = pending} =
+             ChangeOfStatusFlags.execute(new_state2, now)
+
+    assert {:delayed_event, ^pending} = ChangeOfStatusFlags.execute(pending, now)
+
+    assert {:event, %{current_state: :offnormal}, _notification} =
+             ChangeOfStatusFlags.execute(pending, deadline)
+  end
 end

@@ -26,7 +26,7 @@ defmodule BACnet.Stack.ForeignDevice do
   lock the BBMD until a reply or timeout. BVLC success messages contain no request
   identifier, so concurrent commands could otherwise receive false positives.
   Table reads and broadcast distribution use the same lock to serialize replies.
-  Reply timeouts start after the lock is acquired; waiting for the lock is unbounded.
+  Reply timeouts start after the lock is acquired - waiting for the lock is unbounded.
 
   The lock mechanism uses `:global.set_lock/3` and `:global.del_lock/2`, scoped
   to the local Erlang node. `:global` automatically releases a process' locks
@@ -51,7 +51,7 @@ defmodule BACnet.Stack.ForeignDevice do
   will keep the registration. Distribute-Broadcast-To-Network (J.2.10) is the
   mechanism used by `distribute/2`.
 
-  ## See Also
+  ### See Also
 
   - `BACnet.Protocol`
   - `BACnet.Protocol.BroadcastDistributionTableEntry`
@@ -293,12 +293,12 @@ defmodule BACnet.Stack.ForeignDevice do
   Locks communication with a BBMD through the given client's transport.
 
   Returns `:ok` after acquiring the lock. By default, waits indefinitely.
-  `retries` is passed to `:global.set_lock/3`; use `0` for a single attempt,
+  `retries` is passed to `:global.set_lock/3` - use `0` for a single attempt,
   returning `{:error, :lock_unavailable}` if another process holds the lock.
 
   The calling process owns the lock and MUST call `unlock/2` in an `after`
   block after the entire BVLC exchange. The lock is also released if its owner
-  exits. Repeated acquisition by the same process is not reference counted;
+  exits. Repeated acquisition by the same process is not reference counted -
   do not nest acquisitions or call communicating Foreign Device functions
   while holding the lock.
 
@@ -846,6 +846,10 @@ defmodule BACnet.Stack.ForeignDevice do
   end
 
   @doc false
+  @spec handle_call(term(), GenServer.from(), State.t()) ::
+          {:reply, term(), State.t()} | {:noreply, State.t()} | {:stop, :normal, :ok, State.t()}
+  def handle_call(request, from, state)
+
   def handle_call(:get_client, _from, %State{} = state) do
     {:reply, {:ok, {state.client, state.bbmd, state.transport_module, state.portal}}, state}
   end
@@ -899,6 +903,9 @@ defmodule BACnet.Stack.ForeignDevice do
   end
 
   @doc false
+  @spec handle_info(term(), State.t()) :: {:noreply, State.t()}
+  def handle_info(message, state)
+
   def handle_info(
         {:bacnet_transport, _protocol_id, source_address,
          {:bvlc,
@@ -1100,6 +1107,8 @@ defmodule BACnet.Stack.ForeignDevice do
 
   @spec send_fd_registration(State.t()) ::
           {:ok, Registration.t()} | {:error, term()}
+  defp send_fd_registration(state)
+
   defp send_fd_registration(%State{registration: %Registration{status: :waiting_for_ack} = reg}) do
     # Coalesce explicit renewals while a registration reply is outstanding.
     {:ok, reg}

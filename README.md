@@ -119,6 +119,9 @@ By default, Codepagex only generates conversion code for fast conversion algorit
 
 If you need to use other character sets, such as CP932 (JIS-X-0208) or CP850 (DBCS), you will have to configure  Codepagex accordingly.
 Refer to their documentation for the necessary steps.
+DBCS strings select the codepage using the two octets after the character set byte, in big-endian order.
+The decoder uses the corresponding configured Codepagex `CP<number>` mapping and returns
+`{:error, :unknown_character_string_encoding}` if that codepage is unavailable.
 
 ## Timezone
 
@@ -228,77 +231,41 @@ The struct `BACnet.Protocol.Device.ServicesSupported` is automatically adjusted 
 
 ## Status of BACnet objects implementation
 
-Every object type exposes an overridable `execute/2` function, defined by the object
-module. Use `BACnet.Protocol.ObjectsProtocol.execute(object, context)` to execute
-objects without knowing their modules. All objects share the same execution context
-and result contract; the default preserves the object and runtime state.
-
-```elixir
-alias BACnet.Protocol.ObjectExecution.Context
-alias BACnet.Protocol.ObjectExecution.Result
-alias BACnet.Protocol.ObjectsProtocol
-
-context = %Context{
-  now: DateTime.utc_now(), # Supply device-local time for time-based behaviour.
-  monotonic_time: System.monotonic_time(:millisecond),
-  trigger: :periodic,
-  state: previous_state, # nil on the first execution of this object instance
-  lookup_object: nil,
-  read_property: nil,
-  write_property: nil,
-  options: []
-}
-
-{:ok, %Result{object: updated_object, state: next_state}} =
-  ObjectsProtocol.execute(object, context)
-```
-
-The caller retains `updated_object` and passes `next_state` in the next context for
-that same object instance, with fresh clock values. Runtime state is separate from
-BACnet properties and is owned by the object module. Optional context callbacks
-provide object lookup and property reads/writes on local or remote objects. Writes
-are synchronous and are not rolled back on errors. The caller controls execution
-timing, including calls triggered by property or clock changes.
-Use `context.trigger` to distinguish periodic execution, initialization, clock
-changes, and successful property writes (including repeated writes of the same value).
-
-Object modules implement execution logic by overriding `execute/2` after their
-`bac_object/2` block. See `BACnet.Protocol.ObjectsBehaviour` and
-`BACnet.Protocol.ObjectExecution.Context` for callback signatures and failure handling.
-
 The Execute column below tracks implemented operational behaviour, such as Schedule
 evaluation and target writes. The common execution interface alone does not provide
-that behaviour.
+that behaviour. Event Enrollment evaluates configured event and fault algorithms
+through its lifecycle. The Intrinsic Reporting column covers reporting configured
+on the originating object.
 
 | Object Type                  | Representation | Execute | Intrinsic Reporting |
 |------------------------------|----------------|---------|---------------------|
-| Accumulator                  |    135-2012    |    -    |          -          |
-| Analog Input                 |    135-2012    |    -    |          -          |
-| Analog Output                |    135-2012    |    -    |          -          |
-| Analog Value                 |    135-2012    |    -    |          -          |
-| Averaging                    |    135-2012    |    -    |          -          |
-| Binary Input                 |    135-2012    |    -    |          -          |
-| Binary Output                |    135-2012    |    -    |          -          |
-| Binary Value                 |    135-2012    |    -    |          -          |
-| Calendar                     |    135-2012    |    -    |          -          |
-| Command                      |    135-2012    |    -    |          -          |
-| Device                       |    135-2012    |    -    |          -          |
-| Event Enrollment             |    135-2012    |    -    |          -          |
+| Accumulator                  |    135-2012    |   Yes   |         Yes         |
+| Analog Input                 |    135-2012    |   Yes   |         Yes         |
+| Analog Output                |    135-2012    |   Yes   |         Yes         |
+| Analog Value                 |    135-2012    |   Yes   |         Yes         |
+| Averaging                    |    135-2012    |   Yes   |          -          |
+| Binary Input                 |    135-2012    |   Yes   |         Yes         |
+| Binary Output                |    135-2012    |   Yes   |         Yes         |
+| Binary Value                 |    135-2012    |   Yes   |         Yes         |
+| Calendar                     |    135-2012    |   Yes   |          -          |
+| Command                      |    135-2012    |   Yes   |          -          |
+| Device                       |    135-2012    |   Yes   |          -          |
+| Event Enrollment             |    135-2012    |   Yes   |          -          |
 | File                         |    135-2012    |    -    |          -          |
-| Group                        |    135-2012    |    -    |          -          |
+| Group                        |    135-2012    |   Yes   |          -          |
 | Life Safety Point            |       N/A      |    -    |          -          |
 | Life Safety Zone             |       N/A      |    -    |          -          |
-| Loop                         |    135-2012    |    -    |          -          |
-| Multistate Input             |    135-2012    |    -    |          -          |
-| Multistate Output            |    135-2012    |    -    |          -          |
-| Multistate Value             |    135-2012    |    -    |          -          |
+| Loop                         |    135-2012    |   Yes   |         Yes         |
+| Multistate Input             |    135-2012    |   Yes   |         Yes         |
+| Multistate Output            |    135-2012    |   Yes   |         Yes         |
+| Multistate Value             |    135-2012    |   Yes   |         Yes         |
 | Notification Class           |    135-2012    |    -    |          -          |
-| Program                      |    135-2012    |    -    |          -          |
-| Pulse Converter              |    135-2012    |    -    |          -          |
-| Schedule                     |    135-2012    |    -    |          -          |
-| Event Log                    |    135-2012    |    -    |          -          |
-| Trend Log                    |    135-2012    |    -    |          -          |
-| Trend Log Multiple           |    135-2012    |    -    |          -          |
+| Program                      |    135-2012    |   Yes   |         Yes         |
+| Pulse Converter              |    135-2012    |   Yes   |         Yes         |
+| Schedule                     |    135-2012    |   Yes   |         Yes         |
+| Event Log                    |    135-2012    |   Yes   |         Yes         |
+| Trend Log                    |    135-2012    |   Yes   |         Yes         |
+| Trend Log Multiple           |    135-2012    |   Yes   |         Yes         |
 | Load Control                 |        -       |    -    |          -          |
 | Access Point                 |       N/A      |    -    |          -          |
 | Access Zone                  |       N/A      |    -    |          -          |
@@ -306,19 +273,20 @@ that behaviour.
 | Access Rights                |       N/A      |    -    |          -          |
 | Access Credential            |       N/A      |    -    |          -          |
 | Credential Data Input        |       N/A      |    -    |          -          |
-| Structured View              |    135-2012    |    -    |          -          |
-| Character String Value       |    135-2012    |    -    |          -          |
-| DateTime Value               |    135-2012    |    -    |          -          |
-| Large Analog Value           |    135-2012    |    -    |          -          |
-| Bitstring                    |    135-2012    |    -    |          -          |
-| Octet String Value           |    135-2012    |    -    |          -          |
-| Time Value                   |    135-2012    |    -    |          -          |
-| Integer Value                |    135-2012    |    -    |          -          |
-| Positive Integer Value       |    135-2012    |    -    |          -          |
-| Date Value                   |    135-2012    |    -    |          -          |
-| DateTime Pattern Value       |    135-2012    |    -    |          -          |
-| Time Pattern Value           |    135-2012    |    -    |          -          |
-| Date Pattern Value           |    135-2012    |    -    |          -          |
+| Structured View              |    135-2012    |   N/A   |          -          |
+| Character String Value       |    135-2012    |   Yes   |         Yes         |
+| DateTime Value               |    135-2012    |   Yes   |          -          |
+| Large Analog Value           |    135-2012    |   Yes   |         Yes         |
+| Bitstring                    |    135-2012    |   Yes   |         Yes         |
+| Octet String Value           |    135-2012    |   Yes   |          -          |
+| Time Value                   |    135-2012    |   Yes   |          -          |
+| Integer Value                |    135-2012    |   Yes   |         Yes         |
+| Positive Integer Value       |    135-2012    |   Yes   |         Yes         |
+| Date Value                   |    135-2012    |   Yes   |          -          |
+| DateTime Pattern Value       |    135-2012    |   Yes   |          -          |
+| Time Pattern Value           |    135-2012    |   Yes   |          -          |
+| Date Pattern Value           |    135-2012    |   Yes   |          -          |
+| Network Port                 |    135-2016    |   Yes   |         Yes         |
 | Network Security             |       N/A      |    -    |          -          |
 | Global Group                 |        -       |    -    |          -          |
 | Notification Forwarder       |        -       |    -    |          -          |

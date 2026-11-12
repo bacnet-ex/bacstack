@@ -716,9 +716,14 @@ defmodule BACnet.Protocol.EventAlgorithms.UnsignedRangeTest do
     expired = %{pending | dt_offnormal: DateTime.add(DateTime.utc_now(), -60)}
 
     assert {:no_event, %{dt_offnormal: nil, dt_normal: nil} = cleared} =
-             expired |> algorithm.update(monitored_value: normal) |> algorithm.execute()
+             expired
+             |> algorithm.update(monitored_value: normal)
+             |> algorithm.execute()
 
-    result = cleared |> algorithm.update(monitored_value: high) |> algorithm.execute()
+    result =
+      cleared
+      |> algorithm.update(monitored_value: high)
+      |> algorithm.execute()
 
     assert {:delayed_event, %{current_state: :normal}} = result
   end
@@ -736,9 +741,14 @@ defmodule BACnet.Protocol.EventAlgorithms.UnsignedRangeTest do
     expired = %{pending | dt_normal: DateTime.add(DateTime.utc_now(), -60)}
 
     assert {:no_event, %{dt_normal: nil} = interrupted} =
-             expired |> algorithm.update(monitored_value: high) |> algorithm.execute()
+             expired
+             |> algorithm.update(monitored_value: high)
+             |> algorithm.execute()
 
-    result = interrupted |> algorithm.update(monitored_value: normal) |> algorithm.execute()
+    result =
+      interrupted
+      |> algorithm.update(monitored_value: normal)
+      |> algorithm.execute()
 
     assert {:delayed_event, %{current_state: :high_limit}} = result
   end
@@ -749,7 +759,9 @@ defmodule BACnet.Protocol.EventAlgorithms.UnsignedRangeTest do
     parameters = %{pending.parameters | time_delay: 0}
 
     assert {:event, finished, _notification} =
-             pending |> algorithm.update(parameters: parameters) |> algorithm.execute()
+             pending
+             |> algorithm.update(parameters: parameters)
+             |> algorithm.execute()
 
     assert finished.current_state == :high_limit
     assert finished.dt_offnormal == nil
@@ -761,12 +773,16 @@ defmodule BACnet.Protocol.EventAlgorithms.UnsignedRangeTest do
     assert {:event, alarm, _notification} = algorithm.execute(state)
 
     assert {:delayed_event, pending} =
-             alarm |> algorithm.update(monitored_value: normal) |> algorithm.execute()
+             alarm
+             |> algorithm.update(monitored_value: normal)
+             |> algorithm.execute()
 
     parameters = %{pending.parameters | time_delay_normal: 0}
 
     assert {:event, finished, _notification} =
-             pending |> algorithm.update(parameters: parameters) |> algorithm.execute()
+             pending
+             |> algorithm.update(parameters: parameters)
+             |> algorithm.execute()
 
     assert finished.current_state == :normal
     assert finished.dt_offnormal == nil
@@ -783,5 +799,27 @@ defmodule BACnet.Protocol.EventAlgorithms.UnsignedRangeTest do
       })
 
     {UnsignedRange, state, 5, 11}
+  end
+
+  test "execute/2 starts and expires the delay using the supplied sample" do
+    state =
+      UnsignedRange.new(3, %Params{
+        low_limit: 2,
+        high_limit: 7,
+        time_delay: 1,
+        time_delay_normal: nil
+      })
+
+    new_state = %{state | monitored_value: 8}
+    now = ~U[2026-01-01 12:00:00Z]
+    deadline = DateTime.add(now, 1, :second)
+
+    assert {:delayed_event, %{dt_offnormal: ^deadline} = pending} =
+             UnsignedRange.execute(new_state, now)
+
+    assert {:delayed_event, ^pending} = UnsignedRange.execute(pending, now)
+
+    assert {:event, %{current_state: :high_limit}, _notification} =
+             UnsignedRange.execute(pending, deadline)
   end
 end

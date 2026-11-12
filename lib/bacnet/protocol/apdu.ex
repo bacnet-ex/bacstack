@@ -25,7 +25,7 @@ defmodule BACnet.Protocol.APDU do
   | `SimpleACK`                   | 2   | Server      | No             | No           | Positive reply for services that return no data. See `BACnet-SimpleACK-PDU` in Clause 21                                |
   | `ComplexACK`                  | 3   | Server      | No             | Yes          | Positive reply containing data (property values, etc.). See `BACnet-ComplexACK-PDU` in Clause 21                        |
   | `SegmentACK`                  | 4   | Either      | No             | No           | Acknowledges received segments and/or requests more. See `BACnet-SegmentACK-PDU` in Clause 21                           |
-  | `Error`                       | 5   | Server      | No             | No           | Service failed; contains error class + code (+ optional payload). See `BACnet-Error-PDU` in Clause 21                   |
+  | `Error`                       | 5   | Server      | No             | No           | Service failed - contains error class + code (+ optional payload). See `BACnet-Error-PDU` in Clause 21                   |
   | `Reject`                      | 6   | Server      | No             | No           | Request rejected due to protocol/syntax error (before execution). See `BACnet-Reject-PDU` in Clause 21 and Clause 18.8  |
   | `Abort`                       | 7   | Either      | No             | No           | Transaction aborted (timeout, resources, security, etc.). See `BACnet-Abort-PDU` in Clause 21 and Clause 18.10          |
 
@@ -82,7 +82,7 @@ defmodule BACnet.Protocol.APDU do
         property_value: %BACnet.Protocol.ApplicationTags.Encoding{type: :real, value: 100.0, encoding: :primitive, extras: []}
       }}
 
-  ## See Also
+  ### See Also
 
   - `BACnet.Protocol` - top-level PDU decoding (BVLL / NPCI)
   - `BACnet.Protocol.APDU.Abort`

@@ -13,7 +13,7 @@ defmodule BACnet.Protocol.ReadAccessResult do
   inaccessible). The Read Access Result structure makes this per-property
   error reporting possible.
 
-  This type is only used in the response path of Read Property Multiple; the
+  This type is only used in the response path of Read Property Multiple - the
   request side uses Access Specification instead.
   """
 

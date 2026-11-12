@@ -62,8 +62,8 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
      <<0x65, 11, 72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100>>, []},
     {"primitive character string UTF-8", {:character_string, "Hello World"},
      <<0x75, 12, 0, 72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100>>, []},
-    {"primitive character string DBCS", {:character_string, "Hello Ærld"},
-     <<0x75, 13, 1, 72, 101, 108, 108, 111, 32, 1, 146, 31, 114, 108, 100>>, [skip_encode: true]},
+    {"primitive character string DBCS", {:character_string, "Hello Ærld"},
+     <<0x75, 13, 1, 0x03, 0x52, "Hello ", 146, "rld">>, [skip_encode: true]},
     {"primitive character string JIS-X-0208", {:character_string, "Hello 0rld"},
      <<0x75, 13, 2, 72, 101, 108, 108, 111, 32, 48, 21, 31, 114, 108, 100>>, [skip_encode: true]},
     {"primitive character string UCS-4 (UTF-32)", {:character_string, "Hello World"},
@@ -137,13 +137,23 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
      <<0xC4, 2, 3, 245, 181>>, []},
     {"tagged tag num 0", {:tagged, {0, <<0>>, 1}}, <<0x09, 0>>, []},
     {"tagged tag num 8", {:tagged, {8, <<0>>, 1}}, <<0x89, 0>>, []},
+    {"tagged tag num 14", {:tagged, {14, <<0>>, 1}}, <<0xE9, 0>>, []},
+    {"tagged tag num 15", {:tagged, {15, <<0>>, 1}}, <<0xF9, 15, 0>>, []},
     {"tagged tag num 32", {:tagged, {32, <<0>>, 1}}, <<0xF9, 32, 0>>, []},
+    {"tagged tag num 254", {:tagged, {254, <<0>>, 1}}, <<0xF9, 254, 0>>, []},
     {"constructed data real", {:constructed, {0, {:real, 6.9}, 0}},
      <<14, 68, 64, 220, 204, 205, 15>>, []},
     {"constructed data tag num 33 real", {:constructed, {33, {:real, 6.9}, 0}},
      <<254, 33, 68, 64, 220, 204, 205, 255, 33>>, []},
     {"constructed data empty", {:constructed, {0, [], 0}}, <<14, 15>>, []},
+    {"constructed data tag num 14 empty", {:constructed, {14, [], 0}}, <<0xEE, 0xEF>>, []},
+    {"constructed data tag num 15 empty", {:constructed, {15, [], 0}}, <<0xFE, 15, 0xFF, 15>>,
+     []},
     {"constructed data tag num 32 empty", {:constructed, {32, [], 0}}, <<254, 32, 255, 32>>, []},
+    {"constructed data tag num 254 empty", {:constructed, {254, [], 0}}, <<0xFE, 254, 0xFF, 254>>,
+     []},
+    {"constructed data tag num 254 child", {:constructed, {254, {:null, nil}, 0}},
+     <<0xFE, 254, 0, 0xFF, 254>>, []},
     {"constructed data list of null",
      {:constructed,
       {3,
@@ -324,6 +334,20 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
     assert {:error, :insufficient_tag_value_data} = ApplicationTags.decode(<<0x44, 255>>)
   end
 
+  for {description, payload, expected} <- [
+        {"positive two thirds", <<0x3F, 0x2A, 0xAA, 0xAB>>, 0.67},
+        {"negative two thirds", <<0xBF, 0x2A, 0xAA, 0xAB>>, -0.67},
+        {"positive eight thirds", <<0x40, 0x2A, 0xAA, 0xAB>>, 2.67},
+        {"negative eight thirds", <<0xC0, 0x2A, 0xAA, 0xAB>>, -2.67}
+      ] do
+    test "decode real rounds repeating decimals to fractional precision: #{description}" do
+      assert {:ok, unquote(expected)} = ApplicationTags.decode_value(0x4, unquote(payload))
+
+      assert {:ok, {:real, unquote(expected)}, <<>>} =
+               ApplicationTags.decode(<<0x44, unquote(payload)::binary>>)
+    end
+  end
+
   test "decode double not enough data" do
     assert {:error, :insufficient_tag_value_data} =
              ApplicationTags.decode(<<0x55, 8, 192, 73, 6, 37>>)
@@ -344,6 +368,53 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
   test "decode character string unknown encoding" do
     assert {:error, :unknown_character_string_encoding} =
              ApplicationTags.decode(<<0x75, 1, 10, 72>>)
+  end
+
+  test "decode character string DBCS example from Clause 20.2.9" do
+    # The example's encoded bytes use a lowercase 's' in "string".
+    text = "This is a BACnet string!"
+    value = <<1, 850::16, text::binary>>
+
+    assert {:ok, {:character_string, ^text}, <<0x11>>} =
+             ApplicationTags.decode(<<0x75, byte_size(value), value::binary, 0x11>>)
+
+    assert {:ok, ^text} = ApplicationTags.decode_value(7, value)
+  end
+
+  test "decode character string DBCS selects the declared codepage" do
+    assert {:ok, "Æ"} = ApplicationTags.decode_value(7, <<1, 850::16, 0x92>>)
+
+    assert {:ok, "日本語"} =
+             ApplicationTags.decode_value(7, <<1, 932::16, 0x93, 0xFA, 0x96, 0x7B, 0x8C, 0xEA>>)
+
+    assert {:ok, {:character_string, "日本語"}, <<0x11>>} =
+             ApplicationTags.decode(
+               <<0x75, 9, 1, 932::16, 0x93, 0xFA, 0x96, 0x7B, 0x8C, 0xEA, 0x11>>
+             )
+  end
+
+  test "decode character string DBCS allows an empty string after the codepage" do
+    assert {:ok, {:character_string, ""}, ""} = ApplicationTags.decode(<<0x73, 1, 850::16>>)
+    assert {:ok, ""} = ApplicationTags.decode_value(7, <<1, 850::16>>)
+  end
+
+  test "decode character string DBCS rejects an incomplete codepage" do
+    for bytes <- [<<1>>, <<1, 0x03>>] do
+      assert {:error, :invalid_data} = ApplicationTags.decode_value(7, bytes)
+
+      assert {:error, :invalid_data} =
+               ApplicationTags.decode(<<0x70 + byte_size(bytes), bytes::binary>>)
+    end
+  end
+
+  test "decode character string DBCS rejects an unsupported codepage" do
+    assert {:error, :unknown_character_string_encoding} =
+             ApplicationTags.decode_value(7, <<1, 65_535::16, "Hello">>)
+  end
+
+  test "decode character string DBCS rejects invalid bytes for the declared codepage" do
+    assert {:error, "Invalid bytes for encoding"} =
+             ApplicationTags.decode_value(7, <<1, 932::16, 0x93>>)
   end
 
   test "decode character string JIS-X invalid bytes for encoding" do
@@ -568,32 +639,49 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
 
   test "encode elixir time 19:35:49.5" do
     assert {:ok, <<0xB4, 19, 35, 49, 50>>} =
-             ApplicationTags.encode({:time, Time.new!(19, 35, 49, {5, 1})})
+             ApplicationTags.encode({:time, Time.new!(19, 35, 49, {500_000, 1})})
   end
 
   test "encode elixir time 19:35:49.05" do
     assert {:ok, <<0xB4, 19, 35, 49, 5>>} =
-             ApplicationTags.encode({:time, Time.new!(19, 35, 49, {5, 2})})
+             ApplicationTags.encode({:time, Time.new!(19, 35, 49, {50_000, 2})})
   end
 
   test "encode elixir time 19:35:49.500" do
     assert {:ok, <<0xB4, 19, 35, 49, 50>>} =
-             ApplicationTags.encode({:time, Time.new!(19, 35, 49, {500, 3})})
+             ApplicationTags.encode({:time, Time.new!(19, 35, 49, {500_000, 3})})
   end
 
   test "encode elixir time 19:35:49.500_0" do
     assert {:ok, <<0xB4, 19, 35, 49, 50>>} =
-             ApplicationTags.encode({:time, Time.new!(19, 35, 49, {5000, 4})})
+             ApplicationTags.encode({:time, Time.new!(19, 35, 49, {500_000, 4})})
   end
 
   test "encode elixir time 19:35:49.500_00" do
     assert {:ok, <<0xB4, 19, 35, 49, 50>>} =
-             ApplicationTags.encode({:time, Time.new!(19, 35, 49, {50_000, 5})})
+             ApplicationTags.encode({:time, Time.new!(19, 35, 49, {500_000, 5})})
   end
 
   test "encode elixir time 19:35:49.500_000" do
     assert {:ok, <<0xB4, 19, 35, 49, 50>>} =
              ApplicationTags.encode({:time, Time.new!(19, 35, 49, {500_000, 6})})
+  end
+
+  test "native time encoding treats fractional precision as display metadata" do
+    for time <- [
+          ~T[19:35:49.5],
+          ~T[19:35:49.50],
+          ~T[19:35:49.500],
+          ~T[19:35:49.5000],
+          ~T[19:35:49.50000],
+          ~T[19:35:49.500000]
+        ] do
+      assert {:ok, <<0xB4, 19, 35, 49, 50>>} = ApplicationTags.encode({:time, time})
+      assert {:ok, <<19, 35, 49, 50>>, _header} = ApplicationTags.encode_value({:time, time})
+    end
+
+    assert {:ok, <<0xB4, 19, 35, 49, 1>>} = ApplicationTags.encode({:time, ~T[19:35:49.019999]})
+    assert {:ok, <<0xB4, 19, 35, 49, 99>>} = ApplicationTags.encode({:time, ~T[19:35:49.999999]})
   end
 
   test "time encoding rejects invalid hundredth 100" do
@@ -676,6 +764,22 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
   test "encode constructed invalid tag num" do
     assert_raise ArgumentError, fn ->
       ApplicationTags.encode({:constructed, {256, {:null, nil}, 0}})
+    end
+  end
+
+  test "encode rejects reserved and out-of-range context tag numbers" do
+    for tag_number <- [-1, 255, 256] do
+      assert_raise ArgumentError, fn ->
+        ApplicationTags.encode({:tagged, {tag_number, <<0>>, 1}})
+      end
+
+      assert_raise ArgumentError, fn ->
+        ApplicationTags.encode_value({:tagged, {tag_number, <<0>>, 1}})
+      end
+
+      assert_raise ArgumentError, fn ->
+        ApplicationTags.encode({:constructed, {tag_number, [], 0}})
+      end
     end
   end
 

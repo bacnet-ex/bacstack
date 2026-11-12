@@ -101,7 +101,11 @@ defmodule BACnet.Stack.LogBufferTest do
 
   test "new/1 accepts a max size of one" do
     buffer = LogBuffer.new(1)
-    buffer = buffer |> LogBuffer.checkin(:first) |> LogBuffer.checkin(:second)
+
+    buffer =
+      buffer
+      |> LogBuffer.checkin(:first)
+      |> LogBuffer.checkin(:second)
 
     assert LogBuffer.to_list(buffer) == [:second]
     assert LogBuffer.get_size(buffer) == 1
@@ -148,7 +152,12 @@ defmodule BACnet.Stack.LogBufferTest do
     truncated = LogBuffer.truncate(buffer)
     assert LogBuffer.get_size(truncated) == 0
 
-    refilled = truncated |> LogBuffer.checkin(8) |> LogBuffer.checkin(9) |> LogBuffer.checkin(10)
+    refilled =
+      truncated
+      |> LogBuffer.checkin(8)
+      |> LogBuffer.checkin(9)
+      |> LogBuffer.checkin(10)
+
     assert LogBuffer.to_list(refilled) == [9, 10]
   end
 

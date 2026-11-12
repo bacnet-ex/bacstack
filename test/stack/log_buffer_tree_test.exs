@@ -111,7 +111,11 @@ defmodule BACnet.Stack.LogBufferTreeTest do
 
   test "a capacity of one supports repeated overflow and checkout" do
     buffer = LogBufferTree.new(1)
-    buffer = buffer |> LogBufferTree.checkin(1) |> LogBufferTree.checkin(2)
+
+    buffer =
+      buffer
+      |> LogBufferTree.checkin(1)
+      |> LogBufferTree.checkin(2)
 
     assert LogBufferTree.to_list(buffer) == [2]
     assert LogBufferTree.get_size(buffer) == 1
@@ -121,7 +125,11 @@ defmodule BACnet.Stack.LogBufferTreeTest do
     assert LogBufferTree.peek(empty) == :error
     assert LogBufferTree.peek_r(empty) == :error
 
-    refilled = empty |> LogBufferTree.checkin(3) |> LogBufferTree.checkin(4)
+    refilled =
+      empty
+      |> LogBufferTree.checkin(3)
+      |> LogBufferTree.checkin(4)
+
     assert LogBufferTree.to_list(refilled) == [4]
   end
 
@@ -151,7 +159,11 @@ defmodule BACnet.Stack.LogBufferTreeTest do
     assert LogBufferTree.peek(buffer) == {:ok, 3}
     assert LogBufferTree.read_range(buffer, 1, 9) == [4, 5]
 
-    buffer = buffer |> LogBufferTree.checkin(6) |> LogBufferTree.checkin(7)
+    buffer =
+      buffer
+      |> LogBufferTree.checkin(6)
+      |> LogBufferTree.checkin(7)
+
     assert LogBufferTree.to_list(buffer) == [3, 4, 5, 6, 7]
     assert LogBufferTree.to_list(LogBufferTree.checkin(buffer, 8)) == [4, 5, 6, 7, 8]
     assert LogBufferTree.to_list(original) == [1, 2, 3, 4, 5]
@@ -190,7 +202,10 @@ defmodule BACnet.Stack.LogBufferTreeTest do
     assert LogBufferTree.checkout(empty) == {nil, empty}
 
     refilled =
-      empty |> LogBufferTree.checkin(8) |> LogBufferTree.checkin(9) |> LogBufferTree.checkin(10)
+      empty
+      |> LogBufferTree.checkin(8)
+      |> LogBufferTree.checkin(9)
+      |> LogBufferTree.checkin(10)
 
     assert LogBufferTree.to_list(refilled) == [9, 10]
     assert LogBufferTree.to_list(original) == [2, 3]
@@ -238,7 +253,10 @@ defmodule BACnet.Stack.LogBufferTreeTest do
       next_key: 4_294_967_296
     }
 
-    buffer = buffer |> LogBufferTree.checkin(:third) |> LogBufferTree.checkin(:fourth)
+    buffer =
+      buffer
+      |> LogBufferTree.checkin(:third)
+      |> LogBufferTree.checkin(:fourth)
 
     assert LogBufferTree.to_list(buffer) == [:third, :fourth]
     assert LogBufferTree.read_range(buffer, 0, 10) == [:third, :fourth]

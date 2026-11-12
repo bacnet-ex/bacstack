@@ -7,6 +7,8 @@ defmodule BACnet.Protocol.BACnetTimeTest do
 
   doctest BACnetTime
 
+  defp patch_hundredth(time)
+
   defp patch_hundredth(%Time{microsecond: {_us, 0}} = dt), do: dt
 
   defp patch_hundredth(%Time{} = dt) do
@@ -47,69 +49,66 @@ defmodule BACnet.Protocol.BACnetTimeTest do
   end
 
   test "from time" do
-    dt = Time.utc_now()
-
-    hundredth =
-      case dt.microsecond do
-        {_value, 0} -> 0
-        {value, 1} -> value * 10
-        {value, 2} -> value
-        {value, 3} -> Integer.floor_div(value, 10)
-        {value, 4} -> Integer.floor_div(value, 100)
-        {value, 5} -> Integer.floor_div(value, 1000)
-        {value, 6} -> Integer.floor_div(value, 10_000)
-      end
-
-    assert %BACnetTime{
-             second: dt.second,
-             minute: dt.minute,
-             hour: dt.hour,
-             hundredth: hundredth
-           } == BACnetTime.from_time(dt)
+    assert BACnetTime.from_time(~T[23:59:59.123456]) == %BACnetTime{
+             hour: 23,
+             minute: 59,
+             second: 59,
+             hundredth: 12
+           }
   end
 
-  test "from time various ms precision" do
-    assert %BACnetTime{
-             hour: 23,
-             minute: 59,
-             second: 59,
-             hundredth: 50
-           } = BACnetTime.from_time(Time.new!(23, 59, 59, {50_000, 5}))
+  test "from time with explicit fractional precision" do
+    for precision <- 1..6 do
+      assert %BACnetTime{hour: 23, minute: 59, second: 59, hundredth: 50} =
+               BACnetTime.from_time(Time.new!(23, 59, 59, {500_000, precision}))
+    end
 
-    assert %BACnetTime{
-             hour: 23,
-             minute: 59,
-             second: 59,
-             hundredth: 50
-           } = BACnetTime.from_time(Time.new!(23, 59, 59, {5000, 4}))
+    assert %BACnetTime{hour: 23, minute: 59, second: 59, hundredth: 5} =
+             BACnetTime.from_time(Time.new!(23, 59, 59, {50_000, 2}))
+  end
 
-    assert %BACnetTime{
-             hour: 23,
-             minute: 59,
-             second: 59,
-             hundredth: 50
-           } = BACnetTime.from_time(Time.new!(23, 59, 59, {500, 3}))
+  for {time, hundredth} <- [
+        {~T[12:34:56], 0},
+        {~T[12:34:56.5], 50},
+        {~T[12:34:56.50], 50},
+        {~T[12:34:56.500], 50},
+        {~T[12:34:56.5000], 50},
+        {~T[12:34:56.50000], 50},
+        {~T[12:34:56.500000], 50},
+        {~T[12:34:56.05], 5},
+        {~T[12:34:56.334], 33},
+        {~T[12:34:56.009999], 0},
+        {~T[12:34:56.019999], 1},
+        {~T[12:34:56.999999], 99}
+      ] do
+    test "from_time converts microseconds to hundredths for #{Time.to_iso8601(time)}" do
+      time = unquote(Macro.escape(time))
+      converted = BACnetTime.from_time(time)
 
-    assert %BACnetTime{
-             hour: 23,
-             minute: 59,
-             second: 59,
-             hundredth: 50
-           } = BACnetTime.from_time(Time.new!(23, 59, 59, {50, 2}))
+      assert converted == %BACnetTime{
+               hour: 12,
+               minute: 34,
+               second: 56,
+               hundredth: unquote(hundredth)
+             }
 
-    assert %BACnetTime{
-             hour: 23,
-             minute: 59,
-             second: 59,
-             hundredth: 50
-           } = BACnetTime.from_time(Time.new!(23, 59, 59, {5, 1}))
+      assert BACnetTime.valid?(converted)
+    end
+  end
 
-    assert %BACnetTime{
-             hour: 23,
-             minute: 59,
-             second: 59,
-             hundredth: 5
-           } = BACnetTime.from_time(Time.new!(23, 59, 59, {5, 2}))
+  test "unspecified hundredths use the reference time truncated to hundredth resolution" do
+    pattern = %BACnetTime{hour: 12, minute: 34, second: 56, hundredth: :unspecified}
+
+    for {reference, expected} <- [
+          {~T[00:00:00.5], ~T[12:34:56.500000]},
+          {~T[00:00:00.500], ~T[12:34:56.500000]},
+          {~T[00:00:00.500000], ~T[12:34:56.500000]},
+          {~T[00:00:00.123456], ~T[12:34:56.120000]},
+          {~T[00:00:00.009999], ~T[12:34:56]}
+        ] do
+      assert {:ok, ^expected} = BACnetTime.to_time(pattern, reference)
+      assert BACnetTime.to_time!(pattern, reference) == expected
+    end
   end
 
   test "to time" do

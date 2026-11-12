@@ -867,9 +867,14 @@ defmodule BACnet.Protocol.EventAlgorithms.OutOfRangeTest do
     expired = %{pending | dt_offnormal: DateTime.add(DateTime.utc_now(), -60)}
 
     assert {:no_event, %{dt_offnormal: nil, dt_normal: nil} = cleared} =
-             expired |> algorithm.update(monitored_value: normal) |> algorithm.execute()
+             expired
+             |> algorithm.update(monitored_value: normal)
+             |> algorithm.execute()
 
-    result = cleared |> algorithm.update(monitored_value: high) |> algorithm.execute()
+    result =
+      cleared
+      |> algorithm.update(monitored_value: high)
+      |> algorithm.execute()
 
     assert {:delayed_event, %{current_state: :normal}} = result
   end
@@ -887,9 +892,14 @@ defmodule BACnet.Protocol.EventAlgorithms.OutOfRangeTest do
     expired = %{pending | dt_normal: DateTime.add(DateTime.utc_now(), -60)}
 
     assert {:no_event, %{dt_normal: nil} = interrupted} =
-             expired |> algorithm.update(monitored_value: high) |> algorithm.execute()
+             expired
+             |> algorithm.update(monitored_value: high)
+             |> algorithm.execute()
 
-    result = interrupted |> algorithm.update(monitored_value: normal) |> algorithm.execute()
+    result =
+      interrupted
+      |> algorithm.update(monitored_value: normal)
+      |> algorithm.execute()
 
     assert {:delayed_event, %{current_state: :high_limit}} = result
   end
@@ -900,7 +910,9 @@ defmodule BACnet.Protocol.EventAlgorithms.OutOfRangeTest do
     parameters = %{pending.parameters | time_delay: 0}
 
     assert {:event, finished, _notification} =
-             pending |> algorithm.update(parameters: parameters) |> algorithm.execute()
+             pending
+             |> algorithm.update(parameters: parameters)
+             |> algorithm.execute()
 
     assert finished.current_state == :high_limit
     assert finished.dt_offnormal == nil
@@ -912,12 +924,16 @@ defmodule BACnet.Protocol.EventAlgorithms.OutOfRangeTest do
     assert {:event, alarm, _notification} = algorithm.execute(state)
 
     assert {:delayed_event, pending} =
-             alarm |> algorithm.update(monitored_value: normal) |> algorithm.execute()
+             alarm
+             |> algorithm.update(monitored_value: normal)
+             |> algorithm.execute()
 
     parameters = %{pending.parameters | time_delay_normal: 0}
 
     assert {:event, finished, _notification} =
-             pending |> algorithm.update(parameters: parameters) |> algorithm.execute()
+             pending
+             |> algorithm.update(parameters: parameters)
+             |> algorithm.execute()
 
     assert finished.current_state == :normal
     assert finished.dt_offnormal == nil
@@ -935,5 +951,28 @@ defmodule BACnet.Protocol.EventAlgorithms.OutOfRangeTest do
       })
 
     {OutOfRange, state, 5.0, 11.0}
+  end
+
+  test "execute/2 starts and expires the delay using the supplied sample" do
+    state =
+      OutOfRange.new(3.0, %LimitEnable{low_limit_enable: true, high_limit_enable: true}, %Params{
+        low_limit: -2.0,
+        high_limit: 7.0,
+        deadband: 2.0,
+        time_delay: 1,
+        time_delay_normal: nil
+      })
+
+    new_state = %{state | monitored_value: 7.1}
+    now = ~U[2026-01-01 12:00:00Z]
+    deadline = DateTime.add(now, 1, :second)
+
+    assert {:delayed_event, %{dt_offnormal: ^deadline} = pending} =
+             OutOfRange.execute(new_state, now)
+
+    assert {:delayed_event, ^pending} = OutOfRange.execute(pending, now)
+
+    assert {:event, %{current_state: :high_limit}, _notification} =
+             OutOfRange.execute(pending, deadline)
   end
 end

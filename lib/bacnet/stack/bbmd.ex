@@ -31,7 +31,7 @@ defmodule BACnet.Stack.BBMD do
   is stated in J.4.3. Proxy mode (see the `:proxy_mode` start option) is a
   local deviation documented in the option description.
 
-  ## See Also
+  ### See Also
 
   - `BACnet.Protocol`
   - `BACnet.Protocol.BroadcastDistributionTableEntry`

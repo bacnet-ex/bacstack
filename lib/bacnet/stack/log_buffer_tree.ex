@@ -163,7 +163,7 @@ defmodule BACnet.Stack.LogBufferTree do
   @doc """
   Reads up to `count` items starting at the zero-based offset from the oldest item.
 
-  Seeking uses the tree's key index. Only the requested records are collected;
+  Seeking uses the tree's key index. Only the requested records are collected -
   offsets past the end return an empty list.
   """
   @spec read_range(t(), non_neg_integer(), pos_integer()) :: [item()]

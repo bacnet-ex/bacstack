@@ -3,7 +3,7 @@ defmodule BACnet.Protocol.WeekNDay do
   A WeekNDay (Week And Day) is a compact 3-component pattern used inside
   `BACnet.Protocol.CalendarEntry` and `BACnet.Protocol.SpecialEvent` to describe
   recurring days without listing every date.
-  Classic examples: "the third Tuesday of every month", "every even week on Friday",
+  Classic examples: "the third Tuesday of every month", "every Friday",
   or "the last Sunday in odd months".
 
   It is one of BACnet's most powerful yet bandwidth-efficient calendar primitives.
@@ -13,7 +13,7 @@ defmodule BACnet.Protocol.WeekNDay do
     ```
     BACnetWeekNDay ::= SEQUENCE {
         month       (1..12 | 13 | 14 | 255),  -- 13=odd, 14=even, 255=unspecified
-        weekOfMonth (1..6 | 255),             -- 6 = last 7 days, 255=unspecified
+        weekOfMonth (1..9 | 255),             -- 6 = last 7 days, 255=unspecified
         dayOfWeek   (1..7 | 255)
     }
     ```
@@ -24,6 +24,8 @@ defmodule BACnet.Protocol.WeekNDay do
 
   The week-of-month numbering (1 = days 1-7, 6 = last 7 days of month) is defined
   in the production comments and is independent of the actual calendar month length.
+  Values 7, 8 and 9 select the seven-day blocks immediately before the final
+  7, 14 and 21 days, respectively.
 
   ### Examples
 
@@ -63,18 +65,15 @@ defmodule BACnet.Protocol.WeekNDay do
   - `BACnet.Protocol.SpecialEvent`
   """
 
-  # TODO: Throw argument error in encode if not valid
-
   alias BACnet.Protocol.ApplicationTags
 
   @typedoc """
-  Compact recurring-day pattern (see `BACnet.Protocol.WeekNDay` module docs for full semantics
-  and ASN.1 production). Month and week support the same even/odd/unspecified
-  wildcards as `BACnet.Protocol.BACnetDate`.
+  Compact recurring-day pattern.
+  Month supports odd/even/unspecified values - week and weekday support unspecified values.
   """
   @type t :: %__MODULE__{
           month: 1..12 | :even | :odd | :unspecified,
-          week_of_month: 1..6 | :unspecified,
+          week_of_month: 1..9 | :unspecified,
           weekday: 1..7 | :unspecified
         }
 
@@ -91,16 +90,20 @@ defmodule BACnet.Protocol.WeekNDay do
   """
   @spec encode(t(), Keyword.t()) :: {:ok, ApplicationTags.encoding_list()} | {:error, term()}
   def encode(%__MODULE__{} = week, _opts \\ []) do
-    month =
-      case week.month do
-        :unspecified -> 255
-        :even -> 14
-        :odd -> 13
-        _else -> week.month
-      end
+    if valid?(week) do
+      month =
+        case week.month do
+          :unspecified -> 255
+          :even -> 14
+          :odd -> 13
+          _else -> week.month
+        end
 
-    str = <<month, item_to_int(week.week_of_month), item_to_int(week.weekday)>>
-    {:ok, [{:octet_string, str}]}
+      str = <<month, item_to_int(week.week_of_month), item_to_int(week.weekday)>>
+      {:ok, [{:octet_string, str}]}
+    else
+      {:error, :invalid_value}
+    end
   end
 
   @doc """
@@ -114,7 +117,7 @@ defmodule BACnet.Protocol.WeekNDay do
         {:octet_string, <<month, week_of_month, weekday>>}
         | rest
       ]
-      when (month in 1..14 or month == 255) and (week_of_month in 1..6 or week_of_month == 255) and
+      when (month in 1..14 or month == 255) and (week_of_month in 1..9 or week_of_month == 255) and
              (weekday in 1..7 or weekday == 255) ->
         week = %__MODULE__{
           month:
@@ -149,6 +152,8 @@ defmodule BACnet.Protocol.WeekNDay do
   It only validates the struct is valid as per type specification.
   """
   @spec valid?(t()) :: boolean()
+  def valid?(week_n_day)
+
   def valid?(
         %__MODULE__{
           month: month,
@@ -157,11 +162,14 @@ defmodule BACnet.Protocol.WeekNDay do
         } = _t
       )
       when (month in 1..12 or month in [:even, :odd, :unspecified]) and
-             (week in 1..6 or week == :unspecified) and
+             (week in 1..9 or week == :unspecified) and
              (weekday in 1..7 or weekday == :unspecified),
       do: true
 
   def valid?(%__MODULE__{} = _t), do: false
+
+  @spec item_to_int(1..9 | :unspecified) :: 1..9 | 255
+  defp item_to_int(component)
 
   defp item_to_int(:unspecified), do: 255
   defp item_to_int(term), do: term

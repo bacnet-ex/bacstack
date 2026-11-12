@@ -22,6 +22,7 @@ defmodule BACnet.Test.Protocol.ObjectsProtocolTest do
     end
 
     @impl ObjectsBehaviour
+    @spec execute(t(), Context.t()) :: {:ok, Result.t(t())} | {:error, term()}
     def execute(object, %Context{options: options} = context) do
       if Keyword.get(options, :skip, false) do
         super(object, context)
@@ -42,7 +43,7 @@ defmodule BACnet.Test.Protocol.ObjectsProtocolTest do
             trigger: context.trigger
           }
 
-          {:ok, %Result{object: updated, state: state}}
+          {:ok, %Result{object: updated, state: state, next_execution: nil}}
         end
       end
     end
@@ -59,13 +60,16 @@ defmodule BACnet.Test.Protocol.ObjectsProtocolTest do
 
   @target %{@source | object_identifier: %ObjectIdentifier{type: :binary_output, instance: 2}}
 
-  test "every built-in object exports execute/2 and implements the protocol with a no-op default" do
+  test "every built-in object exports lifecycle callbacks and passive types retain their no-op default" do
     context = %Context{
+      device_identifier: nil,
       now: @now,
+      timezone_database: Calendar.UTCOnlyTimeZoneDatabase,
       monotonic_time: -1000,
       trigger: :periodic,
       state: %{preserve: make_ref()},
       lookup_object: fn _ref -> flunk("no-op must not look up objects") end,
+      read_property_multiple: nil,
       read_property: fn _ref -> flunk("no-op must not read properties") end,
       write_property: fn _ref, _value, _priority -> flunk("no-op must not write properties") end,
       options: []
@@ -73,13 +77,61 @@ defmodule BACnet.Test.Protocol.ObjectsProtocolTest do
 
     for module <- Map.values(ObjectsUtility.get_object_type_mappings()) do
       object = struct(module)
-      expected = %Result{object: object, state: context.state}
 
       assert ObjectsBehaviour in module.__info__(:attributes)[:behaviour]
       assert function_exported?(module, :execute, 2)
+      assert function_exported?(module, :validate_execution, 2)
+      assert function_exported?(module, :prepare_write, 3)
       assert ObjectsProtocol.impl_for(object) != nil
+    end
+
+    for module <- Map.values(ObjectsUtility.get_object_type_mappings()),
+        module not in [
+          BACnet.Protocol.ObjectTypes.Accumulator,
+          BACnet.Protocol.ObjectTypes.AnalogInput,
+          BACnet.Protocol.ObjectTypes.AnalogOutput,
+          BACnet.Protocol.ObjectTypes.AnalogValue,
+          BACnet.Protocol.ObjectTypes.Averaging,
+          BACnet.Protocol.ObjectTypes.BinaryInput,
+          BACnet.Protocol.ObjectTypes.BinaryOutput,
+          BACnet.Protocol.ObjectTypes.BinaryValue,
+          BACnet.Protocol.ObjectTypes.BitstringValue,
+          BACnet.Protocol.ObjectTypes.Calendar,
+          BACnet.Protocol.ObjectTypes.CharacterStringValue,
+          BACnet.Protocol.ObjectTypes.Command,
+          BACnet.Protocol.ObjectTypes.DatePatternValue,
+          BACnet.Protocol.ObjectTypes.DateTimePatternValue,
+          BACnet.Protocol.ObjectTypes.DateTimeValue,
+          BACnet.Protocol.ObjectTypes.DateValue,
+          BACnet.Protocol.ObjectTypes.Device,
+          BACnet.Protocol.ObjectTypes.EventEnrollment,
+          BACnet.Protocol.ObjectTypes.EventLog,
+          BACnet.Protocol.ObjectTypes.Group,
+          BACnet.Protocol.ObjectTypes.IntegerValue,
+          BACnet.Protocol.ObjectTypes.LargeAnalogValue,
+          BACnet.Protocol.ObjectTypes.Loop,
+          BACnet.Protocol.ObjectTypes.MultistateInput,
+          BACnet.Protocol.ObjectTypes.MultistateOutput,
+          BACnet.Protocol.ObjectTypes.MultistateValue,
+          BACnet.Protocol.ObjectTypes.NetworkPort,
+          BACnet.Protocol.ObjectTypes.OctetStringValue,
+          BACnet.Protocol.ObjectTypes.PositiveIntegerValue,
+          BACnet.Protocol.ObjectTypes.Program,
+          BACnet.Protocol.ObjectTypes.PulseConverter,
+          BACnet.Protocol.ObjectTypes.Schedule,
+          BACnet.Protocol.ObjectTypes.TimePatternValue,
+          BACnet.Protocol.ObjectTypes.TimeValue,
+          BACnet.Protocol.ObjectTypes.TrendLog,
+          BACnet.Protocol.ObjectTypes.TrendLogMultiple
+        ] do
+      object = struct(module)
+      expected = %Result{object: object, state: context.state, next_execution: nil}
       assert {:ok, ^expected} = module.execute(object, context)
       assert {:ok, ^expected} = ObjectsProtocol.execute(object, context)
+      assert :ok = module.validate_execution(object, context)
+      assert :ok = ObjectsProtocol.validate_execution(object, context)
+      assert {:ok, ^object} = module.prepare_write(object, object, context)
+      assert {:ok, ^object} = ObjectsProtocol.prepare_write(object, object, context)
 
       assert {:ok, %Result{object: ^object, state: nil}} =
                ObjectsProtocol.execute(object, %{context | state: nil})
@@ -93,12 +145,15 @@ defmodule BACnet.Test.Protocol.ObjectsProtocolTest do
     Process.put(:execution_source, true)
 
     context = %Context{
+      device_identifier: nil,
       now: @now,
+      timezone_database: Calendar.UTCOnlyTimeZoneDatabase,
       monotonic_time: -1000,
       trigger: :periodic,
       state: nil,
       lookup_object: nil,
       options: [source: @source, target: @target, priority: 8],
+      read_property_multiple: nil,
       read_property: fn reference ->
         assert reference == @source
         {:ok, Process.get(:execution_source)}
@@ -163,12 +218,15 @@ defmodule BACnet.Test.Protocol.ObjectsProtocolTest do
     assert {:ok, object} = ExecutableObject.create(1, "Executable object")
 
     context = %Context{
+      device_identifier: nil,
       now: @now,
+      timezone_database: Calendar.UTCOnlyTimeZoneDatabase,
       monotonic_time: 0,
       trigger: {:property_write, :present_value, nil, 8},
       state: nil,
       lookup_object: nil,
       options: [source: @source, target: @target],
+      read_property_multiple: nil,
       read_property: fn _reference -> {:ok, false} end,
       write_property: fn _ref, _value, _priority -> :ok end
     }
@@ -190,17 +248,20 @@ defmodule BACnet.Test.Protocol.ObjectsProtocolTest do
     assert {:ok, object} = ExecutableObject.create(1, "Executable object")
 
     context = %Context{
+      device_identifier: nil,
       now: @now,
+      timezone_database: Calendar.UTCOnlyTimeZoneDatabase,
       monotonic_time: 0,
       trigger: :periodic,
       state: :preserved,
       lookup_object: nil,
+      read_property_multiple: nil,
       read_property: nil,
       write_property: nil,
       options: [skip: true]
     }
 
-    result = %Result{object: object, state: :preserved}
+    result = %Result{object: object, state: :preserved, next_execution: nil}
 
     assert {:ok, ^result} = ExecutableObject.execute(object, context)
     assert {:ok, ^result} = ObjectsProtocol.execute(object, context)
@@ -210,12 +271,15 @@ defmodule BACnet.Test.Protocol.ObjectsProtocolTest do
     assert {:ok, object} = ExecutableObject.create(1, "Executable object")
 
     context = %Context{
+      device_identifier: nil,
       now: @now,
+      timezone_database: Calendar.UTCOnlyTimeZoneDatabase,
       monotonic_time: 0,
       trigger: :periodic,
       state: nil,
       lookup_object: nil,
       options: [source: @source, target: @target],
+      read_property_multiple: nil,
       read_property: fn _reference -> {:ok, :invalid} end,
       write_property: fn _ref, _value, _priority -> flunk("invalid value must not be written") end
     }
@@ -251,11 +315,14 @@ defmodule BACnet.Test.Protocol.ObjectsProtocolTest do
 
     assert_raise Protocol.UndefinedError, fn ->
       ObjectsProtocol.execute(~D[2026-11-06], %Context{
+        device_identifier: nil,
         now: @now,
+        timezone_database: Calendar.UTCOnlyTimeZoneDatabase,
         monotonic_time: 0,
         trigger: :periodic,
         state: nil,
         lookup_object: nil,
+        read_property_multiple: nil,
         read_property: nil,
         write_property: nil,
         options: []

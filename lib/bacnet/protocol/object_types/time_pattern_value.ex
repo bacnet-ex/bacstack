@@ -1,13 +1,8 @@
 defmodule BACnet.Protocol.ObjectTypes.TimePatternValue do
   @moduledoc """
-  The Time Pattern Value object holds a recurring time-of-day pattern that may contain
-  "don't care" wildcards in any of the hour/minute/second/hundredths fields. It is the
-  time-only sibling of `BACnet.Protocol.ObjectTypes.DateTimePatternValue` Value and
-  is the pattern form of the simple `BACnet.Protocol.ObjectTypes.TimeValue` object.
-
-  Typical uses are "every day at 06:00", "at :30 and :00 of every hour", or "any time
-  between 08:00 and 17:00" (expressed with appropriate don't-care combinations). The
-  object can be commandable via priority array, so the pattern itself can be overridden.
+  A Time Pattern Value stores a BACnet time pattern, such as the half-hour
+  mark of every hour. Use `BACnet.Protocol.ObjectTypes.TimeValue` when the
+  value represents a single time of day.
 
   ### Object Description (ASHRAE 135)
 
@@ -17,39 +12,67 @@ defmodule BACnet.Protocol.ObjectTypes.TimePatternValue do
   > Time Pattern objects can be used to represent multiple recurring times based on rules defined
   > by the pattern of individual fields of the time.
 
-  ### Behaviour and Operation
+  ### Values and commandability
 
-  Time Pattern Value objects hold a recurring time-of-day pattern (with "don't care"
-  wildcards).
+  Write a `BACnet.Protocol.BACnetTime` with `update_property/3` on a non-commandable
+  instance. To make an instance commandable, select Priority_Array or
+  Relinquish_Default. The object adds the corresponding partner property.
+  Use `set_priority/3` to write a command. The lowest numbered active slot
+  supplies Present_Value, and Relinquish_Default supplies it when all slots
+  are empty.
 
-  The pattern is a normal data value, unless commandable via priority array. The
-  object performs no clock evaluation itself; consumers compare the current time
-  against the pattern. `out_of_service` allows a test pattern to be forced.
+  Use `:unspecified` in any hour, minute, second or hundredth field. Direct
+  writes, priority slots and Relinquish_Default preserve those fields.
+  A fully unspecified time can occupy a priority slot. Pass nil to relinquish
+  a slot in response to BACnet NULL. The host needs to use priority 16 when
+  a BACnet command omits its priority. Priority 6 is reserved for minimum
+  on/off control.
 
-  ### Developer Implementation Notes (geared to device server / application authors)
+  Consumers can interpret the stored pattern for their own purposes. This
+  object keeps the pattern as supplied and does not evaluate it against the
+  device clock or request a wakeup at a matching time.
 
-  The generated code handles storage + basic mechanics (validation, implicit_relationships,
-  readonly annotations as hints to your server, etc.). **You must drive "special" live
-  properties and side effects yourself**, analogous to maintaining `present_value` on
-  inputs via `update_property/3` (never direct mutation). Read notes below + generated
-  tables for details.
+  ### Out of service and write origin
 
-  **Special / live properties and expected developer behaviour**
+  Use `:application_write` for normal local software and `:property_write`
+  for BACnet writes. While Out_Of_Service is true, lifecycle preparation
+  rejects application Present_Value writes, including repeated values and
+  masked commands. It also rejects indirect application edits that would
+  change the effective value. BACnet writes remain available for simulation
+  and command prioritization continues. An absent Out_Of_Service property is
+  treated as in service.
 
-  - `present_value`: The recurring time pattern.
-    **Dev must**: Set by config/writers. Custom application logic evaluate the pattern
-    vs current time (wildcards).
+  ### Lifecycle and host contract
 
-  - `priority_array`, `relinquish_default` (if commandable):
-    **Dev must**: Use priority APIs to command the pattern.
+  The [object execution host](BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host)
+  needs to own instances, serialize operations and retain runtime state.
+  Initialize with `BACnet.Protocol.ObjectExecution.Lifecycle.execute/2` and an
+  `:initialization` context. Build a candidate through the property operations,
+  call `BACnet.Protocol.ObjectExecution.Lifecycle.prepare_write/3`, and execute
+  the prepared object with the same context and prior state. Retain the whole
+  result on success. The host needs to enforce service permissions and array
+  indices, preserve the write origin, and deliver every accepted write.
 
-  - `status_flags`, `out_of_service`:
-    **Dev must**: The `in_alarm`/`fault`/`out_of_service` bits of `status_flags` are
-    automatically updated by the object; `overridden` is a local matter.
+  Use `BACnet.Protocol.ObjectExecution.Lifecycle.prepare_read/2` before reading
+  through `get_property/2`. Execution requires no host I/O or wakeup. After a
+  restart, initialize the restored properties with fresh runtime state. Remote
+  snapshots remain passive and reject local write preparation.
 
-  ### Commandability and Priority Arrays
+  The runnable walkthrough is `examples/objects_lifecycle/time_pattern_value_lifecycle.exs`.
 
-  Value objects can have a priority array (making them commandable).
+  ### Reliability and reporting
+
+  The application supplies Reliability. Reliability_Evaluation_Inhibit exposes
+  NO_FAULT_DETECTED and retains the reported value for restoration. While out
+  of service, either write origin can supply an explicit alternate Reliability,
+  including while inhibited. Refresh any suppressed report held only in runtime
+  state after restart.
+
+  FAULT follows the exposed Reliability, and OUT_OF_SERVICE follows
+  Out_Of_Service. IN_ALARM reflects the supplied Event_State when present.
+  OVERRIDDEN remains a local indication. This module provides the core value
+  lifecycle. Event_State, when present on an object without event reporting,
+  is NORMAL.
 
   ### Examples
 
@@ -59,11 +82,17 @@ defmodule BACnet.Protocol.ObjectTypes.TimePatternValue do
       "Daily"
 
   ### See Also
+  - `BACnet.Protocol.BACnetTime`
   - `BACnet.Protocol.ObjectTypes.TimeValue`
   """
 
   alias BACnet.Protocol.BACnetTime
   alias BACnet.Protocol.Constants
+  alias BACnet.Protocol.ObjectExecution.Context
+  alias BACnet.Protocol.ObjectExecution.Reliability
+  alias BACnet.Protocol.ObjectExecution.Result
+  alias BACnet.Protocol.ObjectIdentifier
+  alias BACnet.Protocol.ObjectOperations
   alias BACnet.Protocol.PriorityArray
 
   require Constants
@@ -75,13 +104,9 @@ defmodule BACnet.Protocol.ObjectTypes.TimePatternValue do
   @type object_opts :: common_object_opts()
 
   @typedoc """
-  Represents a Time Pattern Value object. All keys should be treated as read-only,
-  all updates should go only through `update_property/3`.
-
-  Properties which are for Intrinsic Reporting are nil, if disabled. If Intrinsic Reporting is enabled on the object,
-  then the properties can not be nil.
-
-  For commandable objects (objects with a priority array), the present value property is protected.
+  Represents a Time Pattern Value object. Treat fields as read-only. Build
+  property candidates with `update_property/3` or `set_priority/3` before driving
+  the lifecycle.
   """
   bac_object Constants.macro_assert_name(:object_type, :time_pattern_value) do
     services(intrinsic: false)
@@ -90,10 +115,7 @@ defmodule BACnet.Protocol.ObjectTypes.TimePatternValue do
     field(:status_flags, BACnet.Protocol.StatusFlags.t(), required: true, readonly: true)
     field(:out_of_service, boolean())
 
-    field(:present_value, BACnetTime.t(),
-      required: true,
-      annotation: {:readonly_when, {:out_of_service, false}}
-    )
+    field(:present_value, BACnetTime.t(), required: true)
 
     field(:priority_array, PriorityArray.t(BACnetTime.t()), readonly: true)
     field(:relinquish_default, BACnetTime.t())
@@ -105,5 +127,159 @@ defmodule BACnet.Protocol.ObjectTypes.TimePatternValue do
     field(:reliability_evaluation_inhibit, boolean())
 
     field(:event_state, Constants.event_state())
+  end
+
+  @doc """
+  Checks time patterns, reserved priority and retained runtime state without I/O.
+
+  Initialize local objects before other lifecycle operations. Remote snapshots are passive.
+  No host callback is required.
+  """
+  @impl BACnet.Protocol.ObjectsBehaviour
+  @spec validate_execution(t(), Context.t()) :: :ok | {:error, term()}
+  def validate_execution(object, context)
+
+  def validate_execution(%__MODULE__{_metadata: %{remote_object: remote}}, %Context{})
+      when not is_nil(remote), do: :ok
+
+  def validate_execution(%__MODULE__{} = object, %Context{} = context) do
+    with :ok <- validate_configuration(object) do
+      validate_state(object, context)
+    end
+  end
+
+  @doc """
+  Checks BACnet or application write candidates before commit.
+
+  Application Present_Value writes are rejected while out of service, including same-value
+  and masked commands. Indirect local changes to the effective value are also rejected.
+  BACnet commands remain subject to prioritization while out of service. No state is changed.
+  """
+  @impl BACnet.Protocol.ObjectsBehaviour
+  @spec prepare_write(t(), t(), Context.t()) :: {:ok, t()} | {:error, term()}
+  def prepare_write(original, candidate, context)
+
+  def prepare_write(%__MODULE__{_metadata: %{remote_object: remote}}, _candidate, %Context{})
+      when not is_nil(remote), do: {:error, :operation_not_available_for_remote_objects}
+
+  def prepare_write(%__MODULE__{} = original, %__MODULE__{} = candidate, %Context{} = context) do
+    with :ok <- validate_execution(original, context),
+         :ok <- validate_configuration(candidate),
+         :ok <- validate_write(original, context),
+         :ok <- validate_write(candidate, context) do
+      {:ok, candidate}
+    end
+  end
+
+  @doc """
+  Maintains effective command values, supplied reliability and reliability inhibition.
+
+  Retain the result before exposing the operation or accepting another write. Initialization
+  establishes the baseline from supplied properties. Execution requires no host I/O
+  and requests no wakeup.
+  """
+  @impl BACnet.Protocol.ObjectsBehaviour
+  @spec execute(t(), Context.t()) :: {:ok, Result.t(t())} | {:error, term()}
+  def execute(object, context)
+
+  def execute(%__MODULE__{_metadata: %{remote_object: remote}} = object, %Context{} = context)
+      when not is_nil(remote),
+      do: {:ok, %Result{object: object, state: context.state, next_execution: nil}}
+
+  def execute(%__MODULE__{} = object, %Context{} = context) do
+    with :ok <- validate_execution(object, context),
+         :ok <- validate_write(object, context),
+         {:ok, updated, reliability_state} <- Reliability.reconcile_reported(object, context) do
+      updated = ObjectOperations.propagate_properties(object_contract(), updated)
+      out_of_service = updated.out_of_service == true
+
+      updated = %{
+        updated
+        | status_flags: %{
+            updated.status_flags
+            | out_of_service: out_of_service,
+              fault: has_property?(updated, :reliability) and updated.status_flags.fault,
+              in_alarm: not is_nil(updated.event_state) and updated.status_flags.in_alarm
+          }
+      }
+
+      state =
+        Map.merge(reliability_state, %{
+          identifier: get_object_identifier(updated),
+          value: updated.present_value,
+          out_of_service: out_of_service
+        })
+
+      {:ok, %Result{object: updated, state: state, next_execution: nil}}
+    end
+  end
+
+  @spec validate_configuration(t()) :: :ok | {:error, term()}
+  defp validate_configuration(object)
+
+  defp validate_configuration(%__MODULE__{priority_array: %PriorityArray{priority_6: priority}})
+       when not is_nil(priority), do: {:error, {:invalid_configuration, :priority_6}}
+
+  defp validate_configuration(object) do
+    properties =
+      [:present_value] ++
+        Enum.filter([:priority_array, :relinquish_default], &has_property?(object, &1))
+
+    Enum.reduce_while(properties, :ok, fn property, :ok ->
+      case ObjectOperations.check_property_value(
+             object_contract(),
+             object,
+             property,
+             Map.fetch!(object, property),
+             false,
+             false
+           ) do
+        :ok -> {:cont, :ok}
+        {:error, _reason} = error -> {:halt, error}
+      end
+    end)
+  end
+
+  @spec validate_state(t(), Context.t()) :: :ok | {:error, :invalid_execution_state}
+  defp validate_state(object, context)
+
+  defp validate_state(_object, %Context{trigger: :initialization}), do: :ok
+
+  defp validate_state(object, %Context{state: state}) do
+    valid =
+      case state do
+        %{
+          identifier: %ObjectIdentifier{type: :time_pattern_value} = identifier,
+          value: value,
+          out_of_service: out_of_service,
+          reported_reliability: reported,
+          manual_reliability: manual
+        } ->
+          identifier == get_object_identifier(object) and
+            is_struct(value, BACnetTime) and BACnetTime.valid?(value) and
+            is_boolean(out_of_service) and
+            ObjectOperations.valid_reliability?(object_contract(), object, reported) and
+            ObjectOperations.valid_reliability?(object_contract(), object, manual)
+
+        _other ->
+          false
+      end
+
+    if valid, do: :ok, else: {:error, :invalid_execution_state}
+  end
+
+  @spec validate_write(t(), Context.t()) :: :ok | {:error, term()}
+  defp validate_write(object, context) do
+    case context.trigger do
+      {:application_write, _property, _index, _priority}
+      when object.out_of_service == true or context.state.out_of_service ->
+        if Context.written_property(context) == :present_value or
+             object.present_value != context.state.value,
+           do: {:error, :out_of_service},
+           else: ObjectOperations.check_priority_write(object, context.trigger)
+
+      _other ->
+        ObjectOperations.check_priority_write(object, context.trigger)
+    end
   end
 end

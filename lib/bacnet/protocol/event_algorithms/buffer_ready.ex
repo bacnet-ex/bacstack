@@ -43,6 +43,13 @@ defmodule BACnet.Protocol.EventAlgorithms.BufferReady do
   end
 
   @doc """
+  Returns the previous count used by the algorithm. After a transition this is
+  the record sequence number reported in that transition.
+  """
+  @spec previous_count(t()) :: non_neg_integer()
+  def previous_count(%__MODULE__{parameters: %Params{previous_count: count}}), do: count
+
+  @doc """
   Calculates the new state for the current state and parameters.
   Prior to this function invocation, the state should have been
   updated with `update/2`, if any of the properties has changed.
@@ -63,10 +70,10 @@ defmodule BACnet.Protocol.EventAlgorithms.BufferReady do
   > is greater than or equal to pThreshold and pThreshold is greater than 0,
   > then indicate a transition to the NORMAL event state.
   """
-  @spec execute(t()) ::
+  @spec execute(t(), DateTime.t() | nil) ::
           {:event, new_state :: t(), Notify.t()}
           | {:no_event, state :: t()}
-  def execute(%__MODULE__{} = state) do
+  def execute(%__MODULE__{} = state, now \\ nil) when is_nil(now) or is_struct(now, DateTime) do
     normal_event =
       state.current_state == Constants.macro_assert_name(:event_state, :normal) and
         state.parameters.threshold > 0 and
