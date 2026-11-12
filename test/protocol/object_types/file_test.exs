@@ -321,7 +321,11 @@ defmodule BACnet.Test.Protocol.ObjectTypes.FileTest do
   end
 
   @sysfs_file "/sys/devices/system/cpu/kernel_max"
-  @tag skip: not DiskFile.regular?(@sysfs_file)
+  @tag skip:
+         (case DiskFile.stat(@sysfs_file) do
+            {:ok, %DiskFile.Stat{type: :regular}} -> false
+            _other -> true
+          end)
   test "disk reads reject short data when a file advertises a larger size than it returns" do
     # This sysfs attribute advertises a page-sized file and returns one line of text.
     size = byte_size(DiskFile.read!(@sysfs_file))
