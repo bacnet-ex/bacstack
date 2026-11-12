@@ -246,8 +246,6 @@ defmodule BACstack.MixProject do
           BACnet.Protocol.ObjectExecution.EventReporting,
           BACnet.Protocol.ObjectExecution.IntrinsicReporting,
           BACnet.Protocol.ObjectExecution.Lifecycle,
-          BACnet.Protocol.ObjectExecution.LogLifecycle,
-          BACnet.Protocol.ObjectExecution.Reliability,
           BACnet.Protocol.ObjectExecution.Result,
           BACnet.Protocol.ObjectExecution.Wakeup,
           BACnet.Protocol.ObjectOperations,
@@ -293,6 +291,8 @@ defmodule BACstack.MixProject do
         ],
         "Protocol: Object Execution Internals": [
           BACnet.Protocol.ObjectExecution.BinaryState,
+          BACnet.Protocol.ObjectExecution.LogLifecycle,
+          BACnet.Protocol.ObjectExecution.Reliability,
           BACnet.Protocol.ObjectExecution.ScheduleEvaluator,
           BACnet.Protocol.ObjectExecution.ScheduleTargets
         ]
