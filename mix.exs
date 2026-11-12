@@ -179,7 +179,6 @@ defmodule BACstack.MixProject do
           BACnet.Protocol.BACnetURI,
           BACnet.Protocol.Constants,
           BACnet.Protocol.IncompleteAPDU,
-          BACnet.Protocol.NameValue,
           BACnet.Protocol.NetworkLayerProtocolMessage
         ],
         "Protocol: Data Types": [
@@ -213,6 +212,7 @@ defmodule BACstack.MixProject do
           BACnet.Protocol.LogMultipleRecord,
           BACnet.Protocol.LogRecord,
           BACnet.Protocol.LogStatus,
+          BACnet.Protocol.NameValue,
           BACnet.Protocol.NotificationClassPriority,
           BACnet.Protocol.ObjectIdentifier,
           BACnet.Protocol.ObjectPropertyRef,
