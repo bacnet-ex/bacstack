@@ -1,0 +1,2081 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.4">
+    <meta name="project" content="bacstack v0.1.0-dev.2">
+
+
+    <title>BACnet.Protocol.ObjectTypes.Program — bacstack v0.1.0-dev.2</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-RXHHCTJW.css" />
+
+    <script defer src="dist/sidebar_items-F5D808A4.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-MI33G4N7.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0-dev.2
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr />Protocol.<wbr />ObjectTypes.<wbr />Program</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0-dev.2)</small>
+
+    </h1>
+
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>A Program exposes the state of an application program, script or state machine
+to BACnet clients. Clients read <code class="inline">program_state</code> and use <code class="inline">program_change</code> to
+request actions such as loading, running or halting it. Optional properties
+describe why it halted and identify the loaded program.</p><p>The object deliberately leaves the actual program logic and any additional
+parameters as vendor-specific. It is the standard way to monitor and control
+embedded control logic, custom sequences, or downloadable applications from a
+BACnet workstation.</p><h3 id="module-object-description-ashrae-135" class="section-heading"><a href="#module-object-description-ashrae-135" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Object Description (ASHRAE 135)</span></h3><blockquote><p>The Program object type defines a standardized object whose properties represent
+the externally visible characteristics of an application program.</p><p>Program objects that support intrinsic reporting shall apply the NONE event algorithm.</p></blockquote><h3 id="module-behaviour-and-operation" class="section-heading"><a href="#module-behaviour-and-operation" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Behaviour and Operation</span></h3><p><code class="inline">program_state</code> reflects the runtime's current state. A write to
+<code class="inline">program_change</code> requests a transition. The object accepts another request
+when Program_Change is <code class="inline">:ready</code>. Requests that keep the program in its
+current state complete immediately.</p><p>Starting from idle loads the program and then initializes it at its entry
+point. Load or Restart on an initialized running program reenters that
+entry point. Run resumes a halted, initialized program. If a halt interrupted
+loading, Restart loads the incomplete program again. Out_Of_Service indicates
+whether the program is properly loaded and initialized. A waiting or halted
+program can remain in service. When selected, Reason_For_Halt and
+Description_Of_Halt expose why execution stopped.</p><h3 id="module-lifecycle" class="section-heading"><a href="#module-lifecycle" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Lifecycle</span></h3><p>The <a href="BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host">object execution host</a>
+retains the object and execution state returned by each step. Use
+<a href="BACnet.Protocol.ObjectExecution.Lifecycle.html#prepare_write/3"><code class="inline">BACnet.Protocol.ObjectExecution.Lifecycle.prepare_write/3</code></a> to prepare a
+Program_Change write, then execute the committed candidate. A busy request
+returns <code class="inline">{:error, :busy}</code> before any runtime operation. A local override
+indicated by Status_Flags also prevents BACnet writes to program settings.</p><p>Supply a <a href="#t:runtime/0"><code class="inline">runtime/0</code></a> callback as the <code class="inline">:program_runtime</code> option to
+<a href="#create/4"><code class="inline">create/4</code></a> for a local Program that runs runtime actions. The object retains
+the binding in its metadata. When recreating a persisted object at startup,
+supply the callback from local application configuration.</p><p>Commit the result, then run its immediate continuation to invoke the runtime.
+The callback can finish during that call or return <code class="inline">:pending</code>. For a pending
+action, deliver its token and outcome through the <code class="inline">:program_event</code> option in
+<a href="BACnet.Protocol.ObjectExecution.Context.html"><code class="inline">BACnet.Protocol.ObjectExecution.Context</code></a> on a <code class="inline">:periodic</code> step. Report a
+failure through the same option if the action times out.</p><p>Use the same event option to report runtime waits, resumes, halts and
+location changes. See <a href="#t:runtime_event/0"><code class="inline">runtime_event/0</code></a> for the supported inputs. A runtime
+halt can terminate an incomplete load, and a completion for a superseded
+operation leaves the current operation intact.</p><p>On startup, supply properties that reflect the runtime's current state.
+Initialization clears any saved request without replaying it. The runtime
+runs the program and manages its I/O and resources. Remote snapshots retain
+their stored values.</p><p>With <code class="inline">intrinsic_reporting: true</code>, changes in Reliability can generate FAULT
+and NORMAL transitions. After committing the result, call
+<a href="BACnet.Protocol.ObjectExecution.EventReporting.html#transition/1"><code class="inline">BACnet.Protocol.ObjectExecution.EventReporting.transition/1</code></a> to retrieve them.</p><h3 id="module-examples" class="section-heading"><a href="#module-examples" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Examples</span></h3><p>Creating a Program object:</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p" data-group-id="group-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectTypes.Program</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="group-2">(</span><span class="mi">1400</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;MyApp&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-3">%{</span><span class="ss">program_state</span><span class="p">:</span><span class="w"> </span><span class="ss">:idle</span><span class="p" data-group-id="group-3">}</span><span class="p" data-group-id="group-2">)</span><span class="p">;</span><span class="w"> </span><span class="n">p</span><span class="o">.</span><span class="n">object_name</span><span class="w">
+</span><span class="s">&quot;MyApp&quot;</span></code></pre><p>Loading and starting a program with an asynchronous load:</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution</span><span class="o">.</span><span class="p" data-group-id="group-1">{</span><span class="nc">Context</span><span class="p">,</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="p" data-group-id="group-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectTypes.Program</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">runtime</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k" data-group-id="group-2">fn</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">:load</span><span class="p">,</span><span class="w"> </span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="c">_object</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">    </span><span class="n">send</span><span class="p" data-group-id="group-3">(</span><span class="n">self</span><span class="p" data-group-id="group-4">(</span><span class="p" data-group-id="group-4">)</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-5">{</span><span class="ss">:loading</span><span class="p">,</span><span class="w"> </span><span class="n">token</span><span class="p" data-group-id="group-5">}</span><span class="p" data-group-id="group-3">)</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">    </span><span class="ss">:pending</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">:restart</span><span class="p">,</span><span class="w"> </span><span class="c">_token</span><span class="p">,</span><span class="w"> </span><span class="c">_object</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="ss">:ok</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="k" data-group-id="group-2">end</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-6">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">object</span><span class="p" data-group-id="group-6">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Program</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="group-7">(</span><span class="mi">1400</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;MyApp&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-8">%{</span><span class="ss">program_state</span><span class="p">:</span><span class="w"> </span><span class="ss">:idle</span><span class="p" data-group-id="group-8">}</span><span class="p">,</span><span class="w"> </span><span class="ss">program_runtime</span><span class="p">:</span><span class="w"> </span><span class="n">runtime</span><span class="p" data-group-id="group-7">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Context</span><span class="o">.</span><span class="n">new</span><span class="p" data-group-id="group-9">(</span><span class="ss">:initialization</span><span class="p" data-group-id="group-9">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-10">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">stored</span><span class="p" data-group-id="group-10">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-11">(</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-11">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">write</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-12">%{</span><span class="n">context</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="n">stored</span><span class="o">.</span><span class="n">state</span><span class="p">,</span><span class="w"> </span><span class="ss">trigger</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-13">{</span><span class="ss">:property_write</span><span class="p">,</span><span class="w"> </span><span class="ss">:program_change</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-13">}</span><span class="p" data-group-id="group-12">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-14">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">candidate</span><span class="p" data-group-id="group-14">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Program</span><span class="o">.</span><span class="n">update_property</span><span class="p" data-group-id="group-15">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="ss">:program_change</span><span class="p">,</span><span class="w"> </span><span class="ss">:run</span><span class="p" data-group-id="group-15">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-16">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">prepared</span><span class="p" data-group-id="group-16">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">prepare_write</span><span class="p" data-group-id="group-17">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">candidate</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="p" data-group-id="group-17">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-18">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">staged</span><span class="p" data-group-id="group-18">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-19">(</span><span class="n">prepared</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="p" data-group-id="group-19">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-20">{</span><span class="n">staged</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">program_state</span><span class="p">,</span><span class="w"> </span><span class="n">staged</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">program_change</span><span class="p">,</span><span class="w"> </span><span class="n">staged</span><span class="o">.</span><span class="n">next_execution</span><span class="p" data-group-id="group-20">}</span><span class="w">
+</span><span class="p" data-group-id="group-21">{</span><span class="ss">:loading</span><span class="p">,</span><span class="w"> </span><span class="ss">:run</span><span class="p">,</span><span class="w"> </span><span class="ss">:immediate</span><span class="p" data-group-id="group-21">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-22">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">waiting</span><span class="p" data-group-id="group-22">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-23">(</span><span class="n">staged</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-24">%{</span><span class="n">context</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">trigger</span><span class="p">:</span><span class="w"> </span><span class="ss">:continuation</span><span class="p">,</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="n">staged</span><span class="o">.</span><span class="n">state</span><span class="p" data-group-id="group-24">}</span><span class="p" data-group-id="group-23">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">receive</span><span class="w"> </span><span class="k" data-group-id="group-25">do</span><span class="w"> </span><span class="p" data-group-id="group-26">{</span><span class="ss">:loading</span><span class="p">,</span><span class="w"> </span><span class="n">token</span><span class="p" data-group-id="group-26">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">token</span><span class="w"> </span><span class="k" data-group-id="group-25">end</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">completion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Context</span><span class="o">.</span><span class="n">new</span><span class="p" data-group-id="group-27">(</span><span class="ss">:periodic</span><span class="p">,</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="n">waiting</span><span class="o">.</span><span class="n">state</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">options</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-28">[</span><span class="ss">program_event</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-29">{</span><span class="ss">:completed</span><span class="p">,</span><span class="w"> </span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="ss">:ok</span><span class="p" data-group-id="group-29">}</span><span class="p" data-group-id="group-28">]</span><span class="p" data-group-id="group-27">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-30">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">loaded</span><span class="p" data-group-id="group-30">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-31">(</span><span class="n">waiting</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">completion</span><span class="p" data-group-id="group-31">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-32">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">running</span><span class="p" data-group-id="group-32">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-33">(</span><span class="n">loaded</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-34">%{</span><span class="n">context</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">trigger</span><span class="p">:</span><span class="w"> </span><span class="ss">:continuation</span><span class="p">,</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="n">loaded</span><span class="o">.</span><span class="n">state</span><span class="p" data-group-id="group-34">}</span><span class="p" data-group-id="group-33">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-35">{</span><span class="n">running</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">program_state</span><span class="p">,</span><span class="w"> </span><span class="n">running</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">program_change</span><span class="p">,</span><span class="w"> </span><span class="n">running</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">out_of_service</span><span class="p" data-group-id="group-35">}</span><span class="w">
+</span><span class="p" data-group-id="group-36">{</span><span class="ss">:running</span><span class="p">,</span><span class="w"> </span><span class="ss">:ready</span><span class="p">,</span><span class="w"> </span><span class="no">false</span><span class="p" data-group-id="group-36">}</span></code></pre><h4>WriteProperty without a runtime binding</h4><p>This example shows the host handling a request to write RUN to Program_Change
+on an idle Program. The host resolves the request to the stored local object
+and checks property access before preparing the candidate. For this example,
+the host maps a missing runtime binding to <code class="inline">PROPERTY/WRITE_ACCESS_DENIED</code>
+in a <a href="BACnet.Protocol.APDU.Error.html"><code class="inline">BACnet.Protocol.APDU.Error</code></a> response.</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol</span><span class="o">.</span><span class="p" data-group-id="group-1">{</span><span class="nc">Constants</span><span class="p">,</span><span class="w"> </span><span class="nc">ObjectsUtility</span><span class="p" data-group-id="group-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ApplicationTags.Encoding</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.APDU.Error</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution</span><span class="o">.</span><span class="p" data-group-id="group-2">{</span><span class="nc">Context</span><span class="p">,</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="p" data-group-id="group-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectTypes.Program</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.Services.WriteProperty</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">object</span><span class="p" data-group-id="group-3">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Program</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="group-4">(</span><span class="mi">1400</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;MyApp&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-5">%{</span><span class="ss">program_state</span><span class="p">:</span><span class="w"> </span><span class="ss">:idle</span><span class="p" data-group-id="group-5">}</span><span class="p" data-group-id="group-4">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-6">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">stored</span><span class="p" data-group-id="group-6">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-7">(</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="nc">Context</span><span class="o">.</span><span class="n">new</span><span class="p" data-group-id="group-8">(</span><span class="ss">:initialization</span><span class="p" data-group-id="group-8">)</span><span class="p" data-group-id="group-7">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">request</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-9">%</span><span class="nc" data-group-id="group-9">WriteProperty</span><span class="p" data-group-id="group-9">{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">object_identifier</span><span class="p">:</span><span class="w"> </span><span class="nc">Program</span><span class="o">.</span><span class="n">get_object_identifier</span><span class="p" data-group-id="group-10">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p" data-group-id="group-10">)</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">property_identifier</span><span class="p">:</span><span class="w"> </span><span class="ss">:program_change</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">property_array_index</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">property_value</span><span class="p">:</span><span class="w"> </span><span class="nc">Encoding</span><span class="o">.</span><span class="n">create!</span><span class="p" data-group-id="group-11">(</span><span class="p" data-group-id="group-12">{</span><span class="ss">:enumerated</span><span class="p">,</span><span class="w"> </span><span class="nc">Constants</span><span class="o">.</span><span class="n">by_name!</span><span class="p" data-group-id="group-13">(</span><span class="ss">:program_request</span><span class="p">,</span><span class="w"> </span><span class="ss">:run</span><span class="p" data-group-id="group-13">)</span><span class="p" data-group-id="group-12">}</span><span class="p" data-group-id="group-11">)</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">priority</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="p" data-group-id="group-9">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-14">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">apdu</span><span class="p" data-group-id="group-14">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">WriteProperty</span><span class="o">.</span><span class="n">to_apdu</span><span class="p" data-group-id="group-15">(</span><span class="n">request</span><span class="p">,</span><span class="w"> </span><span class="ss">invoke_id</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p" data-group-id="group-15">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-16">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="p" data-group-id="group-16">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">WriteProperty</span><span class="o">.</span><span class="n">from_apdu</span><span class="p" data-group-id="group-17">(</span><span class="n">apdu</span><span class="p" data-group-id="group-17">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="no">true</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">write</span><span class="o">.</span><span class="n">object_identifier</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nc">Program</span><span class="o">.</span><span class="n">get_object_identifier</span><span class="p" data-group-id="group-18">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p" data-group-id="group-18">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="no">true</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Program</span><span class="o">.</span><span class="n">property_writable?</span><span class="p" data-group-id="group-19">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="o">.</span><span class="n">property_identifier</span><span class="p" data-group-id="group-19">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-20">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="ss">:run</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="group-20">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">ObjectsUtility</span><span class="o">.</span><span class="n">cast_property_to_value</span><span class="p" data-group-id="group-21">(</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="n">write</span><span class="o">.</span><span class="n">object_identifier</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="o">.</span><span class="n">property_identifier</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="o">.</span><span class="n">property_value</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="p" data-group-id="group-21">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-22">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">candidate</span><span class="p" data-group-id="group-22">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Program</span><span class="o">.</span><span class="n">update_property</span><span class="p" data-group-id="group-23">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="o">.</span><span class="n">property_identifier</span><span class="p">,</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="group-23">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">trigger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-24">{</span><span class="ss">:property_write</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="o">.</span><span class="n">property_identifier</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="o">.</span><span class="n">property_array_index</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="o">.</span><span class="n">priority</span><span class="p" data-group-id="group-24">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Context</span><span class="o">.</span><span class="n">new</span><span class="p" data-group-id="group-25">(</span><span class="n">trigger</span><span class="p">,</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="n">stored</span><span class="o">.</span><span class="n">state</span><span class="p" data-group-id="group-25">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-26">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-27">{</span><span class="ss">:unsupported_operation</span><span class="p">,</span><span class="w"> </span><span class="ss">:program_runtime</span><span class="p" data-group-id="group-27">}</span><span class="p" data-group-id="group-26">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">prepare_write</span><span class="p" data-group-id="group-28">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">candidate</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-28">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-29">%</span><span class="nc" data-group-id="group-29">Error</span><span class="p" data-group-id="group-29">{</span><span class="ss">invoke_id</span><span class="p">:</span><span class="w"> </span><span class="n">apdu</span><span class="o">.</span><span class="n">invoke_id</span><span class="p">,</span><span class="w"> </span><span class="ss">service</span><span class="p">:</span><span class="w"> </span><span class="n">apdu</span><span class="o">.</span><span class="n">service</span><span class="p">,</span><span class="w"> </span><span class="ss">class</span><span class="p">:</span><span class="w"> </span><span class="ss">:property</span><span class="p">,</span><span class="w"> </span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="ss">:write_access_denied</span><span class="p">,</span><span class="w"> </span><span class="ss">payload</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-30">[</span><span class="p" data-group-id="group-30">]</span><span class="p" data-group-id="group-29">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">Error</span><span class="o">.</span><span class="n">encode</span><span class="p" data-group-id="group-31">(</span><span class="n">response</span><span class="p" data-group-id="group-31">)</span><span class="w">
+</span><span class="p" data-group-id="group-32">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-33">&lt;&lt;</span><span class="mh">0x50</span><span class="p">,</span><span class="w"> </span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="mh">0x0F</span><span class="p">,</span><span class="w"> </span><span class="mh">0x91</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mh">0x91</span><span class="p">,</span><span class="w"> </span><span class="mh">0x28</span><span class="p" data-group-id="group-33">&gt;&gt;</span><span class="p" data-group-id="group-32">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-34">{</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">program_state</span><span class="p">,</span><span class="w"> </span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">program_change</span><span class="p" data-group-id="group-34">}</span><span class="w">
+</span><span class="p" data-group-id="group-35">{</span><span class="ss">:idle</span><span class="p">,</span><span class="w"> </span><span class="ss">:ready</span><span class="p" data-group-id="group-35">}</span></code></pre><p>The preparation error leaves the stored result intact. A request that keeps
+the program in its current state, such as HALT while idle, can complete
+without a runtime binding. The host can acknowledge that write with
+<a href="BACnet.Protocol.APDU.SimpleACK.html"><code class="inline">BACnet.Protocol.APDU.SimpleACK</code></a> after executing it.</p><h3 id="module-see-also" class="section-heading"><a href="#module-see-also" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">See Also</span></h3><ul><li><a href="BACnet.Protocol.EventAlgorithms.None.html"><code class="inline">BACnet.Protocol.EventAlgorithms.None</code></a></li></ul><hr style="height: 10px;visibility: hidden;"/><hr class="thin"/><p>The following part has been automatically generated.</p><details><summary>Click to expand</summary>
+
+This module defines a BACnet object of the type `program`. The following properties are defined:
+
+| Property | Revision | Required | Readonly | Protected | Intrinsic |
+|----------|----------|----------|----------|-----------|-----------|
+| acked_transitions |  |  | X |  | X |
+| description |  |  |  |  |  |
+| description_of_halt |  |  | X |  |  |
+| event_algorithm_inhibit |  |  |  |  | X |
+| event_algorithm_inhibit_ref |  |  |  |  | X |
+| event_detection_enable |  |  |  |  | X |
+| event_enable |  |  |  |  | X |
+| event_message_texts |  |  | X |  | X |
+| event_message_texts_config |  |  |  |  | X |
+| event_state |  |  |  |  | X |
+| event_timestamps |  |  | X |  | X |
+| instance_of |  |  |  |  |  |
+| limit_enable |  |  |  |  | X |
+| notification_class |  |  |  |  | X |
+| notify_type |  |  |  |  | X |
+| object_instance |  | X | X |  |  |
+| object_name |  | X | X |  |  |
+| out_of_service |  | X | X |  |  |
+| profile_location | 19 |  |  |  |  |
+| profile_name |  |  |  |  |  |
+| program_change |  | X |  |  |  |
+| program_location |  |  | X |  |  |
+| program_state |  | X | X |  |  |
+| reason_for_halt |  |  | X |  |  |
+| reliability |  |  |  |  |  |
+| reliability_evaluation_inhibit |  |  |  |  |  |
+| status_flags |  | X | X |  |  |
+| tags | 19 |  |  |  |  |
+| time_delay |  |  |  |  | X |
+| time_delay_normal |  |  |  |  | X |
+
+The following properties have additional semantics:
+
+| Property | Has Default | Has Init | Implicit Relationships | Validators | Annotations |
+|----------|-------------|----------|------------------------|------------|-------------|
+| event_algorithm_inhibit_ref |  |  | event_algorithm_inhibit |  |  |
+| event_state | X |  |  |  |  |
+| profile_location |  |  |  | Fun | `revision: 19` |
+| program_change | X |  |  |  |  |
+| reason_for_halt |  |  | description_of_halt |  |  |
+| reliability |  |  | reliability_evaluation_inhibit |  |  |
+| tags |  |  |  |  | `revision: 19` |
+
+The following table shows the default values and/or init functions:
+
+| Property | Default Value | Init Function |
+|----------|---------------|---------------|
+| event_state | `:normal` |  |
+| program_change | `:ready` |  |</details>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-types summary">
+  <h3>
+    <a href="#types">Types</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:common_object_opts/0" data-no-tooltip="" translate="no">common_object_opts()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Common object options for creation - all are optional.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:image_status/0" data-no-tooltip="" translate="no">image_status()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>The image available after a halt. An incomplete image requires loading.
+A loaded image still requires initialization. An initialized image remains
+in service and can resume.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:object_opts/0" data-no-tooltip="" translate="no">object_opts()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Options accepted when creating or configuring a Program object.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:operation/0" data-no-tooltip="" translate="no">operation()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>An operation performed by the application runtime. Restart initializes the
+program at its entry point, including after a successful load.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:outcome/0" data-no-tooltip="" translate="no">outcome()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>The runtime's completion of an operation. A load failure returns the program
+to idle. If initial setup fails after loading, the program is halted with
+its complete image still available. Other failures retain the prior state.
+A runtime that actually halted can report that outcome separately.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:property_name/0" data-no-tooltip="" translate="no">property_name()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Available property names for this object.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:property_update_error/0" data-no-tooltip="" translate="no">property_update_error()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>The structure for property errors.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:runtime/0" data-no-tooltip="" translate="no">runtime()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes an operation for the supplied Program object. Return <code class="inline">:pending</code>
+when the host will report the outcome later using the supplied token.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:runtime_event/0" data-no-tooltip="" translate="no">runtime_event()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>A host observation delivered through the <code class="inline">:program_event</code> context option
+on a <code class="inline">:periodic</code> step. Completion tokens identify individual operations.
+<code class="inline">:waiting</code> and <code class="inline">:running</code> report entering and leaving a wait. A runtime that
+was already loading or unloading at initialization can report <code class="inline">:running</code>
+after setup or <code class="inline">:idle</code> after unload. A halt reports its reason, description
+and image status. A location event updates a selected Program_Location.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:t/0" data-no-tooltip="" translate="no">t()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents a Program object. Treat struct fields as read-only. Use the object module's
+property functions to build updates.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#add_property/3" data-no-tooltip="" translate="no">add_property(object, property, value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Adds an optional property to an object.
+Remote objects can not be mutated using this operation.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#create/4" data-no-tooltip="" translate="no">create(instance_number, object_name, properties \\ %{}, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Creates a new object struct with the defined properties. Optional properties are not
+created when not given, only required, given and dependency properties are created.
+Properties with a value of <code class="inline">nil</code> are ignored.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_object_identifier/1" data-no-tooltip="" translate="no">get_object_identifier(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the BACnet object identifier.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_properties/1" data-no-tooltip="" translate="no">get_properties(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the list of properties the object has.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_property/2" data-no-tooltip="" translate="no">get_property(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get a property's value from an object.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#has_property?/2" data-no-tooltip="" translate="no">has_property?(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks if the given object has the given property.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#intrinsic_reporting?/1" data-no-tooltip="" translate="no">intrinsic_reporting?(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks if the given object has Intrinsic Reporting enabled.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#property_writable?/2" data-no-tooltip="" translate="no">property_writable?(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks if the given property is writable.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#remove_property/2" data-no-tooltip="" translate="no">remove_property(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Removes an optional property from an object. This function is idempotent.
+Remote objects can not be mutated using this operation.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#update_property/3" data-no-tooltip="" translate="no">update_property(object, property, value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Updates a property of an object.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions-lifecycle summary">
+  <h3>
+    <a href="#functions-lifecycle">Functions Lifecycle</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute/2" data-no-tooltip="" translate="no">execute(object, context)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Advances the Program lifecycle and evaluates reliability reporting.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#prepare_write/3" data-no-tooltip="" translate="no">prepare_write(object, candidate, context)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks a Program write before commit.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#validate_execution/2" data-no-tooltip="" translate="no">validate_execution(object, context)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks retained program state and runtime availability for the requested step.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions-metadata summary">
+  <h3>
+    <a href="#functions-metadata">Functions Metadata</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_all_properties/0" data-no-tooltip="" translate="no">get_all_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of all properties this object supports.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_annotation/1" data-no-tooltip="" translate="no">get_annotation(name)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the annotations for the given property name.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_annotations/0" data-no-tooltip="" translate="no">get_annotations()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the list of annotations for each property.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_cov_properties/0" data-no-tooltip="" translate="no">get_cov_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of properties used for COV reporting.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_intrinsic_properties/0" data-no-tooltip="" translate="no">get_intrinsic_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of intrinsic properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_optional_properties/0" data-no-tooltip="" translate="no">get_optional_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of optional properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_properties_type_map/0" data-no-tooltip="" translate="no">get_properties_type_map()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get a map of property name to type.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_protected_properties/0" data-no-tooltip="" translate="no">get_protected_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of protected properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_readonly_properties/0" data-no-tooltip="" translate="no">get_readonly_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of readonly properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_required_properties/0" data-no-tooltip="" translate="no">get_required_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of required properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#supports_intrinsic/0" data-no-tooltip="" translate="no">supports_intrinsic()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to check whether the object type supports intrinsic reporting.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h2>
+
+    <div class="types-list">
+<section class="detail" id="t:common_object_opts/0">
+
+  <div class="detail-header">
+    <a href="#t:common_object_opts/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">common_object_opts()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> common_object_opts() ::
+  {:allow_numeric_constants, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()}
+  | {:allow_unknown_properties, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()}
+  | {:ignore_unknown_properties, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()}
+  | {:revision,
+     <a href="BACnet.Protocol.Constants.html#t:protocol_revision/0">BACnet.Protocol.Constants.protocol_revision</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()}
+  | {:skip_property_validation_remote_object, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | :value}</pre>
+
+      </div>
+
+<p>Common object options for creation - all are optional.</p><ul><li><code class="inline">allow_numeric_constants</code> - Constants are atoms and thus unknown constants or vendor extensions are integers
+and thus are rejected. Enabling this option will allow integers (<code class="inline">non_neg_integer()</code>) for properties with
+a <code class="inline">Constants.type()</code> spec.</li><li><code class="inline">allow_unknown_properties</code> - Properties that are unknown to the object implementation are usually rejected.
+With this option, unknown properties (numeric identifiers usually means we dont know them) are accepted
+and put into a separate map. This does mean we can not validate or write them.
+Types of the values can be anything at this point. While you can read unknown properties with atom
+or integer as property identifier, you can only remove numeric unknown property identifiers from an object.
+Property identifiers of type <code class="inline">atom</code> are only accepted, if it is a remote object (object implementation is only
+enforced if it is a local object). Numeric property identifiers are accepted regardless of remote object or not.
+For remote objects, this means you have to write &quot;raw values&quot;
+(usually <a href="BACnet.Protocol.ApplicationTags.Encoding.html"><code class="inline">BACnet.Protocol.ApplicationTags.Encoding</code></a> structs).</li><li><code class="inline">ignore_unknown_properties</code> - Properties that are unknown to the object implementation are usually rejected.
+With this option, unknown properties get ignored, as if they were not specified.</li><li><code class="inline">revision</code> - The BACnet protocol revision used for required properties and annotation
+conditions. Accepts a non-negative protocol revision number (for example, <code class="inline">19</code>)
+or a name from <a href="BACnet.Protocol.Constants.html#t:protocol_revision/0"><code class="inline">BACnet.Protocol.Constants.protocol_revision/0</code></a>.
+Optional properties remain available unless an annotation prohibits them.
+Default required annotations use ASHRAE 135-2012 (revision 14), or the
+addendum/revision that introduced a later object type.</li><li><code class="inline">skip_property_validation_remote_object</code> - Skips property validation for remote objects.
+Sometimes it is possible that the value is invalid as per BACnet specification
+(i.e. value 0 for a multistate object), but you still want those to be represented.
+Value <code class="inline">true</code> neither type nor value are validated. Value <code class="inline">:value</code> means the type
+is still validated and only the value validator is not run (if present).
+The property's <code class="inline">validator_fun</code> will also be skipped.</li></ul>
+  </section>
+</section>
+<section class="detail" id="t:image_status/0">
+
+  <div class="detail-header">
+    <a href="#t:image_status/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">image_status()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L207" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> image_status() :: :incomplete | :loaded | :initialized</pre>
+
+      </div>
+
+<p>The image available after a halt. An incomplete image requires loading.
+A loaded image still requires initialization. An initialized image remains
+in service and can resume.</p>
+  </section>
+</section>
+<section class="detail" id="t:object_opts/0">
+
+  <div class="detail-header">
+    <a href="#t:object_opts/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">object_opts()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L243" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> object_opts() :: <a href="#t:common_object_opts/0">common_object_opts</a>() | {:program_runtime, <a href="#t:runtime/0">runtime</a>()}</pre>
+
+      </div>
+
+<p>Options accepted when creating or configuring a Program object.</p><p><code class="inline">:program_runtime</code> binds the local object to its runtime callback.</p>
+  </section>
+</section>
+<section class="detail" id="t:operation/0">
+
+  <div class="detail-header">
+    <a href="#t:operation/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">operation()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L186" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> operation() :: :load | :run | :halt | :restart | :unload</pre>
+
+      </div>
+
+<p>An operation performed by the application runtime. Restart initializes the
+program at its entry point, including after a successful load.</p>
+  </section>
+</section>
+<section class="detail" id="t:outcome/0">
+
+  <div class="detail-header">
+    <a href="#t:outcome/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">outcome()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L194" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> outcome() :: :ok | {:error, description :: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>()}</pre>
+
+      </div>
+
+<p>The runtime's completion of an operation. A load failure returns the program
+to idle. If initial setup fails after loading, the program is halted with
+its complete image still available. Other failures retain the prior state.
+A runtime that actually halted can report that outcome separately.</p>
+  </section>
+</section>
+<section class="detail" id="t:property_name/0">
+
+  <div class="detail-header">
+    <a href="#t:property_name/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">property_name()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> property_name() ::
+  :acked_transitions
+  | :description
+  | :description_of_halt
+  | :event_algorithm_inhibit
+  | :event_algorithm_inhibit_ref
+  | :event_detection_enable
+  | :event_enable
+  | :event_message_texts
+  | :event_message_texts_config
+  | :event_state
+  | :event_timestamps
+  | :instance_of
+  | :limit_enable
+  | :notification_class
+  | :notify_type
+  | :object_instance
+  | :object_name
+  | :out_of_service
+  | :profile_location
+  | :profile_name
+  | :program_change
+  | :program_location
+  | :program_state
+  | :reason_for_halt
+  | :reliability
+  | :reliability_evaluation_inhibit
+  | :status_flags
+  | :tags
+  | :time_delay
+  | :time_delay_normal</pre>
+
+      </div>
+
+<p>Available property names for this object.</p>
+  </section>
+</section>
+<section class="detail" id="t:property_update_error/0">
+
+  <div class="detail-header">
+    <a href="#t:property_update_error/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">property_update_error()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> property_update_error() ::
+  {:error,
+   {error :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>(),
+    property :: <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()}}</pre>
+
+      </div>
+
+<p>The structure for property errors.</p>
+  </section>
+</section>
+<section class="detail" id="t:runtime/0">
+
+  <div class="detail-header">
+    <a href="#t:runtime/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">runtime()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L200" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> runtime() ::
+  (<a href="#t:operation/0">operation</a>(), token :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">reference</a>(), object :: <a href="#t:t/0">t</a>() -&gt; <a href="#t:outcome/0">outcome</a>() | :pending)</pre>
+
+      </div>
+
+<p>Executes an operation for the supplied Program object. Return <code class="inline">:pending</code>
+when the host will report the outcome later using the supplied token.</p>
+  </section>
+</section>
+<section class="detail" id="t:runtime_event/0">
+
+  <div class="detail-header">
+    <a href="#t:runtime_event/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">runtime_event()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L217" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> runtime_event() ::
+  {:completed, token :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">reference</a>(), <a href="#t:outcome/0">outcome</a>()}
+  | :waiting
+  | :running
+  | :idle
+  | {:halted, reason :: <a href="BACnet.Protocol.Constants.html#t:program_error/0">BACnet.Protocol.Constants.program_error</a>(),
+     description :: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>(), <a href="#t:image_status/0">image_status</a>()}
+  | {:location, location :: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>()}</pre>
+
+      </div>
+
+<p>A host observation delivered through the <code class="inline">:program_event</code> context option
+on a <code class="inline">:periodic</code> step. Completion tokens identify individual operations.
+<code class="inline">:waiting</code> and <code class="inline">:running</code> report entering and leaving a wait. A runtime that
+was already loading or unloading at initialization can report <code class="inline">:running</code>
+after setup or <code class="inline">:idle</code> after unload. A halt reports its reason, description
+and image status. A location event updates a selected Program_Location.</p>
+  </section>
+</section>
+<section class="detail" id="t:t/0">
+
+  <div class="detail-header">
+    <a href="#t:t/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">t()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> t() :: %BACnet.Protocol.ObjectTypes.Program{
+  _metadata: internal_metadata(),
+  _unknown_properties: %{
+    optional(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()) =&gt;
+      <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()
+      | <a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()
+      | [<a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()]
+  },
+  acked_transitions: <a href="BACnet.Protocol.EventTransitionBits.html#t:t/0">BACnet.Protocol.EventTransitionBits.t</a>() | nil,
+  description: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>() | nil,
+  description_of_halt: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>() | nil,
+  event_algorithm_inhibit: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | nil,
+  event_algorithm_inhibit_ref: <a href="BACnet.Protocol.ObjectPropertyRef.html#t:t/0">BACnet.Protocol.ObjectPropertyRef.t</a>() | nil,
+  event_detection_enable: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | nil,
+  event_enable: <a href="BACnet.Protocol.EventTransitionBits.html#t:t/0">BACnet.Protocol.EventTransitionBits.t</a>() | nil,
+  event_message_texts: <a href="BACnet.Protocol.EventMessageTexts.html#t:t/0">BACnet.Protocol.EventMessageTexts.t</a>() | nil,
+  event_message_texts_config: <a href="BACnet.Protocol.EventMessageTexts.html#t:t/0">BACnet.Protocol.EventMessageTexts.t</a>() | nil,
+  event_state:
+    <a href="BACnet.Protocol.Constants.html#t:event_state/0">BACnet.Protocol.Constants.event_state</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>())
+    | nil,
+  event_timestamps: <a href="BACnet.Protocol.EventTimestamps.html#t:t/0">BACnet.Protocol.EventTimestamps.t</a>() | nil,
+  instance_of: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>() | nil,
+  limit_enable: <a href="BACnet.Protocol.LimitEnable.html#t:t/0">BACnet.Protocol.LimitEnable.t</a>() | nil,
+  notification_class: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>() | nil,
+  notify_type:
+    <a href="BACnet.Protocol.Constants.html#t:notify_type/0">BACnet.Protocol.Constants.notify_type</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>())
+    | nil,
+  object_instance: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>(),
+  object_name: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>(),
+  out_of_service: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>(),
+  profile_location: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>() | nil,
+  profile_name: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>() | nil,
+  program_change:
+    <a href="BACnet.Protocol.Constants.html#t:program_request/0">BACnet.Protocol.Constants.program_request</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()),
+  program_location: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>() | nil,
+  program_state:
+    <a href="BACnet.Protocol.Constants.html#t:program_state/0">BACnet.Protocol.Constants.program_state</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()),
+  reason_for_halt:
+    <a href="BACnet.Protocol.Constants.html#t:program_error/0">BACnet.Protocol.Constants.program_error</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>())
+    | nil,
+  reliability:
+    <a href="BACnet.Protocol.Constants.html#t:reliability/0">BACnet.Protocol.Constants.reliability</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>())
+    | nil,
+  reliability_evaluation_inhibit: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | nil,
+  status_flags: <a href="BACnet.Protocol.StatusFlags.html#t:t/0">BACnet.Protocol.StatusFlags.t</a>(),
+  tags: <a href="BACnet.Protocol.BACnetArray.html#t:t/1">BACnet.Protocol.BACnetArray.t</a>(<a href="BACnet.Protocol.NameValue.html#t:t/0">BACnet.Protocol.NameValue.t</a>()) | nil,
+  time_delay: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>() | nil,
+  time_delay_normal: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>() | nil
+}</pre>
+
+      </div>
+
+<p>Represents a Program object. Treat struct fields as read-only. Use the object module's
+property functions to build updates.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="add_property/3">
+
+  <div class="detail-header">
+    <a href="#add_property/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">add_property(object, property, value)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> add_property(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>(), <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Adds an optional property to an object.
+Remote objects can not be mutated using this operation.</p><p>Please note that properties of services can <strong>not</strong> be dynamically added and instead
+the object must be newly created using <a href="#create/4"><code class="inline">create/4</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="create/4">
+
+    <span id="create/2"></span>
+
+    <span id="create/3"></span>
+
+  <div class="detail-header">
+    <a href="#create/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">create(instance_number, object_name, properties \\ %{}, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> create(
+  <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>(),
+  <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>(),
+  %{optional(<a href="#t:property_name/0">property_name</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()) =&gt; <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()},
+  [<a href="#t:object_opts/0">object_opts</a>() | internal_metadata()]
+) :: {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Creates a new object struct with the defined properties. Optional properties are not
+created when not given, only required, given and dependency properties are created.
+Properties with a value of <code class="inline">nil</code> are ignored.</p><p>Only properties that are required for specific services (i.e. Intrinsic Reporting)
+are automatically created.</p>
+  </section>
+</section>
+<section class="detail" id="get_object_identifier/1">
+
+  <div class="detail-header">
+    <a href="#get_object_identifier/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_object_identifier(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_object_identifier(<a href="#t:t/0">t</a>()) :: <a href="BACnet.Protocol.ObjectIdentifier.html#t:t/0">BACnet.Protocol.ObjectIdentifier.t</a>()</pre>
+
+      </div>
+
+<p>Get the BACnet object identifier.</p>
+  </section>
+</section>
+<section class="detail" id="get_properties/1">
+
+  <div class="detail-header">
+    <a href="#get_properties/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_properties(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_properties(<a href="#t:t/0">t</a>()) :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Get the list of properties the object has.</p>
+  </section>
+</section>
+<section class="detail" id="get_property/2">
+
+  <div class="detail-header">
+    <a href="#get_property/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_property(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_property(
+  <a href="#t:t/0">t</a>(),
+  <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()
+) ::
+  {:ok, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Get a property's value from an object.</p>
+  </section>
+</section>
+<section class="detail" id="has_property?/2">
+
+  <div class="detail-header">
+    <a href="#has_property?/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">has_property?(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> has_property?(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()) :: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks if the given object has the given property.</p><p>See <a href="BACnet.Protocol.ObjectsUtility.html#has_property?/2"><code class="inline">BACnet.Protocol.ObjectsUtility.has_property?/2</code></a> for implementation details.</p>
+  </section>
+</section>
+<section class="detail" id="intrinsic_reporting?/1">
+
+  <div class="detail-header">
+    <a href="#intrinsic_reporting?/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">intrinsic_reporting?(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> intrinsic_reporting?(<a href="#t:t/0">t</a>()) :: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks if the given object has Intrinsic Reporting enabled.</p>
+  </section>
+</section>
+<section class="detail" id="property_writable?/2">
+
+  <div class="detail-header">
+    <a href="#property_writable?/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">property_writable?(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L277" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> property_writable?(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()) ::
+  <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()</pre>
+
+          <pre translate="no"><span class="attribute">@spec</span> property_writable?(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()) ::
+  <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks if the given property is writable.</p><p>Check <a href="BACnet.Protocol.ObjectsUtility.html#property_writable?/2"><code class="inline">BACnet.Protocol.ObjectsUtility.property_writable?/2</code></a> for a basic run-down.</p>
+  </section>
+</section>
+<section class="detail" id="remove_property/2">
+
+  <div class="detail-header">
+    <a href="#remove_property/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">remove_property(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> remove_property(
+  <a href="#t:t/0">t</a>(),
+  <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()
+) ::
+  {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Removes an optional property from an object. This function is idempotent.
+Remote objects can not be mutated using this operation.</p><p>Please note that properties of services can <strong>not</strong> be dynamically removed and instead
+the object must be newly created using <a href="#create/4"><code class="inline">create/4</code></a>. Required properties can not be removed.</p>
+  </section>
+</section>
+<section class="detail" id="update_property/3">
+
+  <div class="detail-header">
+    <a href="#update_property/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">update_property(object, property, value)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> update_property(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>(), <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Updates a property of an object.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions-lifecycle" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions-lifecycle">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions Lifecycle</span>
+    </h2>
+
+    <div class="functions-lifecycle-list">
+<section class="detail" id="execute/2">
+
+  <div class="detail-header">
+    <a href="#execute/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute(object, context)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L363" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  {:ok, <a href="BACnet.Protocol.ObjectExecution.Result.html#t:t/1">BACnet.Protocol.ObjectExecution.Result.t</a>(<a href="#t:t/0">t</a>())} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+          <pre translate="no"><span class="attribute">@spec</span> execute(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  {:ok, <a href="BACnet.Protocol.ObjectExecution.Result.html#t:t/1">BACnet.Protocol.ObjectExecution.Result.t</a>(<a href="#t:t/0">t</a>())} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Advances the Program lifecycle and evaluates reliability reporting.</p><p>An accepted Program_Change can publish an intermediate state and request
+an immediate continuation. The continuation invokes the configured runtime
+callback. Retain each result before following its continuation.</p>
+  </section>
+</section>
+<section class="detail" id="prepare_write/3">
+
+  <div class="detail-header">
+    <a href="#prepare_write/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">prepare_write(object, candidate, context)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L319" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> prepare_write(<a href="#t:t/0">t</a>(), <a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+          <pre translate="no"><span class="attribute">@spec</span> prepare_write(<a href="#t:t/0">t</a>(), <a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Checks a Program write before commit.</p><p>Runtime-owned properties are protected. Program_Change can be rejected
+while busy or when the requested operation is invalid for the current
+state. BACnet writes to Program_Change and Instance_Of also honor the
+OVERRIDDEN flag.</p>
+  </section>
+</section>
+<section class="detail" id="validate_execution/2">
+
+  <div class="detail-header">
+    <a href="#validate_execution/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">validate_execution(object, context)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L298" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> validate_execution(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  :ok | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+          <pre translate="no"><span class="attribute">@spec</span> validate_execution(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  :ok | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Checks retained program state and runtime availability for the requested step.</p><p>A pending program operation requires a configured runtime callback.
+Remote snapshots pass preflight.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions-metadata" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions-metadata">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions Metadata</span>
+    </h2>
+
+    <div class="functions-metadata-list">
+<section class="detail" id="get_all_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_all_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_all_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_all_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of all properties this object supports.</p>
+  </section>
+</section>
+<section class="detail" id="get_annotation/1">
+
+  <div class="detail-header">
+    <a href="#get_annotation/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_annotation(name)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_annotation(<a href="#t:property_name/0">property_name</a>()) :: [<a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the annotations for the given property name.</p>
+  </section>
+</section>
+<section class="detail" id="get_annotations/0">
+
+  <div class="detail-header">
+    <a href="#get_annotations/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_annotations()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_annotations() :: [{name :: <a href="#t:property_name/0">property_name</a>(), values :: [<a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()]}]</pre>
+
+      </div>
+
+<p>Auto generated function to get the list of annotations for each property.</p>
+  </section>
+</section>
+<section class="detail" id="get_cov_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_cov_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_cov_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_cov_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of properties used for COV reporting.</p>
+  </section>
+</section>
+<section class="detail" id="get_intrinsic_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_intrinsic_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_intrinsic_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_intrinsic_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of intrinsic properties.</p>
+  </section>
+</section>
+<section class="detail" id="get_optional_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_optional_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_optional_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_optional_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of optional properties.</p>
+  </section>
+</section>
+<section class="detail" id="get_properties_type_map/0">
+
+  <div class="detail-header">
+    <a href="#get_properties_type_map/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_properties_type_map()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_properties_type_map() :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>()</pre>
+
+      </div>
+
+<p>Auto generated function to get a map of property name to type.</p>
+  </section>
+</section>
+<section class="detail" id="get_protected_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_protected_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_protected_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_protected_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of protected properties.</p><p>Protected is an annotation and the object modules prevent writing to
+this property directly in code. The protected properties are either
+written on creation or updated automatically depending on other properties
+being written to. Some properties are only written once at creation and
+never updated.</p>
+  </section>
+</section>
+<section class="detail" id="get_readonly_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_readonly_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_readonly_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_readonly_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of readonly properties.</p><p>Readonly is only an annotation that the property should be write protected
+on the BACnet side, there is no actual write protection in the object.
+This is a hint to the device server. If you need actual write protection, see <code class="inline">protected</code>.</p>
+  </section>
+</section>
+<section class="detail" id="get_required_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_required_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_required_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_required_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of required properties.</p>
+  </section>
+</section>
+<section class="detail" id="supports_intrinsic/0">
+
+  <div class="detail-header">
+    <a href="#supports_intrinsic/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">supports_intrinsic()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/program.ex#L249" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> supports_intrinsic() :: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Auto generated function to check whether the object type supports intrinsic reporting.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0-dev.2">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0-dev.2">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.4) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

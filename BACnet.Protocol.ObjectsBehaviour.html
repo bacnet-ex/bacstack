@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.4">
+    <meta name="project" content="bacstack v0.1.0-dev.2">
+
+
+    <title>BACnet.Protocol.ObjectsBehaviour — bacstack v0.1.0-dev.2</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-RXHHCTJW.css" />
+
+    <script defer src="dist/sidebar_items-F5D808A4.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-MI33G4N7.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0-dev.2
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-behaviour" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr />Protocol.<wbr />ObjectsBehaviour</span> <small>behaviour</small>
+      <small class="app-vsn" translate="no">(bacstack v0.1.0-dev.2)</small>
+
+    </h1>
+
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/objects_behaviour.ex#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>Execution and lifecycle callbacks for BACnet object types.
+The callbacks an object module uses to define its BACnet behaviour.</p><h2 id="module-using-an-object" class="section-heading"><a href="#module-using-an-object" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Using an object</span></h2><p>The <a href="BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host">object execution host</a>
+is the integrating application or higher-level BACnet stack that owns object instances and drives
+their lifecycle. Use <a href="BACnet.Protocol.ObjectExecution.Lifecycle.html"><code class="inline">BACnet.Protocol.ObjectExecution.Lifecycle</code></a> to initialize an instance,
+run its behaviour after a change, prepare writes and refresh values on read. Its
+<a href="BACnet.Protocol.ObjectExecution.Lifecycle.html#module-first-execution">first execution example</a>
+shows how to create an object, supply a context and retain the result.</p><p>Every object defined with <a href="BACnet.Protocol.ObjectsMacro.html"><code class="inline">BACnet.Protocol.ObjectsMacro</code></a> has the same lifecycle interface.
+The default execution returns the object and runtime state as supplied, with no wakeup.
+The object module documents which triggers, options and I/O callbacks its behaviour needs.
+For example, <a href="BACnet.Protocol.ObjectTypes.Calendar.html"><code class="inline">BACnet.Protocol.ObjectTypes.Calendar</code></a> needs the local date and a midnight wakeup,
+while <a href="BACnet.Protocol.ObjectTypes.Schedule.html"><code class="inline">BACnet.Protocol.ObjectTypes.Schedule</code></a> can also write to referenced properties through
+a host callback.</p><p>Use <a href="BACnet.Protocol.ObjectsProtocol.html"><code class="inline">BACnet.Protocol.ObjectsProtocol</code></a> when you need to dispatch an individual callback
+for an object whose module is only known at runtime. For example, a direct protocol execution
+invokes the object's callback without lifecycle preflight or passive remote-snapshot handling.</p><h2 id="module-implementing-an-object-type" class="section-heading"><a href="#module-implementing-an-object-type" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Implementing an object type</span></h2><p><a href="BACnet.Protocol.ObjectsMacro.html"><code class="inline">BACnet.Protocol.ObjectsMacro</code></a> generates overridable implementations of these callbacks.
+The object module defines the behaviour. Host callbacks in
+<a href="BACnet.Protocol.ObjectExecution.Context.html"><code class="inline">BACnet.Protocol.ObjectExecution.Context</code></a> supply object lookup and property I/O.</p><table><thead><tr><th style="text-align: left;">Callback</th><th style="text-align: left;">Responsibility</th></tr></thead><tbody><tr><td style="text-align: left;"><a href="#c:validate_execution/2"><code class="inline">validate_execution/2</code></a></td><td style="text-align: left;">Check the instance's configuration, selected capabilities and required host operations before execution. The default returns <code class="inline">:ok</code>.</td></tr><tr><td style="text-align: left;"><a href="#c:prepare_write/3"><code class="inline">prepare_write/3</code></a></td><td style="text-align: left;">Compare a proposed candidate with the original object. Return the candidate, optionally with validated related changes, or reject it. The default returns the candidate.</td></tr><tr><td style="text-align: left;"><a href="#c:execute/2"><code class="inline">execute/2</code></a></td><td style="text-align: left;">Run one step using the trigger, clock samples and prior state. Return the updated object, runtime state and any request for another execution.</td></tr></tbody></table><p>Keep validation and write preparation free of I/O and other side effects. Use
+<a href="BACnet.Protocol.ObjectExecution.Context.html#require_operations/2"><code class="inline">BACnet.Protocol.ObjectExecution.Context.require_operations/2</code></a> to check for callbacks.
+Use <code class="inline">{:error, {:unsupported_capability, capability}}</code> for a selected capability the
+implementation cannot run, and document any configuration errors the object returns.</p><p>During execution, use the object's property functions so validation and related updates apply.
+Document the object's triggers, <code class="inline">context.options</code>, out-of-service rules and any initialization
+or recovery behaviour the host needs to know. If an operational failure changes Reliability,
+status or runtime state, include those changes in <code class="inline">{:ok, result}</code>. Use <code class="inline">{:error, reason}</code>
+when there is no replacement result to retain. See
+<a href="BACnet.Protocol.ObjectExecution.Lifecycle.html#module-execution-and-failure">execution and failure</a>
+for the handling of committed writes and completed I/O.</p><p>An object can also use <a href="BACnet.Protocol.ObjectExecution.IntrinsicReporting.html"><code class="inline">BACnet.Protocol.ObjectExecution.IntrinsicReporting</code></a> to evaluate
+events or faults as part of execution. Document the reporting selected by
+<code class="inline">intrinsic_reporting: true</code> for that object.</p><p>For example, an object module can track executions since initialization in runtime state.
+Place this override after its <a href="BACnet.Protocol.ObjectsMacro.html#bac_object/2"><code class="inline">BACnet.Protocol.ObjectsMacro.bac_object/2</code></a> block.</p><pre><code class="makeup elixir" translate="no"><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.Context</span><span class="w">
+</span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.Result</span><span class="w">
+
+</span><span class="na">@impl</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectsBehaviour</span><span class="w">
+</span><span class="na">@spec</span><span class="w"> </span><span class="n">execute</span><span class="p" data-group-id="group-1">(</span><span class="n">t</span><span class="p" data-group-id="group-2">(</span><span class="p" data-group-id="group-2">)</span><span class="p">,</span><span class="w"> </span><span class="nc">Context</span><span class="o">.</span><span class="n">t</span><span class="p" data-group-id="group-3">(</span><span class="p" data-group-id="group-3">)</span><span class="p" data-group-id="group-1">)</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="p" data-group-id="group-4">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="nc">Result</span><span class="o">.</span><span class="n">t</span><span class="p" data-group-id="group-5">(</span><span class="n">t</span><span class="p" data-group-id="group-6">(</span><span class="p" data-group-id="group-6">)</span><span class="p" data-group-id="group-5">)</span><span class="p" data-group-id="group-4">}</span><span class="w">
+</span><span class="kd">def</span><span class="w"> </span><span class="nf">execute</span><span class="p" data-group-id="group-7">(</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-8">%</span><span class="nc" data-group-id="group-8">Context</span><span class="p" data-group-id="group-8">{</span><span class="p" data-group-id="group-8">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-7">)</span><span class="w"> </span><span class="k" data-group-id="group-9">do</span><span class="w">
+  </span><span class="n">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-10">(</span><span class="nc">Context</span><span class="o">.</span><span class="n">previous_state</span><span class="p" data-group-id="group-11">(</span><span class="n">context</span><span class="p" data-group-id="group-11">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="mi">0</span><span class="p" data-group-id="group-10">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="w">
+  </span><span class="p" data-group-id="group-12">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-13">%</span><span class="nc" data-group-id="group-13">Result</span><span class="p" data-group-id="group-13">{</span><span class="ss">object</span><span class="p">:</span><span class="w"> </span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="n">count</span><span class="p">,</span><span class="w"> </span><span class="ss">next_execution</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-13">}</span><span class="p" data-group-id="group-12">}</span><span class="w">
+</span><span class="k" data-group-id="group-9">end</span></code></pre><p>Behaviour implementations may also call <a href="BACnet.Protocol.ObjectExecution.Context.html#lookup_object/2"><code class="inline">BACnet.Protocol.ObjectExecution.Context.lookup_object/2</code></a>,
+<a href="BACnet.Protocol.ObjectExecution.Context.html#read_property/2"><code class="inline">BACnet.Protocol.ObjectExecution.Context.read_property/2</code></a>, and
+<a href="BACnet.Protocol.ObjectExecution.Context.html#write_property/4"><code class="inline">BACnet.Protocol.ObjectExecution.Context.write_property/4</code></a> to access other objects. Their host
+callbacks perform the requested I/O during execution.</p>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-callbacks summary">
+  <h3>
+    <a href="#callbacks">Callbacks</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:execute/2" data-no-tooltip="" translate="no">execute(struct, t)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Runs one execution step and returns the object and runtime state, or an error.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:prepare_write/3" data-no-tooltip="" translate="no">prepare_write(struct, struct, t)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Validates a write candidate against the original object before atomic commit.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:validate_execution/2" data-no-tooltip="" translate="no">validate_execution(struct, t)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks configuration and required capabilities without I/O or state changes.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="callbacks" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#callbacks">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Callbacks</span>
+    </h2>
+
+    <div class="callbacks-list">
+<section class="detail" id="c:execute/2">
+
+  <div class="detail-header">
+    <a href="#c:execute/2" class="detail-link" data-no-tooltip="" aria-label="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute(struct, t)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/objects_behaviour.ex#L84" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@callback</span> execute(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  {:ok, <a href="BACnet.Protocol.ObjectExecution.Result.html#t:t/0">BACnet.Protocol.ObjectExecution.Result.t</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Runs one execution step and returns the object and runtime state, or an error.</p><p>The default returns the supplied object and <code class="inline">context.state</code> in <code class="inline">{:ok, result}</code>.</p>
+  </section>
+</section>
+<section class="detail" id="c:prepare_write/3">
+
+  <div class="detail-header">
+    <a href="#c:prepare_write/3" class="detail-link" data-no-tooltip="" aria-label="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">prepare_write(struct, struct, t)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/objects_behaviour.ex#L105" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@callback</span> prepare_write(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>(), <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  {:ok, <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Validates a write candidate against the original object before atomic commit.</p><p>The context carries the write trigger and previous runtime state. The candidate already
+contains the property change and any related updates applied by the object's property
+operations. Return it, optionally with further validated related changes, or reject it.
+Use the original object to check rules such as rejecting writes while busy. Apply these
+checks to same-value writes too. This callback performs no host I/O. Lifecycle preflight
+checks the final candidate before the host commits it.</p>
+  </section>
+</section>
+<section class="detail" id="c:validate_execution/2">
+
+  <div class="detail-header">
+    <a href="#c:validate_execution/2" class="detail-link" data-no-tooltip="" aria-label="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">validate_execution(struct, t)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/objects_behaviour.ex#L93" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@callback</span> validate_execution(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  :ok | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Checks configuration and required capabilities without I/O or state changes.</p><p>Check the instance's selected properties and configuration. Return missing-operation errors
+here, before execution begins. Handle subsequent I/O failures according to the object's
+execution and continuation rules.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0-dev.2">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0-dev.2">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.4) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

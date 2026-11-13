@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.4">
+    <meta name="project" content="bacstack v0.1.0-dev.2">
+
+
+    <title>BACnet.Protocol.ObjectExecution.Lifecycle — bacstack v0.1.0-dev.2</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-RXHHCTJW.css" />
+
+    <script defer src="dist/sidebar_items-F5D808A4.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-MI33G4N7.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0-dev.2
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr />Protocol.<wbr />ObjectExecution.<wbr />Lifecycle</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0-dev.2)</small>
+
+    </h1>
+
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_execution/lifecycle.ex#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>Stateless lifecycle operations for an
+<a href="BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host">object execution host</a>.
+Runs BACnet object behaviour one step at a time.</p><p>Use this module to initialize objects, run their behaviour after a change, prepare property
+writes and refresh computed values before a read. Each operation runs in the caller's process. The
+host retains the result and decides when to call again based on the result and the object's
+documented triggers.</p><p>The object module defines the behaviour, including which triggers and capabilities it supports.
+The default execution preserves the object and state. This module adds preflight and passive
+remote-snapshot handling around the callbacks described in <a href="BACnet.Protocol.ObjectsBehaviour.html"><code class="inline">BACnet.Protocol.ObjectsBehaviour</code></a>.</p><h2 id="module-first-execution" class="section-heading"><a href="#module-first-execution" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">First execution</span></h2><p>Create a local Calendar and initialize it with a fixed UTC sample. This is enough to run
+the Calendar's date calculation in IEx. Other objects can require additional inputs, such
+as a property-read callback or an observation from a driver.</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution</span><span class="o">.</span><span class="p" data-group-id="group-1">{</span><span class="nc">Context</span><span class="p">,</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="p" data-group-id="group-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectTypes.Calendar</span><span class="p">,</span><span class="w"> </span><span class="ss">as</span><span class="p">:</span><span class="w"> </span><span class="nc">CalendarObject</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">object</span><span class="p" data-group-id="group-2">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">CalendarObject</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="group-3">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Holidays&quot;</span><span class="p" data-group-id="group-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Context</span><span class="o">.</span><span class="n">new</span><span class="p" data-group-id="group-4">(</span><span class="ss">:initialization</span><span class="p">,</span><span class="w"> </span><span class="ss">now</span><span class="p">:</span><span class="w"> </span><span class="ld">~U[2026-12-24 12:00:00Z]</span><span class="p" data-group-id="group-4">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-5">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">stored</span><span class="p" data-group-id="group-5">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-6">(</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-6">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">CalendarObject</span><span class="o">.</span><span class="n">get_property</span><span class="p" data-group-id="group-7">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="ss">:present_value</span><span class="p" data-group-id="group-7">)</span><span class="w">
+</span><span class="p" data-group-id="group-8">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="no">false</span><span class="p" data-group-id="group-8">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">stored</span><span class="o">.</span><span class="n">next_execution</span><span class="o">.</span><span class="n">wall_time</span><span class="w">
+</span><span class="ld">~U[2026-12-25 00:00:00Z]</span></code></pre><p>Use <code class="inline">stored.object</code> for subsequent operations and pass <code class="inline">stored.state</code> as the next context's
+<code class="inline">state:</code> option. The Calendar has an empty date list, so its Present_Value is false. Its
+next request is to run at midnight. See <a href="#module-wakeups-continuations-and-restarts">wakeup examples</a>
+to turn that request into a timer, or follow the
+<a href="#module-complete-example-a-calendar-through-the-lifecycle">complete Calendar example</a>
+for writes, reads and clock changes.</p><h2 id="module-object-execution-host" class="section-heading"><a href="#module-object-execution-host" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Object execution host</span></h2><p>In the object execution documentation, <strong>host</strong> means the integrating application code or
+higher-level BACnet stack responsible for owning object instances and driving their lifecycle.
+It connects the object modules' calculations and execution requests to application storage,
+clocks, scheduling and any required I/O. A program managing a single local Calendar can fill this
+role, as can a BACnet device server managing many interacting objects.</p><p>A host can use a GenServer, an application loop or cooperating storage, scheduling and I/O
+components. Keep one current result per instance and process operations on that instance in order. A single process can manage multiple objects.</p><p>BACstack supplies object representations and property operations, the callbacks in
+<a href="BACnet.Protocol.ObjectsBehaviour.html"><code class="inline">BACnet.Protocol.ObjectsBehaviour</code></a>, dispatch through <a href="BACnet.Protocol.ObjectsProtocol.html"><code class="inline">BACnet.Protocol.ObjectsProtocol</code></a>, and the
+operations in this module. The integrating application supplies the context, object storage and
+timers. Host callbacks in <a href="BACnet.Protocol.ObjectExecution.Context.html"><code class="inline">BACnet.Protocol.ObjectExecution.Context</code></a> provide access to other
+objects and properties. Use <a href="BACnet.Protocol.ObjectExecution.Context.html#new/2"><code class="inline">BACnet.Protocol.ObjectExecution.Context.new/2</code></a> to sample clocks
+for a context or supply samples from the application's own clock source.</p><p>The host's shared responsibilities are:</p><table><thead><tr><th style="text-align: left;">Responsibility</th><th style="text-align: left;">What the integrating host needs to provide</th></tr></thead><tbody><tr><td style="text-align: left;">Object ownership</td><td style="text-align: left;">Retain the current object, opaque runtime state and replacement request from <a href="BACnet.Protocol.ObjectExecution.Result.html"><code class="inline">BACnet.Protocol.ObjectExecution.Result</code></a> together, separately for each instance.</td></tr><tr><td style="text-align: left;">Operation ordering</td><td style="text-align: left;">Serialize each instance's preparation, commit, execution and computed reads. Commit intermediate results and finish immediate continuations before the next external operation.</td></tr><tr><td style="text-align: left;">Execution inputs</td><td style="text-align: left;">Supply fresh device-local wall time, a supporting timezone database, VM-monotonic milliseconds, the trigger and the previous runtime state through <a href="BACnet.Protocol.ObjectExecution.Context.html"><code class="inline">BACnet.Protocol.ObjectExecution.Context</code></a>.</td></tr><tr><td style="text-align: left;">Lifecycle delivery</td><td style="text-align: left;">Initialize before serving live values, execute committed writes including same-value writes, refresh computed reads, and deliver clock changes, dependency changes and requested execution steps as required by the object.</td></tr><tr><td style="text-align: left;">Scheduling</td><td style="text-align: left;">Interpret every replacement request, cancel superseded timers, ignore stale deliveries, recheck due deadlines and run immediate continuations. The wakeup examples below show timer arming and delivery.</td></tr><tr><td style="text-align: left;">Property access</td><td style="text-align: left;">Resolve object and property identifiers, enforce access, array-index and priority rules, build validated candidates through property operations, and obtain computed values through the documented read path.</td></tr><tr><td style="text-align: left;">Physical I/O isolation</td><td style="text-align: left;">Apply object-specific out-of-service decoupling. For physical inputs/outputs, stop forwarding automatic hardware Reliability reports while out of service. Inputs also need automatic Present_Value updates isolated from simulation. Explicit local and BACnet Reliability writes can simulate conditions.</td></tr><tr><td style="text-align: left;">Cross-object operations</td><td style="text-align: left;">Supply the lookup/read/write callbacks required by the selected object configuration. Resolve local/remote references, retain target updates, bound transport waits, detect cyclic reads and avoid synchronous calls into an already blocked owner.</td></tr><tr><td style="text-align: left;">Dependencies</td><td style="text-align: left;">Track relevant dependencies and notify affected objects when configuration or values change. Nested reads within one operation need the same supplied time.</td></tr><tr><td style="text-align: left;">Failures and recovery</td><td style="text-align: left;">Retain results according to the commit phase, preserve accepted writes and completed I/O after later errors, and choose a recovery policy without assuming retries are safe.</td></tr><tr><td style="text-align: left;">Restart</td><td style="text-align: left;">Reinitialize with current clocks and fresh runtime state after a VM restart. VM-monotonic timestamps are valid only in the VM that sampled them.</td></tr></tbody></table><p>These requirements apply to the operations and capabilities being used. Optional I/O callbacks
+may be <code class="inline">nil</code> when the object does not require them. For example, Calendar needs time and
+scheduling but no lookup/read/write callbacks. If an application exposes BACnet services, it also
+needs to handle transport, service-error mapping and subscriptions, including applicable COV
+delivery. Those service responsibilities belong to that application's integration layer.</p><p>The <a href="#module-complete-example-a-calendar-through-the-lifecycle">complete Calendar example</a>
+also links to a runnable GenServer example. The GenServer retains the result, serializes
+requests and manages the timer. <a href="BACnet.Protocol.ObjectTypes.Calendar.html"><code class="inline">BACnet.Protocol.ObjectTypes.Calendar</code></a> evaluates the date
+list and returns the next midnight request.</p><h2 id="module-intrinsic-transitions" class="section-heading"><a href="#module-intrinsic-transitions" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Intrinsic transitions</span></h2><p>Use <code class="inline">intrinsic_reporting: true</code> at creation to select the intrinsic reporting documented by
+the object module. The object module describes its monitored properties and algorithms.
+<a href="BACnet.Protocol.ObjectExecution.IntrinsicReporting.html"><code class="inline">BACnet.Protocol.ObjectExecution.IntrinsicReporting</code></a> describes algorithm selection, retained
+reporting state and how event deadlines use the monotonic clock and contribute to wakeups.</p><p>Supply a <code class="inline">lookup_object</code> callback when the host can resolve the object's
+Notification Class. The execution result includes the new event state, event
+timestamp, acknowledgment bits and any transition recorded during that step.</p><p>Check every result with <a href="BACnet.Protocol.ObjectExecution.EventReporting.html#transition/1"><code class="inline">BACnet.Protocol.ObjectExecution.EventReporting.transition/1</code></a>
+after committing it, including results of immediate continuations. In this
+example, <code class="inline">commit</code> and <code class="inline">deliver</code> are the host's storage and notification callbacks.</p><pre><code class="makeup elixir" translate="no"><span class="k">with</span><span class="w"> </span><span class="p" data-group-id="group-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p" data-group-id="group-1">}</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-2">(</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-2">)</span><span class="p">,</span><span class="w">
+     </span><span class="ss">:ok</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">commit</span><span class="o">.</span><span class="p" data-group-id="group-3">(</span><span class="n">result</span><span class="p" data-group-id="group-3">)</span><span class="w"> </span><span class="k" data-group-id="group-4">do</span><span class="w">
+  </span><span class="k">case</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.EventReporting</span><span class="o">.</span><span class="n">transition</span><span class="p" data-group-id="group-5">(</span><span class="n">result</span><span class="p" data-group-id="group-5">)</span><span class="w"> </span><span class="k" data-group-id="group-6">do</span><span class="w">
+    </span><span class="p" data-group-id="group-7">%{</span><span class="ss">enabled</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="p">,</span><span class="w"> </span><span class="ss">routing</span><span class="p">:</span><span class="w"> </span><span class="n">routing</span><span class="p" data-group-id="group-7">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">transition</span><span class="w"> </span><span class="ow">when</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">is_nil</span><span class="p" data-group-id="group-8">(</span><span class="n">routing</span><span class="p" data-group-id="group-8">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+      </span><span class="n">deliver</span><span class="o">.</span><span class="p" data-group-id="group-9">(</span><span class="n">result</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">transition</span><span class="p" data-group-id="group-9">)</span><span class="w">
+
+    </span><span class="c">_other</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+      </span><span class="ss">:ok</span><span class="w">
+  </span><span class="k" data-group-id="group-6">end</span><span class="w">
+</span><span class="k" data-group-id="group-4">end</span></code></pre><p>For Event Log, Trend Log and Trend Log Multiple, the logger's
+<code class="inline">event: :intrinsic_reporting</code> message requests execution. Use the log
+identifier from the message to look up the current object and retained
+state. Call <a href="#execute/2"><code class="inline">execute/2</code></a> with a <code class="inline">:periodic</code> context that includes
+<code class="inline">[trend_logger: logger]</code>. The execution checks the logger's current
+threshold and reporting eligibility. Commit and inspect that result
+using the delivery pattern above.</p><p>Event_Enable controls notification delivery. The result still records the transition when delivery is disabled.
+For AcknowledgeAlarm, the host validates the requested event state and uses
+<a href="BACnet.Protocol.ObjectExecution.EventReporting.html#acknowledge/3"><code class="inline">BACnet.Protocol.ObjectExecution.EventReporting.acknowledge/3</code></a> to match the
+transition timestamp and update its acknowledgment bit. Commit the returned
+object before delivering the acknowledgment notification.</p><h2 id="module-host-responsibilities-and-retained-state" class="section-heading"><a href="#module-host-responsibilities-and-retained-state" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Host responsibilities and retained state</span></h2><p>Retain the complete <a href="BACnet.Protocol.ObjectExecution.Result.html"><code class="inline">BACnet.Protocol.ObjectExecution.Result</code></a> for each instance:</p><ul><li><code class="inline">object</code> is the current BACnet object, including computed property updates.</li><li><code class="inline">state</code> is opaque runtime state owned by the object module. Pass it back in
+the next context for that same instance - property writes do not clear it.</li><li><code class="inline">next_execution</code> is the replacement request for subsequent execution. It is
+part of the retained result even when it is <code class="inline">nil</code>.</li></ul><p>Start with <code class="inline">state: nil</code> and <code class="inline">trigger: :initialization</code>, then atomically retain each successful
+result before processing the next operation. Changing an object through its property API does not
+automatically invoke lifecycle execution. The host needs to deliver the triggers required by the
+object and service the returned requests. Periodic calls alone do not cover writes, computed reads
+or dependency changes that need to take effect immediately.</p><p>Build a context for each operation with <a href="BACnet.Protocol.ObjectExecution.Context.html#new/2"><code class="inline">BACnet.Protocol.ObjectExecution.Context.new/2</code></a>.
+Pass the trigger, prior runtime state and any required host callbacks. By default it samples
+<code class="inline">now</code> in <code class="inline">config :bacstack, :default_timezone</code> (or <code class="inline">&quot;Etc/UTC&quot;</code> when unconfigured), uses the
+configured timezone database and samples monotonic milliseconds. You can supply explicit
+values for any of these fields. Direct struct construction requires every field.</p><p>Monotonic values may be negative. Sample fresh clocks for each new operation and keep the
+same supplied time for preparation, execution and nested reads within one operation.
+Each continuation is a new execution step and needs fresh clock samples after the preceding
+step and its callbacks return. <a href="BACnet.Protocol.ObjectTypes.Command.html"><code class="inline">BACnet.Protocol.ObjectTypes.Command</code></a> uses that later monotonic
+sample to establish its post-delay deadline. See <a href="BACnet.Protocol.ObjectExecution.Context.html"><code class="inline">BACnet.Protocol.ObjectExecution.Context</code></a>
+for callback contracts.</p><p>Set <code class="inline">device_identifier</code> to the containing Device's identity when needed to resolve explicit
+self-device references. See
+<a href="BACnet.Protocol.ObjectTypes.Schedule.html"><code class="inline">BACnet.Protocol.ObjectTypes.Schedule</code></a> for target reference routing.</p><h2 id="module-entry-points-and-triggers" class="section-heading"><a href="#module-entry-points-and-triggers" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Entry points and triggers</span></h2><table><thead><tr><th style="text-align: left;">Operation</th><th style="text-align: left;">Entry point and trigger</th><th style="text-align: left;">Host action after success</th></tr></thead><tbody><tr><td style="text-align: left;">Start or restart an instance</td><td style="text-align: left;"><a href="#execute/2"><code class="inline">execute/2</code></a>, <code class="inline">:initialization</code></td><td style="text-align: left;">Retain the result before serving it.</td></tr><tr><td style="text-align: left;">Proposed property write</td><td style="text-align: left;"><a href="#prepare_write/3"><code class="inline">prepare_write/3</code></a>, <code class="inline">{:property_write, property, index, priority}</code></td><td style="text-align: left;">Commit the returned candidate, then execute the committed write with the same context.</td></tr><tr><td style="text-align: left;">Computed property read</td><td style="text-align: left;"><a href="#prepare_read/2"><code class="inline">prepare_read/2</code></a>, <code class="inline">{:property_read, property, index}</code></td><td style="text-align: left;">Retain the result and finish continuations before calling the getter.</td></tr><tr><td style="text-align: left;">Requested deadline reached</td><td style="text-align: left;"><a href="#execute/2"><code class="inline">execute/2</code></a>, <code class="inline">:timer</code></td><td style="text-align: left;">Retain the result and replace the previous request.</td></tr><tr><td style="text-align: left;">Wall-clock correction or timezone change</td><td style="text-align: left;"><a href="#execute/2"><code class="inline">execute/2</code></a>, <code class="inline">:clock_change</code></td><td style="text-align: left;">Retain the result and reconcile wall-clock timers.</td></tr><tr><td style="text-align: left;">Referenced object changed</td><td style="text-align: left;"><a href="#execute/2"><code class="inline">execute/2</code></a>, <code class="inline">{:object_changed, reference}</code></td><td style="text-align: left;">Retain the result and propagate relevant changes to dependants.</td></tr><tr><td style="text-align: left;">Immediate continuation</td><td style="text-align: left;"><a href="#execute/2"><code class="inline">execute/2</code></a>, <code class="inline">:continuation</code></td><td style="text-align: left;">Retain each result and continue until no immediate step remains.</td></tr><tr><td style="text-align: left;">Application polling</td><td style="text-align: left;"><a href="#execute/2"><code class="inline">execute/2</code></a>, <code class="inline">:periodic</code></td><td style="text-align: left;">Retain the result and honor its next request.</td></tr></tbody></table><p>Local application writes can use <code class="inline">{:application_write, property, array_index, priority}</code>
+with the same preparation and commit order. The object module defines support for this
+origin - <a href="BACnet.Protocol.ObjectTypes.BinaryValue.html"><code class="inline">BACnet.Protocol.ObjectTypes.BinaryValue</code></a>, <a href="BACnet.Protocol.ObjectTypes.AnalogValue.html"><code class="inline">BACnet.Protocol.ObjectTypes.AnalogValue</code></a>
+and <a href="BACnet.Protocol.ObjectTypes.MultistateValue.html"><code class="inline">BACnet.Protocol.ObjectTypes.MultistateValue</code></a>
+use it to enforce out-of-service
+isolation of local application updates. Host callbacks handling BACnet commands need to
+retain the BACnet origin even when the operation is performed locally. See the
+<a href="BACnet.Protocol.ObjectTypes.BinaryValue.html#module-complete-write-example">complete application-write example</a>.
+<a href="BACnet.Protocol.ObjectTypes.BinaryOutput.html"><code class="inline">BACnet.Protocol.ObjectTypes.BinaryOutput</code></a> uses the application origin for physical
+feedback isolation while allowing logical commands during out-of-service
+simulation. Its module documentation and runnable example describe the adapter boundary.
+<a href="BACnet.Protocol.ObjectTypes.AnalogOutput.html"><code class="inline">BACnet.Protocol.ObjectTypes.AnalogOutput</code></a> accepts logical commands from both origins
+while the host decouples the physical output. Explicit out-of-service Reliability
+simulation is accepted from either origin. The host needs to stop forwarding automatic
+hardware Reliability reports while decoupled - origin alone does not identify intent.
+<a href="BACnet.Protocol.ObjectTypes.BinaryInput.html"><code class="inline">BACnet.Protocol.ObjectTypes.BinaryInput</code></a> uses application writes for physical samples
+and physical reliability reports, while BACnet Present_Value writes require out of
+service. Its module documentation includes a complete physical-sample example.
+<a href="BACnet.Protocol.ObjectTypes.AnalogInput.html"><code class="inline">BACnet.Protocol.ObjectTypes.AnalogInput</code></a> accepts in-service engineering readings and
+out-of-service simulation from either origin. Physical observations through
+<a href="BACnet.Protocol.ObjectTypes.AnalogInput.html#set_input/2"><code class="inline">BACnet.Protocol.ObjectTypes.AnalogInput.set_input/2</code></a> can maintain Interface_Value
+independently of simulation. Its host owns acquisition, report isolation and delivery
+of a current reading when service resumes.</p><p>Property indices and priorities are <code class="inline">nil</code> when omitted. The write trigger identifies the
+proposed change during preparation. During execution the object already contains the committed
+change, and the trigger identifies which write led to this execution.</p><h2 id="module-writes" class="section-heading"><a href="#module-writes" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Writes</span></h2><p>Resolve the property and any array index or priority. For a BACnet service write, check
+client write access and decode the BACnet value before building the candidate. The object's
+internal setters can also serve application operations with different access rules.</p><ol><li>Build a candidate through the object's property functions. For an ordinary property use
+the module's <code class="inline">update_property/3</code>. For a priority command or relinquishment use its
+<code class="inline">set_priority/3</code>, where supported.</li><li>Call <a href="#prepare_write/3"><code class="inline">prepare_write/3</code></a> with the original object, candidate and write context. Preparation can
+apply further validated changes and runs preflight on the final candidate. A rejection leaves
+the retained result intact.</li><li>Commit the returned object with the previous state and wakeup. Call <a href="#execute/2"><code class="inline">execute/2</code></a> with that
+committed object and the same context, including for same-value writes. Retain every
+successful execution result and handle its next request before accepting another operation.</li></ol><p>If execution fails after commit, retain the accepted object and the previous state and wakeup.
+Any I/O already performed remains effective. See the
+<a href="#module-complete-example-a-calendar-through-the-lifecycle">complete Calendar example</a> for
+an ordinary property write and the
+<a href="BACnet.Protocol.ObjectTypes.BinaryValue.html#module-complete-write-example">Binary Value write example</a>
+for writes with different origins.</p><h2 id="module-reads-and-dependencies" class="section-heading"><a href="#module-reads-and-dependencies" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Reads and dependencies</span></h2><p>For a property that the object documents as computed on read, use <a href="#prepare_read/2"><code class="inline">prepare_read/2</code></a> with
+a <code class="inline">{:property_read, property, array_index}</code> trigger and the operation's clock samples.
+Commit its result, finish any immediate continuations, then use the object's getter.
+Use the same sequence when serving a computed property through
+<a href="BACnet.Protocol.ObjectExecution.Context.html#read_property/2"><code class="inline">BACnet.Protocol.ObjectExecution.Context.read_property/2</code></a>. A lookup returns the stored
+snapshot. A dependent object that needs the current computed value needs a property read
+or a shared pure calculation.</p><p>For example, <a href="BACnet.Protocol.ObjectTypes.Device.html"><code class="inline">BACnet.Protocol.ObjectTypes.Device</code></a> calculates its clock properties from
+the supplied time during read preparation. Its <code class="inline">:on_read_function</code> annotations for
+Local_Date and Local_Time are an alternative for applications reading without lifecycle
+execution. Choose the lifecycle path when several values need to reflect one clock sample.</p><p>The host needs to serialize operations for each object, track dependencies and deliver
+<code class="inline">{:object_changed, reference}</code> when a dependency changes. For example, a local Calendar edit must
+invalidate affected Schedules even if their own properties have not changed. All nested reads in
+one operation must use the same supplied time. Detect cyclic reads rather than recursively
+executing an object already active.</p><p>Host callbacks run synchronously. Bound transport waits and avoid synchronous calls into a process
+that is already blocked executing this object. A host read callback must retain any refreshed
+target object, state and wakeup before returning its property value to the requesting object.</p><h2 id="module-wakeups-continuations-and-restarts" class="section-heading"><a href="#module-wakeups-continuations-and-restarts" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Wakeups, continuations and restarts</span></h2><p>Each successful result replaces the previous request, including one returned by a read or a
+same-value write:</p><table><thead><tr><th style="text-align: left;"><code class="inline">next_execution</code></th><th style="text-align: left;">Host responsibility</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">nil</code></td><td style="text-align: left;">Cancel the previous request - external lifecycle triggers still apply.</td></tr><tr><td style="text-align: left;"><a href="BACnet.Protocol.ObjectExecution.Wakeup.html"><code class="inline">BACnet.Protocol.ObjectExecution.Wakeup</code></a> with <code class="inline">wall_time</code></td><td style="text-align: left;">Arrange execution at or after this absolute wall-clock instant.</td></tr><tr><td style="text-align: left;"><a href="BACnet.Protocol.ObjectExecution.Wakeup.html"><code class="inline">BACnet.Protocol.ObjectExecution.Wakeup</code></a> with <code class="inline">monotonic_time</code></td><td style="text-align: left;">Arrange execution at or after this absolute VM-monotonic millisecond value.</td></tr><tr><td style="text-align: left;">Both deadlines in <a href="BACnet.Protocol.ObjectExecution.Wakeup.html"><code class="inline">BACnet.Protocol.ObjectExecution.Wakeup</code></a></td><td style="text-align: left;">Execute when the first deadline is reached.</td></tr><tr><td style="text-align: left;"><code class="inline">:immediate</code></td><td style="text-align: left;">Commit the result, then execute with <code class="inline">:continuation</code> before the next external operation.</td></tr></tbody></table><p><a href="BACnet.Protocol.ObjectExecution.Wakeup.html#due?/2"><code class="inline">BACnet.Protocol.ObjectExecution.Wakeup.due?/2</code></a> checks the supplied clocks, including equality. On
+timer delivery, sample time again, ignore deliveries for superseded requests, and rearm an early
+request rather than treating it as due. Compute delays from absolute deadlines using current time
+after committing the result. Replace or cancel old timers whenever the request changes -
+cancellation can race with message delivery.</p><p>An immediate continuation lets an object make a change visible before the next step uses it.
+For example, Command publishes its busy flag before it writes to a target. Commit every intermediate result and pass its state to the next step.
+Implementations must make progress and eventually finish or request a future wakeup. An error ends
+that attempt - it is not a successful continuation or an instruction to retry indefinitely.</p><p>Report wall-clock corrections and timezone changes with <code class="inline">:clock_change</code>, using the new
+device-local time and supporting database. Reconcile wall-clock timers then - elapsed-time
+deadlines remain in the monotonic clock domain. After a VM restart, initialize with fresh runtime
+state and current clocks. Previously stored monotonic timestamps cannot be reused across VMs.
+Durable recovery of object-specific runtime state requires an explicit contract from that object.</p><h3 id="module-example-arming-and-replacing-a-timer" class="section-heading"><a href="#module-example-arming-and-replacing-a-timer" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example: arming and replacing a timer</span></h3><p>The following helper is example application code. Call it in the process that will receive the
+timer message, after retaining a successful result. It cancels the previous timer, calculates a
+delay from each supplied deadline and arms the earlier one with <a href="https://elixir.hexdocs.pm/Process.html#send_after/3"><code class="inline">Process.send_after/3</code></a>. The
+returned timer reference and token need to be retained alongside the current request.</p><pre><code class="makeup elixir" translate="no"><span class="kd">defmodule</span><span class="w"> </span><span class="nc">ExampleLifecycleDriver</span><span class="w"> </span><span class="k" data-group-id="group-1">do</span><span class="w">
+  </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.Context</span><span class="w">
+  </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.Lifecycle</span><span class="w">
+  </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.Result</span><span class="w">
+  </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.Wakeup</span><span class="w">
+
+  </span><span class="na">@type</span><span class="w"> </span><span class="n">timer</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="p" data-group-id="group-2">{</span><span class="n">timer_reference</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="n">reference</span><span class="p" data-group-id="group-3">(</span><span class="p" data-group-id="group-3">)</span><span class="p">,</span><span class="w"> </span><span class="n">delivery_token</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="n">reference</span><span class="p" data-group-id="group-4">(</span><span class="p" data-group-id="group-4">)</span><span class="p" data-group-id="group-2">}</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="no">nil</span><span class="w">
+  </span><span class="na">@type</span><span class="w"> </span><span class="n">commit</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="p" data-group-id="group-5">(</span><span class="nc">Result</span><span class="o">.</span><span class="n">t</span><span class="p" data-group-id="group-6">(</span><span class="p" data-group-id="group-6">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="ss">:ok</span><span class="p" data-group-id="group-5">)</span><span class="w">
+  </span><span class="na">@type</span><span class="w"> </span><span class="n">sample_context</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="p" data-group-id="group-7">(</span><span class="nc">Result</span><span class="o">.</span><span class="n">t</span><span class="p" data-group-id="group-8">(</span><span class="p" data-group-id="group-8">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nc">Context</span><span class="o">.</span><span class="n">t</span><span class="p" data-group-id="group-9">(</span><span class="p" data-group-id="group-9">)</span><span class="p" data-group-id="group-7">)</span><span class="w">
+
+  </span><span class="na">@spec</span><span class="w"> </span><span class="n">replace_timer</span><span class="p" data-group-id="group-10">(</span><span class="n">timer</span><span class="p" data-group-id="group-11">(</span><span class="p" data-group-id="group-11">)</span><span class="p">,</span><span class="w"> </span><span class="nc">Wakeup</span><span class="o">.</span><span class="n">t</span><span class="p" data-group-id="group-12">(</span><span class="p" data-group-id="group-12">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="nc">Context</span><span class="o">.</span><span class="n">t</span><span class="p" data-group-id="group-13">(</span><span class="p" data-group-id="group-13">)</span><span class="p" data-group-id="group-10">)</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="n">timer</span><span class="p" data-group-id="group-14">(</span><span class="p" data-group-id="group-14">)</span><span class="w">
+  </span><span class="kd">def</span><span class="w"> </span><span class="nf">replace_timer</span><span class="p" data-group-id="group-15">(</span><span class="n">previous_timer</span><span class="p">,</span><span class="w"> </span><span class="n">request</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-15">)</span><span class="w">
+
+  </span><span class="kd">def</span><span class="w"> </span><span class="nf">replace_timer</span><span class="p" data-group-id="group-16">(</span><span class="n">previous_timer</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-17">%</span><span class="nc" data-group-id="group-17">Context</span><span class="p" data-group-id="group-17">{</span><span class="p" data-group-id="group-17">}</span><span class="p" data-group-id="group-16">)</span><span class="w"> </span><span class="k" data-group-id="group-18">do</span><span class="w">
+    </span><span class="n">cancel_timer</span><span class="p" data-group-id="group-19">(</span><span class="n">previous_timer</span><span class="p" data-group-id="group-19">)</span><span class="w">
+    </span><span class="no">nil</span><span class="w">
+  </span><span class="k" data-group-id="group-18">end</span><span class="w">
+
+  </span><span class="kd">def</span><span class="w"> </span><span class="nf">replace_timer</span><span class="p" data-group-id="group-20">(</span><span class="n">previous_timer</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-21">%</span><span class="nc" data-group-id="group-21">Wakeup</span><span class="p" data-group-id="group-21">{</span><span class="p" data-group-id="group-21">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">request</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-22">%</span><span class="nc" data-group-id="group-22">Context</span><span class="p" data-group-id="group-22">{</span><span class="p" data-group-id="group-22">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-20">)</span><span class="w"> </span><span class="k" data-group-id="group-23">do</span><span class="w">
+    </span><span class="n">cancel_timer</span><span class="p" data-group-id="group-24">(</span><span class="n">previous_timer</span><span class="p" data-group-id="group-24">)</span><span class="w">
+
+    </span><span class="n">wall_delay</span><span class="w"> </span><span class="o">=</span><span class="w">
+      </span><span class="k">if</span><span class="w"> </span><span class="n">request</span><span class="o">.</span><span class="n">wall_time</span><span class="w"> </span><span class="k" data-group-id="group-25">do</span><span class="w">
+        </span><span class="n">microseconds</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p" data-group-id="group-26">(</span><span class="nc">DateTime</span><span class="o">.</span><span class="n">diff</span><span class="p" data-group-id="group-27">(</span><span class="n">request</span><span class="o">.</span><span class="n">wall_time</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="o">.</span><span class="n">now</span><span class="p">,</span><span class="w"> </span><span class="ss">:microsecond</span><span class="p" data-group-id="group-27">)</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p" data-group-id="group-26">)</span><span class="w">
+        </span><span class="n">div</span><span class="p" data-group-id="group-28">(</span><span class="n">microseconds</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">999</span><span class="p">,</span><span class="w"> </span><span class="mi">1000</span><span class="p" data-group-id="group-28">)</span><span class="w">
+      </span><span class="k" data-group-id="group-25">end</span><span class="w">
+
+    </span><span class="n">monotonic_delay</span><span class="w"> </span><span class="o">=</span><span class="w">
+      </span><span class="k">if</span><span class="w"> </span><span class="n">request</span><span class="o">.</span><span class="n">monotonic_time</span><span class="w"> </span><span class="k" data-group-id="group-29">do</span><span class="w">
+        </span><span class="n">max</span><span class="p" data-group-id="group-30">(</span><span class="n">request</span><span class="o">.</span><span class="n">monotonic_time</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">context</span><span class="o">.</span><span class="n">monotonic_time</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p" data-group-id="group-30">)</span><span class="w">
+      </span><span class="k" data-group-id="group-29">end</span><span class="w">
+
+    </span><span class="k">case</span><span class="w"> </span><span class="nc">Enum</span><span class="o">.</span><span class="n">reject</span><span class="p" data-group-id="group-31">(</span><span class="p" data-group-id="group-32">[</span><span class="n">wall_delay</span><span class="p">,</span><span class="w"> </span><span class="n">monotonic_delay</span><span class="p" data-group-id="group-32">]</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">is_nil</span><span class="o">/</span><span class="mi">1</span><span class="p" data-group-id="group-31">)</span><span class="w"> </span><span class="k" data-group-id="group-33">do</span><span class="w">
+      </span><span class="p" data-group-id="group-34">[</span><span class="p" data-group-id="group-34">]</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+        </span><span class="no">nil</span><span class="w">
+
+      </span><span class="n">delays</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+        </span><span class="n">token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">make_ref</span><span class="p" data-group-id="group-35">(</span><span class="p" data-group-id="group-35">)</span><span class="w">
+        </span><span class="c1"># Recheck long deadlines at least once per minute in this example.</span><span class="w">
+        </span><span class="n">delay</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">min</span><span class="p" data-group-id="group-36">(</span><span class="nc">Enum</span><span class="o">.</span><span class="n">min</span><span class="p" data-group-id="group-37">(</span><span class="n">delays</span><span class="p" data-group-id="group-37">)</span><span class="p">,</span><span class="w"> </span><span class="mi">60_000</span><span class="p" data-group-id="group-36">)</span><span class="w">
+        </span><span class="n">timer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Process</span><span class="o">.</span><span class="n">send_after</span><span class="p" data-group-id="group-38">(</span><span class="n">self</span><span class="p" data-group-id="group-39">(</span><span class="p" data-group-id="group-39">)</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-40">{</span><span class="ss">:object_wakeup</span><span class="p">,</span><span class="w"> </span><span class="n">token</span><span class="p" data-group-id="group-40">}</span><span class="p">,</span><span class="w"> </span><span class="n">delay</span><span class="p" data-group-id="group-38">)</span><span class="w">
+        </span><span class="p" data-group-id="group-41">{</span><span class="n">timer</span><span class="p">,</span><span class="w"> </span><span class="n">token</span><span class="p" data-group-id="group-41">}</span><span class="w">
+    </span><span class="k" data-group-id="group-33">end</span><span class="w">
+  </span><span class="k" data-group-id="group-23">end</span><span class="w">
+
+  </span><span class="na">@spec</span><span class="w"> </span><span class="n">retain_and_continue</span><span class="p" data-group-id="group-42">(</span><span class="nc">Result</span><span class="o">.</span><span class="n">t</span><span class="p" data-group-id="group-43">(</span><span class="p" data-group-id="group-43">)</span><span class="p">,</span><span class="w"> </span><span class="n">sample_context</span><span class="p" data-group-id="group-44">(</span><span class="p" data-group-id="group-44">)</span><span class="p">,</span><span class="w"> </span><span class="n">commit</span><span class="p" data-group-id="group-45">(</span><span class="p" data-group-id="group-45">)</span><span class="p" data-group-id="group-42">)</span><span class="w"> </span><span class="o">::</span><span class="w">
+          </span><span class="p" data-group-id="group-46">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="nc">Result</span><span class="o">.</span><span class="n">t</span><span class="p" data-group-id="group-47">(</span><span class="p" data-group-id="group-47">)</span><span class="p" data-group-id="group-46">}</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p" data-group-id="group-48">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">term</span><span class="p" data-group-id="group-49">(</span><span class="p" data-group-id="group-49">)</span><span class="p">,</span><span class="w"> </span><span class="nc">Result</span><span class="o">.</span><span class="n">t</span><span class="p" data-group-id="group-50">(</span><span class="p" data-group-id="group-50">)</span><span class="p" data-group-id="group-48">}</span><span class="w">
+  </span><span class="kd">def</span><span class="w"> </span><span class="nf">retain_and_continue</span><span class="p" data-group-id="group-51">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="n">sample_context</span><span class="p">,</span><span class="w"> </span><span class="n">commit</span><span class="p" data-group-id="group-51">)</span><span class="w"> </span><span class="k" data-group-id="group-52">do</span><span class="w">
+    </span><span class="ss">:ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">commit</span><span class="o">.</span><span class="p" data-group-id="group-53">(</span><span class="n">result</span><span class="p" data-group-id="group-53">)</span><span class="w">
+
+    </span><span class="k">case</span><span class="w"> </span><span class="n">result</span><span class="o">.</span><span class="n">next_execution</span><span class="w"> </span><span class="k" data-group-id="group-54">do</span><span class="w">
+      </span><span class="ss">:immediate</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+        </span><span class="n">next_context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-55">%{</span><span class="n">sample_context</span><span class="o">.</span><span class="p" data-group-id="group-56">(</span><span class="n">result</span><span class="p" data-group-id="group-56">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="n">result</span><span class="o">.</span><span class="n">state</span><span class="p">,</span><span class="w"> </span><span class="ss">trigger</span><span class="p">:</span><span class="w"> </span><span class="ss">:continuation</span><span class="p" data-group-id="group-55">}</span><span class="w">
+
+        </span><span class="k">case</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-57">(</span><span class="n">result</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">next_context</span><span class="p" data-group-id="group-57">)</span><span class="w"> </span><span class="k" data-group-id="group-58">do</span><span class="w">
+          </span><span class="p" data-group-id="group-59">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">next</span><span class="p" data-group-id="group-59">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">retain_and_continue</span><span class="p" data-group-id="group-60">(</span><span class="n">next</span><span class="p">,</span><span class="w"> </span><span class="n">sample_context</span><span class="p">,</span><span class="w"> </span><span class="n">commit</span><span class="p" data-group-id="group-60">)</span><span class="w">
+          </span><span class="p" data-group-id="group-61">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">reason</span><span class="p" data-group-id="group-61">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p" data-group-id="group-62">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">reason</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p" data-group-id="group-62">}</span><span class="w">
+        </span><span class="k" data-group-id="group-58">end</span><span class="w">
+
+      </span><span class="c">_request</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+        </span><span class="p" data-group-id="group-63">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p" data-group-id="group-63">}</span><span class="w">
+    </span><span class="k" data-group-id="group-54">end</span><span class="w">
+  </span><span class="k" data-group-id="group-52">end</span><span class="w">
+
+  </span><span class="na">@spec</span><span class="w"> </span><span class="n">cancel_timer</span><span class="p" data-group-id="group-64">(</span><span class="n">timer</span><span class="p" data-group-id="group-65">(</span><span class="p" data-group-id="group-65">)</span><span class="p" data-group-id="group-64">)</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="ss">:ok</span><span class="w">
+  </span><span class="kd">defp</span><span class="w"> </span><span class="nf">cancel_timer</span><span class="p" data-group-id="group-66">(</span><span class="n">timer</span><span class="p" data-group-id="group-66">)</span><span class="w">
+
+  </span><span class="kd">defp</span><span class="w"> </span><span class="nf">cancel_timer</span><span class="p" data-group-id="group-67">(</span><span class="no">nil</span><span class="p" data-group-id="group-67">)</span><span class="p">,</span><span class="w"> </span><span class="ss">do</span><span class="p">:</span><span class="w"> </span><span class="ss">:ok</span><span class="w">
+
+  </span><span class="kd">defp</span><span class="w"> </span><span class="nf">cancel_timer</span><span class="p" data-group-id="group-68">(</span><span class="p" data-group-id="group-69">{</span><span class="n">reference</span><span class="p">,</span><span class="w"> </span><span class="c">_token</span><span class="p" data-group-id="group-69">}</span><span class="p" data-group-id="group-68">)</span><span class="w"> </span><span class="k" data-group-id="group-70">do</span><span class="w">
+    </span><span class="nc">Process</span><span class="o">.</span><span class="n">cancel_timer</span><span class="p" data-group-id="group-71">(</span><span class="n">reference</span><span class="p" data-group-id="group-71">)</span><span class="w">
+    </span><span class="ss">:ok</span><span class="w">
+  </span><span class="k" data-group-id="group-70">end</span><span class="w">
+</span><span class="k" data-group-id="group-1">end</span></code></pre><p>The example caps each wait at one minute. If a timer arrives before its deadline, check
+the remaining delay and rearm it. Wall delays are rounded up to milliseconds. Due or past deadlines
+receive a zero delay. An empty <a href="BACnet.Protocol.ObjectExecution.Wakeup.html"><code class="inline">BACnet.Protocol.ObjectExecution.Wakeup</code></a> has no deadline and
+produces no timer.</p><h3 id="module-examples-every-wakeup-option" class="section-heading"><a href="#module-examples-every-wakeup-option" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Examples: every wakeup option</span></h3><p>After defining the helper above, run this block in the same process. These constructed requests
+demonstrate the timing contract independently of an object's algorithm. Each replacement cancels
+the timer from the previous line.</p><pre><code class="makeup elixir" translate="no"><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.Context</span><span class="w">
+</span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.Wakeup</span><span class="w">
+
+</span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Context</span><span class="o">.</span><span class="n">new</span><span class="p" data-group-id="group-1">(</span><span class="ss">:initialization</span><span class="p">,</span><span class="w"> </span><span class="ss">now</span><span class="p">:</span><span class="w"> </span><span class="nc">DateTime</span><span class="o">.</span><span class="n">utc_now</span><span class="p" data-group-id="group-2">(</span><span class="p" data-group-id="group-2">)</span><span class="p" data-group-id="group-1">)</span><span class="w">
+
+</span><span class="c1"># A wall deadline five seconds after the sampled wall time.</span><span class="w">
+</span><span class="n">wall</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-3">%</span><span class="nc" data-group-id="group-3">Wakeup</span><span class="p" data-group-id="group-3">{</span><span class="ss">wall_time</span><span class="p">:</span><span class="w"> </span><span class="nc">DateTime</span><span class="o">.</span><span class="n">add</span><span class="p" data-group-id="group-4">(</span><span class="n">context</span><span class="o">.</span><span class="n">now</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="ss">:second</span><span class="p" data-group-id="group-4">)</span><span class="p">,</span><span class="w"> </span><span class="ss">monotonic_time</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-3">}</span><span class="w">
+</span><span class="n">timer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">ExampleLifecycleDriver</span><span class="o">.</span><span class="n">replace_timer</span><span class="p" data-group-id="group-5">(</span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="n">wall</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-5">)</span><span class="w">
+
+</span><span class="c1"># An absolute monotonic deadline three seconds after the sampled monotonic time.</span><span class="w">
+</span><span class="n">monotonic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-6">%</span><span class="nc" data-group-id="group-6">Wakeup</span><span class="p" data-group-id="group-6">{</span><span class="ss">wall_time</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="ss">monotonic_time</span><span class="p">:</span><span class="w"> </span><span class="n">context</span><span class="o">.</span><span class="n">monotonic_time</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">3000</span><span class="p" data-group-id="group-6">}</span><span class="w">
+</span><span class="n">timer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">ExampleLifecycleDriver</span><span class="o">.</span><span class="n">replace_timer</span><span class="p" data-group-id="group-7">(</span><span class="n">timer</span><span class="p">,</span><span class="w"> </span><span class="n">monotonic</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-7">)</span><span class="w">
+
+</span><span class="c1"># Both deadlines: the earlier one wins (the monotonic deadline in this example).</span><span class="w">
+</span><span class="n">both</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-8">%</span><span class="nc" data-group-id="group-8">Wakeup</span><span class="p" data-group-id="group-8">{</span><span class="ss">wall_time</span><span class="p">:</span><span class="w"> </span><span class="n">wall</span><span class="o">.</span><span class="n">wall_time</span><span class="p">,</span><span class="w"> </span><span class="ss">monotonic_time</span><span class="p">:</span><span class="w"> </span><span class="n">monotonic</span><span class="o">.</span><span class="n">monotonic_time</span><span class="p" data-group-id="group-8">}</span><span class="w">
+</span><span class="n">timer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">ExampleLifecycleDriver</span><span class="o">.</span><span class="n">replace_timer</span><span class="p" data-group-id="group-9">(</span><span class="n">timer</span><span class="p">,</span><span class="w"> </span><span class="n">both</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-9">)</span><span class="w">
+
+</span><span class="c1"># No replacement request: cancel the preceding timer and retain nil.</span><span class="w">
+</span><span class="no">nil</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">ExampleLifecycleDriver</span><span class="o">.</span><span class="n">replace_timer</span><span class="p" data-group-id="group-10">(</span><span class="n">timer</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-10">)</span><span class="w">
+
+</span><span class="c1"># An empty wakeup likewise schedules nothing.</span><span class="w">
+</span><span class="no">nil</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">ExampleLifecycleDriver</span><span class="o">.</span><span class="n">replace_timer</span><span class="p" data-group-id="group-11">(</span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-12">%</span><span class="nc" data-group-id="group-12">Wakeup</span><span class="p" data-group-id="group-12">{</span><span class="ss">wall_time</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="ss">monotonic_time</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-12">}</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-11">)</span></code></pre><p>In an application, sample current clocks again after committing the result and use those samples
+when arming its request. The fixed samples above keep the delay calculations easy to inspect.</p><h3 id="module-example-timer-delivery-and-early-or-stale-messages" class="section-heading"><a href="#module-example-timer-delivery-and-early-or-stale-messages" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example: timer delivery and early or stale messages</span></h3><p>This continues after the helper and context blocks above. A supplied UTC clock starts twenty
+milliseconds before midnight and advances with the real monotonic clock. This lets the example
+service Calendar's actual wall-clock request without waiting for a real midnight. The local
+bindings represent retained state for this one example. After a successful step, a host needs to
+retain the result and service its new request - the example ends by cancelling that new timer.</p><pre><code class="makeup elixir" translate="no"><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.Lifecycle</span><span class="w">
+</span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectTypes.Calendar</span><span class="p">,</span><span class="w"> </span><span class="ss">as</span><span class="p">:</span><span class="w"> </span><span class="nc">CalendarObject</span><span class="w">
+
+</span><span class="p" data-group-id="group-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">calendar</span><span class="p" data-group-id="group-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">CalendarObject</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="group-2">(</span><span class="mi">500</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Timer example&quot;</span><span class="p" data-group-id="group-2">)</span><span class="w">
+</span><span class="n">initial</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-3">%{</span><span class="n">context</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">now</span><span class="p">:</span><span class="w"> </span><span class="ld">~U[2026-12-24 23:59:59.980Z]</span><span class="p">,</span><span class="w">
+  </span><span class="ss">monotonic_time</span><span class="p">:</span><span class="w"> </span><span class="nc">System</span><span class="o">.</span><span class="n">monotonic_time</span><span class="p" data-group-id="group-4">(</span><span class="ss">:millisecond</span><span class="p" data-group-id="group-4">)</span><span class="p">,</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="ss">trigger</span><span class="p">:</span><span class="w"> </span><span class="ss">:initialization</span><span class="p" data-group-id="group-3">}</span><span class="w">
+</span><span class="n">sample</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k" data-group-id="group-5">fn</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+  </span><span class="n">monotonic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">System</span><span class="o">.</span><span class="n">monotonic_time</span><span class="p" data-group-id="group-6">(</span><span class="ss">:millisecond</span><span class="p" data-group-id="group-6">)</span><span class="w">
+  </span><span class="p" data-group-id="group-7">%{</span><span class="n">initial</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">now</span><span class="p">:</span><span class="w"> </span><span class="nc">DateTime</span><span class="o">.</span><span class="n">add</span><span class="p" data-group-id="group-8">(</span><span class="n">initial</span><span class="o">.</span><span class="n">now</span><span class="p">,</span><span class="w"> </span><span class="n">monotonic</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">initial</span><span class="o">.</span><span class="n">monotonic_time</span><span class="p">,</span><span class="w"> </span><span class="ss">:millisecond</span><span class="p" data-group-id="group-8">)</span><span class="p">,</span><span class="w">
+    </span><span class="ss">monotonic_time</span><span class="p">:</span><span class="w"> </span><span class="n">monotonic</span><span class="p" data-group-id="group-7">}</span><span class="w">
+</span><span class="k" data-group-id="group-5">end</span><span class="w">
+</span><span class="p" data-group-id="group-9">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">stored</span><span class="p" data-group-id="group-9">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-10">(</span><span class="n">calendar</span><span class="p">,</span><span class="w"> </span><span class="n">initial</span><span class="p" data-group-id="group-10">)</span><span class="w">
+</span><span class="n">request</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">stored</span><span class="o">.</span><span class="n">next_execution</span><span class="w">
+</span><span class="n">timer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">ExampleLifecycleDriver</span><span class="o">.</span><span class="n">replace_timer</span><span class="p" data-group-id="group-11">(</span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="n">request</span><span class="p">,</span><span class="w"> </span><span class="n">sample</span><span class="o">.</span><span class="p" data-group-id="group-12">(</span><span class="p" data-group-id="group-12">)</span><span class="p" data-group-id="group-11">)</span><span class="w">
+
+</span><span class="n">await</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k" data-group-id="group-13">fn</span><span class="w"> </span><span class="n">recur</span><span class="p">,</span><span class="w"> </span><span class="n">current_timer</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+  </span><span class="k">receive</span><span class="w"> </span><span class="k" data-group-id="group-14">do</span><span class="w">
+    </span><span class="p" data-group-id="group-15">{</span><span class="ss">:object_wakeup</span><span class="p">,</span><span class="w"> </span><span class="n">received_token</span><span class="p" data-group-id="group-15">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+      </span><span class="k">case</span><span class="w"> </span><span class="n">current_timer</span><span class="w"> </span><span class="k" data-group-id="group-16">do</span><span class="w">
+        </span><span class="p" data-group-id="group-17">{</span><span class="c">_reference</span><span class="p">,</span><span class="w"> </span><span class="o">^</span><span class="n">received_token</span><span class="p" data-group-id="group-17">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+          </span><span class="n">fresh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-18">%{</span><span class="n">sample</span><span class="o">.</span><span class="p" data-group-id="group-19">(</span><span class="p" data-group-id="group-19">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="n">stored</span><span class="o">.</span><span class="n">state</span><span class="p">,</span><span class="w"> </span><span class="ss">trigger</span><span class="p">:</span><span class="w"> </span><span class="ss">:timer</span><span class="p" data-group-id="group-18">}</span><span class="w">
+
+          </span><span class="k">if</span><span class="w"> </span><span class="nc">Wakeup</span><span class="o">.</span><span class="n">due?</span><span class="p" data-group-id="group-20">(</span><span class="n">request</span><span class="p">,</span><span class="w"> </span><span class="n">fresh</span><span class="p" data-group-id="group-20">)</span><span class="w"> </span><span class="k" data-group-id="group-21">do</span><span class="w">
+            </span><span class="k">case</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-22">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">fresh</span><span class="p" data-group-id="group-22">)</span><span class="w"> </span><span class="k" data-group-id="group-23">do</span><span class="w">
+              </span><span class="p" data-group-id="group-24">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p" data-group-id="group-24">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+                </span><span class="c1"># Retain first, then re-sample after calculation time.</span><span class="w">
+                </span><span class="n">stored</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">result</span><span class="w">
+                </span><span class="n">schedule_context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sample</span><span class="o">.</span><span class="p" data-group-id="group-25">(</span><span class="p" data-group-id="group-25">)</span><span class="w">
+                </span><span class="n">next_timer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">ExampleLifecycleDriver</span><span class="o">.</span><span class="n">replace_timer</span><span class="p" data-group-id="group-26">(</span><span class="w">
+                  </span><span class="n">current_timer</span><span class="p">,</span><span class="w"> </span><span class="n">stored</span><span class="o">.</span><span class="n">next_execution</span><span class="p">,</span><span class="w"> </span><span class="n">schedule_context</span><span class="p" data-group-id="group-26">)</span><span class="w">
+                </span><span class="nc">ExampleLifecycleDriver</span><span class="o">.</span><span class="n">replace_timer</span><span class="p" data-group-id="group-27">(</span><span class="n">next_timer</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="n">schedule_context</span><span class="p" data-group-id="group-27">)</span><span class="w">
+                </span><span class="p" data-group-id="group-28">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">stored</span><span class="p" data-group-id="group-28">}</span><span class="w">
+
+              </span><span class="p" data-group-id="group-29">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">reason</span><span class="p" data-group-id="group-29">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+                </span><span class="c1"># Preserve stored and request - let the caller choose recovery.</span><span class="w">
+                </span><span class="p" data-group-id="group-30">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">reason</span><span class="p">,</span><span class="w"> </span><span class="n">stored</span><span class="p">,</span><span class="w"> </span><span class="n">request</span><span class="p" data-group-id="group-30">}</span><span class="w">
+            </span><span class="k" data-group-id="group-23">end</span><span class="w">
+          </span><span class="k" data-group-id="group-21">else</span><span class="w">
+            </span><span class="n">rearmed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">ExampleLifecycleDriver</span><span class="o">.</span><span class="n">replace_timer</span><span class="p" data-group-id="group-31">(</span><span class="n">current_timer</span><span class="p">,</span><span class="w"> </span><span class="n">request</span><span class="p">,</span><span class="w"> </span><span class="n">fresh</span><span class="p" data-group-id="group-31">)</span><span class="w">
+            </span><span class="n">recur</span><span class="o">.</span><span class="p" data-group-id="group-32">(</span><span class="n">recur</span><span class="p">,</span><span class="w"> </span><span class="n">rearmed</span><span class="p" data-group-id="group-32">)</span><span class="w">
+          </span><span class="k" data-group-id="group-21">end</span><span class="w">
+
+        </span><span class="c">_stale</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+          </span><span class="c1"># Leave the current result and timer unchanged.</span><span class="w">
+          </span><span class="n">recur</span><span class="o">.</span><span class="p" data-group-id="group-33">(</span><span class="n">recur</span><span class="p">,</span><span class="w"> </span><span class="n">current_timer</span><span class="p" data-group-id="group-33">)</span><span class="w">
+      </span><span class="k" data-group-id="group-16">end</span><span class="w">
+  </span><span class="k" data-group-id="group-14">end</span><span class="w">
+</span><span class="k" data-group-id="group-13">end</span><span class="w">
+
+</span><span class="p" data-group-id="group-34">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="c">_updated</span><span class="p" data-group-id="group-34">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">await</span><span class="o">.</span><span class="p" data-group-id="group-35">(</span><span class="n">await</span><span class="p">,</span><span class="w"> </span><span class="n">timer</span><span class="p" data-group-id="group-35">)</span></code></pre><p>The token check must precede execution. Cancelling a timer with <a href="https://elixir.hexdocs.pm/Process.html#cancel_timer/1"><code class="inline">Process.cancel_timer/1</code></a> does not
+remove a message that has already arrived in the mailbox. The loop above ignores stale deliveries
+and rearms early ones until a due request executes. It stops after that one execution.</p><h3 id="module-example-immediate-continuations-and-visible-commits" class="section-heading"><a href="#module-example-immediate-continuations-and-visible-commits" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example: immediate continuations and visible commits</span></h3><p>An immediate continuation needs a synchronous commit followed by another execution step, rather
+than a process timer. The helper's continuation function above commits every intermediate result
+before dispatching <a href="#execute/2"><code class="inline">execute/2</code></a> with <code class="inline">:continuation</code>. It obtains fresh clock inputs from
+a caller-supplied context factory after each commit and fills in the continuation trigger and
+retained state. On failure it returns the last committed result, including its pending request. The object module
+decides whether to return <code class="inline">:immediate</code> - Calendar does not.</p><p>This block, following the helper and context blocks, defines a small custom object that returns
+one intermediate result and then finishes its update. An Agent serves as the example's storage.
+Target I/O callbacks would need to read this committed storage directly, without calling an
+executing owner that is synchronously blocked.</p><pre><code class="makeup elixir" translate="no"><span class="kd">defmodule</span><span class="w"> </span><span class="nc">ExampleStagedObject</span><span class="w"> </span><span class="k" data-group-id="group-1">do</span><span class="w">
+  </span><span class="kn">use</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectsMacro</span><span class="w">
+
+  </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.Context</span><span class="w">
+  </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.Result</span><span class="w">
+
+  </span><span class="na">@type</span><span class="w"> </span><span class="n">object_opts</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="n">common_object_opts</span><span class="p" data-group-id="group-2">(</span><span class="p" data-group-id="group-2">)</span><span class="w">
+
+  </span><span class="n">bac_object</span><span class="w"> </span><span class="ss">:binary_value</span><span class="w"> </span><span class="k" data-group-id="group-3">do</span><span class="w">
+    </span><span class="n">services</span><span class="p" data-group-id="group-4">(</span><span class="ss">intrinsic</span><span class="p">:</span><span class="w"> </span><span class="no">false</span><span class="p" data-group-id="group-4">)</span><span class="w">
+    </span><span class="n">field</span><span class="p" data-group-id="group-5">(</span><span class="ss">:present_value</span><span class="p">,</span><span class="w"> </span><span class="n">boolean</span><span class="p" data-group-id="group-6">(</span><span class="p" data-group-id="group-6">)</span><span class="p">,</span><span class="w"> </span><span class="ss">required</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="p">,</span><span class="w"> </span><span class="ss">default</span><span class="p">:</span><span class="w"> </span><span class="no">false</span><span class="p" data-group-id="group-5">)</span><span class="w">
+  </span><span class="k" data-group-id="group-3">end</span><span class="w">
+
+  </span><span class="na">@impl</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectsBehaviour</span><span class="w">
+  </span><span class="na">@spec</span><span class="w"> </span><span class="n">execute</span><span class="p" data-group-id="group-7">(</span><span class="n">t</span><span class="p" data-group-id="group-8">(</span><span class="p" data-group-id="group-8">)</span><span class="p">,</span><span class="w"> </span><span class="nc">Context</span><span class="o">.</span><span class="n">t</span><span class="p" data-group-id="group-9">(</span><span class="p" data-group-id="group-9">)</span><span class="p" data-group-id="group-7">)</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="p" data-group-id="group-10">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="nc">Result</span><span class="o">.</span><span class="n">t</span><span class="p" data-group-id="group-11">(</span><span class="n">t</span><span class="p" data-group-id="group-12">(</span><span class="p" data-group-id="group-12">)</span><span class="p" data-group-id="group-11">)</span><span class="p" data-group-id="group-10">}</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p" data-group-id="group-13">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">term</span><span class="p" data-group-id="group-14">(</span><span class="p" data-group-id="group-14">)</span><span class="p" data-group-id="group-13">}</span><span class="w">
+  </span><span class="kd">def</span><span class="w"> </span><span class="nf">execute</span><span class="p" data-group-id="group-15">(</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-15">)</span><span class="w"> </span><span class="k" data-group-id="group-16">do</span><span class="w">
+    </span><span class="k">case</span><span class="w"> </span><span class="n">context</span><span class="o">.</span><span class="n">state</span><span class="w"> </span><span class="k" data-group-id="group-17">do</span><span class="w">
+      </span><span class="no">nil</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+        </span><span class="p" data-group-id="group-18">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-19">%</span><span class="nc" data-group-id="group-19">Result</span><span class="p" data-group-id="group-19">{</span><span class="ss">object</span><span class="p">:</span><span class="w"> </span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="ss">:pending</span><span class="p">,</span><span class="w"> </span><span class="ss">next_execution</span><span class="p">:</span><span class="w"> </span><span class="ss">:immediate</span><span class="p" data-group-id="group-19">}</span><span class="p" data-group-id="group-18">}</span><span class="w">
+
+      </span><span class="ss">:pending</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+        </span><span class="k">with</span><span class="w"> </span><span class="p" data-group-id="group-20">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">updated</span><span class="p" data-group-id="group-20">}</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">update_property</span><span class="p" data-group-id="group-21">(</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="ss">:present_value</span><span class="p">,</span><span class="w"> </span><span class="no">true</span><span class="p" data-group-id="group-21">)</span><span class="w"> </span><span class="k" data-group-id="group-22">do</span><span class="w">
+          </span><span class="p" data-group-id="group-23">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-24">%</span><span class="nc" data-group-id="group-24">Result</span><span class="p" data-group-id="group-24">{</span><span class="ss">object</span><span class="p">:</span><span class="w"> </span><span class="n">updated</span><span class="p">,</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="ss">:finished</span><span class="p">,</span><span class="w"> </span><span class="ss">next_execution</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-24">}</span><span class="p" data-group-id="group-23">}</span><span class="w">
+        </span><span class="k" data-group-id="group-22">end</span><span class="w">
+
+      </span><span class="ss">:finished</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+        </span><span class="p" data-group-id="group-25">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-26">%</span><span class="nc" data-group-id="group-26">Result</span><span class="p" data-group-id="group-26">{</span><span class="ss">object</span><span class="p">:</span><span class="w"> </span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="ss">:finished</span><span class="p">,</span><span class="w"> </span><span class="ss">next_execution</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-26">}</span><span class="p" data-group-id="group-25">}</span><span class="w">
+    </span><span class="k" data-group-id="group-17">end</span><span class="w">
+  </span><span class="k" data-group-id="group-16">end</span><span class="w">
+</span><span class="k" data-group-id="group-1">end</span><span class="w">
+
+</span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.Lifecycle</span><span class="w">
+
+</span><span class="p" data-group-id="group-27">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">object</span><span class="p" data-group-id="group-27">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">ExampleStagedObject</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="group-28">(</span><span class="mi">501</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Continuation example&quot;</span><span class="p" data-group-id="group-28">)</span><span class="w">
+</span><span class="p" data-group-id="group-29">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">storage</span><span class="p" data-group-id="group-29">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Agent</span><span class="o">.</span><span class="n">start_link</span><span class="p" data-group-id="group-30">(</span><span class="k" data-group-id="group-31">fn</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="no">nil</span><span class="w"> </span><span class="k" data-group-id="group-31">end</span><span class="p" data-group-id="group-30">)</span><span class="w">
+</span><span class="n">commit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k" data-group-id="group-32">fn</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nc">Agent</span><span class="o">.</span><span class="n">update</span><span class="p" data-group-id="group-33">(</span><span class="n">storage</span><span class="p">,</span><span class="w"> </span><span class="k" data-group-id="group-34">fn</span><span class="w"> </span><span class="c">_previous</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="k" data-group-id="group-34">end</span><span class="p" data-group-id="group-33">)</span><span class="w"> </span><span class="k" data-group-id="group-32">end</span><span class="w">
+
+</span><span class="n">sample_context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k" data-group-id="group-35">fn</span><span class="w"> </span><span class="c">_stored</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+  </span><span class="p" data-group-id="group-36">%{</span><span class="n">context</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">now</span><span class="p">:</span><span class="w"> </span><span class="nc">DateTime</span><span class="o">.</span><span class="n">now!</span><span class="p" data-group-id="group-37">(</span><span class="n">context</span><span class="o">.</span><span class="n">now</span><span class="o">.</span><span class="n">time_zone</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="o">.</span><span class="n">timezone_database</span><span class="p" data-group-id="group-37">)</span><span class="p">,</span><span class="w">
+    </span><span class="ss">monotonic_time</span><span class="p">:</span><span class="w"> </span><span class="nc">System</span><span class="o">.</span><span class="n">monotonic_time</span><span class="p" data-group-id="group-38">(</span><span class="ss">:millisecond</span><span class="p" data-group-id="group-38">)</span><span class="p" data-group-id="group-36">}</span><span class="w">
+</span><span class="k" data-group-id="group-35">end</span><span class="w">
+
+</span><span class="k">try</span><span class="w"> </span><span class="k" data-group-id="group-39">do</span><span class="w">
+  </span><span class="p" data-group-id="group-40">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">first</span><span class="p" data-group-id="group-40">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-41">(</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-41">)</span><span class="w">
+  </span><span class="ss">:immediate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">first</span><span class="o">.</span><span class="n">next_execution</span><span class="w">
+
+  </span><span class="k">case</span><span class="w"> </span><span class="nc">ExampleLifecycleDriver</span><span class="o">.</span><span class="n">retain_and_continue</span><span class="p" data-group-id="group-42">(</span><span class="n">first</span><span class="p">,</span><span class="w"> </span><span class="n">sample_context</span><span class="p">,</span><span class="w"> </span><span class="n">commit</span><span class="p" data-group-id="group-42">)</span><span class="w"> </span><span class="k" data-group-id="group-43">do</span><span class="w">
+    </span><span class="p" data-group-id="group-44">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">settled</span><span class="p" data-group-id="group-44">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+      </span><span class="no">true</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">settled</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">present_value</span><span class="w">
+      </span><span class="ss">:finished</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">settled</span><span class="o">.</span><span class="n">state</span><span class="w">
+      </span><span class="o">^</span><span class="n">settled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Agent</span><span class="o">.</span><span class="n">get</span><span class="p" data-group-id="group-45">(</span><span class="n">storage</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="ni">&amp;1</span><span class="p" data-group-id="group-45">)</span><span class="w">
+      </span><span class="n">fresh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-46">%{</span><span class="n">context</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">now</span><span class="p">:</span><span class="w"> </span><span class="nc">DateTime</span><span class="o">.</span><span class="n">utc_now</span><span class="p" data-group-id="group-47">(</span><span class="p" data-group-id="group-47">)</span><span class="p">,</span><span class="w">
+        </span><span class="ss">monotonic_time</span><span class="p">:</span><span class="w"> </span><span class="nc">System</span><span class="o">.</span><span class="n">monotonic_time</span><span class="p" data-group-id="group-48">(</span><span class="ss">:millisecond</span><span class="p" data-group-id="group-48">)</span><span class="p" data-group-id="group-46">}</span><span class="w">
+      </span><span class="n">timer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">ExampleLifecycleDriver</span><span class="o">.</span><span class="n">replace_timer</span><span class="p" data-group-id="group-49">(</span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="n">settled</span><span class="o">.</span><span class="n">next_execution</span><span class="p">,</span><span class="w"> </span><span class="n">fresh</span><span class="p" data-group-id="group-49">)</span><span class="w">
+      </span><span class="nc">ExampleLifecycleDriver</span><span class="o">.</span><span class="n">replace_timer</span><span class="p" data-group-id="group-50">(</span><span class="n">timer</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="n">fresh</span><span class="p" data-group-id="group-50">)</span><span class="w">
+
+    </span><span class="p" data-group-id="group-51">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">reason</span><span class="p">,</span><span class="w"> </span><span class="n">last_committed</span><span class="p" data-group-id="group-51">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+      </span><span class="p" data-group-id="group-52">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">reason</span><span class="p">,</span><span class="w"> </span><span class="n">last_committed</span><span class="p" data-group-id="group-52">}</span><span class="w">
+  </span><span class="k" data-group-id="group-43">end</span><span class="w">
+</span><span class="k" data-group-id="group-39">after</span><span class="w">
+  </span><span class="nc">Agent</span><span class="o">.</span><span class="n">stop</span><span class="p" data-group-id="group-53">(</span><span class="n">storage</span><span class="p" data-group-id="group-53">)</span><span class="w">
+</span><span class="k" data-group-id="group-39">end</span></code></pre><h2 id="module-execution-and-failure" class="section-heading"><a href="#module-execution-and-failure" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Execution and failure</span></h2><p>Local execution first calls the object's
+<a href="BACnet.Protocol.ObjectsBehaviour.html#c:validate_execution/2"><code class="inline">BACnet.Protocol.ObjectsBehaviour.validate_execution/2</code></a>. This pure callback rejects unsupported
+selected capabilities, invalid configuration or missing host operations before side effects. A
+successful preflight is not a promise that later I/O will succeed.
+<a href="BACnet.Protocol.ObjectExecution.Context.html#require_operations/2"><code class="inline">BACnet.Protocol.ObjectExecution.Context.require_operations/2</code></a> checks required callbacks - object
+modules define the capabilities and configuration they support.</p><p>Operation failures requiring retained state (including per-target outcomes) must be returned in a
+successful <a href="BACnet.Protocol.ObjectExecution.Result.html"><code class="inline">BACnet.Protocol.ObjectExecution.Result</code></a>, with appropriate object properties. Partial
+I/O has no rollback - do not blindly retry an error. Callback exceptions and malformed results are
+programming errors. Library/integration errors remain distinct from BACnet service errors - the
+host needs to map them at its service boundary.</p><p>Remote snapshots execute passively without invoking any object or host callback - preparing a write
+to a remote snapshot is rejected. A local object referencing remote targets is subject to its own
+capability checks instead.</p><p>A successful remote-snapshot execution requests no further execution. The host needs to cancel any
+previous wakeup when retaining that result.</p><table><thead><tr><th style="text-align: left;">Outcome</th><th style="text-align: left;">Retained state</th></tr></thead><tbody><tr><td style="text-align: left;">Write preparation rejected</td><td style="text-align: left;">Original object, runtime state and wakeup.</td></tr><tr><td style="text-align: left;">Successful execution</td><td style="text-align: left;">Returned object, runtime state and replacement wakeup.</td></tr><tr><td style="text-align: left;">Execution error without a new write commit</td><td style="text-align: left;">Previous object, runtime state and wakeup - earlier host I/O remains effective.</td></tr><tr><td style="text-align: left;">Execution error after write commit</td><td style="text-align: left;">Accepted candidate, previous runtime state and wakeup - earlier host I/O remains effective.</td></tr></tbody></table><p>Common errors include <code class="inline">:object_identity_mismatch</code>, <code class="inline">:operation_not_available_for_remote_objects</code>,
+<code class="inline">{:unsupported_operation, operation}</code> and <code class="inline">{:unsupported_capability, capability}</code>. Configuration
+and operation errors are documented by the object module. All are returned as <code class="inline">{:error, reason}</code>.
+Decide recovery and service-error mapping at the host boundary, preserving the distinction between
+a rejected write and an execution failure after acceptance.</p><h2 id="module-complete-example-a-calendar-through-the-lifecycle" class="section-heading"><a href="#module-complete-example-a-calendar-through-the-lifecycle" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Complete example: a Calendar through the lifecycle</span></h2><p>This example can be pasted into IEx with BACstack loaded. It supplies explicit UTC clock samples
+to demonstrate initialization, a write, a due midnight timer, a fresh read and a backward clock
+correction. <code class="inline">stored</code> is the host's retained result - rebinding it represents committing the result
+for this one instance. The pattern matches follow the successful path. An application must also
+handle errors using the retention rules above and arrange actual timers.</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.BACnetDate</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.CalendarEntry</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution</span><span class="o">.</span><span class="p" data-group-id="group-1">{</span><span class="nc">Context</span><span class="p">,</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="p">,</span><span class="w"> </span><span class="nc">Result</span><span class="p">,</span><span class="w"> </span><span class="nc">Wakeup</span><span class="p" data-group-id="group-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectTypes.Calendar</span><span class="p">,</span><span class="w"> </span><span class="ss">as</span><span class="p">:</span><span class="w"> </span><span class="nc">CalendarObject</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">object</span><span class="p" data-group-id="group-2">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">CalendarObject</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="group-3">(</span><span class="mi">500</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Special days&quot;</span><span class="p" data-group-id="group-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Context</span><span class="o">.</span><span class="n">new</span><span class="p" data-group-id="group-4">(</span><span class="ss">:initialization</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">now</span><span class="p">:</span><span class="w"> </span><span class="ld">~U[2026-12-24 12:00:00Z]</span><span class="p">,</span><span class="w"> </span><span class="ss">monotonic_time</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p" data-group-id="group-4">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-5">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-6">%</span><span class="nc" data-group-id="group-6">Result</span><span class="p" data-group-id="group-6">{</span><span class="p" data-group-id="group-6">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">stored</span><span class="p" data-group-id="group-5">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-7">(</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-7">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">present_value</span><span class="w">
+</span><span class="no">false</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">special_day</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-8">%</span><span class="nc" data-group-id="group-8">CalendarEntry</span><span class="p" data-group-id="group-8">{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:date</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">date</span><span class="p">:</span><span class="w"> </span><span class="nc">BACnetDate</span><span class="o">.</span><span class="n">from_date</span><span class="p" data-group-id="group-9">(</span><span class="ld">~D[2026-12-24]</span><span class="p" data-group-id="group-9">)</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">date_range</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">week_n_day</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="p" data-group-id="group-8">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">write_context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-10">%{</span><span class="n">context</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="n">stored</span><span class="o">.</span><span class="n">state</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">trigger</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-11">{</span><span class="ss">:property_write</span><span class="p">,</span><span class="w"> </span><span class="ss">:date_list</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-11">}</span><span class="p" data-group-id="group-10">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="no">true</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">CalendarObject</span><span class="o">.</span><span class="n">property_writable?</span><span class="p" data-group-id="group-12">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="ss">:date_list</span><span class="p" data-group-id="group-12">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-13">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">candidate</span><span class="p" data-group-id="group-13">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">CalendarObject</span><span class="o">.</span><span class="n">update_property</span><span class="p" data-group-id="group-14">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="ss">:date_list</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-15">[</span><span class="n">special_day</span><span class="p" data-group-id="group-15">]</span><span class="p" data-group-id="group-14">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-16">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">prepared</span><span class="p" data-group-id="group-16">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">prepare_write</span><span class="p" data-group-id="group-17">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">candidate</span><span class="p">,</span><span class="w"> </span><span class="n">write_context</span><span class="p" data-group-id="group-17">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">stored</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-18">%{</span><span class="n">stored</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">object</span><span class="p">:</span><span class="w"> </span><span class="n">prepared</span><span class="p" data-group-id="group-18">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-19">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">stored</span><span class="p" data-group-id="group-19">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-20">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">write_context</span><span class="p" data-group-id="group-20">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">present_value</span><span class="w">
+</span><span class="no">true</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">stored</span><span class="o">.</span><span class="n">next_execution</span><span class="o">.</span><span class="n">wall_time</span><span class="w">
+</span><span class="ld">~U[2026-12-25 00:00:00Z]</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">timer_context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-21">%{</span><span class="n">context</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">now</span><span class="p">:</span><span class="w"> </span><span class="ld">~U[2026-12-25 00:00:00Z]</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">monotonic_time</span><span class="p">:</span><span class="w"> </span><span class="mi">43_200_000</span><span class="p">,</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="n">stored</span><span class="o">.</span><span class="n">state</span><span class="p">,</span><span class="w"> </span><span class="ss">trigger</span><span class="p">:</span><span class="w"> </span><span class="ss">:timer</span><span class="p" data-group-id="group-21">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">Wakeup</span><span class="o">.</span><span class="n">due?</span><span class="p" data-group-id="group-22">(</span><span class="n">stored</span><span class="o">.</span><span class="n">next_execution</span><span class="p">,</span><span class="w"> </span><span class="n">timer_context</span><span class="p" data-group-id="group-22">)</span><span class="w">
+</span><span class="no">true</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-23">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">stored</span><span class="p" data-group-id="group-23">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-24">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">timer_context</span><span class="p" data-group-id="group-24">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">present_value</span><span class="w">
+</span><span class="no">false</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">read_context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-25">%{</span><span class="n">context</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">now</span><span class="p">:</span><span class="w"> </span><span class="ld">~U[2026-12-26 12:00:00Z]</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">monotonic_time</span><span class="p">:</span><span class="w"> </span><span class="mi">172_800_000</span><span class="p">,</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="n">stored</span><span class="o">.</span><span class="n">state</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">trigger</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-26">{</span><span class="ss">:property_read</span><span class="p">,</span><span class="w"> </span><span class="ss">:present_value</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-26">}</span><span class="p" data-group-id="group-25">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-27">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">stored</span><span class="p" data-group-id="group-27">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">prepare_read</span><span class="p" data-group-id="group-28">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">read_context</span><span class="p" data-group-id="group-28">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">CalendarObject</span><span class="o">.</span><span class="n">get_property</span><span class="p" data-group-id="group-29">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="ss">:present_value</span><span class="p" data-group-id="group-29">)</span><span class="w">
+</span><span class="p" data-group-id="group-30">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="no">false</span><span class="p" data-group-id="group-30">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">changed_context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-31">%{</span><span class="n">context</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">now</span><span class="p">:</span><span class="w"> </span><span class="ld">~U[2026-12-24 12:00:00Z]</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">monotonic_time</span><span class="p">:</span><span class="w"> </span><span class="mi">172_800_001</span><span class="p">,</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="n">stored</span><span class="o">.</span><span class="n">state</span><span class="p">,</span><span class="w"> </span><span class="ss">trigger</span><span class="p">:</span><span class="w"> </span><span class="ss">:clock_change</span><span class="p" data-group-id="group-31">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-32">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">stored</span><span class="p" data-group-id="group-32">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-33">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">changed_context</span><span class="p" data-group-id="group-33">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-34">{</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">present_value</span><span class="p">,</span><span class="w"> </span><span class="n">stored</span><span class="o">.</span><span class="n">next_execution</span><span class="o">.</span><span class="n">wall_time</span><span class="p" data-group-id="group-34">}</span><span class="w">
+</span><span class="p" data-group-id="group-35">{</span><span class="no">true</span><span class="p">,</span><span class="w"> </span><span class="ld">~U[2026-12-25 00:00:00Z]</span><span class="p" data-group-id="group-35">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">repeat_context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-36">%{</span><span class="n">changed_context</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="n">stored</span><span class="o">.</span><span class="n">state</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">trigger</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-37">{</span><span class="ss">:property_write</span><span class="p">,</span><span class="w"> </span><span class="ss">:date_list</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-37">}</span><span class="p" data-group-id="group-36">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-38">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">candidate</span><span class="p" data-group-id="group-38">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">CalendarObject</span><span class="o">.</span><span class="n">update_property</span><span class="p" data-group-id="group-39">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="ss">:date_list</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-40">[</span><span class="n">special_day</span><span class="p" data-group-id="group-40">]</span><span class="p" data-group-id="group-39">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-41">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">prepared</span><span class="p" data-group-id="group-41">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">prepare_write</span><span class="p" data-group-id="group-42">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">candidate</span><span class="p">,</span><span class="w"> </span><span class="n">repeat_context</span><span class="p" data-group-id="group-42">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">stored</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-43">%{</span><span class="n">stored</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">object</span><span class="p">:</span><span class="w"> </span><span class="n">prepared</span><span class="p" data-group-id="group-43">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-44">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">stored</span><span class="p" data-group-id="group-44">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-45">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">repeat_context</span><span class="p" data-group-id="group-45">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">present_value</span><span class="w">
+</span><span class="no">true</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">rejected_context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-46">%{</span><span class="n">repeat_context</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">trigger</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-47">{</span><span class="ss">:property_write</span><span class="p">,</span><span class="w"> </span><span class="ss">:present_value</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-47">}</span><span class="p" data-group-id="group-46">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-48">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">candidate</span><span class="p" data-group-id="group-48">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">CalendarObject</span><span class="o">.</span><span class="n">update_property</span><span class="p" data-group-id="group-49">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="ss">:present_value</span><span class="p">,</span><span class="w"> </span><span class="no">false</span><span class="p" data-group-id="group-49">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">prepare_write</span><span class="p" data-group-id="group-50">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">candidate</span><span class="p">,</span><span class="w"> </span><span class="n">rejected_context</span><span class="p" data-group-id="group-50">)</span><span class="w">
+</span><span class="p" data-group-id="group-51">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-52">{</span><span class="ss">:write_access_denied</span><span class="p">,</span><span class="w"> </span><span class="ss">:present_value</span><span class="p" data-group-id="group-52">}</span><span class="p" data-group-id="group-51">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">present_value</span><span class="w">
+</span><span class="no">true</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">polling_context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-53">%{</span><span class="n">changed_context</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="n">stored</span><span class="o">.</span><span class="n">state</span><span class="p">,</span><span class="w"> </span><span class="ss">trigger</span><span class="p">:</span><span class="w"> </span><span class="ss">:periodic</span><span class="p" data-group-id="group-53">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-54">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">stored</span><span class="p" data-group-id="group-54">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-55">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">polling_context</span><span class="p" data-group-id="group-55">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">Context</span><span class="o">.</span><span class="n">require_operations</span><span class="p" data-group-id="group-56">(</span><span class="n">polling_context</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-57">[</span><span class="ss">:read_property</span><span class="p" data-group-id="group-57">]</span><span class="p" data-group-id="group-56">)</span><span class="w">
+</span><span class="p" data-group-id="group-58">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-59">{</span><span class="ss">:unsupported_operation</span><span class="p">,</span><span class="w"> </span><span class="ss">:read_property</span><span class="p" data-group-id="group-59">}</span><span class="p" data-group-id="group-58">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">reference</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-60">%</span><span class="nc" data-group-id="group-60">BACnet.Protocol.DeviceObjectRef</span><span class="p" data-group-id="group-60">{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">device_identifier</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">object_identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-61">%</span><span class="nc" data-group-id="group-61">BACnet.Protocol.ObjectIdentifier</span><span class="p" data-group-id="group-61">{</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:calendar</span><span class="p">,</span><span class="w"> </span><span class="ss">instance</span><span class="p">:</span><span class="w"> </span><span class="mi">501</span><span class="p" data-group-id="group-61">}</span><span class="p" data-group-id="group-60">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dependency_context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-62">%{</span><span class="n">polling_context</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="n">stored</span><span class="o">.</span><span class="n">state</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">trigger</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-63">{</span><span class="ss">:object_changed</span><span class="p">,</span><span class="w"> </span><span class="n">reference</span><span class="p" data-group-id="group-63">}</span><span class="p" data-group-id="group-62">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-64">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">stored</span><span class="p" data-group-id="group-64">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-65">(</span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">dependency_context</span><span class="p" data-group-id="group-65">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">stored</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">present_value</span><span class="w">
+</span><span class="no">true</span></code></pre><p>The repeated write follows the same preparation/commit/execution phases. The rejected write leaves
+<code class="inline">stored</code> unchanged. The final calls illustrate periodic execution, missing-operation preflight and
+construction of a dependency-change trigger. Calendar recalculates its date predicate for that
+trigger without looking up the reference - an object that consumes dependencies needs its own
+documented callbacks and capability checks.</p><p>A remote snapshot is passive. This separate example preserves even a supplied
+runtime-state marker and rejects local write preparation:</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution</span><span class="o">.</span><span class="p" data-group-id="group-1">{</span><span class="nc">Context</span><span class="p">,</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="p" data-group-id="group-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectTypes.Calendar</span><span class="p">,</span><span class="w"> </span><span class="ss">as</span><span class="p">:</span><span class="w"> </span><span class="nc">CalendarObject</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">snapshot</span><span class="p" data-group-id="group-2">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">CalendarObject</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="group-3">(</span><span class="mi">502</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Remote Calendar&quot;</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="p" data-group-id="group-4">%{</span><span class="ss">date_list</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-5">[</span><span class="p" data-group-id="group-5">]</span><span class="p">,</span><span class="w"> </span><span class="ss">present_value</span><span class="p">:</span><span class="w"> </span><span class="no">false</span><span class="p" data-group-id="group-4">}</span><span class="p">,</span><span class="w"> </span><span class="ss">remote_object</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p" data-group-id="group-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-6">%</span><span class="nc" data-group-id="group-6">Context</span><span class="p" data-group-id="group-6">{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">device_identifier</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">now</span><span class="p">:</span><span class="w"> </span><span class="ld">~U[2026-12-25 12:00:00Z]</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">timezone_database</span><span class="p">:</span><span class="w"> </span><span class="nc">Calendar.UTCOnlyTimeZoneDatabase</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">monotonic_time</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">trigger</span><span class="p">:</span><span class="w"> </span><span class="ss">:initialization</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="ss">:retained</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">lookup_object</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">read_property_multiple</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">read_property</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">write_property</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">options</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-7">[</span><span class="p" data-group-id="group-7">]</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="p" data-group-id="group-6">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-8">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">passive</span><span class="p" data-group-id="group-8">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-9">(</span><span class="n">snapshot</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-9">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-10">{</span><span class="n">passive</span><span class="o">.</span><span class="n">object</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">snapshot</span><span class="p">,</span><span class="w"> </span><span class="n">passive</span><span class="o">.</span><span class="n">state</span><span class="p">,</span><span class="w"> </span><span class="n">passive</span><span class="o">.</span><span class="n">next_execution</span><span class="p" data-group-id="group-10">}</span><span class="w">
+</span><span class="p" data-group-id="group-11">{</span><span class="no">true</span><span class="p">,</span><span class="w"> </span><span class="ss">:retained</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-11">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">write_context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-12">%{</span><span class="n">context</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">trigger</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-13">{</span><span class="ss">:property_write</span><span class="p">,</span><span class="w"> </span><span class="ss">:date_list</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-13">}</span><span class="p" data-group-id="group-12">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">prepare_write</span><span class="p" data-group-id="group-14">(</span><span class="n">snapshot</span><span class="p">,</span><span class="w"> </span><span class="n">snapshot</span><span class="p">,</span><span class="w"> </span><span class="n">write_context</span><span class="p" data-group-id="group-14">)</span><span class="w">
+</span><span class="p" data-group-id="group-15">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="ss">:operation_not_available_for_remote_objects</span><span class="p" data-group-id="group-15">}</span></code></pre><p>Calendar returns wall-clock wakeups and preserves the supplied runtime state. Other object modules
+may use host callbacks, runtime state or continuations as described in their documentation. For a
+runnable example with an actual timer, serialized operations and error handling, use the
+example host in
+<code class="inline">examples/objects_lifecycle/calendar_lifecycle_host.exs</code> - run its walkthrough with <code class="inline">mix run examples/objects_lifecycle/calendar_lifecycle.exs</code> from the repository root.</p>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute/2" data-no-tooltip="" translate="no">execute(object, context)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Runs local preflight and one execution step, or preserves a remote snapshot.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#prepare_read/2" data-no-tooltip="" translate="no">prepare_read(object, context)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Runs the object's read step using a property-read trigger.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#prepare_write/3" data-no-tooltip="" translate="no">prepare_write(object, candidate, context)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Prepares a candidate for atomic commit, without executing its behaviour.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="execute/2">
+
+  <div class="detail-header">
+    <a href="#execute/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute(object, context)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_execution/lifecycle.ex#L721" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  {:ok, <a href="BACnet.Protocol.ObjectExecution.Result.html#t:t/0">BACnet.Protocol.ObjectExecution.Result.t</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Runs local preflight and one execution step, or preserves a remote snapshot.</p><p>For local objects, calls <a href="BACnet.Protocol.ObjectsBehaviour.html#c:validate_execution/2"><code class="inline">BACnet.Protocol.ObjectsBehaviour.validate_execution/2</code></a> before the
+module's <a href="BACnet.Protocol.ObjectsBehaviour.html#c:execute/2"><code class="inline">BACnet.Protocol.ObjectsBehaviour.execute/2</code></a> callback. A successful result must be
+retained before servicing its next request or accepting another operation. On error, no
+replacement result is supplied - preserve the previous state, accounting for any property write
+already committed.</p><p>Supply the trigger and prior runtime state in the context. This function does not check timer
+deadlines, apply a proposed property write, drain continuations or schedule subsequent calls.
+Remote snapshots preserve the object and supplied state without invoking object or host callbacks
+and return no wakeup request.</p>
+  </section>
+</section>
+<section class="detail" id="prepare_read/2">
+
+  <div class="detail-header">
+    <a href="#prepare_read/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">prepare_read(object, context)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_execution/lifecycle.ex#L787" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> prepare_read(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  {:ok, <a href="BACnet.Protocol.ObjectExecution.Result.html#t:t/0">BACnet.Protocol.ObjectExecution.Result.t</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Runs the object's read step using a property-read trigger.</p><p>Performs one <a href="#execute/2"><code class="inline">execute/2</code></a> step and returns its execution result. Retain it,
+finish any immediate continuations, then obtain the property through the object's getter.
+The object defines which values the read step refreshes. For
+example, <a href="BACnet.Protocol.ObjectTypes.EventEnrollment.html"><code class="inline">BACnet.Protocol.ObjectTypes.EventEnrollment</code></a> returns its last
+evaluated state and preserves its pending deadline. The same ordering
+applies to reads requested by another executing object. On error, keep the
+previous result and return the failure to the reader.</p>
+  </section>
+</section>
+<section class="detail" id="prepare_write/3">
+
+  <div class="detail-header">
+    <a href="#prepare_write/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">prepare_write(object, candidate, context)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_execution/lifecycle.ex#L756" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> prepare_write(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>(), <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  {:ok, <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">struct</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Prepares a candidate for atomic commit, without executing its behaviour.</p><p>Requires a property-write or application-write trigger. Candidates must retain their module,
+instance number and local/remote identity. The host needs to validate property requirements and constraints through
+the object's property operations before this call and enforce property access, array indices
+and the request's priority rules.
+A command or indexed write targeting slot 6 is denied. The proposed candidate
+must preserve slot 6 so that the binary minimum-time callback can maintain the hold.</p><p>Calls the module's pure <a href="BACnet.Protocol.ObjectsBehaviour.html#c:prepare_write/3"><code class="inline">BACnet.Protocol.ObjectsBehaviour.prepare_write/3</code></a> callback, checks the
+returned identity and runs execution preflight on that final candidate. It neither commits the
+candidate nor executes behaviour. On success, commit the returned object while retaining runtime
+state, then call <a href="#execute/2"><code class="inline">execute/2</code></a> with the same write
+context, including for same-value writes. On error, leave the original result and request
+unchanged. Preparing a write to a remote snapshot returns <code class="inline">{:error, :operation_not_available_for_remote_objects}</code>.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0-dev.2">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0-dev.2">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.4) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

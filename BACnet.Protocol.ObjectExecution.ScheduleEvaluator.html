@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.4">
+    <meta name="project" content="bacstack v0.1.0-dev.2">
+
+
+    <title>BACnet.Protocol.ObjectExecution.ScheduleEvaluator — bacstack v0.1.0-dev.2</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-RXHHCTJW.css" />
+
+    <script defer src="dist/sidebar_items-F5D808A4.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-MI33G4N7.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0-dev.2
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr />Protocol.<wbr />ObjectExecution.<wbr />ScheduleEvaluator</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0-dev.2)</small>
+
+    </h1>
+
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_execution/schedule_evaluator.ex#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>Internal validation, value selection and deadline calculations for Schedule objects.</p><p><a href="BACnet.Protocol.ObjectTypes.Schedule.html"><code class="inline">BACnet.Protocol.ObjectTypes.Schedule</code></a> uses these helpers to implement its object behaviour.
+Use <a href="BACnet.Protocol.ObjectExecution.Lifecycle.html"><code class="inline">BACnet.Protocol.ObjectExecution.Lifecycle</code></a> to run a Schedule in an application.
+The functions here validate the timetable and calculate its selected value and next deadline.</p><h2 id="module-inputs-and-responsibilities" class="section-heading"><a href="#module-inputs-and-responsibilities" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Inputs and responsibilities</span></h2><p>Inputs are normally <a href="BACnet.Protocol.ObjectTypes.Schedule.html"><code class="inline">BACnet.Protocol.ObjectTypes.Schedule</code></a> structs. Each function also accepts
+a map containing the fields it reads, as described in its documentation. The configuration
+fields used across this module are:</p><table><thead><tr><th style="text-align: left;">Field</th><th style="text-align: left;">Representation</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">weekly_schedule</code></td><td style="text-align: left;">Seven-element <a href="BACnet.Protocol.BACnetArray.html"><code class="inline">BACnet.Protocol.BACnetArray</code></a> of <a href="BACnet.Protocol.DailySchedule.html"><code class="inline">BACnet.Protocol.DailySchedule</code></a>, or <code class="inline">nil</code>.</td></tr><tr><td style="text-align: left;"><code class="inline">exception_schedule</code></td><td style="text-align: left;"><a href="BACnet.Protocol.BACnetArray.html"><code class="inline">BACnet.Protocol.BACnetArray</code></a> of <a href="BACnet.Protocol.SpecialEvent.html"><code class="inline">BACnet.Protocol.SpecialEvent</code></a>, or <code class="inline">nil</code>.</td></tr><tr><td style="text-align: left;"><code class="inline">effective_period</code></td><td style="text-align: left;"><a href="BACnet.Protocol.DateRange.html"><code class="inline">BACnet.Protocol.DateRange</code></a>.</td></tr><tr><td style="text-align: left;"><code class="inline">schedule_default</code>, <code class="inline">present_value</code></td><td style="text-align: left;">Primitive <a href="BACnet.Protocol.ApplicationTags.Encoding.html"><code class="inline">BACnet.Protocol.ApplicationTags.Encoding</code></a> values.</td></tr><tr><td style="text-align: left;"><code class="inline">out_of_service</code></td><td style="text-align: left;">Boolean used by <a href="#next_wakeup/2"><code class="inline">next_wakeup/2</code></a>.</td></tr></tbody></table><p><a href="#validate/1"><code class="inline">validate/1</code></a> checks configuration contents. Its required map keys must already be present.
+Validate the input before using the individual calculations. Call <a href="#datatype/1"><code class="inline">datatype/1</code></a> to check
+that the non-NULL values share a BACnet application datatype.
+The Schedule implementation decides how validation failures affect its Reliability property.</p><p><a href="#calendar_references/1"><code class="inline">calendar_references/1</code></a> identifies the local Calendar values needed by <a href="#evaluate/3"><code class="inline">evaluate/3</code></a>. The caller
+needs to obtain fresh Boolean values for all those identifiers and supply them in the calendar
+map. For lifecycle execution, nested Calendar reads need to share the enclosing operation's
+supplied time, as described by <a href="BACnet.Protocol.ObjectExecution.Lifecycle.html"><code class="inline">BACnet.Protocol.ObjectExecution.Lifecycle</code></a>.</p><p><a href="#next_wakeup/2"><code class="inline">next_wakeup/2</code></a> calculates local deadlines from the time and timezone database in
+<a href="BACnet.Protocol.ObjectExecution.Context.html"><code class="inline">BACnet.Protocol.ObjectExecution.Context</code></a>. Supply Calendar values and other inputs
+before calling these functions. Schedule handles Reliability updates, and the host
+delivers timers.</p><h2 id="module-null-selection-and-target-values" class="section-heading"><a href="#module-null-selection-and-target-values" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">NULL selection and target values</span></h2><p>A NULL weekly or exception time/value entry causes selection to fall through to another
+applicable value. The Schedule default is the final fallback and can itself be NULL.
+<a href="#values/1"><code class="inline">values/1</code></a> retains all configured NULLs for configuration inspection. <a href="#target_values/1"><code class="inline">target_values/1</code></a> omits
+NULL time/value entries but retains the default, including a NULL default, because that value
+can be written to a target. The current selected value, including an out-of-service manual
+value, is supplied separately to <a href="BACnet.Protocol.ObjectExecution.ScheduleTargets.html#prepare/5"><code class="inline">BACnet.Protocol.ObjectExecution.ScheduleTargets.prepare/5</code></a>
+by the Schedule implementation.</p><h2 id="module-example" class="section-heading"><a href="#module-example" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example</span></h2><p>This example evaluates a validated daily schedule and calculates its next requested deadline.
+It uses supplied UTC time and no Calendar references.</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ApplicationTags.Encoding</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol</span><span class="o">.</span><span class="p" data-group-id="group-1">{</span><span class="nc">BACnetArray</span><span class="p">,</span><span class="w"> </span><span class="nc">BACnetTime</span><span class="p">,</span><span class="w"> </span><span class="nc">DailySchedule</span><span class="p">,</span><span class="w"> </span><span class="nc">TimeValue</span><span class="p" data-group-id="group-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution</span><span class="o">.</span><span class="p" data-group-id="group-2">{</span><span class="nc">Context</span><span class="p">,</span><span class="w"> </span><span class="nc">ScheduleEvaluator</span><span class="p" data-group-id="group-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectTypes.Schedule</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">null</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Encoding</span><span class="o">.</span><span class="n">create!</span><span class="p" data-group-id="group-3">(</span><span class="p" data-group-id="group-4">{</span><span class="ss">:null</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-4">}</span><span class="p" data-group-id="group-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">on</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Encoding</span><span class="o">.</span><span class="n">create!</span><span class="p" data-group-id="group-5">(</span><span class="p" data-group-id="group-6">{</span><span class="ss">:enumerated</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="group-6">}</span><span class="p" data-group-id="group-5">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">day</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-7">%</span><span class="nc" data-group-id="group-7">DailySchedule</span><span class="p" data-group-id="group-7">{</span><span class="ss">schedule</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-8">[</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="p" data-group-id="group-9">%</span><span class="nc" data-group-id="group-9">TimeValue</span><span class="p" data-group-id="group-9">{</span><span class="ss">time</span><span class="p">:</span><span class="w"> </span><span class="nc">BACnetTime</span><span class="o">.</span><span class="n">from_time</span><span class="p" data-group-id="group-10">(</span><span class="ld">~T[08:00:00]</span><span class="p" data-group-id="group-10">)</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="n">on</span><span class="p" data-group-id="group-9">}</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="p" data-group-id="group-11">%</span><span class="nc" data-group-id="group-11">TimeValue</span><span class="p" data-group-id="group-11">{</span><span class="ss">time</span><span class="p">:</span><span class="w"> </span><span class="nc">BACnetTime</span><span class="o">.</span><span class="n">from_time</span><span class="p" data-group-id="group-12">(</span><span class="ld">~T[18:00:00]</span><span class="p" data-group-id="group-12">)</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="n">null</span><span class="p" data-group-id="group-11">}</span><span class="p" data-group-id="group-8">]</span><span class="p" data-group-id="group-7">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-13">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">object</span><span class="p" data-group-id="group-13">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Schedule</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="group-14">(</span><span class="mi">600</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Lighting&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-15">%{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">weekly_schedule</span><span class="p">:</span><span class="w"> </span><span class="nc">BACnetArray</span><span class="o">.</span><span class="n">from_list</span><span class="p" data-group-id="group-16">(</span><span class="nc">List</span><span class="o">.</span><span class="n">duplicate</span><span class="p" data-group-id="group-17">(</span><span class="n">day</span><span class="p">,</span><span class="w"> </span><span class="mi">7</span><span class="p" data-group-id="group-17">)</span><span class="p">,</span><span class="w"> </span><span class="no">true</span><span class="p" data-group-id="group-16">)</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">schedule_default</span><span class="p">:</span><span class="w"> </span><span class="n">null</span><span class="p" data-group-id="group-15">}</span><span class="p" data-group-id="group-14">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">validate</span><span class="p" data-group-id="group-18">(</span><span class="n">object</span><span class="p" data-group-id="group-18">)</span><span class="w">
+</span><span class="ss">:ok</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">datatype</span><span class="p" data-group-id="group-19">(</span><span class="n">object</span><span class="p" data-group-id="group-19">)</span><span class="w">
+</span><span class="p" data-group-id="group-20">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="ss">:enumerated</span><span class="p" data-group-id="group-20">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">calendar_references</span><span class="p" data-group-id="group-21">(</span><span class="n">object</span><span class="p" data-group-id="group-21">)</span><span class="w">
+</span><span class="p" data-group-id="group-22">[</span><span class="p" data-group-id="group-22">]</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">evaluate</span><span class="p" data-group-id="group-23">(</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="ld">~U[2026-11-09 08:00:00Z]</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-24">%{</span><span class="p" data-group-id="group-24">}</span><span class="p" data-group-id="group-23">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">on</span><span class="w">
+</span><span class="no">true</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">evaluate</span><span class="p" data-group-id="group-25">(</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="ld">~U[2026-11-09 18:00:00Z]</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-26">%{</span><span class="p" data-group-id="group-26">}</span><span class="p" data-group-id="group-25">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">null</span><span class="w">
+</span><span class="no">true</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">Enum</span><span class="o">.</span><span class="n">count</span><span class="p" data-group-id="group-27">(</span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">values</span><span class="p" data-group-id="group-28">(</span><span class="n">object</span><span class="p" data-group-id="group-28">)</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p" data-group-id="group-29">(</span><span class="ni">&amp;1</span><span class="o">.</span><span class="n">type</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="ss">:null</span><span class="p" data-group-id="group-29">)</span><span class="p" data-group-id="group-27">)</span><span class="w">
+</span><span class="mi">8</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">Enum</span><span class="o">.</span><span class="n">count</span><span class="p" data-group-id="group-30">(</span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">target_values</span><span class="p" data-group-id="group-31">(</span><span class="n">object</span><span class="p" data-group-id="group-31">)</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p" data-group-id="group-32">(</span><span class="ni">&amp;1</span><span class="o">.</span><span class="n">type</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="ss">:null</span><span class="p" data-group-id="group-32">)</span><span class="p" data-group-id="group-30">)</span><span class="w">
+</span><span class="mi">1</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Context</span><span class="o">.</span><span class="n">new</span><span class="p" data-group-id="group-33">(</span><span class="ss">:initialization</span><span class="p">,</span><span class="w"> </span><span class="ss">now</span><span class="p">:</span><span class="w"> </span><span class="ld">~U[2026-11-09 08:00:00Z]</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">monotonic_time</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="ss">timezone_database</span><span class="p">:</span><span class="w"> </span><span class="nc">Calendar.UTCOnlyTimeZoneDatabase</span><span class="p" data-group-id="group-33">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-34">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">wakeup</span><span class="p" data-group-id="group-34">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">next_wakeup</span><span class="p" data-group-id="group-35">(</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-35">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">DateTime</span><span class="o">.</span><span class="n">to_iso8601</span><span class="p" data-group-id="group-36">(</span><span class="n">wakeup</span><span class="o">.</span><span class="n">wall_time</span><span class="p" data-group-id="group-36">)</span><span class="w">
+</span><span class="s">&quot;2026-11-09T18:00:00.000000Z&quot;</span></code></pre>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#active?/2" data-no-tooltip="" translate="no">active?(object, date)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks whether a date matches the Schedule's effective period.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#calendar_references/1" data-no-tooltip="" translate="no">calendar_references(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Lists the distinct Calendar identifiers used by exception events.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#datatype/1" data-no-tooltip="" translate="no">datatype(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Finds the common application tag of the non-NULL configured values.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#evaluate/3" data-no-tooltip="" translate="no">evaluate(object, now, calendars)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Selects the automatic value at the supplied device-local wall time.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#next_wakeup/2" data-no-tooltip="" translate="no">next_wakeup(object, context)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Calculates the next potential automatic transition or local midnight.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#same_value?/2" data-no-tooltip="" translate="no">same_value?(left, right)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Compares application tags and payloads using strict payload equality.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#target_values/1" data-no-tooltip="" translate="no">target_values(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Collects possible automatic output values for advance target validation.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#valid_value?/1" data-no-tooltip="" translate="no">valid_value?(value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks whether a term is a supported primitive Schedule value.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#validate/1" data-no-tooltip="" translate="no">validate(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Validates the structural and semantic contents of a Schedule configuration.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#values/1" data-no-tooltip="" translate="no">values(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Collects the default and all configured weekly and exception values.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="active?/2">
+
+  <div class="detail-header">
+    <a href="#active?/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">active?(object, date)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_execution/schedule_evaluator.ex#L345" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> active?(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>(), <a href="https://elixir.hexdocs.pm/Date.html#t:t/0">Date.t</a>()) :: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks whether a date matches the Schedule's effective period.</p><p>Reads only <code class="inline">effective_period</code> and delegates date-pattern matching to
+<a href="BACnet.Protocol.CalendarEntry.html#matches_date?/2"><code class="inline">BACnet.Protocol.CalendarEntry.matches_date?/2</code></a>. The range must be valid for matching.
+This predicate does not consider <code class="inline">out_of_service</code>, time/value entries or exception priorities.
+The Schedule implementation separately decides whether automatic evaluation should run.</p><h2 id="active?/2-example" class="section-heading"><a href="#active?/2-example" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example</span></h2><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.BACnetDate</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.DateRange</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.ScheduleEvaluator</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">object</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-1">%{</span><span class="ss">effective_period</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-2">%</span><span class="nc" data-group-id="group-2">DateRange</span><span class="p" data-group-id="group-2">{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">start_date</span><span class="p">:</span><span class="w"> </span><span class="nc">BACnetDate</span><span class="o">.</span><span class="n">from_date</span><span class="p" data-group-id="group-3">(</span><span class="ld">~D[2026-11-01]</span><span class="p" data-group-id="group-3">)</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">end_date</span><span class="p">:</span><span class="w"> </span><span class="nc">BACnetDate</span><span class="o">.</span><span class="n">from_date</span><span class="p" data-group-id="group-4">(</span><span class="ld">~D[2026-11-30]</span><span class="p" data-group-id="group-4">)</span><span class="p" data-group-id="group-2">}</span><span class="p" data-group-id="group-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">active?</span><span class="p" data-group-id="group-5">(</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="ld">~D[2026-11-09]</span><span class="p" data-group-id="group-5">)</span><span class="w">
+</span><span class="no">true</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">active?</span><span class="p" data-group-id="group-6">(</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="ld">~D[2026-12-01]</span><span class="p" data-group-id="group-6">)</span><span class="w">
+</span><span class="no">false</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="calendar_references/1">
+
+  <div class="detail-header">
+    <a href="#calendar_references/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">calendar_references(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_execution/schedule_evaluator.ex#L315" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> calendar_references(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>()) :: [<a href="BACnet.Protocol.ObjectIdentifier.html#t:t/0">BACnet.Protocol.ObjectIdentifier.t</a>()]</pre>
+
+      </div>
+
+<p>Lists the distinct Calendar identifiers used by exception events.</p><p>Reads <code class="inline">exception_schedule</code>. Returns <a href="BACnet.Protocol.ObjectIdentifier.html"><code class="inline">BACnet.Protocol.ObjectIdentifier</code></a> values in order of first
+occurrence. Inline <a href="BACnet.Protocol.CalendarEntry.html"><code class="inline">BACnet.Protocol.CalendarEntry</code></a> periods are not included. On validated input,
+these identifiers refer to local Calendar objects. The function does not look up or read them.</p><p>The caller needs to supply their fresh Boolean values to <a href="#evaluate/3"><code class="inline">evaluate/3</code></a>.</p><h2 id="calendar_references/1-example" class="section-heading"><a href="#calendar_references/1-example" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example</span></h2><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="nc">BACnet.Protocol.ObjectExecution.ScheduleEvaluator</span><span class="o">.</span><span class="n">calendar_references</span><span class="p" data-group-id="group-1">(</span><span class="p" data-group-id="group-2">%{</span><span class="ss">exception_schedule</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-2">}</span><span class="p" data-group-id="group-1">)</span><span class="w">
+</span><span class="p" data-group-id="group-3">[</span><span class="p" data-group-id="group-3">]</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="datatype/1">
+
+  <div class="detail-header">
+    <a href="#datatype/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">datatype(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_execution/schedule_evaluator.ex#L288" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> datatype(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>()) :: {:ok, <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>() | nil} | {:error, :inconsistent_datatypes}</pre>
+
+      </div>
+
+<p>Finds the common application tag of the non-NULL configured values.</p><p>Uses the same fields and values as <a href="#values/1"><code class="inline">values/1</code></a>, ignoring NULLs. Returns <code class="inline">{:ok, tag}</code> for one
+common tag, <code class="inline">{:ok, nil}</code> for an all-NULL configuration, or <code class="inline">{:error, :inconsistent_datatypes}</code>
+when multiple non-NULL tags occur. It does not include <code class="inline">present_value</code> or check target
+compatibility. Values are expected to have passed <a href="#validate/1"><code class="inline">validate/1</code></a> or <a href="#valid_value?/1"><code class="inline">valid_value?/1</code></a>.</p><h2 id="datatype/1-example" class="section-heading"><a href="#datatype/1-example" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example</span></h2><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ApplicationTags.Encoding</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.ScheduleEvaluator</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">datatype</span><span class="p" data-group-id="group-1">(</span><span class="p" data-group-id="group-2">%{</span><span class="ss">schedule_default</span><span class="p">:</span><span class="w"> </span><span class="nc">Encoding</span><span class="o">.</span><span class="n">create!</span><span class="p" data-group-id="group-3">(</span><span class="p" data-group-id="group-4">{</span><span class="ss">:real</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p" data-group-id="group-4">}</span><span class="p" data-group-id="group-3">)</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">weekly_schedule</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="ss">exception_schedule</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-2">}</span><span class="p" data-group-id="group-1">)</span><span class="w">
+</span><span class="p" data-group-id="group-5">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="ss">:real</span><span class="p" data-group-id="group-5">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">datatype</span><span class="p" data-group-id="group-6">(</span><span class="p" data-group-id="group-7">%{</span><span class="ss">schedule_default</span><span class="p">:</span><span class="w"> </span><span class="nc">Encoding</span><span class="o">.</span><span class="n">create!</span><span class="p" data-group-id="group-8">(</span><span class="p" data-group-id="group-9">{</span><span class="ss">:null</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-9">}</span><span class="p" data-group-id="group-8">)</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">weekly_schedule</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="ss">exception_schedule</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-7">}</span><span class="p" data-group-id="group-6">)</span><span class="w">
+</span><span class="p" data-group-id="group-10">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-10">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="evaluate/3">
+
+  <div class="detail-header">
+    <a href="#evaluate/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">evaluate(object, now, calendars)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_execution/schedule_evaluator.ex#L375" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> evaluate(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>(), <a href="https://elixir.hexdocs.pm/DateTime.html#t:t/0">DateTime.t</a>(), %{
+  required(<a href="BACnet.Protocol.ObjectIdentifier.html#t:t/0">BACnet.Protocol.ObjectIdentifier.t</a>()) =&gt; <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()
+}) ::
+  <a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()</pre>
+
+      </div>
+
+<p>Selects the automatic value at the supplied device-local wall time.</p><p>Reads <code class="inline">weekly_schedule</code>, <code class="inline">exception_schedule</code> and <code class="inline">schedule_default</code>. Inputs must have passed
+structural validation. The calendar map must contain fresh Boolean values keyed by every
+identifier returned by <a href="#calendar_references/1"><code class="inline">calendar_references/1</code></a> - a missing key raises <a href="https://elixir.hexdocs.pm/KeyError.html"><code class="inline">KeyError</code></a>.</p><p>Matching exceptions are considered by ascending numeric priority, with array order breaking
+ties. Each list contributes its latest time/value entry at or before the supplied time. NULL
+contributions fall through to another exception, then the weekday schedule, then the default.
+Weekly indices run from Monday (<code class="inline">1</code>) through Sunday (<code class="inline">7</code>). The default may itself be NULL.</p><p>Returns the selected encoding unchanged. The caller needs to check effective-period and
+out-of-service rules before choosing to use this calculation. This function does not update
+<code class="inline">present_value</code>, Reliability or any targets.</p><h2 id="evaluate/3-example" class="section-heading"><a href="#evaluate/3-example" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example</span></h2><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ApplicationTags.Encoding</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.ScheduleEvaluator</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectTypes.Schedule</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">fallback</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Encoding</span><span class="o">.</span><span class="n">create!</span><span class="p" data-group-id="group-1">(</span><span class="p" data-group-id="group-2">{</span><span class="ss">:enumerated</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p" data-group-id="group-2">}</span><span class="p" data-group-id="group-1">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">object</span><span class="p" data-group-id="group-3">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Schedule</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="group-4">(</span><span class="mi">600</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Fallback&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-5">%{</span><span class="ss">schedule_default</span><span class="p">:</span><span class="w"> </span><span class="n">fallback</span><span class="p" data-group-id="group-5">}</span><span class="p" data-group-id="group-4">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">evaluate</span><span class="p" data-group-id="group-6">(</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="ld">~U[2026-11-09 08:00:00Z]</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-7">%{</span><span class="p" data-group-id="group-7">}</span><span class="p" data-group-id="group-6">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">fallback</span><span class="w">
+</span><span class="no">true</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="next_wakeup/2">
+
+  <div class="detail-header">
+    <a href="#next_wakeup/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">next_wakeup(object, context)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_execution/schedule_evaluator.ex#L426" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> next_wakeup(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  {:ok, <a href="BACnet.Protocol.ObjectExecution.Wakeup.html#t:t/0">BACnet.Protocol.ObjectExecution.Wakeup.t</a>() | nil} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Calculates the next potential automatic transition or local midnight.</p><p>Reads <code class="inline">out_of_service</code>, and for an in-service object also <code class="inline">effective_period</code>, <code class="inline">weekly_schedule</code>
+and <code class="inline">exception_schedule</code>. The context supplies <code class="inline">now</code> and <code class="inline">timezone_database</code> - its trigger,
+monotonic time, state and host operations are not used by this calculation.</p><p>Returns <code class="inline">{:ok, nil}</code> out of service. Otherwise returns a
+<a href="BACnet.Protocol.ObjectExecution.Wakeup.html"><code class="inline">BACnet.Protocol.ObjectExecution.Wakeup</code></a> with the earliest future wall deadline and
+<code class="inline">monotonic_time: nil</code>. Outside the effective period, only the next local midnight is considered.
+Inside it, all of today's weekly and exception transition times are also considered. This can
+request an extra check for an exception whose period does not match today.</p><p>Both occurrences of an ambiguous local time are considered. A time in a timezone gap resolves
+to the first instant after that gap. Database errors return <code class="inline">{:error, {:timezone_error, reason}}</code>.
+Inputs must already be structurally valid. No timer is armed - the integrating host needs to
+service the returned deadline through <a href="BACnet.Protocol.ObjectExecution.Lifecycle.html"><code class="inline">BACnet.Protocol.ObjectExecution.Lifecycle</code></a>.</p><h2 id="next_wakeup/2-example" class="section-heading"><a href="#next_wakeup/2-example" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example</span></h2><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution</span><span class="o">.</span><span class="p" data-group-id="group-1">{</span><span class="nc">Context</span><span class="p">,</span><span class="w"> </span><span class="nc">ScheduleEvaluator</span><span class="p" data-group-id="group-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Context</span><span class="o">.</span><span class="n">new</span><span class="p" data-group-id="group-2">(</span><span class="ss">:periodic</span><span class="p">,</span><span class="w"> </span><span class="ss">now</span><span class="p">:</span><span class="w"> </span><span class="ld">~U[2026-11-09 08:00:00Z]</span><span class="p">,</span><span class="w"> </span><span class="ss">monotonic_time</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p" data-group-id="group-2">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">next_wakeup</span><span class="p" data-group-id="group-3">(</span><span class="p" data-group-id="group-4">%{</span><span class="ss">out_of_service</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="p" data-group-id="group-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-3">)</span><span class="w">
+</span><span class="p" data-group-id="group-5">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-5">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="same_value?/2">
+
+  <div class="detail-header">
+    <a href="#same_value?/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">same_value?(left, right)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_execution/schedule_evaluator.ex#L208" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> same_value?(
+  <a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>(),
+  <a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()
+) :: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Compares application tags and payloads using strict payload equality.</p><p>The inputs are expected to be validated primitive encodings. Encoding metadata and <code class="inline">extras</code>
+do not participate in the comparison. REAL and Double remain distinct even when their payloads
+are equal. The Schedule implementation uses this comparison to detect value changes.</p><h2 id="same_value?/2-example" class="section-heading"><a href="#same_value?/2-example" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example</span></h2><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ApplicationTags.Encoding</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.ScheduleEvaluator</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Encoding</span><span class="o">.</span><span class="n">create!</span><span class="p" data-group-id="group-1">(</span><span class="p" data-group-id="group-2">{</span><span class="ss">:real</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p" data-group-id="group-2">}</span><span class="p" data-group-id="group-1">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">same_value?</span><span class="p" data-group-id="group-3">(</span><span class="n">value</span><span class="p">,</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="group-3">)</span><span class="w">
+</span><span class="no">true</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">same_value?</span><span class="p" data-group-id="group-4">(</span><span class="n">value</span><span class="p">,</span><span class="w"> </span><span class="nc">Encoding</span><span class="o">.</span><span class="n">create!</span><span class="p" data-group-id="group-5">(</span><span class="p" data-group-id="group-6">{</span><span class="ss">:double</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p" data-group-id="group-6">}</span><span class="p" data-group-id="group-5">)</span><span class="p" data-group-id="group-4">)</span><span class="w">
+</span><span class="no">false</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="target_values/1">
+
+  <div class="detail-header">
+    <a href="#target_values/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">target_values(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_execution/schedule_evaluator.ex#L256" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> target_values(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>()) :: [<a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()]</pre>
+
+      </div>
+
+<p>Collects possible automatic output values for advance target validation.</p><p>Reads <code class="inline">schedule_default</code>, <code class="inline">weekly_schedule</code> and <code class="inline">exception_schedule</code>. Returns the default,
+including NULL, followed by the non-NULL weekly and exception values in the same order as
+<a href="#values/1"><code class="inline">values/1</code></a>. Duplicates are retained. NULL time/value entries are omitted because they select a
+fallback - they are not themselves the resulting command. A NULL default can be the result
+and must remain in this list.</p><p><a href="BACnet.Protocol.ObjectExecution.ScheduleTargets.html#prepare/5"><code class="inline">BACnet.Protocol.ObjectExecution.ScheduleTargets.prepare/5</code></a> also checks the current selected
+value. Out-of-service manual control supplies only that selected value rather than this list.
+The module example demonstrates the difference from <a href="#values/1"><code class="inline">values/1</code></a> with NULL time entries.</p><h2 id="target_values/1-example" class="section-heading"><a href="#target_values/1-example" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example</span></h2><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ApplicationTags.Encoding</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.ScheduleEvaluator</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">null</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Encoding</span><span class="o">.</span><span class="n">create!</span><span class="p" data-group-id="group-1">(</span><span class="p" data-group-id="group-2">{</span><span class="ss">:null</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-2">}</span><span class="p" data-group-id="group-1">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">target_values</span><span class="p" data-group-id="group-3">(</span><span class="p" data-group-id="group-4">%{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">schedule_default</span><span class="p">:</span><span class="w"> </span><span class="n">null</span><span class="p">,</span><span class="w"> </span><span class="ss">weekly_schedule</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="ss">exception_schedule</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-4">}</span><span class="p" data-group-id="group-3">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="p" data-group-id="group-5">[</span><span class="n">null</span><span class="p" data-group-id="group-5">]</span><span class="w">
+</span><span class="no">true</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="valid_value?/1">
+
+  <div class="detail-header">
+    <a href="#valid_value?/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">valid_value?(value)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_execution/schedule_evaluator.ex#L180" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> valid_value?(<a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()) :: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks whether a term is a supported primitive Schedule value.</p><p>Accepts <a href="BACnet.Protocol.ApplicationTags.Encoding.html"><code class="inline">BACnet.Protocol.ApplicationTags.Encoding</code></a> structs with <code class="inline">encoding: :primitive</code>, a
+supported application tag and a payload valid for that tag. NULL requires a <code class="inline">nil</code> payload.
+The <code class="inline">extras</code> field must be a keyword list without an <code class="inline">:encoder</code> entry. Tagged/constructed
+encodings, deferred encoders and non-encoding terms return <code class="inline">false</code>.</p><p>This checks one value independently of configuration datatype consistency and target types.</p><h2 id="valid_value?/1-example" class="section-heading"><a href="#valid_value?/1-example" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example</span></h2><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ApplicationTags.Encoding</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.ScheduleEvaluator</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">valid_value?</span><span class="p" data-group-id="group-1">(</span><span class="nc">Encoding</span><span class="o">.</span><span class="n">create!</span><span class="p" data-group-id="group-2">(</span><span class="p" data-group-id="group-3">{</span><span class="ss">:null</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-3">}</span><span class="p" data-group-id="group-2">)</span><span class="p" data-group-id="group-1">)</span><span class="w">
+</span><span class="no">true</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">valid_value?</span><span class="p" data-group-id="group-4">(</span><span class="p" data-group-id="group-5">%</span><span class="nc" data-group-id="group-5">Encoding</span><span class="p" data-group-id="group-5">{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">encoding</span><span class="p">:</span><span class="w"> </span><span class="ss">:primitive</span><span class="p">,</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:unsigned_integer</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="p">,</span><span class="w"> </span><span class="ss">extras</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-6">[</span><span class="p" data-group-id="group-6">]</span><span class="p" data-group-id="group-5">}</span><span class="p" data-group-id="group-4">)</span><span class="w">
+</span><span class="no">false</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">valid_value?</span><span class="p" data-group-id="group-7">(</span><span class="no">nil</span><span class="p" data-group-id="group-7">)</span><span class="w">
+</span><span class="no">false</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="validate/1">
+
+  <div class="detail-header">
+    <a href="#validate/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">validate(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_execution/schedule_evaluator.ex#L143" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> validate(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>()) :: :ok | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Validates the structural and semantic contents of a Schedule configuration.</p><p>Reads <code class="inline">weekly_schedule</code>, <code class="inline">exception_schedule</code>, <code class="inline">effective_period</code>, <code class="inline">schedule_default</code> and
+<code class="inline">present_value</code>. A present weekly array must contain seven daily schedules. If the weekly
+array is absent, the exception array must contain at least one event. Time/value lists need
+specific, unique times and valid primitive values. Event periods, priorities and the effective
+date range must also be valid.</p><p>Returns <code class="inline">:ok</code>, <code class="inline">{:error, {:duplicate_entry, property}}</code> for repeated times, or
+<code class="inline">{:error, {:invalid_configuration, property}}</code> for other invalid contents. The property detail
+can also be <code class="inline">:missing_schedule</code> or <code class="inline">:schedule_value</code>. Missing map keys are programming errors.</p><p>Datatype consistency is checked separately by <a href="#datatype/1"><code class="inline">datatype/1</code></a>. This function does not check target
+compatibility, host operations, service capabilities or runtime state.</p><h2 id="validate/1-example" class="section-heading"><a href="#validate/1-example" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example</span></h2><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.ScheduleEvaluator</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectTypes.Schedule</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">object</span><span class="p" data-group-id="group-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Schedule</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="group-2">(</span><span class="mi">600</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Empty week&quot;</span><span class="p" data-group-id="group-2">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">validate</span><span class="p" data-group-id="group-3">(</span><span class="n">object</span><span class="p" data-group-id="group-3">)</span><span class="w">
+</span><span class="ss">:ok</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">validate</span><span class="p" data-group-id="group-4">(</span><span class="p" data-group-id="group-5">%{</span><span class="n">object</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">weekly_schedule</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="ss">exception_schedule</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-5">}</span><span class="p" data-group-id="group-4">)</span><span class="w">
+</span><span class="p" data-group-id="group-6">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-7">{</span><span class="ss">:invalid_configuration</span><span class="p">,</span><span class="w"> </span><span class="ss">:missing_schedule</span><span class="p" data-group-id="group-7">}</span><span class="p" data-group-id="group-6">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="values/1">
+
+  <div class="detail-header">
+    <a href="#values/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">values(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_execution/schedule_evaluator.ex#L231" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> values(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>()) :: [<a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()]</pre>
+
+      </div>
+
+<p>Collects the default and all configured weekly and exception values.</p><p>Reads <code class="inline">schedule_default</code>, <code class="inline">weekly_schedule</code> and <code class="inline">exception_schedule</code>. Returns the default first,
+followed by weekly values in day/list order and exception values in array/list order. Duplicates
+and NULL entries are retained. <code class="inline">present_value</code> is not included. This function does not select
+values for a particular date or time.</p><p>See <a href="#target_values/1"><code class="inline">target_values/1</code></a> for the values used in advance target checks and <a href="#datatype/1"><code class="inline">datatype/1</code></a> for the
+non-NULL configuration datatype check.</p><h2 id="values/1-example" class="section-heading"><a href="#values/1-example" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example</span></h2><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ApplicationTags.Encoding</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution.ScheduleEvaluator</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">null</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Encoding</span><span class="o">.</span><span class="n">create!</span><span class="p" data-group-id="group-1">(</span><span class="p" data-group-id="group-2">{</span><span class="ss">:null</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-2">}</span><span class="p" data-group-id="group-1">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">ScheduleEvaluator</span><span class="o">.</span><span class="n">values</span><span class="p" data-group-id="group-3">(</span><span class="p" data-group-id="group-4">%{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">schedule_default</span><span class="p">:</span><span class="w"> </span><span class="n">null</span><span class="p">,</span><span class="w"> </span><span class="ss">weekly_schedule</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="ss">exception_schedule</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-4">}</span><span class="p" data-group-id="group-3">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="p" data-group-id="group-5">[</span><span class="n">null</span><span class="p" data-group-id="group-5">]</span><span class="w">
+</span><span class="no">true</span></code></pre>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0-dev.2">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0-dev.2">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.4) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

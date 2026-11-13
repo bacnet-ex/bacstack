@@ -1,0 +1,2376 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.4">
+    <meta name="project" content="bacstack v0.1.0-dev.2">
+
+
+    <title>BACnet.Protocol.ObjectTypes.NetworkPort — bacstack v0.1.0-dev.2</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-RXHHCTJW.css" />
+
+    <script defer src="dist/sidebar_items-F5D808A4.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-MI33G4N7.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0-dev.2
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr />Protocol.<wbr />ObjectTypes.<wbr />NetworkPort</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0-dev.2)</small>
+
+    </h1>
+
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>A Network Port exposes a device's communication settings and status through
+BACnet. A client can read the port configuration and request supported
+changes. The application connects those requests to its running transport.</p><p>The Network Port object type defines a standardized object whose properties represent
+the externally visible characteristics of a network port of a BACnet device.
+All BACnet devices shall contain at least one Network Port object per configured port.
+It is a local matter whether or not Network Port objects exist for non-configured ports.
+It is a local matter whether or not the Network Port object is used for non-BACnet ports.</p><p>Verification and validation of property values within a Network Port object is a local matter.
+Property values which are required to maintain proper operation of the network shall be
+retained across a device reset.</p><p>Network Port objects may optionally support intrinsic reporting to facilitate the reporting
+of fault conditions. Network Port objects that support intrinsic reporting shall apply the
+NONE event algorithm.</p><p>As specified in the standard (ASHRAE 135-2016, Clause 12.56), some properties of the Network
+Port object are required if the object is used to represent a network of a given type and
+protocol level. For example, a Network Port object whose Network_Type is MSTP must include
+the Max_Master property (when applicable), and a Network Port object whose Network_Type is
+IPV4 must include the BACnet_IP_Subnet_Mask property (when Protocol_Level is BACNET_APPLICATION).</p><p>Aside from the properties so required, it is a local matter whether a Network Port object
+contains properties that do not apply to its Network_Type. Some vendors may find it convenient
+to have all of their Network Port objects support the same list of properties regardless of
+Network_Type. This is permitted, but not required.</p><h3 id="module-object-description-ashrae-135-2016" class="section-heading"><a href="#module-object-description-ashrae-135-2016" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Object Description (ASHRAE 135-2016)</span></h3><blockquote><p>The Network Port object provides access to the configuration and properties of network ports
+of a device. All BACnet devices shall contain one Network Port object per configured port.
+It is a local matter whether or not Network Port objects exist for non-configured ports.
+It is a local matter whether or not the Network Port object is used for non-BACnet ports.</p><p>It is suggested that instances greater than 255 be used for Network Port objects with a
+Protocol_Level of PHYSICAL or PROTOCOL.
+When the Protocol_Level property has a value of BACNET_APPLICATION, the
+instance number (see Clause 20.2.14) shall correspond to the Port ID of the associated network
+as described in Clause 6.</p></blockquote><h3 id="module-behaviour-and-operation" class="section-heading"><a href="#module-behaviour-and-operation" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Behaviour and Operation</span></h3><p>Writes to configuration properties expose the proposed settings and set
+<code class="inline">changes_pending</code>. The first write to each property retains its previous value
+in the object metadata. The host can call <a href="#active_configuration/1"><code class="inline">active_configuration/1</code></a> for settings
+still in effect, such as the BDT used by the BVLL layer. The object and its
+pending metadata need to be persisted together when pending writes survive a reset.</p><p>The <a href="BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host">object execution host</a>
+handles <a href="BACnet.Protocol.Services.ReinitializeDevice.html"><code class="inline">BACnet.Protocol.Services.ReinitializeDevice</code></a>. It needs to apply the pending
+configuration across affected ports as a single transaction for ACTIVATE_CHANGES
+or WARMSTART. After successful activation, execute each affected object with
+<code class="inline">:periodic</code> and <code class="inline">network_port_event: {:configuration_activated, :activate_changes}</code>
+or <code class="inline">{:configuration_activated, :warmstart}</code> in the context options. The host
+needs to serialize activation with configuration writes. RESTART_PORT is a
+command to reinitialize one port with its active settings.</p><h4>Commands</h4><p>Set <code class="inline">supports_command_execution: true</code> to select <code class="inline">command</code> with the initial
+value <code class="inline">:idle</code>. The object handles <code class="inline">:discard_changes</code> and accepts other commands
+through callbacks in the <code class="inline">:network_port_runtime</code> creation option. Each
+callback implements one action and receives the committed Network Port object.
+For a command write, the host needs to build a candidate with <a href="#update_property/3"><code class="inline">update_property/3</code></a>
+and call <a href="BACnet.Protocol.ObjectExecution.Lifecycle.html#prepare_write/3"><code class="inline">BACnet.Protocol.ObjectExecution.Lifecycle.prepare_write/3</code></a>. On success
+it commits the candidate, acknowledges the BACnet write and then executes the
+committed object with the command write trigger. While the command is outstanding,
+another command write returns <code class="inline">{:error, {:object, :busy}}</code>.</p><p>Execution restores <code class="inline">:idle</code> after the callback returns. For slave discovery,
+the callback should return once discovery has started. For restart, DHCP,
+foreign-device renewal, autonegotiation and proprietary commands, an error
+updates <code class="inline">reliability</code> and the fault flag. The execution result retains the
+callback outcome as a <a href="#t:command_result/0"><code class="inline">command_result/0</code></a>. With intrinsic reporting selected,
+the command outcome is in the result state's <code class="inline">execution_state</code> field.
+DISCARD_CHANGES restores the active configuration while preserving live observations.</p><h4>Host responsibilities</h4><p>An <code class="inline">:out_of_service</code> runtime callback must disable or enable communication at the
+object's <code class="inline">protocol_level</code>. For an Out_Of_Service write,
+the host needs to prepare the candidate, execute the write on it and commit the
+successful result before acknowledging it. If the callback fails, the host
+needs to retain the original object. The callback must leave communication
+in its previous state on failure. If the write arrived on the affected port,
+the host and adapter need to allow the service response through.</p><p>The host owns lower-layer port references, inherited settings, transport I/O,
+DHCP and foreign-device timers, and routing tables. It needs to validate the
+reference hierarchy and apply shared settings and referenced-port faults
+consistently across affected objects. It may enforce the optional single-client
+pending-change policy in Clause 12.56.13. Use <a href="#update_operating_property/3"><code class="inline">update_operating_property/3</code></a> to
+record live transport values such as the negotiated link speed or DHCP addresses.
+The host supplies <code class="inline">{:network_number_learned, number, configured?}</code> as
+the <code class="inline">:network_port_event</code> when processing a Network-Number-Is message for
+an unconfigured port. See <a href="#t:port_event/0"><code class="inline">port_event/0</code></a> for the supported events.
+With <code class="inline">intrinsic_reporting: true</code>, reliability changes can generate FAULT and
+NORMAL transitions. The host retrieves the transition with
+<a href="BACnet.Protocol.ObjectExecution.EventReporting.html#transition/1"><code class="inline">BACnet.Protocol.ObjectExecution.EventReporting.transition/1</code></a> after retaining
+the result.</p><p>The IPv6 UDP port uses the general pending-configuration mechanism in
+Clause 12.56.13. The ACTIVATE command mentioned in Clause 12.56.42 has no
+corresponding command value in Clause 12.56.14.</p><h4>Exposing IP addresses as read-only</h4><p>The host can expose a static IP address for discovery and diagnostics while
+restricting configuration to local administration. Use <a href="#property_writable?/2"><code class="inline">property_writable?/2</code></a>
+for the object's access rules, which make the IPv4 address read-only when DHCP
+is enabled and the IPv6 address read-only when automatic addressing is enabled.
+For a static address, add a host write policy that denies <code class="inline">:ip_address</code> and
+<code class="inline">:ipv6_address</code> for the selected Network Port instances.</p><p>In <a href="BACnet.Protocol.Services.WriteProperty.html"><code class="inline">BACnet.Protocol.Services.WriteProperty</code></a>, resolve the object and property,
+then apply the policy before building a candidate. Return a BACnet error with
+class <code class="inline">:property</code> and code <code class="inline">:write_access_denied</code> for a denied write. Use the
+same policy for each write in <a href="BACnet.Protocol.Services.WritePropertyMultiple.html"><code class="inline">BACnet.Protocol.Services.WritePropertyMultiple</code></a>
+as it is processed in request order. Identify the denied object, property, and
+array index in the first failed write attempt of
+<a href="BACnet.Protocol.Services.Error.WritePropertyMultipleError.html"><code class="inline">BACnet.Protocol.Services.Error.WritePropertyMultipleError</code></a>.</p><p>Reads still expose the configured address. If a local administrator or the
+operating system changes it, the host can record the new operating address
+with <a href="#update_operating_property/3"><code class="inline">update_operating_property/3</code></a>. To restrict client-triggered automatic
+address changes as well, apply the policy to writes to <code class="inline">:ip_dhcp_enable</code> and
+<code class="inline">:ipv6_auto_addressing_enable</code> and to commands that can restart address
+assignment, such as <code class="inline">:renew_dhcp</code>.</p><p>This example applies the policy to every Network Port handled by the function.
+The same policy can use the port's object identifier to select individual ports.</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.BACnetArray</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution</span><span class="o">.</span><span class="p" data-group-id="group-1">{</span><span class="nc">Context</span><span class="p">,</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="p" data-group-id="group-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectTypes.NetworkPort</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">port</span><span class="p" data-group-id="group-2">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">NetworkPort</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="group-3">(</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Static IPv4 port&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-4">%{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">network_type</span><span class="p">:</span><span class="w"> </span><span class="ss">:ipv4</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">protocol_level</span><span class="p">:</span><span class="w"> </span><span class="ss">:bacnet_application</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">bacnet_ip_mode</span><span class="p">:</span><span class="w"> </span><span class="ss">:normal</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">bacnet_ip_udp_port</span><span class="p">:</span><span class="w"> </span><span class="mi">47_808</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">ip_address</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-5">{</span><span class="mi">192</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p" data-group-id="group-5">}</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">ip_subnet_mask</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-6">{</span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p" data-group-id="group-6">}</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">ip_default_gateway</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-7">{</span><span class="mi">192</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="group-7">}</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">ip_dns_server</span><span class="p">:</span><span class="w"> </span><span class="nc">BACnetArray</span><span class="o">.</span><span class="n">new</span><span class="p" data-group-id="group-8">(</span><span class="p" data-group-id="group-8">)</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">ip_dhcp_enable</span><span class="p">:</span><span class="w"> </span><span class="no">false</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Static address&quot;</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="p" data-group-id="group-4">}</span><span class="p" data-group-id="group-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">prepare_write</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k" data-group-id="group-9">fn</span><span class="w"> </span><span class="n">port</span><span class="p">,</span><span class="w"> </span><span class="n">property</span><span class="p">,</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="n">property</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="p" data-group-id="group-10">[</span><span class="ss">:ip_address</span><span class="p">,</span><span class="w"> </span><span class="ss">:ipv6_address</span><span class="p" data-group-id="group-10">]</span><span class="w"> </span><span class="ow">and</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">       </span><span class="nc">NetworkPort</span><span class="o">.</span><span class="n">property_writable?</span><span class="p" data-group-id="group-11">(</span><span class="n">port</span><span class="p">,</span><span class="w"> </span><span class="n">property</span><span class="p" data-group-id="group-11">)</span><span class="w"> </span><span class="k" data-group-id="group-12">do</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">    </span><span class="k">with</span><span class="w"> </span><span class="p" data-group-id="group-13">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">candidate</span><span class="p" data-group-id="group-13">}</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nc">NetworkPort</span><span class="o">.</span><span class="n">update_property</span><span class="p" data-group-id="group-14">(</span><span class="n">port</span><span class="p">,</span><span class="w"> </span><span class="n">property</span><span class="p">,</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="group-14">)</span><span class="w"> </span><span class="k" data-group-id="group-15">do</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">      </span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Context</span><span class="o">.</span><span class="n">new</span><span class="p" data-group-id="group-16">(</span><span class="p" data-group-id="group-17">{</span><span class="ss">:property_write</span><span class="p">,</span><span class="w"> </span><span class="n">property</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-17">}</span><span class="p" data-group-id="group-16">)</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">      </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">prepare_write</span><span class="p" data-group-id="group-18">(</span><span class="n">port</span><span class="p">,</span><span class="w"> </span><span class="n">candidate</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-18">)</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">    </span><span class="k" data-group-id="group-15">end</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="k" data-group-id="group-12">else</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">    </span><span class="p" data-group-id="group-19">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-20">{</span><span class="ss">:property</span><span class="p">,</span><span class="w"> </span><span class="ss">:write_access_denied</span><span class="p" data-group-id="group-20">}</span><span class="p" data-group-id="group-19">}</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="k" data-group-id="group-12">end</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="k" data-group-id="group-9">end</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">prepare_write</span><span class="o">.</span><span class="p" data-group-id="group-21">(</span><span class="n">port</span><span class="p">,</span><span class="w"> </span><span class="ss">:ip_address</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-22">{</span><span class="mi">192</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">20</span><span class="p" data-group-id="group-22">}</span><span class="p" data-group-id="group-21">)</span><span class="w">
+</span><span class="p" data-group-id="group-23">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-24">{</span><span class="ss">:property</span><span class="p">,</span><span class="w"> </span><span class="ss">:write_access_denied</span><span class="p" data-group-id="group-24">}</span><span class="p" data-group-id="group-23">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-25">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">candidate</span><span class="p" data-group-id="group-25">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">prepare_write</span><span class="o">.</span><span class="p" data-group-id="group-26">(</span><span class="n">port</span><span class="p">,</span><span class="w"> </span><span class="ss">:description</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Administration network&quot;</span><span class="p" data-group-id="group-26">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">NetworkPort</span><span class="o">.</span><span class="n">get_property</span><span class="p" data-group-id="group-27">(</span><span class="n">candidate</span><span class="p">,</span><span class="w"> </span><span class="ss">:description</span><span class="p" data-group-id="group-27">)</span><span class="w">
+</span><span class="p" data-group-id="group-28">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Administration network&quot;</span><span class="p" data-group-id="group-28">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">NetworkPort</span><span class="o">.</span><span class="n">get_property</span><span class="p" data-group-id="group-29">(</span><span class="n">port</span><span class="p">,</span><span class="w"> </span><span class="ss">:ip_address</span><span class="p" data-group-id="group-29">)</span><span class="w">
+</span><span class="p" data-group-id="group-30">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-31">{</span><span class="mi">192</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p" data-group-id="group-31">}</span><span class="p" data-group-id="group-30">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-32">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">observed</span><span class="p" data-group-id="group-32">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">NetworkPort</span><span class="o">.</span><span class="n">update_operating_property</span><span class="p" data-group-id="group-33">(</span><span class="n">port</span><span class="p">,</span><span class="w"> </span><span class="ss">:ip_address</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-34">{</span><span class="mi">192</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">30</span><span class="p" data-group-id="group-34">}</span><span class="p" data-group-id="group-33">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">NetworkPort</span><span class="o">.</span><span class="n">get_property</span><span class="p" data-group-id="group-35">(</span><span class="n">observed</span><span class="p">,</span><span class="w"> </span><span class="ss">:ip_address</span><span class="p" data-group-id="group-35">)</span><span class="w">
+</span><span class="p" data-group-id="group-36">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-37">{</span><span class="mi">192</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">30</span><span class="p" data-group-id="group-37">}</span><span class="p" data-group-id="group-36">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">observed</span><span class="o">.</span><span class="n">changes_pending</span><span class="w">
+</span><span class="no">false</span></code></pre><h3 id="module-example" class="section-heading"><a href="#module-example" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example</span></h3><p>Stage a network number, then discard the pending change through the command
+property. The call to execute represents the step after the host commits and
+acknowledges the command write.</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution</span><span class="o">.</span><span class="p" data-group-id="group-1">{</span><span class="nc">Context</span><span class="p">,</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="p" data-group-id="group-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectTypes.NetworkPort</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">port</span><span class="p" data-group-id="group-2">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">NetworkPort</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="group-3">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Virtual port&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-4">%{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">network_type</span><span class="p">:</span><span class="w"> </span><span class="ss">:virtual</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">protocol_level</span><span class="p">:</span><span class="w"> </span><span class="ss">:bacnet_application</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">mac_address</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-5">&lt;&lt;</span><span class="mi">1</span><span class="p" data-group-id="group-5">&gt;&gt;</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">network_number</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">network_number_quality</span><span class="p">:</span><span class="w"> </span><span class="ss">:configured</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="p" data-group-id="group-4">}</span><span class="p">,</span><span class="w"> </span><span class="ss">supports_command_execution</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="p" data-group-id="group-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-6">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">staged</span><span class="p" data-group-id="group-6">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">NetworkPort</span><span class="o">.</span><span class="n">update_property</span><span class="p" data-group-id="group-7">(</span><span class="n">port</span><span class="p">,</span><span class="w"> </span><span class="ss">:network_number</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p" data-group-id="group-7">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">staged</span><span class="o">.</span><span class="n">network_number</span><span class="w">
+</span><span class="mi">8</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-8">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">active</span><span class="p" data-group-id="group-8">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">NetworkPort</span><span class="o">.</span><span class="n">active_configuration</span><span class="p" data-group-id="group-9">(</span><span class="n">staged</span><span class="p" data-group-id="group-9">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">active</span><span class="o">.</span><span class="n">network_number</span><span class="w">
+</span><span class="mi">7</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-10">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">candidate</span><span class="p" data-group-id="group-10">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">NetworkPort</span><span class="o">.</span><span class="n">update_property</span><span class="p" data-group-id="group-11">(</span><span class="n">staged</span><span class="p">,</span><span class="w"> </span><span class="ss">:command</span><span class="p">,</span><span class="w"> </span><span class="ss">:discard_changes</span><span class="p" data-group-id="group-11">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">write</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Context</span><span class="o">.</span><span class="n">new</span><span class="p" data-group-id="group-12">(</span><span class="p" data-group-id="group-13">{</span><span class="ss">:property_write</span><span class="p">,</span><span class="w"> </span><span class="ss">:command</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="group-13">}</span><span class="p" data-group-id="group-12">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-14">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">accepted</span><span class="p" data-group-id="group-14">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">prepare_write</span><span class="p" data-group-id="group-15">(</span><span class="n">staged</span><span class="p">,</span><span class="w"> </span><span class="n">candidate</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="p" data-group-id="group-15">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">accepted</span><span class="o">.</span><span class="n">command</span><span class="w">
+</span><span class="ss">:discard_changes</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-16">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">finished</span><span class="p" data-group-id="group-16">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-17">(</span><span class="n">accepted</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="p" data-group-id="group-17">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-18">{</span><span class="n">finished</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">network_number</span><span class="p">,</span><span class="w"> </span><span class="n">finished</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">changes_pending</span><span class="p">,</span><span class="w"> </span><span class="n">finished</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">command</span><span class="p" data-group-id="group-18">}</span><span class="w">
+</span><span class="p" data-group-id="group-19">{</span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="no">false</span><span class="p">,</span><span class="w"> </span><span class="ss">:idle</span><span class="p" data-group-id="group-19">}</span></code></pre><h3 id="module-see-also" class="section-heading"><a href="#module-see-also" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">See Also</span></h3><ul><li>ASHRAE Standard 135-2016 Clause 12.56 Network Port Object Type</li><li>Addendum ai to 135-2012 (introduction of the object)</li></ul><hr style="height: 10px;visibility: hidden;"/><hr class="thin"/><p>The following part has been automatically generated.</p><details><summary>Click to expand</summary>
+
+This module defines a BACnet object of the type `network_port`. The following properties are defined:
+
+| Property | Revision | Required | Readonly | Protected | Intrinsic |
+|----------|----------|----------|----------|-----------|-----------|
+| acked_transitions |  |  | X |  | X |
+| apdu_length |  |  | X |  |  |
+| auto_slave_discovery |  |  |  |  |  |
+| bacnet_ip_global_address |  |  |  |  |  |
+| bacnet_ip_mode |  |  |  |  |  |
+| bacnet_ip_multicast_address |  |  |  |  |  |
+| bacnet_ip_nat_traversal |  |  |  |  |  |
+| bacnet_ip_udp_port |  |  |  |  |  |
+| bacnet_ipv6_mode |  |  |  |  |  |
+| bacnet_ipv6_multicast_address |  |  |  |  |  |
+| bacnet_ipv6_udp_port |  |  |  |  |  |
+| bbmd_accept_fd_registrations |  |  |  |  |  |
+| bbmd_broadcast_distribution_table |  |  |  |  |  |
+| bbmd_foreign_device_table |  |  | X |  |  |
+| changes_pending |  | X | X |  |  |
+| command |  |  |  |  |  |
+| description |  |  |  |  |  |
+| event_algorithm_inhibit |  |  |  |  | X |
+| event_algorithm_inhibit_ref |  |  |  |  | X |
+| event_detection_enable |  |  |  |  | X |
+| event_enable |  |  |  |  | X |
+| event_message_texts |  |  | X |  | X |
+| event_message_texts_config |  |  |  |  | X |
+| event_state |  |  |  |  | X |
+| event_timestamps |  |  | X |  | X |
+| fd_bbmd_address |  |  |  |  |  |
+| fd_subscription_lifetime |  |  |  |  |  |
+| ip_address |  |  |  |  |  |
+| ip_default_gateway |  |  |  |  |  |
+| ip_dhcp_enable |  |  |  |  |  |
+| ip_dhcp_lease_time |  |  | X |  |  |
+| ip_dhcp_lease_time_remaining |  |  | X |  |  |
+| ip_dhcp_server |  |  | X |  |  |
+| ip_dns_server |  |  |  |  |  |
+| ip_subnet_mask |  |  |  |  |  |
+| ipv6_address |  |  |  |  |  |
+| ipv6_auto_addressing_enable |  |  |  |  |  |
+| ipv6_default_gateway |  |  |  |  |  |
+| ipv6_dhcp_lease_time |  |  | X |  |  |
+| ipv6_dhcp_lease_time_remaining |  |  | X |  |  |
+| ipv6_dhcp_server |  |  |  |  |  |
+| ipv6_dns_server |  |  |  |  |  |
+| ipv6_prefix_length |  |  |  |  |  |
+| ipv6_zone_index |  |  |  |  |  |
+| limit_enable |  |  |  |  | X |
+| link_speed |  |  |  |  |  |
+| link_speed_autonegotiate |  |  |  |  |  |
+| link_speeds |  |  | X |  |  |
+| mac_address |  |  |  |  |  |
+| manual_slave_address_binding |  |  |  |  |  |
+| max_info_frames |  |  |  |  |  |
+| max_master |  |  |  |  |  |
+| network_interface_name |  |  | X |  |  |
+| network_number |  |  |  |  |  |
+| network_number_quality |  |  | X |  |  |
+| network_type |  | X | X |  |  |
+| notification_class |  |  |  |  | X |
+| notify_type |  |  |  |  | X |
+| object_instance |  | X | X |  |  |
+| object_name |  | X | X |  |  |
+| out_of_service |  | X |  |  |  |
+| profile_location | 19 |  |  |  |  |
+| profile_name |  |  |  |  |  |
+| protocol_level |  | X | X |  |  |
+| reference_port |  |  |  |  |  |
+| reliability |  | X |  |  |  |
+| reliability_evaluation_inhibit |  |  |  |  |  |
+| routing_table |  |  | X |  |  |
+| slave_address_binding |  |  | X |  |  |
+| slave_proxy_enable |  |  |  |  |  |
+| status_flags |  | X | X |  |  |
+| tags | 19 |  |  |  |  |
+| time_delay |  |  |  |  | X |
+| time_delay_normal |  |  |  |  | X |
+| virtual_mac_address_table |  |  |  |  |  |
+
+The following properties have additional semantics:
+
+| Property | Has Default | Has Init | Implicit Relationships | Validators | Annotations |
+|----------|-------------|----------|------------------------|------------|-------------|
+| apdu_length | X |  |  |  | `required_when: {:fn, [line: 365, column: 24], [{:->, [line: 365, column: 42], [[{:props, [line: 365, column: 27], nil}, {:_object, [line: 365, column: 34], nil}], {:in, [line: 366, column: 43], [{{:., [line: 366, column: 14], [{:__aliases__, [line: 366, column: 11], [:Map]}, :get]}, [line: 366, column: 15], [{:props, [line: 366, column: 19], nil}, :protocol_level]}, [:bacnet_application, :non_bacnet_application]]}]}]}` |
+| auto_slave_discovery |  |  | slave_proxy_enable |  |  |
+| bacnet_ip_global_address |  |  |  |  | `required_when: {:fn, [line: 487, column: 24], [{:->, [line: 487, column: 42], [[{:props, [line: 487, column: 27], nil}, {:_object, [line: 487, column: 34], nil}], {:==, [line: 488, column: 52], [{{:., [line: 488, column: 14], [{:__aliases__, [line: 488, column: 11], [:Map]}, :get]}, [line: 488, column: 15], [{:props, [line: 488, column: 19], nil}, :bacnet_ip_nat_traversal]}, true]}]}]}` |
+| bacnet_ip_mode |  |  |  |  | `required_when: {:fn, [line: 397, column: 24], [{:->, [line: 397, column: 42], [[{:props, [line: 397, column: 27], nil}, {:_object, [line: 397, column: 34], nil}], {:==, [line: 398, column: 41], [{{:., [line: 398, column: 14], [{:__aliases__, [line: 398, column: 11], [:Map]}, :get]}, [line: 398, column: 15], [{:props, [line: 398, column: 19], nil}, :network_type]}, :ipv4]}]}]}` |
+| bacnet_ip_multicast_address |  |  |  |  | `decoder: {:&, [line: 444, column: 18], [{:decode_ipv4_address, [line: 444, column: 19], [:bacnet_ip_multicast_address, {:&, [line: 444, column: 69], [1]}]}]}, encoder: {:&, [line: 445, column: 18], [{:encode_ipv4_address, [line: 445, column: 19], [:bacnet_ip_multicast_address, {:&, [line: 445, column: 69], [1]}]}]}` |
+| bacnet_ip_udp_port |  |  |  | Type | `required_when: {:fn, [line: 405, column: 24], [{:->, [line: 405, column: 42], [[{:props, [line: 405, column: 27], nil}, {:_object, [line: 405, column: 34], nil}], {:==, [line: 406, column: 41], [{{:., [line: 406, column: 14], [{:__aliases__, [line: 406, column: 11], [:Map]}, :get]}, [line: 406, column: 15], [{:props, [line: 406, column: 19], nil}, :network_type]}, :ipv4]}]}]}` |
+| bacnet_ipv6_mode |  |  |  |  | `required_when: {:fn, [line: 526, column: 24], [{:->, [line: 526, column: 42], [[{:props, [line: 526, column: 27], nil}, {:_object, [line: 526, column: 34], nil}], {:and, [line: 527, column: 50], [{:==, [line: 527, column: 41], [{{:., [line: 527, column: 14], [{:__aliases__, [line: 527, column: 11], [:Map]}, :get]}, [line: 527, column: 15], [{:props, [line: 527, column: 19], nil}, :network_type]}, :ipv6]}, {:==, [line: 528, column: 45], [{{:., [line: 528, column: 16], [{:__aliases__, [line: 528, column: 13], [:Map]}, :get]}, [line: 528, column: 17], [{:props, [line: 528, column: 21], nil}, :protocol_level]}, :bacnet_application]}]}]}]}` |
+| bacnet_ipv6_multicast_address |  |  |  | Type | `decoder: {:&, [line: 553, column: 18], [{:decode_ipv6_address, [line: 553, column: 19], [:bacnet_ipv6_multicast_address, {:&, [line: 553, column: 71], [1]}]}]}, encoder: {:&, [line: 554, column: 18], [{:encode_ipv6_address, [line: 554, column: 19], [:bacnet_ipv6_multicast_address, {:&, [line: 554, column: 71], [1]}]}]}, required_when: {:fn, [line: 555, column: 24], [{:->, [line: 555, column: 42], [[{:props, [line: 555, column: 27], nil}, {:_object, [line: 555, column: 34], nil}], {:and, [line: 556, column: 50], [{:==, [line: 556, column: 41], [{{:., [line: 556, column: 14], [{:__aliases__, [line: 556, column: 11], [:Map]}, :get]}, [line: 556, column: 15], [{:props, [line: 556, column: 19], nil}, :network_type]}, :ipv6]}, {:==, [line: 557, column: 45], [{{:., [line: 557, column: 16], [{:__aliases__, [line: 557, column: 13], [:Map]}, :get]}, [line: 557, column: 17], [{:props, [line: 557, column: 21], nil}, :protocol_level]}, :bacnet_application]}]}]}]}` |
+| bacnet_ipv6_udp_port |  |  |  | Type | `required_when: {:fn, [line: 535, column: 24], [{:->, [line: 535, column: 42], [[{:props, [line: 535, column: 27], nil}, {:_object, [line: 535, column: 34], nil}], {:and, [line: 536, column: 50], [{:==, [line: 536, column: 41], [{{:., [line: 536, column: 14], [{:__aliases__, [line: 536, column: 11], [:Map]}, :get]}, [line: 536, column: 15], [{:props, [line: 536, column: 19], nil}, :network_type]}, :ipv6]}, {:==, [line: 537, column: 45], [{{:., [line: 537, column: 16], [{:__aliases__, [line: 537, column: 13], [:Map]}, :get]}, [line: 537, column: 17], [{:props, [line: 537, column: 21], nil}, :protocol_level]}, :bacnet_application]}]}]}]}` |
+| bbmd_accept_fd_registrations |  |  | bbmd_broadcast_distribution_table |  |  |
+| bbmd_broadcast_distribution_table |  |  |  |  | `required_when: {:fn, [line: 496, column: 24], [{:->, [line: 496, column: 42], [[{:props, [line: 496, column: 27], nil}, {:_object, [line: 496, column: 34], nil}], {:==, [line: 497, column: 43], [{{:., [line: 497, column: 14], [{:__aliases__, [line: 497, column: 11], [:Map]}, :get]}, [line: 497, column: 15], [{:props, [line: 497, column: 19], nil}, :bacnet_ip_mode]}, :bbmd]}]}]}` |
+| bbmd_foreign_device_table |  |  | bbmd_broadcast_distribution_table |  |  |
+| command | X |  |  |  | `required_when: {:opts, :supports_command_execution}` |
+| event_algorithm_inhibit_ref |  |  | event_algorithm_inhibit |  |  |
+| event_state | X |  |  |  |  |
+| fd_bbmd_address |  |  |  |  | `required_when: {:fn, [line: 513, column: 24], [{:->, [line: 513, column: 42], [[{:props, [line: 513, column: 27], nil}, {:_object, [line: 513, column: 34], nil}], {:==, [line: 514, column: 43], [{{:., [line: 514, column: 14], [{:__aliases__, [line: 514, column: 11], [:Map]}, :get]}, [line: 514, column: 15], [{:props, [line: 514, column: 19], nil}, :bacnet_ip_mode]}, :foreign]}]}]}` |
+| fd_subscription_lifetime |  |  | fd_bbmd_address | Type |  |
+| ip_address |  |  |  |  | `decoder: {:&, [line: 413, column: 18], [{:decode_ipv4_address, [line: 413, column: 19], [:ip_address, {:&, [line: 413, column: 52], [1]}]}]}, encoder: {:&, [line: 414, column: 18], [{:encode_ipv4_address, [line: 414, column: 19], [:ip_address, {:&, [line: 414, column: 52], [1]}]}]}, required_when: {:fn, [line: 415, column: 24], [{:->, [line: 415, column: 42], [[{:props, [line: 415, column: 27], nil}, {:_object, [line: 415, column: 34], nil}], {:==, [line: 416, column: 41], [{{:., [line: 416, column: 14], [{:__aliases__, [line: 416, column: 11], [:Map]}, :get]}, [line: 416, column: 15], [{:props, [line: 416, column: 19], nil}, :network_type]}, :ipv4]}]}]}` |
+| ip_default_gateway |  |  |  |  | `decoder: {:&, [line: 433, column: 18], [{:decode_ipv4_address, [line: 433, column: 19], [:ip_default_gateway, {:&, [line: 433, column: 60], [1]}]}]}, encoder: {:&, [line: 434, column: 18], [{:encode_ipv4_address, [line: 434, column: 19], [:ip_default_gateway, {:&, [line: 434, column: 60], [1]}]}]}, required_when: {:fn, [line: 435, column: 24], [{:->, [line: 435, column: 42], [[{:props, [line: 435, column: 27], nil}, {:_object, [line: 435, column: 34], nil}], {:==, [line: 436, column: 41], [{{:., [line: 436, column: 14], [{:__aliases__, [line: 436, column: 11], [:Map]}, :get]}, [line: 436, column: 15], [{:props, [line: 436, column: 19], nil}, :network_type]}, :ipv4]}]}]}` |
+| ip_dhcp_enable |  |  |  |  | `required_when: {:fn, [line: 462, column: 24], [{:->, [line: 462, column: 42], [[{:props, [line: 462, column: 27], nil}, {:_object, [line: 462, column: 34], nil}], {:==, [line: 463, column: 41], [{{:., [line: 463, column: 14], [{:__aliases__, [line: 463, column: 11], [:Map]}, :get]}, [line: 463, column: 15], [{:props, [line: 463, column: 19], nil}, :network_type]}, :ipv4]}]}]}` |
+| ip_dhcp_server |  |  |  |  | `decoder: {:&, [line: 471, column: 18], [{:decode_ipv4_address, [line: 471, column: 19], [:ip_dhcp_server, {:&, [line: 471, column: 56], [1]}]}]}, encoder: {:&, [line: 472, column: 18], [{:encode_ipv4_address, [line: 472, column: 19], [:ip_dhcp_server, {:&, [line: 472, column: 56], [1]}]}]}` |
+| ip_dns_server |  |  |  |  | `decoder: {:&, [line: 452, column: 18], [{:decode_ipv4_address, [line: 452, column: 19], [:ip_dns_server, {:&, [line: 452, column: 55], [1]}]}]}, encoder: {:&, [line: 453, column: 18], [{:encode_ipv4_address, [line: 453, column: 19], [:ip_dns_server, {:&, [line: 453, column: 55], [1]}]}]}, required_when: {:fn, [line: 454, column: 24], [{:->, [line: 454, column: 42], [[{:props, [line: 454, column: 27], nil}, {:_object, [line: 454, column: 34], nil}], {:==, [line: 455, column: 41], [{{:., [line: 455, column: 14], [{:__aliases__, [line: 455, column: 11], [:Map]}, :get]}, [line: 455, column: 15], [{:props, [line: 455, column: 19], nil}, :network_type]}, :ipv4]}]}]}` |
+| ip_subnet_mask |  |  |  |  | `decoder: {:&, [line: 423, column: 18], [{:decode_ipv4_address, [line: 423, column: 19], [:ip_subnet_mask, {:&, [line: 423, column: 56], [1]}]}]}, encoder: {:&, [line: 424, column: 18], [{:encode_ipv4_address, [line: 424, column: 19], [:ip_subnet_mask, {:&, [line: 424, column: 56], [1]}]}]}, required_when: {:fn, [line: 425, column: 24], [{:->, [line: 425, column: 42], [[{:props, [line: 425, column: 27], nil}, {:_object, [line: 425, column: 34], nil}], {:==, [line: 426, column: 41], [{{:., [line: 426, column: 14], [{:__aliases__, [line: 426, column: 11], [:Map]}, :get]}, [line: 426, column: 15], [{:props, [line: 426, column: 19], nil}, :network_type]}, :ipv4]}]}]}` |
+| ipv6_address |  |  |  |  | `decoder: {:&, [line: 564, column: 18], [{:decode_ipv6_address, [line: 564, column: 19], [:ipv6_address, {:&, [line: 564, column: 54], [1]}]}]}, encoder: {:&, [line: 565, column: 18], [{:encode_ipv6_address, [line: 565, column: 19], [:ipv6_address, {:&, [line: 565, column: 54], [1]}]}]}, required_when: {:fn, [line: 566, column: 24], [{:->, [line: 566, column: 42], [[{:props, [line: 566, column: 27], nil}, {:_object, [line: 566, column: 34], nil}], {:==, [line: 567, column: 41], [{{:., [line: 567, column: 14], [{:__aliases__, [line: 567, column: 11], [:Map]}, :get]}, [line: 567, column: 15], [{:props, [line: 567, column: 19], nil}, :network_type]}, :ipv6]}]}]}` |
+| ipv6_default_gateway |  |  |  |  | `decoder: {:&, [line: 582, column: 18], [{:decode_ipv6_address, [line: 582, column: 19], [:ipv6_default_gateway, {:&, [line: 582, column: 62], [1]}]}]}, encoder: {:&, [line: 583, column: 18], [{:encode_ipv6_address, [line: 583, column: 19], [:ipv6_default_gateway, {:&, [line: 583, column: 62], [1]}]}]}, required_when: {:fn, [line: 584, column: 24], [{:->, [line: 584, column: 42], [[{:props, [line: 584, column: 27], nil}, {:_object, [line: 584, column: 34], nil}], {:==, [line: 585, column: 41], [{{:., [line: 585, column: 14], [{:__aliases__, [line: 585, column: 11], [:Map]}, :get]}, [line: 585, column: 15], [{:props, [line: 585, column: 19], nil}, :network_type]}, :ipv6]}]}]}` |
+| ipv6_dhcp_server |  |  |  |  | `decoder: {:&, [line: 614, column: 18], [{:decode_ipv6_address, [line: 614, column: 19], [:ipv6_dhcp_server, {:&, [line: 614, column: 58], [1]}]}]}, encoder: {:&, [line: 615, column: 18], [{:encode_ipv6_address, [line: 615, column: 19], [:ipv6_dhcp_server, {:&, [line: 615, column: 58], [1]}]}]}` |
+| ipv6_dns_server | X |  |  |  | `decoder: {:&, [line: 593, column: 18], [{:decode_ipv6_address, [line: 593, column: 19], [:ipv6_dns_server, {:&, [line: 593, column: 57], [1]}]}]}, encoder: {:&, [line: 594, column: 18], [{:encode_ipv6_address, [line: 594, column: 19], [:ipv6_dns_server, {:&, [line: 594, column: 57], [1]}]}]}, required_when: {:fn, [line: 595, column: 24], [{:->, [line: 595, column: 42], [[{:props, [line: 595, column: 27], nil}, {:_object, [line: 595, column: 34], nil}], {:==, [line: 596, column: 41], [{{:., [line: 596, column: 14], [{:__aliases__, [line: 596, column: 11], [:Map]}, :get]}, [line: 596, column: 15], [{:props, [line: 596, column: 19], nil}, :network_type]}, :ipv6]}]}]}` |
+| ipv6_prefix_length |  |  |  |  | `required_when: {:fn, [line: 574, column: 24], [{:->, [line: 574, column: 42], [[{:props, [line: 574, column: 27], nil}, {:_object, [line: 574, column: 34], nil}], {:==, [line: 575, column: 41], [{{:., [line: 575, column: 14], [{:__aliases__, [line: 575, column: 11], [:Map]}, :get]}, [line: 575, column: 15], [{:props, [line: 575, column: 19], nil}, :network_type]}, :ipv6]}]}]}` |
+| link_speed | X |  |  |  | `required_when: {:fn, [line: 374, column: 24], [{:->, [line: 374, column: 42], [[{:props, [line: 374, column: 27], nil}, {:_object, [line: 374, column: 34], nil}], {:and, [line: 382, column: 13], [{:in, [line: 375, column: 41], [{{:., [line: 375, column: 14], [{:__aliases__, [line: 375, column: 11], [:Map]}, :get]}, [line: 375, column: 15], [{:props, [line: 375, column: 19], nil}, :network_type]}, [:arcnet, :ethernet, :lontalk, :serial, :virtual, :zigbee]]}, {:==, [line: 383, column: 45], [{{:., [line: 383, column: 16], [{:__aliases__, [line: 383, column: 13], [:Map]}, :get]}, [line: 383, column: 17], [{:props, [line: 383, column: 21], nil}, :protocol_level]}, :physical]}]}]}]}` |
+| link_speeds | X |  |  |  |  |
+| mac_address |  |  |  |  | `only_when: {:fn, [line: 340, column: 20], [{:->, [line: 340, column: 36], [[{:props, [line: 340, column: 23], nil}, {:_meta, [line: 340, column: 30], nil}], {:if, [line: 341, column: 11], [{:==, [line: 341, column: 35], [{{:., [from_brackets: true, line: 341, column: 19], [Access, :get]}, [from_brackets: true, line: 341, column: 19], [{:props, [line: 341, column: 14], nil}, :network_type]}, :ptp]}, [do: false, else: :optional]]}]}]}, required_when: {:fn, [line: 347, column: 24], [{:->, [line: 347, column: 42], [[{:props, [line: 347, column: 27], nil}, {:_object, [line: 347, column: 34], nil}], {:in, [line: 348, column: 41], [{{:., [line: 348, column: 14], [{:__aliases__, [line: 348, column: 11], [:Map]}, :get]}, [line: 348, column: 15], [{:props, [line: 348, column: 19], nil}, :network_type]}, [:arcnet, :ethernet, :lontalk, :mstp, :serial, :virtual, :zigbee]]}]}]}` |
+| max_info_frames |  |  |  | Type |  |
+| max_master |  |  | max_info_frames | Type |  |
+| network_number | X |  |  | Type | `required_when: {:fn, [line: 315, column: 24], [{:->, [line: 315, column: 40], [[{:props, [line: 315, column: 27], nil}, {:_meta, [line: 315, column: 34], nil}], {:in, [line: 316, column: 43], [{{:., [line: 316, column: 14], [{:__aliases__, [line: 316, column: 11], [:Map]}, :get]}, [line: 316, column: 15], [{:props, [line: 316, column: 19], nil}, :protocol_level]}, [:bacnet_application, :non_bacnet_application]]}]}]}` |
+| network_number_quality | X |  |  |  | `required_when: {:fn, [line: 325, column: 24], [{:->, [line: 325, column: 40], [[{:props, [line: 325, column: 27], nil}, {:_meta, [line: 325, column: 34], nil}], {:in, [line: 326, column: 43], [{{:., [line: 326, column: 14], [{:__aliases__, [line: 326, column: 11], [:Map]}, :get]}, [line: 326, column: 15], [{:props, [line: 326, column: 19], nil}, :protocol_level]}, [:bacnet_application, :non_bacnet_application]]}]}]}` |
+| profile_location |  |  |  | Fun | `revision: 19` |
+| protocol_level |  |  |  | Fun |  |
+| reliability | X |  |  |  |  |
+| tags |  |  |  |  | `revision: 19` |
+| virtual_mac_address_table |  |  |  |  | `required_when: {:fn, [line: 674, column: 24], [{:->, [line: 674, column: 42], [[{:props, [line: 674, column: 27], nil}, {:_object, [line: 674, column: 34], nil}], {:in, [line: 675, column: 41], [{{:., [line: 675, column: 14], [{:__aliases__, [line: 675, column: 11], [:Map]}, :get]}, [line: 675, column: 15], [{:props, [line: 675, column: 19], nil}, :network_type]}, [:ipv6, :sc, :zigbee]]}]}]}` |
+
+The following table shows the default values and/or init functions:
+
+| Property | Default Value | Init Function |
+|----------|---------------|---------------|
+| apdu_length | `1476` |  |
+| command | `:idle` |  |
+| event_state | `:normal` |  |
+| ipv6_dns_server | <a title="#BACnet.Protocol.BACnetArray<size: 0, items: [], fixed_size: nil>">`%BACnet.Protocol.BACnetArray{...}`</a> |  |
+| link_speed | `0.0` |  |
+| link_speeds | <a title="#BACnet.Protocol.BACnetArray<size: 0, items: [], fixed_size: nil>">`%BACnet.Protocol.BACnetArray{...}`</a> |  |
+| network_number | `0` |  |
+| network_number_quality | `:unknown` |  |
+| reliability | `:no_fault_detected` |  |</details>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-types summary">
+  <h3>
+    <a href="#types">Types</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:command_result/0" data-no-tooltip="" translate="no">command_result()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>The last command and its outcome, returned as lifecycle state after execution.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:common_object_opts/0" data-no-tooltip="" translate="no">common_object_opts()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Common object options for creation - all are optional.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:object_opts/0" data-no-tooltip="" translate="no">object_opts()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Options accepted when creating or configuring a Network Port object.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:port_command/0" data-no-tooltip="" translate="no">port_command()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>A command defined by Clause 12.56.14 or a vendor command in the range 128 to 255.
+Enable <code class="inline">:allow_numeric_constants</code> to supply a vendor command.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:port_event/0" data-no-tooltip="" translate="no">port_event()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>A completed configuration activation or a network number learned from a received
+Network-Number-Is message. The boolean is the sender's configured flag.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:property_name/0" data-no-tooltip="" translate="no">property_name()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Available property names for this object.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:property_update_error/0" data-no-tooltip="" translate="no">property_update_error()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>The structure for property errors.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:runtime/0" data-no-tooltip="" translate="no">runtime()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Host actions keyed by command or by <code class="inline">:out_of_service</code>. The port argument carries
+the selected command or the requested out-of-service state. Return <code class="inline">:ok</code> when the
+object may accept its next write, or an error with the reason the action failed.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:t/0" data-no-tooltip="" translate="no">t()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents a Network Port object. Treat struct fields as read-only. Use the object module's
+property functions to build updates.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#add_property/3" data-no-tooltip="" translate="no">add_property(object, property, value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Adds an optional property to an object.
+Remote objects can not be mutated using this operation.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#create/4" data-no-tooltip="" translate="no">create(instance_number, object_name, properties \\ %{}, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Creates a new object struct with the defined properties. Optional properties are not
+created when not given, only required, given and dependency properties are created.
+Properties with a value of <code class="inline">nil</code> are ignored.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_object_identifier/1" data-no-tooltip="" translate="no">get_object_identifier(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the BACnet object identifier.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_properties/1" data-no-tooltip="" translate="no">get_properties(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the list of properties the object has.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_property/2" data-no-tooltip="" translate="no">get_property(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get a property's value from an object.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#has_property?/2" data-no-tooltip="" translate="no">has_property?(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks if the given object has the given property.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#intrinsic_reporting?/1" data-no-tooltip="" translate="no">intrinsic_reporting?(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks if the given object has Intrinsic Reporting enabled.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#property_writable?/2" data-no-tooltip="" translate="no">property_writable?(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks if the given property is writable.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#remove_property/2" data-no-tooltip="" translate="no">remove_property(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Removes an optional property from an object. This function is idempotent.
+Remote objects can not be mutated using this operation.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#update_operating_property/3" data-no-tooltip="" translate="no">update_operating_property(object, property, value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Records a property value reported by the operating port without staging a write.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#update_property/3" data-no-tooltip="" translate="no">update_property(object, property, value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Updates a property of an object.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions-lifecycle summary">
+  <h3>
+    <a href="#functions-lifecycle">Functions Lifecycle</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute/2" data-no-tooltip="" translate="no">execute(object, context)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes a Network Port command or an Out_Of_Service update.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#prepare_write/3" data-no-tooltip="" translate="no">prepare_write(object, candidate, context)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks a proposed Network Port write against the port's access rules.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#validate_execution/2" data-no-tooltip="" translate="no">validate_execution(object, context)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks configuration and capabilities without host I/O or state changes.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions-metadata summary">
+  <h3>
+    <a href="#functions-metadata">Functions Metadata</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_all_properties/0" data-no-tooltip="" translate="no">get_all_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of all properties this object supports.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_annotation/1" data-no-tooltip="" translate="no">get_annotation(name)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the annotations for the given property name.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_annotations/0" data-no-tooltip="" translate="no">get_annotations()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the list of annotations for each property.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_cov_properties/0" data-no-tooltip="" translate="no">get_cov_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of properties used for COV reporting.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_intrinsic_properties/0" data-no-tooltip="" translate="no">get_intrinsic_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of intrinsic properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_optional_properties/0" data-no-tooltip="" translate="no">get_optional_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of optional properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_properties_type_map/0" data-no-tooltip="" translate="no">get_properties_type_map()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get a map of property name to type.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_protected_properties/0" data-no-tooltip="" translate="no">get_protected_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of protected properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_readonly_properties/0" data-no-tooltip="" translate="no">get_readonly_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of readonly properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_required_properties/0" data-no-tooltip="" translate="no">get_required_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of required properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#supports_intrinsic/0" data-no-tooltip="" translate="no">supports_intrinsic()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to check whether the object type supports intrinsic reporting.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions-operational summary">
+  <h3>
+    <a href="#functions-operational">Functions Operational</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#active_configuration/1" data-no-tooltip="" translate="no">active_configuration(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Returns the active values of settings that participate in pending changes, along
+with the network number quality. During pending changes, the corresponding
+property reads on the object return the staged values.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h2>
+
+    <div class="types-list">
+<section class="detail" id="t:command_result/0">
+
+  <div class="detail-header">
+    <a href="#t:command_result/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">command_result()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L265" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> command_result() ::
+  {:command_result, command :: <a href="#t:port_command/0">port_command</a>(),
+   outcome :: :ok | {:error, reason :: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}}</pre>
+
+      </div>
+
+<p>The last command and its outcome, returned as lifecycle state after execution.</p>
+  </section>
+</section>
+<section class="detail" id="t:common_object_opts/0">
+
+  <div class="detail-header">
+    <a href="#t:common_object_opts/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">common_object_opts()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> common_object_opts() ::
+  {:allow_numeric_constants, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()}
+  | {:allow_unknown_properties, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()}
+  | {:ignore_unknown_properties, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()}
+  | {:revision,
+     <a href="BACnet.Protocol.Constants.html#t:protocol_revision/0">BACnet.Protocol.Constants.protocol_revision</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()}
+  | {:skip_property_validation_remote_object, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | :value}</pre>
+
+      </div>
+
+<p>Common object options for creation - all are optional.</p><ul><li><code class="inline">allow_numeric_constants</code> - Constants are atoms and thus unknown constants or vendor extensions are integers
+and thus are rejected. Enabling this option will allow integers (<code class="inline">non_neg_integer()</code>) for properties with
+a <code class="inline">Constants.type()</code> spec.</li><li><code class="inline">allow_unknown_properties</code> - Properties that are unknown to the object implementation are usually rejected.
+With this option, unknown properties (numeric identifiers usually means we dont know them) are accepted
+and put into a separate map. This does mean we can not validate or write them.
+Types of the values can be anything at this point. While you can read unknown properties with atom
+or integer as property identifier, you can only remove numeric unknown property identifiers from an object.
+Property identifiers of type <code class="inline">atom</code> are only accepted, if it is a remote object (object implementation is only
+enforced if it is a local object). Numeric property identifiers are accepted regardless of remote object or not.
+For remote objects, this means you have to write &quot;raw values&quot;
+(usually <a href="BACnet.Protocol.ApplicationTags.Encoding.html"><code class="inline">BACnet.Protocol.ApplicationTags.Encoding</code></a> structs).</li><li><code class="inline">ignore_unknown_properties</code> - Properties that are unknown to the object implementation are usually rejected.
+With this option, unknown properties get ignored, as if they were not specified.</li><li><code class="inline">revision</code> - The BACnet protocol revision used for required properties and annotation
+conditions. Accepts a non-negative protocol revision number (for example, <code class="inline">19</code>)
+or a name from <a href="BACnet.Protocol.Constants.html#t:protocol_revision/0"><code class="inline">BACnet.Protocol.Constants.protocol_revision/0</code></a>.
+Optional properties remain available unless an annotation prohibits them.
+Default required annotations use ASHRAE 135-2012 (revision 14), or the
+addendum/revision that introduced a later object type.</li><li><code class="inline">skip_property_validation_remote_object</code> - Skips property validation for remote objects.
+Sometimes it is possible that the value is invalid as per BACnet specification
+(i.e. value 0 for a multistate object), but you still want those to be represented.
+Value <code class="inline">true</code> neither type nor value are validated. Value <code class="inline">:value</code> means the type
+is still validated and only the value validator is not run (if present).
+The property's <code class="inline">validator_fun</code> will also be skipped.</li></ul>
+  </section>
+</section>
+<section class="detail" id="t:object_opts/0">
+
+  <div class="detail-header">
+    <a href="#t:object_opts/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">object_opts()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L240" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> object_opts() ::
+  {:intrinsic_reporting, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()}
+  | {:supports_command_execution, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()}
+  | {:network_port_runtime, <a href="#t:runtime/0">runtime</a>()}
+  | <a href="#t:common_object_opts/0">common_object_opts</a>()</pre>
+
+      </div>
+
+<p>Options accepted when creating or configuring a Network Port object.</p><p>Supports enabling intrinsic reporting via <code class="inline">intrinsic_reporting</code>.</p><p>In addition to the common options, Network Port supports:</p><ul><li><code class="inline">supports_command_execution</code> - Selects the Command property.</li><li><code class="inline">network_port_runtime</code> - Binds host actions to this port.</li></ul>
+  </section>
+</section>
+<section class="detail" id="t:port_command/0">
+
+  <div class="detail-header">
+    <a href="#t:port_command/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">port_command()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L250" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> port_command() :: <a href="BACnet.Protocol.Constants.html#t:network_port_command/0">BACnet.Protocol.Constants.network_port_command</a>() | 128..255</pre>
+
+      </div>
+
+<p>A command defined by Clause 12.56.14 or a vendor command in the range 128 to 255.
+Enable <code class="inline">:allow_numeric_constants</code> to supply a vendor command.</p>
+  </section>
+</section>
+<section class="detail" id="t:port_event/0">
+
+  <div class="detail-header">
+    <a href="#t:port_event/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">port_event()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L273" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> port_event() ::
+  {:configuration_activated, :activate_changes | :warmstart}
+  | {:network_number_learned, network_number :: 1..65534,
+     configured? :: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()}</pre>
+
+      </div>
+
+<p>A completed configuration activation or a network number learned from a received
+Network-Number-Is message. The boolean is the sender's configured flag.</p>
+  </section>
+</section>
+<section class="detail" id="t:property_name/0">
+
+  <div class="detail-header">
+    <a href="#t:property_name/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">property_name()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> property_name() ::
+  :acked_transitions
+  | :apdu_length
+  | :auto_slave_discovery
+  | :bacnet_ip_global_address
+  | :bacnet_ip_mode
+  | :bacnet_ip_multicast_address
+  | :bacnet_ip_nat_traversal
+  | :bacnet_ip_udp_port
+  | :bacnet_ipv6_mode
+  | :bacnet_ipv6_multicast_address
+  | :bacnet_ipv6_udp_port
+  | :bbmd_accept_fd_registrations
+  | :bbmd_broadcast_distribution_table
+  | :bbmd_foreign_device_table
+  | :changes_pending
+  | :command
+  | :description
+  | :event_algorithm_inhibit
+  | :event_algorithm_inhibit_ref
+  | :event_detection_enable
+  | :event_enable
+  | :event_message_texts
+  | :event_message_texts_config
+  | :event_state
+  | :event_timestamps
+  | :fd_bbmd_address
+  | :fd_subscription_lifetime
+  | :ip_address
+  | :ip_default_gateway
+  | :ip_dhcp_enable
+  | :ip_dhcp_lease_time
+  | :ip_dhcp_lease_time_remaining
+  | :ip_dhcp_server
+  | :ip_dns_server
+  | :ip_subnet_mask
+  | :ipv6_address
+  | :ipv6_auto_addressing_enable
+  | :ipv6_default_gateway
+  | :ipv6_dhcp_lease_time
+  | :ipv6_dhcp_lease_time_remaining
+  | :ipv6_dhcp_server
+  | :ipv6_dns_server
+  | :ipv6_prefix_length
+  | :ipv6_zone_index
+  | :limit_enable
+  | :link_speed
+  | :link_speed_autonegotiate
+  | :link_speeds
+  | :mac_address
+  | :manual_slave_address_binding
+  | :max_info_frames
+  | :max_master
+  | :network_interface_name
+  | :network_number
+  | :network_number_quality
+  | :network_type
+  | :notification_class
+  | :notify_type
+  | :object_instance
+  | :object_name
+  | :out_of_service
+  | :profile_location
+  | :profile_name
+  | :protocol_level
+  | :reference_port
+  | :reliability
+  | :reliability_evaluation_inhibit
+  | :routing_table
+  | :slave_address_binding
+  | :slave_proxy_enable
+  | :status_flags
+  | :tags
+  | :time_delay
+  | :time_delay_normal
+  | :virtual_mac_address_table</pre>
+
+      </div>
+
+<p>Available property names for this object.</p>
+  </section>
+</section>
+<section class="detail" id="t:property_update_error/0">
+
+  <div class="detail-header">
+    <a href="#t:property_update_error/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">property_update_error()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> property_update_error() ::
+  {:error,
+   {error :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>(),
+    property :: <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()}}</pre>
+
+      </div>
+
+<p>The structure for property errors.</p>
+  </section>
+</section>
+<section class="detail" id="t:runtime/0">
+
+  <div class="detail-header">
+    <a href="#t:runtime/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">runtime()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L257" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> runtime() :: %{
+  optional(<a href="#t:port_command/0">port_command</a>() | :out_of_service) =&gt;
+    (port :: <a href="#t:t/0">t</a>() -&gt; :ok | {:error, reason :: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()})
+}</pre>
+
+      </div>
+
+<p>Host actions keyed by command or by <code class="inline">:out_of_service</code>. The port argument carries
+the selected command or the requested out-of-service state. Return <code class="inline">:ok</code> when the
+object may accept its next write, or an error with the reason the action failed.</p>
+  </section>
+</section>
+<section class="detail" id="t:t/0">
+
+  <div class="detail-header">
+    <a href="#t:t/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">t()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> t() :: %BACnet.Protocol.ObjectTypes.NetworkPort{
+  _metadata: internal_metadata(),
+  _unknown_properties: %{
+    optional(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()) =&gt;
+      <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()
+      | <a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()
+      | [<a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()]
+  },
+  acked_transitions: <a href="BACnet.Protocol.EventTransitionBits.html#t:t/0">BACnet.Protocol.EventTransitionBits.t</a>() | nil,
+  apdu_length: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>() | nil,
+  auto_slave_discovery: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | nil,
+  bacnet_ip_global_address: <a href="BACnet.Protocol.HostNPort.html#t:t/0">BACnet.Protocol.HostNPort.t</a>() | nil,
+  bacnet_ip_mode:
+    <a href="BACnet.Protocol.Constants.html#t:ip_mode/0">BACnet.Protocol.Constants.ip_mode</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>())
+    | nil,
+  bacnet_ip_multicast_address: :inet.ip4_address() | nil,
+  bacnet_ip_nat_traversal: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | nil,
+  bacnet_ip_udp_port: <a href="BACnet.Protocol.ApplicationTags.html#t:unsigned16/0">BACnet.Protocol.ApplicationTags.unsigned16</a>() | nil,
+  bacnet_ipv6_mode:
+    <a href="BACnet.Protocol.Constants.html#t:ip_mode/0">BACnet.Protocol.Constants.ip_mode</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>())
+    | nil,
+  bacnet_ipv6_multicast_address:
+    {:inet.ip6_address(), :inet.port_number()} | nil,
+  bacnet_ipv6_udp_port: <a href="BACnet.Protocol.ApplicationTags.html#t:unsigned16/0">BACnet.Protocol.ApplicationTags.unsigned16</a>() | nil,
+  bbmd_accept_fd_registrations: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | nil,
+  bbmd_broadcast_distribution_table:
+    [<a href="BACnet.Protocol.BroadcastDistributionTableEntry.html#t:t/0">BACnet.Protocol.BroadcastDistributionTableEntry.t</a>()] | nil,
+  bbmd_foreign_device_table:
+    [<a href="BACnet.Protocol.ForeignDeviceTableEntry.html#t:t/0">BACnet.Protocol.ForeignDeviceTableEntry.t</a>()] | nil,
+  changes_pending: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>(),
+  command:
+    <a href="BACnet.Protocol.Constants.html#t:network_port_command/0">BACnet.Protocol.Constants.network_port_command</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>())
+    | nil,
+  description: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>() | nil,
+  event_algorithm_inhibit: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | nil,
+  event_algorithm_inhibit_ref: <a href="BACnet.Protocol.ObjectPropertyRef.html#t:t/0">BACnet.Protocol.ObjectPropertyRef.t</a>() | nil,
+  event_detection_enable: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | nil,
+  event_enable: <a href="BACnet.Protocol.EventTransitionBits.html#t:t/0">BACnet.Protocol.EventTransitionBits.t</a>() | nil,
+  event_message_texts: <a href="BACnet.Protocol.EventMessageTexts.html#t:t/0">BACnet.Protocol.EventMessageTexts.t</a>() | nil,
+  event_message_texts_config: <a href="BACnet.Protocol.EventMessageTexts.html#t:t/0">BACnet.Protocol.EventMessageTexts.t</a>() | nil,
+  event_state:
+    <a href="BACnet.Protocol.Constants.html#t:event_state/0">BACnet.Protocol.Constants.event_state</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>())
+    | nil,
+  event_timestamps: <a href="BACnet.Protocol.EventTimestamps.html#t:t/0">BACnet.Protocol.EventTimestamps.t</a>() | nil,
+  fd_bbmd_address: <a href="BACnet.Protocol.HostNPort.html#t:t/0">BACnet.Protocol.HostNPort.t</a>() | nil,
+  fd_subscription_lifetime: <a href="BACnet.Protocol.ApplicationTags.html#t:unsigned16/0">BACnet.Protocol.ApplicationTags.unsigned16</a>() | nil,
+  ip_address: :inet.ip4_address() | nil,
+  ip_default_gateway: :inet.ip4_address() | nil,
+  ip_dhcp_enable: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | nil,
+  ip_dhcp_lease_time: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>() | nil,
+  ip_dhcp_lease_time_remaining: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>() | nil,
+  ip_dhcp_server: :inet.ip4_address() | nil,
+  ip_dns_server: <a href="BACnet.Protocol.BACnetArray.html#t:t/1">BACnet.Protocol.BACnetArray.t</a>(:inet.ip4_address()) | nil,
+  ip_subnet_mask: :inet.ip4_address() | nil,
+  ipv6_address: :inet.ip6_address() | nil,
+  ipv6_auto_addressing_enable: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | nil,
+  ipv6_default_gateway: :inet.ip6_address() | nil,
+  ipv6_dhcp_lease_time: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>() | nil,
+  ipv6_dhcp_lease_time_remaining: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>() | nil,
+  ipv6_dhcp_server: :inet.ip6_address() | nil,
+  ipv6_dns_server: <a href="BACnet.Protocol.BACnetArray.html#t:t/1">BACnet.Protocol.BACnetArray.t</a>(:inet.ip6_address()) | nil,
+  ipv6_prefix_length: 0..128 | nil,
+  ipv6_zone_index: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>() | nil,
+  limit_enable: <a href="BACnet.Protocol.LimitEnable.html#t:t/0">BACnet.Protocol.LimitEnable.t</a>() | nil,
+  link_speed: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">float</a>() | nil,
+  link_speed_autonegotiate: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | nil,
+  link_speeds: <a href="BACnet.Protocol.BACnetArray.html#t:t/1">BACnet.Protocol.BACnetArray.t</a>(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">float</a>()) | nil,
+  mac_address: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">binary</a>() | nil,
+  manual_slave_address_binding: [<a href="BACnet.Protocol.AddressBinding.html#t:t/0">BACnet.Protocol.AddressBinding.t</a>()] | nil,
+  max_info_frames: 1..255 | nil,
+  max_master: 0..127 | nil,
+  network_interface_name: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>() | nil,
+  network_number: <a href="BACnet.Protocol.ApplicationTags.html#t:unsigned16/0">BACnet.Protocol.ApplicationTags.unsigned16</a>() | nil,
+  network_number_quality:
+    <a href="BACnet.Protocol.Constants.html#t:network_number_quality/0">BACnet.Protocol.Constants.network_number_quality</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>())
+    | nil,
+  network_type:
+    <a href="BACnet.Protocol.Constants.html#t:network_type/0">BACnet.Protocol.Constants.network_type</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()),
+  notification_class: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>() | nil,
+  notify_type:
+    <a href="BACnet.Protocol.Constants.html#t:notify_type/0">BACnet.Protocol.Constants.notify_type</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>())
+    | nil,
+  object_instance: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>(),
+  object_name: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>(),
+  out_of_service: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>(),
+  profile_location: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>() | nil,
+  profile_name: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>() | nil,
+  protocol_level:
+    <a href="BACnet.Protocol.Constants.html#t:protocol_level/0">BACnet.Protocol.Constants.protocol_level</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()),
+  reference_port: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>() | nil,
+  reliability:
+    <a href="BACnet.Protocol.Constants.html#t:reliability/0">BACnet.Protocol.Constants.reliability</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()),
+  reliability_evaluation_inhibit: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | nil,
+  routing_table: [<a href="BACnet.Protocol.RouterEntry.html#t:t/0">BACnet.Protocol.RouterEntry.t</a>()] | nil,
+  slave_address_binding: [<a href="BACnet.Protocol.AddressBinding.html#t:t/0">BACnet.Protocol.AddressBinding.t</a>()] | nil,
+  slave_proxy_enable: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | nil,
+  status_flags: <a href="BACnet.Protocol.StatusFlags.html#t:t/0">BACnet.Protocol.StatusFlags.t</a>(),
+  tags: <a href="BACnet.Protocol.BACnetArray.html#t:t/1">BACnet.Protocol.BACnetArray.t</a>(<a href="BACnet.Protocol.NameValue.html#t:t/0">BACnet.Protocol.NameValue.t</a>()) | nil,
+  time_delay: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>() | nil,
+  time_delay_normal: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>() | nil,
+  virtual_mac_address_table: [<a href="BACnet.Protocol.VmacEntry.html#t:t/0">BACnet.Protocol.VmacEntry.t</a>()] | nil
+}</pre>
+
+      </div>
+
+<p>Represents a Network Port object. Treat struct fields as read-only. Use the object module's
+property functions to build updates.</p><p>Create the object with <code class="inline">intrinsic_reporting: true</code> to select its intrinsic
+reporting properties. The fields for those properties are <code class="inline">nil</code> when omitted.
+Many properties are conditional on <code class="inline">network_type</code> and <code class="inline">protocol_level</code>.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="add_property/3">
+
+  <div class="detail-header">
+    <a href="#add_property/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">add_property(object, property, value)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> add_property(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>(), <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Adds an optional property to an object.
+Remote objects can not be mutated using this operation.</p><p>Please note that properties of services can <strong>not</strong> be dynamically added and instead
+the object must be newly created using <a href="#create/4"><code class="inline">create/4</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="create/4">
+
+    <span id="create/2"></span>
+
+    <span id="create/3"></span>
+
+  <div class="detail-header">
+    <a href="#create/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">create(instance_number, object_name, properties \\ %{}, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> create(
+  <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>(),
+  <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>(),
+  %{optional(<a href="#t:property_name/0">property_name</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()) =&gt; <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()},
+  [<a href="#t:object_opts/0">object_opts</a>() | internal_metadata()]
+) :: {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Creates a new object struct with the defined properties. Optional properties are not
+created when not given, only required, given and dependency properties are created.
+Properties with a value of <code class="inline">nil</code> are ignored.</p><p>Only properties that are required for specific services (i.e. Intrinsic Reporting)
+are automatically created.</p>
+  </section>
+</section>
+<section class="detail" id="get_object_identifier/1">
+
+  <div class="detail-header">
+    <a href="#get_object_identifier/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_object_identifier(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_object_identifier(<a href="#t:t/0">t</a>()) :: <a href="BACnet.Protocol.ObjectIdentifier.html#t:t/0">BACnet.Protocol.ObjectIdentifier.t</a>()</pre>
+
+      </div>
+
+<p>Get the BACnet object identifier.</p>
+  </section>
+</section>
+<section class="detail" id="get_properties/1">
+
+  <div class="detail-header">
+    <a href="#get_properties/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_properties(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_properties(<a href="#t:t/0">t</a>()) :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Get the list of properties the object has.</p>
+  </section>
+</section>
+<section class="detail" id="get_property/2">
+
+  <div class="detail-header">
+    <a href="#get_property/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_property(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_property(
+  <a href="#t:t/0">t</a>(),
+  <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()
+) ::
+  {:ok, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Get a property's value from an object.</p>
+  </section>
+</section>
+<section class="detail" id="has_property?/2">
+
+  <div class="detail-header">
+    <a href="#has_property?/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">has_property?(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> has_property?(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()) :: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks if the given object has the given property.</p><p>See <a href="BACnet.Protocol.ObjectsUtility.html#has_property?/2"><code class="inline">BACnet.Protocol.ObjectsUtility.has_property?/2</code></a> for implementation details.</p>
+  </section>
+</section>
+<section class="detail" id="intrinsic_reporting?/1">
+
+  <div class="detail-header">
+    <a href="#intrinsic_reporting?/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">intrinsic_reporting?(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> intrinsic_reporting?(<a href="#t:t/0">t</a>()) :: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks if the given object has Intrinsic Reporting enabled.</p>
+  </section>
+</section>
+<section class="detail" id="property_writable?/2">
+
+  <div class="detail-header">
+    <a href="#property_writable?/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">property_writable?(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L1180" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> property_writable?(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()) ::
+  <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()</pre>
+
+          <pre translate="no"><span class="attribute">@spec</span> property_writable?(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()) ::
+  <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks if the given property is writable.</p><p>Check <a href="BACnet.Protocol.ObjectsUtility.html#property_writable?/2"><code class="inline">BACnet.Protocol.ObjectsUtility.property_writable?/2</code></a> for a basic run-down.</p>
+  </section>
+</section>
+<section class="detail" id="remove_property/2">
+
+  <div class="detail-header">
+    <a href="#remove_property/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">remove_property(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> remove_property(
+  <a href="#t:t/0">t</a>(),
+  <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()
+) ::
+  {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Removes an optional property from an object. This function is idempotent.
+Remote objects can not be mutated using this operation.</p><p>Please note that properties of services can <strong>not</strong> be dynamically removed and instead
+the object must be newly created using <a href="#create/4"><code class="inline">create/4</code></a>. Required properties can not be removed.</p>
+  </section>
+</section>
+<section class="detail" id="update_operating_property/3">
+
+  <div class="detail-header">
+    <a href="#update_operating_property/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">update_operating_property(object, property, value)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L772" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> update_operating_property(
+  <a href="#t:t/0">t</a>(),
+  <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>(),
+  <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()
+) ::
+  {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Records a property value reported by the operating port without staging a write.</p><p>When that property already has a staged write, its active value changes and
+the pending value remains visible through <a href="#get_property/2"><code class="inline">get_property/2</code></a>. The host should
+call this for observations such as DHCP addresses, actual link speed and
+live tables. Command and Changes_Pending are managed by the lifecycle.</p>
+  </section>
+</section>
+<section class="detail" id="update_property/3">
+
+  <div class="detail-header">
+    <a href="#update_property/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">update_property(object, property, value)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L730" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> update_property(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>(), <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+          <pre translate="no"><span class="attribute">@spec</span> update_property(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>(), <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Updates a property of an object.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions-lifecycle" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions-lifecycle">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions Lifecycle</span>
+    </h2>
+
+    <div class="functions-lifecycle-list">
+<section class="detail" id="execute/2">
+
+  <div class="detail-header">
+    <a href="#execute/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute(object, context)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L841" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  {:ok, <a href="BACnet.Protocol.ObjectExecution.Result.html#t:t/1">BACnet.Protocol.ObjectExecution.Result.t</a>(<a href="#t:t/0">t</a>())} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+          <pre translate="no"><span class="attribute">@spec</span> execute(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  {:ok, <a href="BACnet.Protocol.ObjectExecution.Result.html#t:t/1">BACnet.Protocol.ObjectExecution.Result.t</a>(<a href="#t:t/0">t</a>())} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Executes a Network Port command or an Out_Of_Service update.</p><p>Initialization resets a selected Command to idle. Committed commands
+apply or discard pending configuration as appropriate and may invoke the
+configured network runtime. Each successful local step evaluates
+reliability reporting.</p>
+  </section>
+</section>
+<section class="detail" id="prepare_write/3">
+
+  <div class="detail-header">
+    <a href="#prepare_write/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">prepare_write(object, candidate, context)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L814" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> prepare_write(<a href="#t:t/0">t</a>(), <a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+          <pre translate="no"><span class="attribute">@spec</span> prepare_write(<a href="#t:t/0">t</a>(), <a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Checks a proposed Network Port write against the port's access rules.</p><p>Validates command writes and changes to port configuration before the host
+commits the candidate. Pending configuration is applied during execution
+of the relevant command.</p>
+  </section>
+</section>
+<section class="detail" id="validate_execution/2">
+
+  <div class="detail-header">
+    <a href="#validate_execution/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">validate_execution(object, context)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> validate_execution(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  :ok | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Checks configuration and capabilities without host I/O or state changes.</p><p>See <a href="BACnet.Protocol.ObjectsBehaviour.html"><code class="inline">BACnet.Protocol.ObjectsBehaviour</code></a> for the preflight contract.
+Required host operations are supplied by the integrating application described in the
+<a href="BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host">object execution host contract</a>.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions-metadata" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions-metadata">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions Metadata</span>
+    </h2>
+
+    <div class="functions-metadata-list">
+<section class="detail" id="get_all_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_all_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_all_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_all_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of all properties this object supports.</p>
+  </section>
+</section>
+<section class="detail" id="get_annotation/1">
+
+  <div class="detail-header">
+    <a href="#get_annotation/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_annotation(name)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_annotation(<a href="#t:property_name/0">property_name</a>()) :: [<a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the annotations for the given property name.</p>
+  </section>
+</section>
+<section class="detail" id="get_annotations/0">
+
+  <div class="detail-header">
+    <a href="#get_annotations/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_annotations()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_annotations() :: [{name :: <a href="#t:property_name/0">property_name</a>(), values :: [<a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()]}]</pre>
+
+      </div>
+
+<p>Auto generated function to get the list of annotations for each property.</p>
+  </section>
+</section>
+<section class="detail" id="get_cov_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_cov_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_cov_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_cov_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of properties used for COV reporting.</p>
+  </section>
+</section>
+<section class="detail" id="get_intrinsic_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_intrinsic_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_intrinsic_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_intrinsic_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of intrinsic properties.</p>
+  </section>
+</section>
+<section class="detail" id="get_optional_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_optional_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_optional_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_optional_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of optional properties.</p>
+  </section>
+</section>
+<section class="detail" id="get_properties_type_map/0">
+
+  <div class="detail-header">
+    <a href="#get_properties_type_map/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_properties_type_map()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_properties_type_map() :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>()</pre>
+
+      </div>
+
+<p>Auto generated function to get a map of property name to type.</p>
+  </section>
+</section>
+<section class="detail" id="get_protected_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_protected_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_protected_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_protected_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of protected properties.</p><p>Protected is an annotation and the object modules prevent writing to
+this property directly in code. The protected properties are either
+written on creation or updated automatically depending on other properties
+being written to. Some properties are only written once at creation and
+never updated.</p>
+  </section>
+</section>
+<section class="detail" id="get_readonly_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_readonly_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_readonly_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_readonly_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of readonly properties.</p><p>Readonly is only an annotation that the property should be write protected
+on the BACnet side, there is no actual write protection in the object.
+This is a hint to the device server. If you need actual write protection, see <code class="inline">protected</code>.</p>
+  </section>
+</section>
+<section class="detail" id="get_required_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_required_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_required_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_required_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of required properties.</p>
+  </section>
+</section>
+<section class="detail" id="supports_intrinsic/0">
+
+  <div class="detail-header">
+    <a href="#supports_intrinsic/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">supports_intrinsic()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L285" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> supports_intrinsic() :: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Auto generated function to check whether the object type supports intrinsic reporting.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions-operational" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions-operational">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions Operational</span>
+    </h2>
+
+    <div class="functions-operational-list">
+<section class="detail" id="active_configuration/1">
+
+  <div class="detail-header">
+    <a href="#active_configuration/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">active_configuration(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/network_port.ex#L747" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> active_configuration(<a href="#t:t/0">t</a>()) :: {:ok, <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the active values of settings that participate in pending changes, along
+with the network number quality. During pending changes, the corresponding
+property reads on the object return the staged values.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0-dev.2">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0-dev.2">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.4) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>

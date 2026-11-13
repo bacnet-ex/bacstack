@@ -1,0 +1,1951 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.4">
+    <meta name="project" content="bacstack v0.1.0-dev.2">
+
+
+    <title>BACnet.Protocol.ObjectTypes.EventEnrollment — bacstack v0.1.0-dev.2</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-RXHHCTJW.css" />
+
+    <script defer src="dist/sidebar_items-F5D808A4.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-MI33G4N7.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0-dev.2
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">BACnet.<wbr />Protocol.<wbr />ObjectTypes.<wbr />EventEnrollment</span> 
+      <small class="app-vsn" translate="no">(bacstack v0.1.0-dev.2)</small>
+
+    </h1>
+
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>An Event Enrollment monitors a property on a local or remote object. Use
+one to report events for a source that lacks its own intrinsic reporting.
+The enrollment holds the algorithm configuration and event state and refers
+to a Notification Class for delivery.</p><h3 id="module-object-description-ashrae-135" class="section-heading"><a href="#module-object-description-ashrae-135" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Object Description (ASHRAE 135)</span></h3><blockquote><p>The Event Enrollment object type defines a standardized object that represents
+and contains the information required for algorithmic reporting of events.
+For the general event concepts and algorithmic event reporting, see Clause 13.2.</p></blockquote><h3 id="module-behaviour-and-operation" class="section-heading"><a href="#module-behaviour-and-operation" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Behaviour and Operation</span></h3><p><code class="inline">object_property_reference</code> selects the value to monitor. <code class="inline">event_parameters</code>
+selects the event algorithm and its inputs. An optional <code class="inline">fault_parameters</code>
+selects the fault algorithm. The object derives <code class="inline">event_type</code> and <code class="inline">fault_type</code>
+from those parameters. The enrollment only reads the monitored object.</p><p>The <a href="BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host">object execution host</a>
+supplies the <code class="inline">:read_property</code> callback in <a href="BACnet.Protocol.ObjectExecution.Context.html"><code class="inline">BACnet.Protocol.ObjectExecution.Context</code></a>.
+The enrollment passes local and device-qualified references to that callback,
+including any array index. For remote monitoring, the host can use
+<a href="BACnet.Stack.ClientHelper.html#read_property/5"><code class="inline">BACnet.Stack.ClientHelper.read_property/5</code></a> and return the property's native
+value. For an optional property that is absent, return an unknown-property
+error. The enrollment also reads inputs selected by the algorithm, such as
+the monitored object's status flags, a feedback or setpoint reference, or a
+life safety mode.</p><p>Execute when the enrollment starts, an input changes, a configuration write
+commits or a timer comes due. For a remote source, the host can also poll with
+<code class="inline">:periodic</code>. Retain each result and schedule any requested monotonic deadline.
+The algorithm uses monotonic time to measure delays and local wall time for
+event timestamps and Notification Class delivery windows. A property read
+returns the last evaluated state and preserves any pending deadline.</p><h4>Reliability and inhibition</h4><p>Acquisition and configuration failures take precedence over a fault reported by
+the monitored object, which takes precedence over the optional fault algorithm.
+Fault transitions take precedence over offnormal events. An initialized
+<code class="inline">event_algorithm_inhibit_ref</code> controls the inhibit flag from a local Boolean or
+BinaryPV property. Inhibition returns an offnormal event to NORMAL and starts a
+fresh delay when released. Fault detection can continue while the event algorithm
+is inhibited. <code class="inline">reliability_evaluation_inhibit</code> suppresses reliability evaluation.
+Disabling <code class="inline">event_detection_enable</code> resets event state, timestamps, messages and
+acknowledgment bits and clears the retained event and fault algorithm states.</p><h4>Transitions and delivery</h4><p>Each transition updates its event timestamp, message and acknowledgment bit.
+The enrollment uses <a href="BACnet.Protocol.ObjectExecution.Context.html#lookup_object/2"><code class="inline">BACnet.Protocol.ObjectExecution.Context.lookup_object/2</code></a>
+to find the Notification Class, which provides the eligible recipients and
+acknowledgment requirement. If lookup fails, the enrollment records the
+transition with a <code class="inline">nil</code> routing plan and no acknowledgment requirement.</p><p>After committing the result, call <a href="#transition/1"><code class="inline">transition/1</code></a> to get the recorded transition.
+For an enabled transition with a routing plan, the host builds either a
+<a href="BACnet.Protocol.Services.ConfirmedEventNotification.html"><code class="inline">BACnet.Protocol.Services.ConfirmedEventNotification</code></a> or
+an <a href="BACnet.Protocol.Services.UnconfirmedEventNotification.html"><code class="inline">BACnet.Protocol.Services.UnconfirmedEventNotification</code></a> for each recipient.
+To process an alarm acknowledgment, the host validates the acknowledged event
+state and uses <a href="#acknowledge/3"><code class="inline">acknowledge/3</code></a> to match the last timestamp and update the bit. It
+handles delivery of the resulting acknowledgment notification.</p><p>The lifecycle supports NONE and the implemented standard event and fault
+algorithms. An enabled enrollment with a vendor-specific Extended algorithm
+returns an unsupported-algorithm error.</p><h3 id="module-example" class="section-heading"><a href="#module-example" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example</span></h3><p>Monitor an unsigned Present_Value and hold the high-limit condition for five
+seconds before emitting a transition.</p><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol</span><span class="o">.</span><span class="p" data-group-id="group-1">{</span><span class="nc">DeviceObjectPropertyRef</span><span class="p">,</span><span class="w"> </span><span class="nc">EventParameters</span><span class="p">,</span><span class="w"> </span><span class="nc">ObjectIdentifier</span><span class="p">,</span><span class="w"> </span><span class="nc">StatusFlags</span><span class="p" data-group-id="group-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectExecution</span><span class="o">.</span><span class="p" data-group-id="group-2">{</span><span class="nc">Context</span><span class="p">,</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="p" data-group-id="group-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.ObjectTypes</span><span class="o">.</span><span class="p" data-group-id="group-3">{</span><span class="nc">EventEnrollment</span><span class="p">,</span><span class="w"> </span><span class="nc">NotificationClass</span><span class="p" data-group-id="group-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">reference</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-4">%</span><span class="nc" data-group-id="group-4">DeviceObjectPropertyRef</span><span class="p" data-group-id="group-4">{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">device_identifier</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">object_identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-5">%</span><span class="nc" data-group-id="group-5">ObjectIdentifier</span><span class="p" data-group-id="group-5">{</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:positive_integer_value</span><span class="p">,</span><span class="w"> </span><span class="ss">instance</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p" data-group-id="group-5">}</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">property_identifier</span><span class="p">:</span><span class="w"> </span><span class="ss">:present_value</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">property_array_index</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="p" data-group-id="group-4">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-6">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">enrollment</span><span class="p" data-group-id="group-6">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">EventEnrollment</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="group-7">(</span><span class="mi">1100</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;High value&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-8">%{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">notification_class</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">object_property_reference</span><span class="p">:</span><span class="w"> </span><span class="n">reference</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">event_parameters</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-9">%</span><span class="nc" data-group-id="group-9">EventParameters.UnsignedRange</span><span class="p" data-group-id="group-9">{</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">    </span><span class="ss">low_limit</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">high_limit</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="ss">time_delay</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="ss">time_delay_normal</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="p" data-group-id="group-9">}</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="p" data-group-id="group-8">}</span><span class="p" data-group-id="group-7">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-10">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">class</span><span class="p" data-group-id="group-10">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">NotificationClass</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="group-11">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Alarms&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-12">%{</span><span class="ss">notification_class</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="group-12">}</span><span class="p" data-group-id="group-11">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">read</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k" data-group-id="group-13">fn</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="p" data-group-id="group-14">%{</span><span class="ss">property_identifier</span><span class="p">:</span><span class="w"> </span><span class="ss">:present_value</span><span class="p" data-group-id="group-14">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p" data-group-id="group-15">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="mi">12</span><span class="p" data-group-id="group-15">}</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="p" data-group-id="group-16">%{</span><span class="ss">property_identifier</span><span class="p">:</span><span class="w"> </span><span class="ss">:reliability</span><span class="p" data-group-id="group-16">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p" data-group-id="group-17">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="ss">:no_fault_detected</span><span class="p" data-group-id="group-17">}</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="p" data-group-id="group-18">%{</span><span class="ss">property_identifier</span><span class="p">:</span><span class="w"> </span><span class="ss">:status_flags</span><span class="p" data-group-id="group-18">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p" data-group-id="group-19">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="nc">StatusFlags</span><span class="o">.</span><span class="n">from_bitstring</span><span class="p" data-group-id="group-20">(</span><span class="p" data-group-id="group-21">{</span><span class="no">false</span><span class="p">,</span><span class="w"> </span><span class="no">false</span><span class="p">,</span><span class="w"> </span><span class="no">false</span><span class="p">,</span><span class="w"> </span><span class="no">false</span><span class="p" data-group-id="group-21">}</span><span class="p" data-group-id="group-20">)</span><span class="p" data-group-id="group-19">}</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="k" data-group-id="group-13">end</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">now</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ld">~U[2026-06-01 12:00:00Z]</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Context</span><span class="o">.</span><span class="n">new</span><span class="p" data-group-id="group-22">(</span><span class="ss">:initialization</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">now</span><span class="p">:</span><span class="w"> </span><span class="n">now</span><span class="p">,</span><span class="w"> </span><span class="ss">monotonic_time</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="ss">read_property</span><span class="p">:</span><span class="w"> </span><span class="n">read</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">lookup_object</span><span class="p">:</span><span class="w"> </span><span class="k" data-group-id="group-23">fn</span><span class="w"> </span><span class="c">_reference</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p" data-group-id="group-24">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">class</span><span class="p" data-group-id="group-24">}</span><span class="w"> </span><span class="k" data-group-id="group-23">end</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="p" data-group-id="group-22">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-25">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">pending</span><span class="p" data-group-id="group-25">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-26">(</span><span class="n">enrollment</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="group-26">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">pending</span><span class="o">.</span><span class="n">next_execution</span><span class="o">.</span><span class="n">monotonic_time</span><span class="w">
+</span><span class="mi">5000</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">timer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="group-27">%{</span><span class="n">context</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">trigger</span><span class="p">:</span><span class="w"> </span><span class="ss">:timer</span><span class="p">,</span><span class="w"> </span><span class="ss">now</span><span class="p">:</span><span class="w"> </span><span class="nc">DateTime</span><span class="o">.</span><span class="n">add</span><span class="p" data-group-id="group-28">(</span><span class="n">now</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="ss">:second</span><span class="p" data-group-id="group-28">)</span><span class="p">,</span><span class="w">
+</span><span class="gp unselectable">...&gt; </span><span class="w">  </span><span class="ss">monotonic_time</span><span class="p">:</span><span class="w"> </span><span class="mi">5000</span><span class="p">,</span><span class="w"> </span><span class="ss">state</span><span class="p">:</span><span class="w"> </span><span class="n">pending</span><span class="o">.</span><span class="n">state</span><span class="p" data-group-id="group-27">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="p" data-group-id="group-29">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">evaluated</span><span class="p" data-group-id="group-29">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Lifecycle</span><span class="o">.</span><span class="n">execute</span><span class="p" data-group-id="group-30">(</span><span class="n">pending</span><span class="o">.</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">timer</span><span class="p" data-group-id="group-30">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">evaluated</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">event_state</span><span class="w">
+</span><span class="ss">:high_limit</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">EventEnrollment</span><span class="o">.</span><span class="n">transition</span><span class="p" data-group-id="group-31">(</span><span class="n">evaluated</span><span class="p" data-group-id="group-31">)</span><span class="o">.</span><span class="n">transition</span><span class="w">
+</span><span class="ss">:to_offnormal</span></code></pre><h3 id="module-see-also" class="section-heading"><a href="#module-see-also" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">See Also</span></h3><ul><li><a href="BACnet.Protocol.EventAlgorithms.html"><code class="inline">BACnet.Protocol.EventAlgorithms</code></a></li><li><a href="BACnet.Protocol.FaultAlgorithms.html"><code class="inline">BACnet.Protocol.FaultAlgorithms</code></a></li><li>Related: <a href="BACnet.Protocol.ObjectTypes.NotificationClass.html"><code class="inline">BACnet.Protocol.ObjectTypes.NotificationClass</code></a></li></ul><hr style="height: 10px;visibility: hidden;"/><hr class="thin"/><p>The following part has been automatically generated.</p><details><summary>Click to expand</summary>
+
+This module defines a BACnet object of the type `event_enrollment`. The following properties are defined:
+
+| Property | Revision | Required | Readonly | Protected | Intrinsic |
+|----------|----------|----------|----------|-----------|-----------|
+| acked_transitions |  | X | X |  |  |
+| description |  |  |  |  |  |
+| event_algorithm_inhibit |  |  |  |  |  |
+| event_algorithm_inhibit_ref |  |  |  |  |  |
+| event_detection_enable |  | X |  |  |  |
+| event_enable |  | X |  |  |  |
+| event_message_texts |  |  | X |  |  |
+| event_message_texts_config |  |  |  |  |  |
+| event_parameters |  | X |  |  |  |
+| event_state |  | X | X |  |  |
+| event_timestamps |  | X | X |  |  |
+| event_type |  | X | X |  |  |
+| fault_parameters |  |  |  |  |  |
+| fault_type |  |  | X |  |  |
+| notification_class |  | X |  |  |  |
+| notify_type |  | X |  |  |  |
+| object_instance |  | X | X |  |  |
+| object_name |  | X | X |  |  |
+| object_property_reference |  | X |  |  |  |
+| profile_location | 19 |  |  |  |  |
+| profile_name |  |  |  |  |  |
+| reliability |  | X | X |  |  |
+| reliability_evaluation_inhibit |  |  |  |  |  |
+| status_flags |  | X | X |  |  |
+| tags | 19 |  |  |  |  |
+| time_delay_normal |  |  |  |  |  |
+
+The following properties have additional semantics:
+
+| Property | Has Default | Has Init | Implicit Relationships | Validators | Annotations |
+|----------|-------------|----------|------------------------|------------|-------------|
+| acked_transitions | X |  |  |  |  |
+| event_algorithm_inhibit_ref |  |  | event_algorithm_inhibit |  |  |
+| event_detection_enable | X |  |  |  |  |
+| event_enable | X |  |  |  |  |
+| event_message_texts | X |  |  |  |  |
+| event_parameters | X |  |  |  |  |
+| event_state | X |  |  |  |  |
+| event_timestamps | X |  |  |  |  |
+| event_type | X |  |  |  |  |
+| fault_parameters | X |  | fault_type |  |  |
+| fault_type | X |  |  |  |  |
+| notify_type | X |  |  |  |  |
+| object_property_reference | X |  |  |  |  |
+| profile_location |  |  |  | Fun | `revision: 19` |
+| reliability | X |  |  |  |  |
+| tags |  |  |  |  | `revision: 19` |
+
+The following table shows the default values and/or init functions:
+
+| Property | Default Value | Init Function |
+|----------|---------------|---------------|
+| acked_transitions | <a title="%BACnet.Protocol.EventTransitionBits{to_offnormal: true, to_fault: true, to_normal: true}">`%BACnet.Protocol.EventTransitionBits{...}`</a> |  |
+| event_detection_enable | `true` |  |
+| event_enable | <a title="%BACnet.Protocol.EventTransitionBits{to_offnormal: true, to_fault: true, to_normal: true}">`%BACnet.Protocol.EventTransitionBits{...}`</a> |  |
+| event_message_texts | <a title="%BACnet.Protocol.EventMessageTexts{to_offnormal: &quot;&quot;, to_fault: &quot;&quot;, to_normal: &quot;&quot;}">`%BACnet.Protocol.EventMessageTexts{...}`</a> |  |
+| event_parameters | <a title="%BACnet.Protocol.EventParameters.None{}">`%BACnet.Protocol.EventParameters.None{...}`</a> |  |
+| event_state | `:normal` |  |
+| event_timestamps | <a title="%BACnet.Protocol.EventTimestamps{to_offnormal: %BACnet.Protocol.BACnetTimestamp{type: :datetime, time: nil, sequence_number: nil, datetime: %BACnet.Protocol.BACnetDateTime{date: %BACnet.Protocol.BACnetDate{year: :unspecified, month: :unspecified, day: :unspecified, weekday: :unspecified}, time: %BACnet.Protocol.BACnetTime{hour: :unspecified, minute: :unspecified, second: :unspecified, hundredth: :unspecified}}}, to_fault: %BACnet.Protocol.BACnetTimestamp{type: :datetime, time: nil, sequence_number: nil, datetime: %BACnet.Protocol.BACnetDateTime{date: %BACnet.Protocol.BACnetDate{year: :unspecified, month: :unspecified, day: :unspecified, weekday: :unspecified}, time: %BACnet.Protocol.BACnetTime{hour: :unspecified, minute: :unspecified, second: :unspecified, hundredth: :unspecified}}}, to_normal: %BACnet.Protocol.BACnetTimestamp{type: :datetime, time: nil, sequence_number: nil, datetime: %BACnet.Protocol.BACnetDateTime{date: %BACnet.Protocol.BACnetDate{year: :unspecified, month: :unspecified, day: :unspecified, weekday: :unspecified}, time: %BACnet.Protocol.BACnetTime{hour: :unspecified, minute: :unspecified, second: :unspecified, hundredth: :unspecified}}}}">`%BACnet.Protocol.EventTimestamps{...}`</a> |  |
+| event_type | `:none` |  |
+| fault_parameters | <a title="%BACnet.Protocol.FaultParameters.None{}">`%BACnet.Protocol.FaultParameters.None{...}`</a> |  |
+| fault_type | `:none` |  |
+| notify_type | `:alarm` |  |
+| object_property_reference | <a title="%BACnet.Protocol.DeviceObjectPropertyRef{object_identifier: %BACnet.Protocol.ObjectIdentifier{type: :binary_input, instance: 4194303}, property_identifier: 4194303, property_array_index: nil, device_identifier: nil}">`%BACnet.Protocol.DeviceObjectPropertyRef{...}`</a> |  |
+| reliability | `:no_fault_detected` |  |</details>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-types summary">
+  <h3>
+    <a href="#types">Types</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:common_object_opts/0" data-no-tooltip="" translate="no">common_object_opts()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Common object options for creation - all are optional.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:object_opts/0" data-no-tooltip="" translate="no">object_opts()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Options accepted when creating or configuring an Event Enrollment object.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:property_name/0" data-no-tooltip="" translate="no">property_name()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Available property names for this object.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:property_update_error/0" data-no-tooltip="" translate="no">property_update_error()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>The structure for property errors.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:t/0" data-no-tooltip="" translate="no">t()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents an Event Enrollment object. Treat struct fields as read-only. Use the object module's
+property functions to build updates.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:transition/0" data-no-tooltip="" translate="no">transition()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>A transition produced by the current execution step. The host uses its routing
+plan to deliver the event if the transition is enabled. A nil routing plan
+indicates that the Notification Class could not be resolved.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#add_property/3" data-no-tooltip="" translate="no">add_property(object, property, value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Adds an optional property to an object.
+Remote objects can not be mutated using this operation.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#create/4" data-no-tooltip="" translate="no">create(instance_number, object_name, properties \\ %{}, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Creates a new object struct with the defined properties. Optional properties are not
+created when not given, only required, given and dependency properties are created.
+Properties with a value of <code class="inline">nil</code> are ignored.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_object_identifier/1" data-no-tooltip="" translate="no">get_object_identifier(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the BACnet object identifier.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_properties/1" data-no-tooltip="" translate="no">get_properties(object)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get the list of properties the object has.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_property/2" data-no-tooltip="" translate="no">get_property(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get a property's value from an object.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#has_property?/2" data-no-tooltip="" translate="no">has_property?(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks if the given object has the given property.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#property_writable?/2" data-no-tooltip="" translate="no">property_writable?(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks if the given property is writable.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#remove_property/2" data-no-tooltip="" translate="no">remove_property(object, property)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Removes an optional property from an object. This function is idempotent.
+Remote objects can not be mutated using this operation.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#update_property/3" data-no-tooltip="" translate="no">update_property(object, property, value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Updates a property of an object.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions-lifecycle summary">
+  <h3>
+    <a href="#functions-lifecycle">Functions Lifecycle</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#execute/2" data-no-tooltip="" translate="no">execute(object, context)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Evaluates a monitored sample or returns the last evaluated read snapshot.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#prepare_write/3" data-no-tooltip="" translate="no">prepare_write(object, candidate, context)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks write access before committing an Event Enrollment candidate.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#validate_execution/2" data-no-tooltip="" translate="no">validate_execution(object, context)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks selected algorithms, parameters and property references.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions-metadata summary">
+  <h3>
+    <a href="#functions-metadata">Functions Metadata</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_all_properties/0" data-no-tooltip="" translate="no">get_all_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of all properties this object supports.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_annotation/1" data-no-tooltip="" translate="no">get_annotation(name)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the annotations for the given property name.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_annotations/0" data-no-tooltip="" translate="no">get_annotations()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the list of annotations for each property.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_cov_properties/0" data-no-tooltip="" translate="no">get_cov_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of properties used for COV reporting.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_intrinsic_properties/0" data-no-tooltip="" translate="no">get_intrinsic_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of intrinsic properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_optional_properties/0" data-no-tooltip="" translate="no">get_optional_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of optional properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_properties_type_map/0" data-no-tooltip="" translate="no">get_properties_type_map()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get a map of property name to type.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_protected_properties/0" data-no-tooltip="" translate="no">get_protected_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of protected properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_readonly_properties/0" data-no-tooltip="" translate="no">get_readonly_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of readonly properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_required_properties/0" data-no-tooltip="" translate="no">get_required_properties()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to get the names of required properties.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#supports_intrinsic/0" data-no-tooltip="" translate="no">supports_intrinsic()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Auto generated function to check whether the object type supports intrinsic reporting.</p></div>
+
+    </div>
+
+</div>
+<div class="summary-functions-operational summary">
+  <h3>
+    <a href="#functions-operational">Functions Operational</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#acknowledge/3" data-no-tooltip="" translate="no">acknowledge(object, transition, timestamp)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Acknowledges the most recent event of the given transition type after matching
+its timestamp. The host handles service authentication, validation of the
+acknowledged event state, and distribution of the acknowledgment notification.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#transition/1" data-no-tooltip="" translate="no">transition(result)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Returns the transition produced by this execution, if any. A subsequent read or
+evaluation clears the transition from its own result.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h2>
+
+    <div class="types-list">
+<section class="detail" id="t:common_object_opts/0">
+
+  <div class="detail-header">
+    <a href="#t:common_object_opts/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">common_object_opts()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> common_object_opts() ::
+  {:allow_numeric_constants, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()}
+  | {:allow_unknown_properties, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()}
+  | {:ignore_unknown_properties, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()}
+  | {:revision,
+     <a href="BACnet.Protocol.Constants.html#t:protocol_revision/0">BACnet.Protocol.Constants.protocol_revision</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()}
+  | {:skip_property_validation_remote_object, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | :value}</pre>
+
+      </div>
+
+<p>Common object options for creation - all are optional.</p><ul><li><code class="inline">allow_numeric_constants</code> - Constants are atoms and thus unknown constants or vendor extensions are integers
+and thus are rejected. Enabling this option will allow integers (<code class="inline">non_neg_integer()</code>) for properties with
+a <code class="inline">Constants.type()</code> spec.</li><li><code class="inline">allow_unknown_properties</code> - Properties that are unknown to the object implementation are usually rejected.
+With this option, unknown properties (numeric identifiers usually means we dont know them) are accepted
+and put into a separate map. This does mean we can not validate or write them.
+Types of the values can be anything at this point. While you can read unknown properties with atom
+or integer as property identifier, you can only remove numeric unknown property identifiers from an object.
+Property identifiers of type <code class="inline">atom</code> are only accepted, if it is a remote object (object implementation is only
+enforced if it is a local object). Numeric property identifiers are accepted regardless of remote object or not.
+For remote objects, this means you have to write &quot;raw values&quot;
+(usually <a href="BACnet.Protocol.ApplicationTags.Encoding.html"><code class="inline">BACnet.Protocol.ApplicationTags.Encoding</code></a> structs).</li><li><code class="inline">ignore_unknown_properties</code> - Properties that are unknown to the object implementation are usually rejected.
+With this option, unknown properties get ignored, as if they were not specified.</li><li><code class="inline">revision</code> - The BACnet protocol revision used for required properties and annotation
+conditions. Accepts a non-negative protocol revision number (for example, <code class="inline">19</code>)
+or a name from <a href="BACnet.Protocol.Constants.html#t:protocol_revision/0"><code class="inline">BACnet.Protocol.Constants.protocol_revision/0</code></a>.
+Optional properties remain available unless an annotation prohibits them.
+Default required annotations use ASHRAE 135-2012 (revision 14), or the
+addendum/revision that introduced a later object type.</li><li><code class="inline">skip_property_validation_remote_object</code> - Skips property validation for remote objects.
+Sometimes it is possible that the value is invalid as per BACnet specification
+(i.e. value 0 for a multistate object), but you still want those to be represented.
+Value <code class="inline">true</code> neither type nor value are validated. Value <code class="inline">:value</code> means the type
+is still validated and only the value validator is not run (if present).
+The property's <code class="inline">validator_fun</code> will also be skipped.</li></ul>
+  </section>
+</section>
+<section class="detail" id="t:object_opts/0">
+
+  <div class="detail-header">
+    <a href="#t:object_opts/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">object_opts()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L153" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> object_opts() :: <a href="#t:common_object_opts/0">common_object_opts</a>()</pre>
+
+      </div>
+
+<p>Options accepted when creating or configuring an Event Enrollment object.</p>
+  </section>
+</section>
+<section class="detail" id="t:property_name/0">
+
+  <div class="detail-header">
+    <a href="#t:property_name/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">property_name()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> property_name() ::
+  :acked_transitions
+  | :description
+  | :event_algorithm_inhibit
+  | :event_algorithm_inhibit_ref
+  | :event_detection_enable
+  | :event_enable
+  | :event_message_texts
+  | :event_message_texts_config
+  | :event_parameters
+  | :event_state
+  | :event_timestamps
+  | :event_type
+  | :fault_parameters
+  | :fault_type
+  | :notification_class
+  | :notify_type
+  | :object_instance
+  | :object_name
+  | :object_property_reference
+  | :profile_location
+  | :profile_name
+  | :reliability
+  | :reliability_evaluation_inhibit
+  | :status_flags
+  | :tags
+  | :time_delay_normal</pre>
+
+      </div>
+
+<p>Available property names for this object.</p>
+  </section>
+</section>
+<section class="detail" id="t:property_update_error/0">
+
+  <div class="detail-header">
+    <a href="#t:property_update_error/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">property_update_error()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> property_update_error() ::
+  {:error,
+   {error :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>(),
+    property :: <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()}}</pre>
+
+      </div>
+
+<p>The structure for property errors.</p>
+  </section>
+</section>
+<section class="detail" id="t:t/0">
+
+  <div class="detail-header">
+    <a href="#t:t/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">t()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> t() :: %BACnet.Protocol.ObjectTypes.EventEnrollment{
+  _metadata: internal_metadata(),
+  _unknown_properties: %{
+    optional(<a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()) =&gt;
+      <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()
+      | <a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()
+      | [<a href="BACnet.Protocol.ApplicationTags.Encoding.html#t:t/0">BACnet.Protocol.ApplicationTags.Encoding.t</a>()]
+  },
+  acked_transitions: <a href="BACnet.Protocol.EventTransitionBits.html#t:t/0">BACnet.Protocol.EventTransitionBits.t</a>(),
+  description: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>() | nil,
+  event_algorithm_inhibit: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | nil,
+  event_algorithm_inhibit_ref: <a href="BACnet.Protocol.ObjectPropertyRef.html#t:t/0">BACnet.Protocol.ObjectPropertyRef.t</a>() | nil,
+  event_detection_enable: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>(),
+  event_enable: <a href="BACnet.Protocol.EventTransitionBits.html#t:t/0">BACnet.Protocol.EventTransitionBits.t</a>(),
+  event_message_texts: <a href="BACnet.Protocol.EventMessageTexts.html#t:t/0">BACnet.Protocol.EventMessageTexts.t</a>() | nil,
+  event_message_texts_config: <a href="BACnet.Protocol.EventMessageTexts.html#t:t/0">BACnet.Protocol.EventMessageTexts.t</a>() | nil,
+  event_parameters: <a href="BACnet.Protocol.EventParameters.html#t:event_parameter/0">BACnet.Protocol.EventParameters.event_parameter</a>(),
+  event_state:
+    <a href="BACnet.Protocol.Constants.html#t:event_state/0">BACnet.Protocol.Constants.event_state</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()),
+  event_timestamps: <a href="BACnet.Protocol.EventTimestamps.html#t:t/0">BACnet.Protocol.EventTimestamps.t</a>(),
+  event_type:
+    <a href="BACnet.Protocol.Constants.html#t:event_type/0">BACnet.Protocol.Constants.event_type</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()),
+  fault_parameters: <a href="BACnet.Protocol.FaultParameters.html#t:fault_parameter/0">BACnet.Protocol.FaultParameters.fault_parameter</a>() | nil,
+  fault_type:
+    <a href="BACnet.Protocol.Constants.html#t:fault_type/0">BACnet.Protocol.Constants.fault_type</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>())
+    | nil,
+  notification_class: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>(),
+  notify_type:
+    <a href="BACnet.Protocol.Constants.html#t:notify_type/0">BACnet.Protocol.Constants.notify_type</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()),
+  object_instance: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>(),
+  object_name: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>(),
+  object_property_reference: <a href="BACnet.Protocol.DeviceObjectPropertyRef.html#t:t/0">BACnet.Protocol.DeviceObjectPropertyRef.t</a>(),
+  profile_location: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>() | nil,
+  profile_name: <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>() | nil,
+  reliability:
+    <a href="BACnet.Protocol.Constants.html#t:reliability/0">BACnet.Protocol.Constants.reliability</a>()
+    | (reserved_or_vendor_extension :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()),
+  reliability_evaluation_inhibit: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>() | nil,
+  status_flags: <a href="BACnet.Protocol.StatusFlags.html#t:t/0">BACnet.Protocol.StatusFlags.t</a>(),
+  tags: <a href="BACnet.Protocol.BACnetArray.html#t:t/1">BACnet.Protocol.BACnetArray.t</a>(<a href="BACnet.Protocol.NameValue.html#t:t/0">BACnet.Protocol.NameValue.t</a>()) | nil,
+  time_delay_normal: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>() | nil
+}</pre>
+
+      </div>
+
+<p>Represents an Event Enrollment object. Treat struct fields as read-only. Use the object module's
+property functions to build updates.</p>
+  </section>
+</section>
+<section class="detail" id="t:transition/0">
+
+  <div class="detail-header">
+    <a href="#t:transition/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">transition()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L271" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> transition() :: <a href="BACnet.Protocol.ObjectExecution.EventReporting.html#t:transition/0">BACnet.Protocol.ObjectExecution.EventReporting.transition</a>()</pre>
+
+      </div>
+
+<p>A transition produced by the current execution step. The host uses its routing
+plan to deliver the event if the transition is enabled. A nil routing plan
+indicates that the Notification Class could not be resolved.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="add_property/3">
+
+  <div class="detail-header">
+    <a href="#add_property/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">add_property(object, property, value)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> add_property(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>(), <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Adds an optional property to an object.
+Remote objects can not be mutated using this operation.</p><p>Please note that properties of services can <strong>not</strong> be dynamically added and instead
+the object must be newly created using <a href="#create/4"><code class="inline">create/4</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="create/4">
+
+    <span id="create/2"></span>
+
+    <span id="create/3"></span>
+
+  <div class="detail-header">
+    <a href="#create/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">create(instance_number, object_name, properties \\ %{}, opts \\ [])</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> create(
+  <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>(),
+  <a href="https://elixir.hexdocs.pm/String.html#t:t/0">String.t</a>(),
+  %{optional(<a href="#t:property_name/0">property_name</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">atom</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()) =&gt; <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()},
+  [<a href="#t:object_opts/0">object_opts</a>() | internal_metadata()]
+) :: {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Creates a new object struct with the defined properties. Optional properties are not
+created when not given, only required, given and dependency properties are created.
+Properties with a value of <code class="inline">nil</code> are ignored.</p><p>Only properties that are required for specific services (i.e. Intrinsic Reporting)
+are automatically created.</p>
+  </section>
+</section>
+<section class="detail" id="get_object_identifier/1">
+
+  <div class="detail-header">
+    <a href="#get_object_identifier/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_object_identifier(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_object_identifier(<a href="#t:t/0">t</a>()) :: <a href="BACnet.Protocol.ObjectIdentifier.html#t:t/0">BACnet.Protocol.ObjectIdentifier.t</a>()</pre>
+
+      </div>
+
+<p>Get the BACnet object identifier.</p>
+  </section>
+</section>
+<section class="detail" id="get_properties/1">
+
+  <div class="detail-header">
+    <a href="#get_properties/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_properties(object)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_properties(<a href="#t:t/0">t</a>()) :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Get the list of properties the object has.</p>
+  </section>
+</section>
+<section class="detail" id="get_property/2">
+
+  <div class="detail-header">
+    <a href="#get_property/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_property(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_property(
+  <a href="#t:t/0">t</a>(),
+  <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()
+) ::
+  {:ok, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Get a property's value from an object.</p>
+  </section>
+</section>
+<section class="detail" id="has_property?/2">
+
+  <div class="detail-header">
+    <a href="#has_property?/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">has_property?(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> has_property?(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()) :: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks if the given object has the given property.</p><p>See <a href="BACnet.Protocol.ObjectsUtility.html#has_property?/2"><code class="inline">BACnet.Protocol.ObjectsUtility.has_property?/2</code></a> for implementation details.</p>
+  </section>
+</section>
+<section class="detail" id="property_writable?/2">
+
+  <div class="detail-header">
+    <a href="#property_writable?/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">property_writable?(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L359" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> property_writable?(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()) ::
+  <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()</pre>
+
+          <pre translate="no"><span class="attribute">@spec</span> property_writable?(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()) ::
+  <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Checks if the given property is writable.</p><p>Check <a href="BACnet.Protocol.ObjectsUtility.html#property_writable?/2"><code class="inline">BACnet.Protocol.ObjectsUtility.property_writable?/2</code></a> for a basic run-down.</p>
+  </section>
+</section>
+<section class="detail" id="remove_property/2">
+
+  <div class="detail-header">
+    <a href="#remove_property/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">remove_property(object, property)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> remove_property(
+  <a href="#t:t/0">t</a>(),
+  <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>() | <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">non_neg_integer</a>()
+) ::
+  {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Removes an optional property from an object. This function is idempotent.
+Remote objects can not be mutated using this operation.</p><p>Please note that properties of services can <strong>not</strong> be dynamically removed and instead
+the object must be newly created using <a href="#create/4"><code class="inline">create/4</code></a>. Required properties can not be removed.</p>
+  </section>
+</section>
+<section class="detail" id="update_property/3">
+
+  <div class="detail-header">
+    <a href="#update_property/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">update_property(object, property, value)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> update_property(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>(), <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | <a href="#t:property_update_error/0">property_update_error</a>()</pre>
+
+      </div>
+
+<p>Updates a property of an object.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions-lifecycle" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions-lifecycle">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions Lifecycle</span>
+    </h2>
+
+    <div class="functions-lifecycle-list">
+<section class="detail" id="execute/2">
+
+  <div class="detail-header">
+    <a href="#execute/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">execute(object, context)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L379" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> execute(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  {:ok, <a href="BACnet.Protocol.ObjectExecution.Result.html#t:t/1">BACnet.Protocol.ObjectExecution.Result.t</a>(<a href="#t:t/0">t</a>())} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+          <pre translate="no"><span class="attribute">@spec</span> execute(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  {:ok, <a href="BACnet.Protocol.ObjectExecution.Result.html#t:t/1">BACnet.Protocol.ObjectExecution.Result.t</a>(<a href="#t:t/0">t</a>())} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Evaluates a monitored sample or returns the last evaluated read snapshot.</p><p>Evaluation acquires the required properties through the host, evaluates
+the configured algorithms, and returns any transition and next deadline.
+Read steps preserve the pending deadline and clear the previous
+transition from the returned result.</p>
+  </section>
+</section>
+<section class="detail" id="prepare_write/3">
+
+  <div class="detail-header">
+    <a href="#prepare_write/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">prepare_write(object, candidate, context)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L337" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> prepare_write(<a href="#t:t/0">t</a>(), <a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+          <pre translate="no"><span class="attribute">@spec</span> prepare_write(<a href="#t:t/0">t</a>(), <a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Checks write access before committing an Event Enrollment candidate.</p><p>An initialized inhibit reference controls Event_Algorithm_Inhibit.
+Remote snapshots return an operation-not-available error.</p>
+  </section>
+</section>
+<section class="detail" id="validate_execution/2">
+
+  <div class="detail-header">
+    <a href="#validate_execution/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">validate_execution(object, context)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L294" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> validate_execution(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  :ok | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+          <pre translate="no"><span class="attribute">@spec</span> validate_execution(<a href="#t:t/0">t</a>(), <a href="BACnet.Protocol.ObjectExecution.Context.html#t:t/0">BACnet.Protocol.ObjectExecution.Context.t</a>()) ::
+  :ok | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Checks selected algorithms, parameters and property references.</p><p>An enabled local enrollment rejects unsupported algorithms and invalid
+configuration before acquiring a monitored value. Remote snapshots and
+enrollments with detection disabled pass preflight.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions-metadata" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions-metadata">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions Metadata</span>
+    </h2>
+
+    <div class="functions-metadata-list">
+<section class="detail" id="get_all_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_all_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_all_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_all_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of all properties this object supports.</p>
+  </section>
+</section>
+<section class="detail" id="get_annotation/1">
+
+  <div class="detail-header">
+    <a href="#get_annotation/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_annotation(name)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_annotation(<a href="#t:property_name/0">property_name</a>()) :: [<a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the annotations for the given property name.</p>
+  </section>
+</section>
+<section class="detail" id="get_annotations/0">
+
+  <div class="detail-header">
+    <a href="#get_annotations/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_annotations()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_annotations() :: [{name :: <a href="#t:property_name/0">property_name</a>(), values :: [<a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()]}]</pre>
+
+      </div>
+
+<p>Auto generated function to get the list of annotations for each property.</p>
+  </section>
+</section>
+<section class="detail" id="get_cov_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_cov_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_cov_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_cov_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of properties used for COV reporting.</p>
+  </section>
+</section>
+<section class="detail" id="get_intrinsic_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_intrinsic_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_intrinsic_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_intrinsic_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of intrinsic properties.</p>
+  </section>
+</section>
+<section class="detail" id="get_optional_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_optional_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_optional_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_optional_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of optional properties.</p>
+  </section>
+</section>
+<section class="detail" id="get_properties_type_map/0">
+
+  <div class="detail-header">
+    <a href="#get_properties_type_map/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_properties_type_map()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_properties_type_map() :: <a href="https://elixir.hexdocs.pm/typespecs.html#basic-types">map</a>()</pre>
+
+      </div>
+
+<p>Auto generated function to get a map of property name to type.</p>
+  </section>
+</section>
+<section class="detail" id="get_protected_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_protected_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_protected_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_protected_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of protected properties.</p><p>Protected is an annotation and the object modules prevent writing to
+this property directly in code. The protected properties are either
+written on creation or updated automatically depending on other properties
+being written to. Some properties are only written once at creation and
+never updated.</p>
+  </section>
+</section>
+<section class="detail" id="get_readonly_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_readonly_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_readonly_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_readonly_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of readonly properties.</p><p>Readonly is only an annotation that the property should be write protected
+on the BACnet side, there is no actual write protection in the object.
+This is a hint to the device server. If you need actual write protection, see <code class="inline">protected</code>.</p>
+  </section>
+</section>
+<section class="detail" id="get_required_properties/0">
+
+  <div class="detail-header">
+    <a href="#get_required_properties/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_required_properties()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_required_properties() :: [<a href="BACnet.Protocol.Constants.html#t:property_identifier/0">BACnet.Protocol.Constants.property_identifier</a>()]</pre>
+
+      </div>
+
+<p>Auto generated function to get the names of required properties.</p>
+  </section>
+</section>
+<section class="detail" id="supports_intrinsic/0">
+
+  <div class="detail-header">
+    <a href="#supports_intrinsic/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">supports_intrinsic()</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L159" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> supports_intrinsic() :: <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Auto generated function to check whether the object type supports intrinsic reporting.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions-operational" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions-operational">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions Operational</span>
+    </h2>
+
+    <div class="functions-operational-list">
+<section class="detail" id="acknowledge/3">
+
+  <div class="detail-header">
+    <a href="#acknowledge/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">acknowledge(object, transition, timestamp)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L435" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> acknowledge(
+  <a href="#t:t/0">t</a>(),
+  <a href="BACnet.Protocol.Constants.html#t:event_transition_bit/0">BACnet.Protocol.Constants.event_transition_bit</a>(),
+  <a href="BACnet.Protocol.BACnetTimestamp.html#t:t/0">BACnet.Protocol.BACnetTimestamp.t</a>()
+) :: {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://elixir.hexdocs.pm/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Acknowledges the most recent event of the given transition type after matching
+its timestamp. The host handles service authentication, validation of the
+acknowledged event state, and distribution of the acknowledgment notification.</p>
+  </section>
+</section>
+<section class="detail" id="transition/1">
+
+  <div class="detail-header">
+    <a href="#transition/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">transition(result)</h1>
+
+
+        <a href="https://github.com/bacnet-ex/bacstack/blob/master/lib/bacnet/protocol/object_types/event_enrollment.ex#L417" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> transition(<a href="BACnet.Protocol.ObjectExecution.Result.html#t:t/1">BACnet.Protocol.ObjectExecution.Result.t</a>(<a href="#t:t/0">t</a>())) :: <a href="#t:transition/0">transition</a>() | nil</pre>
+
+      </div>
+
+<p>Returns the transition produced by this execution, if any. A subsequent read or
+evaluation clears the transition from its own result.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0-dev.2">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0-dev.2">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.4) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>
