@@ -114,7 +114,7 @@ defmodule BACnet.Stack.Transport.IPv4TransportTest do
     {:ok, peer, peer_port} = peer_socket()
 
     assert :ok = IPv4Transport.send(portal, {{127, 0, 0, 1}, peer_port}, <<16, 8>>)
-    assert <<0x81, 0x0A, _len::16, rest::binary>> = recv_udp(peer)
+    assert <<0x81, 0x0A, _len::size(16), rest::binary>> = recv_udp(peer)
     assert binary_part(rest, byte_size(rest) - 2, 2) == <<16, 8>>
 
     who_is = ApduFactory.who_is()
@@ -122,7 +122,7 @@ defmodule BACnet.Stack.Transport.IPv4TransportTest do
     assert :ok =
              IPv4Transport.send(portal, {{127, 0, 0, 1}, peer_port}, who_is, is_broadcast: true)
 
-    assert <<0x81, 0x0B, _len::16, rest::binary>> = recv_udp(peer)
+    assert <<0x81, 0x0B, _len::size(16), rest::binary>> = recv_udp(peer)
     assert binary_part(rest, byte_size(rest) - 2, 2) == encoded(who_is)
 
     assert :ok =
@@ -132,7 +132,7 @@ defmodule BACnet.Stack.Transport.IPv4TransportTest do
                source: %NpciTarget{net: 1, address: 9}
              )
 
-    assert <<0x81, 0x09, _len::16, 1, 2, rest::binary>> = recv_udp(peer)
+    assert <<0x81, 0x09, _len::size(16), 1, 2, rest::binary>> = recv_udp(peer)
     assert binary_part(rest, byte_size(rest) - 2, 2) == <<16, 8>>
 
     assert :ok =
@@ -146,7 +146,7 @@ defmodule BACnet.Stack.Transport.IPv4TransportTest do
     assert :ok =
              IPv4Transport.send(portal, {{127, 0, 0, 1}, peer_port}, <<>>, bvlc: <<0x0A>>)
 
-    assert <<0x81, 0x0A, _len::16, _rest::binary>> = recv_udp(peer)
+    assert <<0x81, 0x0A, _len::size(16), _rest::binary>> = recv_udp(peer)
 
     assert :ok =
              IPv4Transport.send(portal, {{255, 255, 255, 255}, peer_port}, [<<16>>, 8], [])
@@ -299,8 +299,8 @@ defmodule BACnet.Stack.Transport.IPv4TransportTest do
 
     log =
       capture_log(fn ->
-        push(peer, port, <<0x81, 0x0A, 99::16, 0x01, 0x00>>)
-        push(peer, port, <<0x81, 0x00, 6::16, 0xFF, 0xFF>>)
+        push(peer, port, <<0x81, 0x0A, 99::size(16), 0x01, 0x00>>)
+        push(peer, port, <<0x81, 0x00, 6::size(16), 0xFF, 0xFF>>)
         push(peer, port, frame(0x0A, <<0xFF, 0x00>>))
         refute_receive {:bacnet_transport, _protocol, _source, _message, _transport}, 80
       end)
@@ -309,7 +309,7 @@ defmodule BACnet.Stack.Transport.IPv4TransportTest do
 
     push(peer, port, <<1, 2, 3>>)
     push(peer, port, <<0x81, 0x0A>> <> :binary.copy(<<0>>, 1600))
-    push(peer, port, frame(0x0A, <<0x01, 0x20, 0xFFFF::16, 0, 0, 16, 8>>))
+    push(peer, port, frame(0x0A, <<0x01, 0x20, 0xFFFF::size(16), 0, 0, 16, 8>>))
     refute_receive {:bacnet_transport, _, _, _, _}, 80
 
     push(peer, port, unicast_who_is())
@@ -401,7 +401,7 @@ defmodule BACnet.Stack.Transport.IPv4TransportTest do
     {:ok, peer, peer_port} = peer_socket()
 
     assert :ok = IPv4Transport.send(portal, {{127, 0, 0, 1}, peer_port}, <<16, 8>>, [])
-    assert <<0x81, 0x0B, _len::16, _rest::binary>> = recv_udp(peer)
+    assert <<0x81, 0x0B, _len::size(16), _rest::binary>> = recv_udp(peer)
 
     assert :ok = IPv4Transport.close(transport)
     assert :persistent_term.get({IPv4Transport, portal}, :missing) == :missing
@@ -643,7 +643,7 @@ defmodule BACnet.Stack.Transport.IPv4TransportTest do
   end
 
   defp frame(function, payload) do
-    <<0x81, function, 4 + byte_size(payload)::16, payload::binary>>
+    <<0x81, function, 4 + byte_size(payload)::size(16), payload::binary>>
   end
 
   defp unicast_who_is() do

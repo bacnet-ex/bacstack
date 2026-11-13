@@ -70,7 +70,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.OctetStringValueTest do
     stored = initialize(%{present_value: <<0>>})
 
     assert {:error, {:invalid_property_type, :present_value}} =
-             write(stored, :present_value, <<1::1>>, :application_write)
+             write(stored, :present_value, <<1::size(1)>>, :application_write)
 
     payload = <<0, 255, 0, 254, 0>>
     {:ok, updated} = write(stored, :present_value, payload, :application_write)
@@ -139,7 +139,11 @@ defmodule BACnet.Test.Protocol.ObjectTypes.OctetStringValueTest do
     ctx = context(stored, :periodic)
     wrong_id = %{stored.state.identifier | instance: 11}
 
-    for state <- [nil, %{stored.state | value: <<1::1>>}, %{stored.state | identifier: wrong_id}] do
+    for state <- [
+          nil,
+          %{stored.state | value: <<1::size(1)>>},
+          %{stored.state | identifier: wrong_id}
+        ] do
       assert {:error, :invalid_execution_state} =
                Lifecycle.execute(stored.object, %{ctx | state: state})
     end

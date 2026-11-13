@@ -380,7 +380,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.LoopTest do
   end
 
   test "zero constants disable only their own terms, including negative zero" do
-    <<negative_zero::float-64>> = <<1::1, 0::63>>
+    <<negative_zero::float-64>> = <<1::size(1), 0::size(63)>>
 
     for zero <- [0.0, negative_zero],
         {properties, expected} <- [

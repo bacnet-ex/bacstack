@@ -2082,7 +2082,7 @@ defmodule BACnet.Stack.TrendLoggerTest do
           Encoding.create!({:enumerated, 1}),
           Encoding.create!({:unsigned_integer, 4}),
           Encoding.create!({:signed_integer, -2}),
-          Encoding.create!({:bitstring, {1, <<1::1>>}}),
+          Encoding.create!({:bitstring, {1, <<1::size(1)>>}}),
           Encoding.create!({:character_string, "log"}),
           Encoding.create!({:octet_string, <<9>>}),
           Encoding.create!({:null, nil})

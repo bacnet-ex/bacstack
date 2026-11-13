@@ -165,7 +165,7 @@ defmodule BACnet.Protocol.ValueSourceTest do
             {"1", @mac},
             {0, nil},
             {0, [1, 2, 3]},
-            {0, <<1::1>>}
+            {0, <<1::size(1)>>}
           ] do
         source = %ValueSource{
           type: :address,
@@ -296,7 +296,7 @@ defmodule BACnet.Protocol.ValueSourceTest do
             {0, :broadcast},
             {0, nil},
             {0, [1, 2]},
-            {0, <<1::1>>}
+            {0, <<1::size(1)>>}
           ] do
         assert {:error, :invalid_tags} =
                  ValueSource.parse(
@@ -379,7 +379,7 @@ defmodule BACnet.Protocol.ValueSourceTest do
             %RecipientAddress{network: 0.0, address: @mac},
             %RecipientAddress{network: nil, address: @mac},
             %RecipientAddress{network: 0, address: nil},
-            %RecipientAddress{network: 0, address: <<1::1>>}
+            %RecipientAddress{network: 0, address: <<1::size(1)>>}
           ] do
         refute ValueSource.valid?(%ValueSource{type: :address, object: nil, address: address})
       end

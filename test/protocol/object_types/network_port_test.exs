@@ -575,7 +575,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.NetworkPortTest do
 
   test "IPv4 encoder supports port suffixes at both port boundaries" do
     for port <- [0, 65_535] do
-      expected = <<192, 0, 2, 1, port::16>>
+      expected = <<192, 0, 2, 1, port::size(16)>>
 
       assert {:ok, %Encoding{type: :octet_string, value: ^expected}} =
                ObjectsUtility.cast_value_to_property(

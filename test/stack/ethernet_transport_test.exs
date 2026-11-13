@@ -183,14 +183,14 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
     frame = await_outgoing(peer, @peer_mac, @lo_mac)
     assert :binary.part(frame, 0, 6) == @peer_mac
     assert :binary.part(frame, 6, 6) == @lo_mac
-    assert :binary.part(frame, 12, 9) == <<7::16, @llc, 1, 0, 16, 8>>
+    assert :binary.part(frame, 12, 9) == <<7::size(16), @llc, 1, 0, 16, 8>>
 
     drain_peer(peer)
     assert :ok = EthernetTransport.send(portal, @broadcast, [16, 8], skip_headers: true)
     skipped = await_outgoing(peer, @broadcast, @lo_mac)
     assert :binary.part(skipped, 0, 6) == @broadcast
     assert :binary.part(skipped, 6, 6) == @lo_mac
-    assert :binary.part(skipped, 12, 4) == <<2::16, 16, 8>>
+    assert :binary.part(skipped, 12, 4) == <<2::size(16), 16, 8>>
 
     encoded = IO.iodata_to_binary(EncoderProtocol.encode(ApduFactory.who_is()))
     drain_peer(peer)
@@ -215,10 +215,10 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
         :ok = EthernetTransport.send(portal, second_destination, <<16, 9>>)
       end)
 
-    assert <<@peer_mac, @lo_mac, 7::16, @llc, 1, 0, 16, 8>> ==
+    assert <<@peer_mac, @lo_mac, 7::size(16), @llc, 1, 0, 16, 8>> ==
              await_outgoing(peer, @peer_mac, @lo_mac)
 
-    assert <<second_destination::binary, @lo_mac, 7::16, @llc, 1, 0, 16, 9>> ==
+    assert <<second_destination::binary, @lo_mac, 7::size(16), @llc, 1, 0, 16, 9>> ==
              await_outgoing(peer, second_destination, @lo_mac)
 
     assert :ok = Task.await(task)
@@ -258,8 +258,8 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
     transport = start_lo!()
     peer = open_peer!(transport)
     nonce = System.unique_integer([:positive, :monotonic])
-    source_mac = <<2, nonce::32, 1>>
-    probe_mac = <<2, nonce::32, 2>>
+    source_mac = <<2, nonce::size(32), 1>>
+    probe_mac = <<2, nonce::size(32), 2>>
 
     log =
       capture_log(fn ->
@@ -384,7 +384,13 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
   defp open_peer!(transport) do
     {_socket, ifindex, _mac} = EthernetTransport.get_portal(transport)
     {:ok, peer} = :socket.open(17, 3, 3)
-    :ok = :socket.bind(peer, %{family: 17, addr: <<3::16, ifindex::32-native, 0::112>>})
+
+    :ok =
+      :socket.bind(peer, %{
+        family: 17,
+        addr: <<3::size(16), ifindex::size(32)-native, 0::size(112)>>
+      })
+
     :socket.setopt(peer, :socket, :rcvbuf, 1_048_576)
 
     on_exit(fn ->
@@ -401,7 +407,7 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
   defp write_frame!(peer, transport, dst, src, payload, len \\ nil) do
     {_socket, ifindex, _mac} = EthernetTransport.get_portal(transport)
     len = len || byte_size(payload)
-    frame = [dst, src, <<len::16>>, @llc, payload]
+    frame = [dst, src, <<len::size(16)>>, @llc, payload]
     assert :ok = :socket.sendto(peer, frame, packet_addr(ifindex), [], 1_000)
   end
 
@@ -411,7 +417,7 @@ defmodule BACnet.Stack.Transport.EthernetTransportTest do
   end
 
   defp packet_addr(ifindex) do
-    %{family: 17, addr: <<0::16, ifindex::32-native, 0::128>>}
+    %{family: 17, addr: <<0::size(16), ifindex::size(32)-native, 0::size(128)>>}
   end
 
   defp await_payload(source, transport, deadline \\ System.monotonic_time(:millisecond) + 1_000) do

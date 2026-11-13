@@ -299,7 +299,7 @@ defmodule BACnet.Stack.BBMDTest do
     assert opts[:bvlc] ==
              <<Constants.macro_by_name(:bvlc_result_purpose, :bvlc_read_foreign_device_table_ack)>>
 
-    assert <<192, 168, 5, 5, 47_810::16, 60::16, remaining::16>> = data
+    assert <<192, 168, 5, 5, 47_810::size(16), 60::size(16), remaining::size(16)>> = data
     assert remaining in 85..90
 
     bad = {{1, 2, 3}, 47_808}
@@ -331,10 +331,10 @@ defmodule BACnet.Stack.BBMDTest do
                  :bvlc_read_broadcast_distribution_table_ack
                )>>
 
-    assert {:ok, <<192, 168, 1, 20, 47_808::16, 255, 255, 255, 0>>} ==
+    assert {:ok, <<192, 168, 1, 20, 47_808::size(16), 255, 255, 255, 0>>} ==
              BroadcastDistributionTableEntry.encode(entry)
 
-    assert data == <<192, 168, 1, 20, 47_808::16, 255, 255, 255, 0>>
+    assert data == <<192, 168, 1, 20, 47_808::size(16), 255, 255, 255, 0>>
 
     {_transport, bare} = start_client(@local, @broadcast)
 

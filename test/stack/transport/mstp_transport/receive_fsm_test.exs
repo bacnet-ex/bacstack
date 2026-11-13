@@ -261,7 +261,7 @@ defmodule BACnet.Stack.Transport.MstpTransport.ReceiveFSMTest do
   end
 
   defp too_long_frame(type, dest, src) do
-    header = <<type, dest, src, 502::16>>
+    header = <<type, dest, src, 502::size(16)>>
     header_crc = 0xFF - EncodingTools.calculate_header_crc(header, 0xFF)
     <<0x55, 0xFF, header::binary, header_crc, 0::size(504 * 8)>>
   end
@@ -272,7 +272,7 @@ defmodule BACnet.Stack.Transport.MstpTransport.ReceiveFSMTest do
   end
 
   defp bad_cobs_frame(type, dest, src) do
-    header = <<type, dest, src, 3::16>>
+    header = <<type, dest, src, 3::size(16)>>
     header_crc = 0xFF - EncodingTools.calculate_header_crc(header, 0xFF)
     <<0x55, 0xFF, header::binary, header_crc, 1, 1, 1, 1, 1>>
   end
@@ -280,13 +280,13 @@ defmodule BACnet.Stack.Transport.MstpTransport.ReceiveFSMTest do
   defp cobs_frame(type, dest, src, data) do
     {:ok, cobs} = EncodingTools.encode_cobs(data)
     cobs = IO.iodata_to_binary(cobs)
-    header = <<type, dest, src, byte_size(cobs) - 2::16>>
+    header = <<type, dest, src, byte_size(cobs) - 2::size(16)>>
     header_crc = 0xFF - EncodingTools.calculate_header_crc(header, 0xFF)
     <<0x55, 0xFF, header::binary, header_crc, cobs::binary>>
   end
 
   defp data_frame(type, dest, src, data) do
-    header = <<type, dest, src, byte_size(data)::16>>
+    header = <<type, dest, src, byte_size(data)::size(16)>>
     header_crc = 0xFF - EncodingTools.calculate_header_crc(header, 0xFF)
     data_crc = 0xFFFF - EncodingTools.calculate_data_crc(data, 0xFFFF)
     <<0x55, 0xFF, header::binary, header_crc, data::binary, data_crc::little-16>>

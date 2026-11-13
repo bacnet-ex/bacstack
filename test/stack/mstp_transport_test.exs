@@ -1375,7 +1375,7 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
     # frames and several frames in a single message. Keep unread bytes per peer.
     deadline = System.monotonic_time(:millisecond) + 1_000
     header = read_uart(peer, 8, deadline)
-    assert <<0x55, 0xFF, _type, _destination, _source, length::16, _crc>> = header
+    assert <<0x55, 0xFF, _type, _destination, _source, length::size(16), _crc>> = header
     payload_length = if length > 0, do: length + 2, else: 0
     header <> read_uart(peer, payload_length, deadline)
   end
@@ -1452,13 +1452,13 @@ defmodule BACnet.Stack.Transport.MstpTransportTest do
   defp cobs_frame(type, dest, src, data) do
     {:ok, cobs} = EncodingTools.encode_cobs(data)
     cobs = IO.iodata_to_binary(cobs)
-    header = <<type, dest, src, byte_size(cobs) - 2::16>>
+    header = <<type, dest, src, byte_size(cobs) - 2::size(16)>>
     header_crc = 0xFF - EncodingTools.calculate_header_crc(header, 0xFF)
     <<0x55, 0xFF, header::binary, header_crc, cobs::binary>>
   end
 
   defp data_frame(type, dest, src, data) do
-    header = <<type, dest, src, byte_size(data)::16>>
+    header = <<type, dest, src, byte_size(data)::size(16)>>
     header_crc = 0xFF - EncodingTools.calculate_header_crc(header, 0xFF)
     data_crc = 0xFFFF - EncodingTools.calculate_data_crc(data, 0xFFFF)
     <<0x55, 0xFF, header::binary, header_crc, data::binary, data_crc::little-16>>

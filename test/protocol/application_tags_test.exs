@@ -373,7 +373,7 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
   test "decode character string DBCS example from Clause 20.2.9" do
     # The example's encoded bytes use a lowercase 's' in "string".
     text = "This is a BACnet string!"
-    value = <<1, 850::16, text::binary>>
+    value = <<1, 850::size(16), text::binary>>
 
     assert {:ok, {:character_string, ^text}, <<0x11>>} =
              ApplicationTags.decode(<<0x75, byte_size(value), value::binary, 0x11>>)
@@ -382,20 +382,25 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
   end
 
   test "decode character string DBCS selects the declared codepage" do
-    assert {:ok, "Æ"} = ApplicationTags.decode_value(7, <<1, 850::16, 0x92>>)
+    assert {:ok, "Æ"} = ApplicationTags.decode_value(7, <<1, 850::size(16), 0x92>>)
 
     assert {:ok, "日本語"} =
-             ApplicationTags.decode_value(7, <<1, 932::16, 0x93, 0xFA, 0x96, 0x7B, 0x8C, 0xEA>>)
+             ApplicationTags.decode_value(
+               7,
+               <<1, 932::size(16), 0x93, 0xFA, 0x96, 0x7B, 0x8C, 0xEA>>
+             )
 
     assert {:ok, {:character_string, "日本語"}, <<0x11>>} =
              ApplicationTags.decode(
-               <<0x75, 9, 1, 932::16, 0x93, 0xFA, 0x96, 0x7B, 0x8C, 0xEA, 0x11>>
+               <<0x75, 9, 1, 932::size(16), 0x93, 0xFA, 0x96, 0x7B, 0x8C, 0xEA, 0x11>>
              )
   end
 
   test "decode character string DBCS allows an empty string after the codepage" do
-    assert {:ok, {:character_string, ""}, ""} = ApplicationTags.decode(<<0x73, 1, 850::16>>)
-    assert {:ok, ""} = ApplicationTags.decode_value(7, <<1, 850::16>>)
+    assert {:ok, {:character_string, ""}, ""} =
+             ApplicationTags.decode(<<0x73, 1, 850::size(16)>>)
+
+    assert {:ok, ""} = ApplicationTags.decode_value(7, <<1, 850::size(16)>>)
   end
 
   test "decode character string DBCS rejects an incomplete codepage" do
@@ -409,12 +414,12 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
 
   test "decode character string DBCS rejects an unsupported codepage" do
     assert {:error, :unknown_character_string_encoding} =
-             ApplicationTags.decode_value(7, <<1, 65_535::16, "Hello">>)
+             ApplicationTags.decode_value(7, <<1, 65_535::size(16), "Hello">>)
   end
 
   test "decode character string DBCS rejects invalid bytes for the declared codepage" do
     assert {:error, "Invalid bytes for encoding"} =
-             ApplicationTags.decode_value(7, <<1, 932::16, 0x93>>)
+             ApplicationTags.decode_value(7, <<1, 932::size(16), 0x93>>)
   end
 
   test "decode character string JIS-X invalid bytes for encoding" do
