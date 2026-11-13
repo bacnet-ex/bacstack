@@ -298,6 +298,7 @@ defmodule BACnet.Protocol.ObjectTypes.AnalogInput do
   Prepare and execute the candidate with an application-write Present_Value context before
   exposing it. On error, no partial object is returned. Remote snapshots cannot receive input.
   """
+  @doc group: "Functions Operational"
   @spec set_input(t(), ApplicationTags.ieee_float() | :undefined) :: {:ok, t()} | {:error, term()}
   def set_input(object, value)
 

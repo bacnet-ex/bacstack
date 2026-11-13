@@ -558,6 +558,7 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
   to call this after the restart and final system status update, and send the request
   to each returned recipient. Calling this function performs no network I/O.
   """
+  @doc group: "Functions Operational"
   @spec restart_notification(t()) ::
           {:ok, {recipients :: [Recipient.t()], notification :: UnconfirmedCovNotification.t()}}
           | {:ok, nil}
@@ -595,6 +596,7 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
   Only a due timer or periodic step produces requests. The returned service
   structures contain the local or UTC date and time sampled for that step.
   """
+  @doc group: "Functions Operational"
   @spec time_synchronization_requests(Result.t(t())) :: [time_sync_request()]
   def time_synchronization_requests(result)
 
@@ -900,6 +902,7 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
   > and will be converted to a map. If you use this map multiple times in a row,
   > consider storing it in a variable as the conversion can be computational heavy.
   """
+  @doc group: "Functions Metadata"
   @spec get_vendor_ids() :: %{optional(non_neg_integer()) => String.t()}
   def get_vendor_ids() do
     get_vendor_ids_arr()

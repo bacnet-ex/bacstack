@@ -1,12 +1,26 @@
 defmodule BACnet.Test.Protocol.ObjectTypes.BinaryValueTest do
+  alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.BACnetDateTime
+  alias BACnet.Protocol.BACnetTime
+  alias BACnet.Protocol.DaysOfWeek
+  alias BACnet.Protocol.Destination
+  alias BACnet.Protocol.DeviceObjectPropertyRef
+  alias BACnet.Protocol.EventTransitionBits
+  alias BACnet.Protocol.NotificationParameters
   alias BACnet.Protocol.DeviceObjectPropertyRef
   alias BACnet.Protocol.ObjectExecution.Context
   alias BACnet.Protocol.ObjectExecution.EventReporting
   alias BACnet.Protocol.ObjectExecution.Lifecycle
   alias BACnet.Protocol.ObjectExecution.Result
   alias BACnet.Protocol.ObjectExecution.Wakeup
+  alias BACnet.Protocol.ObjectIdentifier
+  alias BACnet.Protocol.ObjectPropertyRef
+  alias BACnet.Protocol.ObjectsMacro
   alias BACnet.Protocol.ObjectTypes.BinaryValue
+  alias BACnet.Protocol.ObjectTypes.NotificationClass
+  alias BACnet.Protocol.PropertyState
+  alias BACnet.Protocol.Recipient
+  alias BACnet.Protocol.Services.UnconfirmedEventNotification
   alias BACnet.Test.Support.Protocol.ObjectExecutionTestHost, as: Host
 
   use ExUnit.Case, async: true
@@ -427,6 +441,249 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryValueTest do
     assert EventReporting.transition(tick) == nil
   end
 
+  test "both alarm delays restart after interruption and use monotonic time" do
+    object =
+      object(%{alarm_value: true, time_delay: 2, time_delay_normal: 1}, intrinsic_reporting: true)
+
+    {:ok, initial} = BinaryValue.execute(object, context(nil, 0, :initialization))
+    {:ok, pending} = sample(initial, true, 100)
+    assert pending.next_execution.monotonic_time == 2100
+    {:ok, cancelled} = sample(pending, false, 500)
+    assert cancelled.next_execution == nil
+    {:ok, pending} = sample(cancelled, true, 700)
+    assert pending.next_execution.monotonic_time == 2700
+
+    early = %{context(pending, 2100, :timer) | now: DateTime.add(@now, 100_000, :second)}
+    assert {:ok, early} = BinaryValue.execute(pending.object, early)
+    assert EventReporting.transition(early) == nil
+    assert early.next_execution.monotonic_time == 2700
+    assert {:ok, alarm} = BinaryValue.execute(early.object, context(early, 2700, :timer))
+
+    assert %{
+             event_type: :change_of_state,
+             to_state: :offnormal,
+             event_values: %NotificationParameters.ChangeOfState{
+               new_state: %PropertyState{type: :binary_value, value: true}
+             }
+           } =
+             EventReporting.transition(alarm)
+
+    {:ok, pending} = sample(alarm, false, 2800)
+    assert pending.next_execution.monotonic_time == 3800
+    {:ok, cancelled} = sample(pending, true, 3000)
+    assert cancelled.next_execution == nil
+    {:ok, pending} = sample(cancelled, false, 3100)
+    assert pending.next_execution.monotonic_time == 4100
+    assert {:ok, normal} = BinaryValue.execute(pending.object, context(pending, 4100, :timer))
+    assert %{transition: :to_normal, to_state: :normal} = EventReporting.transition(normal)
+    refute normal.object.status_flags.in_alarm
+  end
+
+  test "initialization restores an offnormal input and evaluates recovery from the current reading" do
+    properties = %{event_state: :offnormal, alarm_value: true, time_delay_normal: 2}
+    active = object(Map.put(properties, :present_value, true), intrinsic_reporting: true)
+    cleared = object(Map.put(properties, :present_value, false), intrinsic_reporting: true)
+
+    assert {:ok, stored} = BinaryValue.execute(active, context(nil, 100, :initialization))
+    assert stored.object.event_state == :offnormal
+    assert EventReporting.transition(stored) == nil
+    assert stored.next_execution == nil
+
+    assert {:ok, pending} = BinaryValue.execute(cleared, context(nil, 100, :initialization))
+    assert pending.object.event_state == :offnormal
+    assert EventReporting.transition(pending) == nil
+    assert pending.next_execution.monotonic_time == 2100
+
+    assert {:ok, normal} =
+             BinaryValue.execute(pending.object, context(pending, 2100, :timer))
+
+    assert %{from_state: :offnormal, to_state: :normal} = EventReporting.transition(normal)
+  end
+
+  test "history ticks retain a pending alarm and request the earliest deadline" do
+    object =
+      object(%{alarm_value: true, elapsed_active_time: 0, time_delay: 2},
+        intrinsic_reporting: true
+      )
+
+    {:ok, initial} = BinaryValue.execute(object, context(nil, 0, :initialization))
+    {:ok, pending} = sample(initial, true, 100)
+    assert pending.next_execution.monotonic_time == 1100
+    {:ok, tick} = BinaryValue.execute(pending.object, context(pending, 1100, :timer))
+    assert tick.object.elapsed_active_time == 1
+    assert tick.next_execution.monotonic_time == 2100
+    assert EventReporting.transition(tick) == nil
+    {:ok, alarm} = BinaryValue.execute(tick.object, context(tick, 2100, :timer))
+    assert alarm.object.elapsed_active_time == 2
+    assert %{to_state: :offnormal} = EventReporting.transition(alarm)
+    assert alarm.next_execution.monotonic_time == 3100
+  end
+
+  test "inhibition cancels delays, clears alarms and restarts timing after release" do
+    object = object(%{alarm_value: true, time_delay: 1}, intrinsic_reporting: true)
+    {:ok, initial} = BinaryValue.execute(object, context(nil, 0, :initialization))
+    {:ok, pending} = sample(initial, true, 100)
+    {:ok, inhibited} = write(pending, :event_algorithm_inhibit, true, 200)
+    assert inhibited.next_execution == nil
+    {:ok, released} = write(inhibited, :event_algorithm_inhibit, false, 300)
+    assert released.next_execution.monotonic_time == 1300
+    {:ok, alarm} = BinaryValue.execute(released.object, context(released, 1300, :timer))
+    {:ok, cleared} = write(alarm, :event_algorithm_inhibit, true, 1400)
+    assert %{to_state: :normal} = EventReporting.transition(cleared)
+
+    {:ok, disabled} = write(alarm, :event_detection_enable, false, 1400)
+    assert disabled.object.event_state == :normal
+
+    assert disabled.object.event_timestamps.to_offnormal ==
+             ObjectsMacro.get_default_bacnet_timestamp()
+
+    assert disabled.object.event_message_texts.to_offnormal == ""
+    assert disabled.object.acked_transitions.to_offnormal
+    assert EventReporting.transition(disabled) == nil
+  end
+
+  test "linked inhibition follows a local property and holds its value if a read fails" do
+    reference = %ObjectPropertyRef{
+      object_identifier: %ObjectIdentifier{type: :binary_value, instance: 25},
+      property_identifier: :present_value,
+      property_array_index: nil
+    }
+
+    object =
+      object(%{alarm_value: true, present_value: true, event_algorithm_inhibit_ref: reference},
+        intrinsic_reporting: true
+      )
+
+    ctx = %{
+      context(nil, 0, :initialization)
+      | read_property: fn ref ->
+          assert %DeviceObjectPropertyRef{object_identifier: id, device_identifier: nil} = ref
+          assert id == reference.object_identifier
+          {:ok, true}
+        end
+    }
+
+    assert {:ok, inhibited} = BinaryValue.execute(object, ctx)
+    assert inhibited.object.event_algorithm_inhibit
+    assert inhibited.object.event_state == :normal
+    ctx = %{context(inhibited, 100, :periodic) | read_property: fn _ref -> {:error, :timeout} end}
+    assert {:ok, still_inhibited} = BinaryValue.execute(inhibited.object, ctx)
+    assert still_inhibited.object.event_algorithm_inhibit
+    assert EventReporting.transition(still_inhibited) == nil
+    ctx = %{context(still_inhibited, 200, :periodic) | read_property: fn _ref -> {:ok, false} end}
+    assert {:ok, alarm} = BinaryValue.execute(still_inhibited.object, ctx)
+    assert %{to_state: :offnormal} = EventReporting.transition(alarm)
+  end
+
+  test "faults take precedence over alarms and recovery starts a new alarm delay" do
+    object =
+      object(
+        %{alarm_value: true, present_value: true, time_delay: 2, reliability: :no_fault_detected},
+        intrinsic_reporting: true
+      )
+
+    {:ok, pending} = BinaryValue.execute(object, context(nil, 0, :initialization))
+    {:ok, fault} = write(pending, :reliability, :no_sensor, 100)
+
+    assert %{
+             to_state: :fault,
+             event_type: :change_of_reliability,
+             event_values: %NotificationParameters.ChangeOfReliability{property_values: [value]}
+           } = EventReporting.transition(fault)
+
+    assert value.property_identifier == :present_value
+    assert %Encoding{type: :enumerated, value: 1} = value.property_value
+    assert fault.next_execution == nil
+    {:ok, repeated} = write(fault, :reliability, :no_sensor, 200)
+    assert EventReporting.transition(repeated) == nil
+    {:ok, changed} = write(repeated, :reliability, :open_loop, 300)
+    assert %{from_state: :fault, to_state: :fault} = EventReporting.transition(changed)
+    {:ok, cleared} = write(changed, :reliability, :no_fault_detected, 400)
+    assert %{transition: :to_normal} = EventReporting.transition(cleared)
+    assert cleared.next_execution == :immediate
+    {:ok, pending} = BinaryValue.execute(cleared.object, context(cleared, 400, :continuation))
+    assert pending.next_execution.monotonic_time == 2400
+    assert EventReporting.transition(pending) == nil
+  end
+
+  test "a host delivers a routed alarm after commit and acknowledges its timestamp" do
+    transitions = EventTransitionBits.from_bitstring({true, false, false})
+    device = %ObjectIdentifier{type: :device, instance: 2}
+
+    destination = %Destination{
+      recipient: %Recipient{type: :device, device: device, address: nil},
+      process_identifier: 17,
+      issue_confirmed_notifications: false,
+      transitions: transitions,
+      valid_days: DaysOfWeek.from_bitstring({true, true, true, true, true, true, true}),
+      from_time: BACnetTime.from_time(~T[00:00:00]),
+      to_time: BACnetTime.from_time(~T[23:59:59])
+    }
+
+    {:ok, class} =
+      NotificationClass.create(7, "Alarms", %{
+        notification_class: 7,
+        recipient_list: [destination],
+        ack_required: transitions
+      })
+
+    object =
+      object(
+        %{
+          alarm_value: true,
+          notification_class: 7,
+          event_enable: transitions,
+          out_of_service: true
+        },
+        intrinsic_reporting: true
+      )
+
+    identifier = BinaryValue.get_object_identifier(object)
+
+    host =
+      Host.new([{object, []}, {class, []}], @now, 0,
+        after_commit: fn host, id, result ->
+          if id == identifier do
+            assert Host.snapshot(host, id).object == result.object
+            deliver_transition(result, id)
+          end
+        end
+      )
+
+    assert :ok = Host.execute(host, identifier, :initialization)
+
+    reference = %DeviceObjectPropertyRef{
+      device_identifier: nil,
+      object_identifier: identifier,
+      property_identifier: :present_value,
+      property_array_index: nil
+    }
+
+    Host.advance(host, DateTime.add(@now, 1, :second), 1000)
+    assert :ok = Host.write(host, reference, true)
+    assert_received {:notification, ^device, notification}
+    assert notification.event_object == identifier
+    assert notification.process_identifier == 17
+    assert notification.to_state == :offnormal
+    assert notification.ack_required
+    assert notification.event_values.status_flags.out_of_service
+    recorded = Host.snapshot(host, identifier).object
+    refute recorded.acked_transitions.to_offnormal
+    assert notification.timestamp == recorded.event_timestamps.to_offnormal
+
+    assert {:ok, acknowledged} =
+             EventReporting.acknowledge(recorded, :to_offnormal, notification.timestamp)
+
+    assert acknowledged.acked_transitions.to_offnormal
+
+    assert {:error, {:services, :invalid_timestamp}} =
+             EventReporting.acknowledge(recorded, :to_normal, notification.timestamp)
+
+    assert {:ok, true} = Host.read(host, reference)
+    assert :ok = Host.write(host, reference, true)
+    refute_received {:notification, _device, _notification}
+  end
+
   test "remote snapshots retain their object and runtime state without callbacks" do
     object =
       object(
@@ -611,6 +868,45 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryValueTest do
     with {:ok, candidate} <- candidate,
          {:ok, prepared} <- Lifecycle.prepare_write(stored.object, candidate, ctx) do
       BinaryValue.execute(prepared, ctx)
+    end
+  end
+
+  defp sample(stored, raw, milliseconds) do
+    ctx = context(stored, milliseconds, {:application_write, :present_value, nil, nil})
+
+    with {:ok, candidate} <- BinaryValue.update_property(stored.object, :present_value, raw),
+         {:ok, prepared} <- Lifecycle.prepare_write(stored.object, candidate, ctx) do
+      Lifecycle.execute(prepared, ctx)
+    end
+  end
+
+  defp deliver_transition(result, identifier) do
+    case EventReporting.transition(result) do
+      %{enabled: true, routing: %{destinations: destinations} = routing} = transition ->
+        for destination <- destinations do
+          notification = %UnconfirmedEventNotification{
+            process_identifier: destination.process_identifier,
+            initiating_device: %ObjectIdentifier{type: :device, instance: 1},
+            event_object: identifier,
+            timestamp: transition.timestamp,
+            notification_class: transition.notification_class,
+            priority: routing.priority,
+            event_type: transition.event_type,
+            message_text: transition.message_text,
+            notify_type: transition.notify_type,
+            ack_required: routing.ack_required,
+            from_state: transition.from_state,
+            to_state: transition.to_state,
+            event_values: transition.event_values
+          }
+
+          {:ok, apdu} = UnconfirmedEventNotification.to_apdu(notification, [])
+          {:ok, decoded} = UnconfirmedEventNotification.from_apdu(apdu)
+          send(self(), {:notification, destination.recipient.device, decoded})
+        end
+
+      _other ->
+        :ok
     end
   end
 end

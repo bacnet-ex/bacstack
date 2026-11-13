@@ -8,6 +8,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryInputTest do
   alias BACnet.Protocol.EventTransitionBits
   alias BACnet.Protocol.NotificationParameters
   alias BACnet.Protocol.ObjectExecution.Context
+  alias BACnet.Protocol.ObjectExecution.EventReporting
   alias BACnet.Protocol.ObjectExecution.Lifecycle
   alias BACnet.Protocol.ObjectExecution.Result
   alias BACnet.Protocol.ObjectExecution.Wakeup
@@ -502,14 +503,17 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryInputTest do
     assert active.object.change_of_state_count == 1
     assert active.object.event_state == :offnormal
     assert active.object.status_flags.in_alarm
-    assert %{to_state: :offnormal, enabled: false, routing: nil} = BinaryInput.transition(active)
+
+    assert %{to_state: :offnormal, enabled: false, routing: nil} =
+             EventReporting.transition(active)
+
     refute BinaryInput.property_writable?(object, :event_state)
     assert {:error, :write_access_denied} = write(stored, :event_state, :fault, 50)
     invalid = %{context(stored, 50, :timer) | state: %{stored.state | reporting: :invalid}}
     assert {:error, :invalid_execution_state} = BinaryInput.execute(stored.object, invalid)
     {:ok, tick} = Lifecycle.execute(active.object, context(active, 1100, :timer))
     assert tick.object.elapsed_active_time == 1
-    assert BinaryInput.transition(tick) == nil
+    assert EventReporting.transition(tick) == nil
   end
 
   test "both alarm delays restart after interruption and use monotonic time" do
@@ -526,7 +530,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryInputTest do
 
     early = %{context(pending, 2100, :timer) | now: DateTime.add(@now, 100_000, :second)}
     assert {:ok, early} = BinaryInput.execute(pending.object, early)
-    assert BinaryInput.transition(early) == nil
+    assert EventReporting.transition(early) == nil
     assert early.next_execution.monotonic_time == 2700
     assert {:ok, alarm} = BinaryInput.execute(early.object, context(early, 2700, :timer))
 
@@ -537,7 +541,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryInputTest do
                new_state: %PropertyState{type: :binary_value, value: true}
              }
            } =
-             BinaryInput.transition(alarm)
+             EventReporting.transition(alarm)
 
     {:ok, pending} = sample(alarm, false, 2800)
     assert pending.next_execution.monotonic_time == 3800
@@ -546,7 +550,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryInputTest do
     {:ok, pending} = sample(cancelled, false, 3100)
     assert pending.next_execution.monotonic_time == 4100
     assert {:ok, normal} = BinaryInput.execute(pending.object, context(pending, 4100, :timer))
-    assert %{transition: :to_normal, to_state: :normal} = BinaryInput.transition(normal)
+    assert %{transition: :to_normal, to_state: :normal} = EventReporting.transition(normal)
     refute normal.object.status_flags.in_alarm
   end
 
@@ -557,18 +561,18 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryInputTest do
 
     assert {:ok, stored} = BinaryInput.execute(active, context(nil, 100, :initialization))
     assert stored.object.event_state == :offnormal
-    assert BinaryInput.transition(stored) == nil
+    assert EventReporting.transition(stored) == nil
     assert stored.next_execution == nil
 
     assert {:ok, pending} = BinaryInput.execute(cleared, context(nil, 100, :initialization))
     assert pending.object.event_state == :offnormal
-    assert BinaryInput.transition(pending) == nil
+    assert EventReporting.transition(pending) == nil
     assert pending.next_execution.monotonic_time == 2100
 
     assert {:ok, normal} =
              BinaryInput.execute(pending.object, context(pending, 2100, :timer))
 
-    assert %{from_state: :offnormal, to_state: :normal} = BinaryInput.transition(normal)
+    assert %{from_state: :offnormal, to_state: :normal} = EventReporting.transition(normal)
   end
 
   test "history ticks retain a pending alarm and request the earliest deadline" do
@@ -583,10 +587,10 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryInputTest do
     {:ok, tick} = BinaryInput.execute(pending.object, context(pending, 1100, :timer))
     assert tick.object.elapsed_active_time == 1
     assert tick.next_execution.monotonic_time == 2100
-    assert BinaryInput.transition(tick) == nil
+    assert EventReporting.transition(tick) == nil
     {:ok, alarm} = BinaryInput.execute(tick.object, context(tick, 2100, :timer))
     assert alarm.object.elapsed_active_time == 2
-    assert %{to_state: :offnormal} = BinaryInput.transition(alarm)
+    assert %{to_state: :offnormal} = EventReporting.transition(alarm)
     assert alarm.next_execution.monotonic_time == 3100
   end
 
@@ -600,7 +604,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryInputTest do
     assert released.next_execution.monotonic_time == 1300
     {:ok, alarm} = BinaryInput.execute(released.object, context(released, 1300, :timer))
     {:ok, cleared} = write(alarm, :event_algorithm_inhibit, true, 1400)
-    assert %{to_state: :normal} = BinaryInput.transition(cleared)
+    assert %{to_state: :normal} = EventReporting.transition(cleared)
 
     {:ok, disabled} = write(alarm, :event_detection_enable, false, 1400)
     assert disabled.object.event_state == :normal
@@ -610,7 +614,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryInputTest do
 
     assert disabled.object.event_message_texts.to_offnormal == ""
     assert disabled.object.acked_transitions.to_offnormal
-    assert BinaryInput.transition(disabled) == nil
+    assert EventReporting.transition(disabled) == nil
   end
 
   test "linked inhibition follows a local property and holds its value if a read fails" do
@@ -640,10 +644,10 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryInputTest do
     ctx = %{context(inhibited, 100, :periodic) | read_property: fn _ref -> {:error, :timeout} end}
     assert {:ok, still_inhibited} = BinaryInput.execute(inhibited.object, ctx)
     assert still_inhibited.object.event_algorithm_inhibit
-    assert BinaryInput.transition(still_inhibited) == nil
+    assert EventReporting.transition(still_inhibited) == nil
     ctx = %{context(still_inhibited, 200, :periodic) | read_property: fn _ref -> {:ok, false} end}
     assert {:ok, alarm} = BinaryInput.execute(still_inhibited.object, ctx)
-    assert %{to_state: :offnormal} = BinaryInput.transition(alarm)
+    assert %{to_state: :offnormal} = EventReporting.transition(alarm)
   end
 
   test "faults take precedence over alarms and recovery starts a new alarm delay" do
@@ -660,21 +664,21 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryInputTest do
              to_state: :fault,
              event_type: :change_of_reliability,
              event_values: %NotificationParameters.ChangeOfReliability{property_values: [value]}
-           } = BinaryInput.transition(fault)
+           } = EventReporting.transition(fault)
 
     assert value.property_identifier == :present_value
     assert %Encoding{type: :enumerated, value: 1} = value.property_value
     assert fault.next_execution == nil
     {:ok, repeated} = write(fault, :reliability, :no_sensor, 200)
-    assert BinaryInput.transition(repeated) == nil
+    assert EventReporting.transition(repeated) == nil
     {:ok, changed} = write(repeated, :reliability, :open_loop, 300)
-    assert %{from_state: :fault, to_state: :fault} = BinaryInput.transition(changed)
+    assert %{from_state: :fault, to_state: :fault} = EventReporting.transition(changed)
     {:ok, cleared} = write(changed, :reliability, :no_fault_detected, 400)
-    assert %{transition: :to_normal} = BinaryInput.transition(cleared)
+    assert %{transition: :to_normal} = EventReporting.transition(cleared)
     assert cleared.next_execution == :immediate
     {:ok, pending} = BinaryInput.execute(cleared.object, context(cleared, 400, :continuation))
     assert pending.next_execution.monotonic_time == 2400
-    assert BinaryInput.transition(pending) == nil
+    assert EventReporting.transition(pending) == nil
   end
 
   test "a host delivers a routed alarm after commit and acknowledges its timestamp" do
@@ -743,12 +747,12 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryInputTest do
     assert notification.timestamp == recorded.event_timestamps.to_offnormal
 
     assert {:ok, acknowledged} =
-             BinaryInput.acknowledge(recorded, :to_offnormal, notification.timestamp)
+             EventReporting.acknowledge(recorded, :to_offnormal, notification.timestamp)
 
     assert acknowledged.acked_transitions.to_offnormal
 
     assert {:error, {:services, :invalid_timestamp}} =
-             BinaryInput.acknowledge(recorded, :to_normal, notification.timestamp)
+             EventReporting.acknowledge(recorded, :to_normal, notification.timestamp)
 
     assert {:ok, true} = Host.read(host, reference)
     assert :ok = Host.write(host, reference, true)
@@ -823,7 +827,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryInputTest do
   end
 
   defp deliver_transition(result, identifier) do
-    case BinaryInput.transition(result) do
+    case EventReporting.transition(result) do
       %{enabled: true, routing: %{destinations: destinations} = routing} = transition ->
         for destination <- destinations do
           notification = %UnconfirmedEventNotification{

@@ -1059,6 +1059,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
       [object execution host](BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host)
       needs to retain the complete result and handle its next execution request.
       """
+      @doc group: "Functions Lifecycle"
       @impl BACnet.Protocol.ObjectsBehaviour
       @spec execute(t(), BACnet.Protocol.ObjectExecution.Context.t()) ::
               {:ok, BACnet.Protocol.ObjectExecution.Result.t(t())} | {:error, term()}
@@ -1078,6 +1079,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
       Required host operations are supplied by the integrating application described in the
       [object execution host contract](BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host).
       """
+      @doc group: "Functions Lifecycle"
       @impl BACnet.Protocol.ObjectsBehaviour
       @spec validate_execution(t(), BACnet.Protocol.ObjectExecution.Context.t()) ::
               :ok | {:error, term()}
@@ -1095,6 +1097,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
       The [object execution host](BACnet.Protocol.ObjectExecution.Lifecycle.html#module-object-execution-host)
       needs to retain the accepted candidate and perform the post-commit execution step.
       """
+      @doc group: "Functions Lifecycle"
       @impl BACnet.Protocol.ObjectsBehaviour
       @spec prepare_write(t(), t(), BACnet.Protocol.ObjectExecution.Context.t()) ::
               {:ok, t()} | {:error, term()}
@@ -1268,6 +1271,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
       @doc """
       Auto generated function to get the annotations for the given property name.
       """
+      @doc group: "Functions Metadata"
       @spec get_annotation(property_name()) :: [term()]
       def get_annotation(name) when is_atom(name) do
         Keyword.get(object_contract().annotations, name, [])
@@ -1276,6 +1280,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
       @doc """
       Auto generated function to get the list of annotations for each property.
       """
+      @doc group: "Functions Metadata"
       @spec get_annotations() :: [{name :: property_name(), values :: [term()]}]
       def get_annotations() do
         object_contract().annotations
@@ -1514,24 +1519,28 @@ defmodule BACnet.Protocol.ObjectsMacro do
       @doc """
       Auto generated function to get the names of all properties this object supports.
       """
+      @doc group: "Functions Metadata"
       @spec get_all_properties() :: [Constants.property_identifier()]
       def get_all_properties(), do: @object_tables.properties
 
       @doc """
       Auto generated function to get the names of properties used for COV reporting.
       """
+      @doc group: "Functions Metadata"
       @spec get_cov_properties() :: [Constants.property_identifier()]
       def get_cov_properties(), do: @object_tables.cov
 
       @doc """
       Auto generated function to get the names of intrinsic properties.
       """
+      @doc group: "Functions Metadata"
       @spec get_intrinsic_properties() :: [Constants.property_identifier()]
       def get_intrinsic_properties(), do: @object_tables.intrinsic
 
       @doc """
       Auto generated function to get the names of optional properties.
       """
+      @doc group: "Functions Metadata"
       @spec get_optional_properties() :: [Constants.property_identifier()]
       def get_optional_properties(), do: @object_tables.optional
 
@@ -1544,6 +1553,7 @@ defmodule BACnet.Protocol.ObjectsMacro do
       being written to. Some properties are only written once at creation and
       never updated.
       """
+      @doc group: "Functions Metadata"
       @spec get_protected_properties() :: [Constants.property_identifier()]
       def get_protected_properties(), do: @object_tables.protected
 
@@ -1554,24 +1564,28 @@ defmodule BACnet.Protocol.ObjectsMacro do
       on the BACnet side, there is no actual write protection in the object.
       This is a hint to the device server. If you need actual write protection, see `protected`.
       """
+      @doc group: "Functions Metadata"
       @spec get_readonly_properties() :: [Constants.property_identifier()]
       def get_readonly_properties(), do: @object_tables.readonly
 
       @doc """
       Auto generated function to get the names of required properties.
       """
+      @doc group: "Functions Metadata"
       @spec get_required_properties() :: [Constants.property_identifier()]
       def get_required_properties(), do: @object_tables.required
 
       @doc """
       Auto generated function to check whether the object type supports intrinsic reporting.
       """
+      @doc group: "Functions Metadata"
       @spec supports_intrinsic() :: boolean()
       def supports_intrinsic(), do: @object_tables.supports_intrinsic
 
       @doc """
       Auto generated function to get a map of property name to type.
       """
+      @doc group: "Functions Metadata"
       @spec get_properties_type_map() :: map()
       def get_properties_type_map(), do: @object_tables.type_map
 

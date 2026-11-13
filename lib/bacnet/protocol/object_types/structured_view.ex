@@ -178,6 +178,7 @@ defmodule BACnet.Protocol.ObjectTypes.StructuredView do
   BACnet array indices. References with object instance 4194303 are skipped.
   Returns a property error if Subordinate_List is unavailable on a snapshot.
   """
+  @doc group: "Functions Operational"
   @spec configured_subordinates(t()) ::
           {:ok, [{array_index :: pos_integer(), reference :: DeviceObjectRef.t()}]}
           | property_update_error()

@@ -271,6 +271,7 @@ defmodule BACnet.Protocol.ObjectTypes.AnalogOutput do
   physical out-of-service policy - this function performs no I/O and measures no output.
   An in-service Present_Value can use the existing BACnet REAL special values as well as floats.
   """
+  @doc group: "Functions Operational"
   @spec get_output(t(), float()) :: ApplicationTags.ieee_float()
   def get_output(%__MODULE__{} = object, decoupled_output_state \\ 0.0)
       when is_float(decoupled_output_state) do

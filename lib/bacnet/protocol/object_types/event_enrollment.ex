@@ -412,6 +412,7 @@ defmodule BACnet.Protocol.ObjectTypes.EventEnrollment do
   Returns the transition produced by this execution, if any. A subsequent read or
   evaluation clears the transition from its own result.
   """
+  @doc group: "Functions Operational"
   @spec transition(Result.t(t())) :: transition() | nil
   def transition(result)
 
@@ -428,6 +429,7 @@ defmodule BACnet.Protocol.ObjectTypes.EventEnrollment do
   its timestamp. The host handles service authentication, validation of the
   acknowledged event state, and distribution of the acknowledgment notification.
   """
+  @doc group: "Functions Operational"
   @spec acknowledge(t(), Constants.event_transition_bit(), BACnetTimestamp.t()) ::
           {:ok, t()} | {:error, term()}
   def acknowledge(object, transition, timestamp)

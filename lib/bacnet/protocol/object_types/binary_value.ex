@@ -243,15 +243,6 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryValue do
     )
   end
 
-  @spec check_implicit_relationships(t(), :add | :remove) :: {:ok, t()} | {:error, term()}
-  defp check_implicit_relationships(object, operation) do
-    # Close the three-property history group regardless of which member was supplied.
-    with {:ok, first} <- super(object, operation),
-         {:ok, second} <- super(first, operation) do
-      super(second, operation)
-    end
-  end
-
   @doc """
   Checks retained runtime state without I/O.
 

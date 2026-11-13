@@ -259,6 +259,7 @@ defmodule BACnet.Protocol.ObjectTypes.File do
   `eof` flag is true when the prepared range includes the last octet or record.
   The host needs to read that range from the same storage snapshot.
   """
+  @doc group: "Functions Operational"
   @spec prepare_file_read(t(), AtomicReadFile.t(), non_neg_integer()) ::
           {:ok, read :: AtomicReadFile.t(), eof :: boolean()} | file_access_error()
   def prepare_file_read(%__MODULE__{} = object, %AtomicReadFile{} = request, length)
@@ -275,6 +276,7 @@ defmodule BACnet.Protocol.ObjectTypes.File do
   beyond that length are allowed. The host needs to extend the storage as
   required and publish the corresponding metadata after a successful write.
   """
+  @doc group: "Functions Operational"
   @spec prepare_file_write(t(), AtomicWriteFile.t(), non_neg_integer()) ::
           {:ok, AtomicWriteFile.t()} | file_access_error()
   def prepare_file_write(%__MODULE__{} = object, %AtomicWriteFile{} = request, length)
@@ -290,6 +292,7 @@ defmodule BACnet.Protocol.ObjectTypes.File do
   The host needs to serialize this operation with writes to the same file.
   The read uses the length measured from the open file.
   """
+  @doc group: "Functions Operational"
   @spec read_file(t(), AtomicReadFile.t()) :: {:ok, AtomicReadFileAck.t()} | disk_file_error()
   def read_file(%__MODULE__{} = object, %AtomicReadFile{} = request) do
     with :ok <- validate_file_access(object, request.object_identifier, request.stream_access),
@@ -320,6 +323,7 @@ defmodule BACnet.Protocol.ObjectTypes.File do
   access through publication of the returned metadata. A `t:disk_write_error/0`
   includes metadata to publish if a write failed after it may have changed the file.
   """
+  @doc group: "Functions Operational"
   @spec write_file(t(), AtomicWriteFile.t(), BACnetDateTime.t()) ::
           {:ok, updated :: t(), ack :: AtomicWriteFileAck.t()}
           | disk_file_error()
@@ -359,6 +363,7 @@ defmodule BACnet.Protocol.ObjectTypes.File do
   as the previous one. The host needs to publish the new metadata and storage
   together.
   """
+  @doc group: "Functions Operational"
   @spec record_modification(t(), storage_measurements(), BACnetDateTime.t()) ::
           {:ok, t()}
           | property_update_error()

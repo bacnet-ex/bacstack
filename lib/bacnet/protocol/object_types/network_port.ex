@@ -742,6 +742,7 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
   with the network number quality. During pending changes, the corresponding
   property reads on the object return the staged values.
   """
+  @doc group: "Functions Operational"
   @spec active_configuration(t()) :: {:ok, map()} | {:error, term()}
   def active_configuration(object)
 

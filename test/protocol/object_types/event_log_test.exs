@@ -58,6 +58,9 @@ defmodule BACnet.Test.Protocol.ObjectTypes.EventLogTest do
 
     assert {:ok, %Result{object: ^remote, state: :retained, next_execution: nil}} =
              Lifecycle.execute(remote, context)
+
+    assert {:error, :operation_not_available_for_remote_objects} =
+             EventLog.get_log_buffer(remote, context)
   end
 
   test "accepts registered logger names and rejects invalid logger options during preflight" do
@@ -302,14 +305,59 @@ defmodule BACnet.Test.Protocol.ObjectTypes.EventLogTest do
     assert EventReporting.transition(duplicate) == nil
   end
 
-  defp logger_context(options \\ []) do
-    logger =
-      start_supervised!(
-        {TrendLogger,
-         Keyword.put(options, :lookup_cb, fn _reference ->
+  test "get_log_buffer captures the backend and sequence number together" do
+    {logger, context} = logger_context([], fn _reference -> flunk("unexpected lookup") end)
+
+    assert {:ok, object} =
+             EventLog.create(
+               1,
+               "History",
+               %{buffer_size: 8, notification_threshold: 1, event_algorithm_inhibit: true},
+               intrinsic_reporting: true
+             )
+
+    assert {:error, :unknown_object} = EventLog.get_log_buffer(object, context)
+    assert :ok = TrendLogger.add_object(logger, object)
+    assert :ok = TrendLogger.trigger_log(logger, object, {:time_change, 1.0})
+    assert {:ok, {1, backend, buffer}} = EventLog.get_log_buffer(object, context)
+
+    assert :ok = TrendLogger.trigger_log(logger, object, {:time_change, 2.0})
+    assert {:ok, {2, ^backend, updated_buffer}} = EventLog.get_log_buffer(object, context)
+
+    assert [%EventLogRecord{log_datum: {:time_change, 1.0}}] = backend.read_range(buffer, 0, 2)
+
+    assert [
+             %EventLogRecord{log_datum: {:time_change, 1.0}},
+             %EventLogRecord{log_datum: {:time_change, 2.0}}
+           ] = backend.read_range(updated_buffer, 0, 2)
+  end
+
+  test "get_log_buffer reports missing or invalid logger options" do
+    assert {:ok, object} =
+             EventLog.create(
+               1,
+               "History",
+               %{buffer_size: 8, notification_threshold: 1, event_algorithm_inhibit: true},
+               intrinsic_reporting: true
+             )
+
+    context = Context.new(:periodic)
+
+    assert {:error, {:unsupported_operation, :trend_logger}} =
+             EventLog.get_log_buffer(object, context)
+
+    assert {:error, {:invalid_execution_option, :trend_logger}} =
+             EventLog.get_log_buffer(object, %{context | options: [trend_logger: 123]})
+  end
+
+  defp logger_context(
+         options \\ [],
+         lookup \\ fn _reference ->
            {:error, %BACnetError{class: :object, code: :unknown_object}}
-         end)}
-      )
+         end
+       ) do
+    logger =
+      start_supervised!({TrendLogger, Keyword.put(options, :lookup_cb, lookup)})
 
     {logger, Context.new(:initialization, options: [trend_logger: logger])}
   end

@@ -588,10 +588,28 @@ defmodule BACnet.Protocol.ObjectOperations do
           update_result()
   def check_implicit_relationships(%ObjectsContract{} = contract, object, operation)
       when operation in [:add, :remove] do
-    Enum.reduce_while(contract.implicit_relationships, {:ok, object}, fn {prop, relat},
-                                                                         {:ok, acc} ->
-      align_relationship(contract, object, acc, prop, relat, operation)
-    end)
+    case Enum.reduce_while(contract.implicit_relationships, {:ok, object}, fn {prop, relat},
+                                                                              {:ok, acc} ->
+           align_relationship(contract, object, acc, prop, relat, operation)
+         end) do
+      {:ok, new_object} ->
+        # We need to check if all necessary keys are present, if not, we need to call it again
+        # We may have multiple relationships per property, so calling it once will not add/remove all
+        Enum.reduce_while(contract.implicit_relationships, {:ok, new_object}, fn {prop, relat},
+                                                                                 {:ok, acc} ->
+          has_key1 = Enum.member?(object._metadata.properties_list, prop)
+          has_key2 = Enum.member?(object._metadata.properties_list, relat)
+
+          if has_key1 == has_key2 do
+            {:cont, {:ok, acc}}
+          else
+            {:halt, check_implicit_relationships(contract, new_object, operation)}
+          end
+        end)
+
+      other ->
+        other
+    end
   end
 
   @doc """

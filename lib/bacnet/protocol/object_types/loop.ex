@@ -498,6 +498,7 @@ defmodule BACnet.Protocol.ObjectTypes.Loop do
   Control runs in service when Loop reads a configured reference or receives an
   application reading.
   """
+  @doc group: "Functions Operational"
   @spec pid_enabled?(t()) :: boolean()
   def pid_enabled?(%__MODULE__{} = object),
     do: Map.get(object._metadata.other, :pid_enabled, true) == true
@@ -509,6 +510,7 @@ defmodule BACnet.Protocol.ObjectTypes.Loop do
   output limits. Pass `nil` to start with the calculated proportional term and
   bias. This updates local configuration for the next startup.
   """
+  @doc group: "Functions Operational"
   @spec set_pid_start_value(t(), number() | nil) :: {:ok, t()} | {:error, term()}
   def set_pid_start_value(%__MODULE__{} = object, value),
     do: set_pid_value(object, :pid_start_value, value)
@@ -520,6 +522,7 @@ defmodule BACnet.Protocol.ObjectTypes.Loop do
   output limits. Pass `nil` to use `min_output` when configured, or zero within
   the output limits otherwise. This updates local configuration for the next stop.
   """
+  @doc group: "Functions Operational"
   @spec set_pid_stop_value(t(), number() | nil) :: {:ok, t()} | {:error, term()}
   def set_pid_stop_value(%__MODULE__{} = object, value),
     do: set_pid_value(object, :pid_stop_value, value)
@@ -531,6 +534,7 @@ defmodule BACnet.Protocol.ObjectTypes.Loop do
   applies the setting on the next automatic sample with its retained PID history.
   Startup and transfers establish the output before the hold takes effect.
   """
+  @doc group: "Functions Operational"
   @spec set_pid_deadzone(t(), number()) :: {:ok, t()} | {:error, term()}
   def set_pid_deadzone(%__MODULE__{} = object, value),
     do: set_pid_value(object, :pid_deadzone, value)
@@ -566,6 +570,7 @@ defmodule BACnet.Protocol.ObjectTypes.Loop do
   selects manual mode with the simulated output. Reapplying the same setting
   preserves the current execution request.
   """
+  @doc group: "Functions Operational"
   @spec set_pid_enabled(t(), boolean(), Context.t()) :: {:ok, Result.t(t())} | {:error, term()}
   def set_pid_enabled(object, enabled, context)
 

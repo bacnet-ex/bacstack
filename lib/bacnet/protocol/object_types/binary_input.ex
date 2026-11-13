@@ -182,12 +182,10 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryInput do
   alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.BACnetDateTime
-  alias BACnet.Protocol.BACnetTimestamp
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.EventAlgorithms
   alias BACnet.Protocol.ObjectExecution.BinaryState
   alias BACnet.Protocol.ObjectExecution.Context
-  alias BACnet.Protocol.ObjectExecution.EventReporting
   alias BACnet.Protocol.ObjectExecution.IntrinsicReporting
   alias BACnet.Protocol.ObjectExecution.Result
   alias BACnet.Protocol.ObjectsMacro
@@ -299,6 +297,7 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryInput do
   A nil sample marks the input unknown, preserves the present value and sets a selected
   `interface_value` to `:undefined` (BACnet NULL).
   """
+  @doc group: "Functions Operational"
   @spec set_input(t(), boolean() | nil) :: {:ok, t()} | {:error, term()}
   def set_input(object, value)
 
@@ -319,14 +318,6 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryInput do
   def property_writable?(%__MODULE__{} = object, :present_value), do: object.out_of_service
 
   def property_writable?(%__MODULE__{} = object, property), do: super(object, property)
-
-  @spec check_implicit_relationships(t(), :add | :remove) :: {:ok, t()} | {:error, term()}
-  defp check_implicit_relationships(object, operation) do
-    with {:ok, first} <- super(object, operation),
-         {:ok, second} <- super(first, operation) do
-      super(second, operation)
-    end
-  end
 
   @doc """
   Checks selected capabilities and retained input/history state without I/O.
@@ -417,28 +408,6 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryInput do
        )}
     end
   end
-
-  @doc """
-  Returns the transition from this execution result for host delivery after commit.
-  """
-  @spec transition(Result.t(t())) :: EventReporting.transition() | nil
-  def transition(%Result{object: %__MODULE__{}} = result), do: EventReporting.transition(result)
-
-  @doc """
-  Acknowledges the current transition of the given kind after matching its timestamp.
-
-  The host validates the acknowledged event state and delivers the acknowledgment
-  notification as part of its BACnet service handling.
-  """
-  @spec acknowledge(t(), Constants.event_transition_bit(), BACnetTimestamp.t()) ::
-          {:ok, t()} | {:error, term()}
-  def acknowledge(object, transition, timestamp)
-
-  def acknowledge(%__MODULE__{_metadata: %{remote_object: remote}}, _transition, _timestamp)
-      when not is_nil(remote), do: {:error, :operation_not_available_for_remote_objects}
-
-  def acknowledge(%__MODULE__{} = object, transition, %BACnetTimestamp{} = timestamp),
-    do: EventReporting.acknowledge(object, transition, timestamp)
 
   @spec validate_configuration(t()) :: :ok | {:error, term()}
   defp validate_configuration(object) do

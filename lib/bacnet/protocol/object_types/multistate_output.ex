@@ -211,6 +211,7 @@ defmodule BACnet.Protocol.ObjectTypes.MultistateOutput do
   hold its last value, go to a safe state or behaves according to local logic (-> defined as local matter).
   The default value is `1` - the safe state of physical outputs in typical environments.
   """
+  @doc group: "Functions Operational"
   @spec get_output(t(), pos_integer()) :: pos_integer()
   def get_output(%__MODULE__{} = object, decoupled_output_state \\ 1)
       when is_integer(decoupled_output_state) and decoupled_output_state >= 1 do

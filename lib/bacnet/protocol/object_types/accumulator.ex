@@ -291,6 +291,7 @@ defmodule BACnet.Protocol.ObjectTypes.Accumulator do
   the supplied monotonic time. While out of service, the batch is ignored. Retain the
   entire result before submitting another batch or exposing a property operation.
   """
+  @doc group: "Functions Operational"
   @spec record_pulses(t(), non_neg_integer(), Context.t()) ::
           {:ok, Result.t(t())} | {:error, term()}
   def record_pulses(object, pulses, context)

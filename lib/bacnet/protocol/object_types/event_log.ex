@@ -108,6 +108,7 @@ defmodule BACnet.Protocol.ObjectTypes.EventLog do
   alias BACnet.Protocol.ObjectExecution.Context
   alias BACnet.Protocol.ObjectExecution.LogLifecycle
   alias BACnet.Protocol.ObjectExecution.Result
+  alias BACnet.Stack.TrendLogger
 
   require Constants
   use BACnet.Protocol.ObjectsMacro
@@ -203,6 +204,35 @@ defmodule BACnet.Protocol.ObjectTypes.EventLog do
       intrinsic: true,
       default: 0
     )
+  end
+
+  @doc """
+  Returns the logger's buffer for a registered local Event Log.
+
+  Uses the `:trend_logger` option in the execution context and returns
+  `{:ok, {sequence_number, buffer_module, buffer}}`. Use the captured buffer
+  with its module's `c:BACnet.Stack.LogBufferBehaviour.read_range/3` callback.
+  The sequence number belongs to that same capture.
+
+  An unregistered log returns `{:error, :unknown_object}`. Remote snapshots
+  return `{:error, :operation_not_available_for_remote_objects}`.
+  """
+  @doc group: "Functions Operational"
+  @spec get_log_buffer(t(), Context.t()) ::
+          {:ok,
+           {sequence_number :: non_neg_integer(), buffer_module :: module(),
+            buffer :: LogBufferBehaviour.t()}}
+          | {:error, term()}
+  def get_log_buffer(object, context)
+
+  def get_log_buffer(%__MODULE__{_metadata: %{remote_object: remote}}, %Context{})
+      when not is_nil(remote),
+      do: {:error, :operation_not_available_for_remote_objects}
+
+  def get_log_buffer(%__MODULE__{} = object, %Context{} = context) do
+    with {:ok, logger} <- LogLifecycle.get_logger(context) do
+      TrendLogger.get_buffer(logger, object)
+    end
   end
 
   @doc """

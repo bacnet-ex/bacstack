@@ -157,6 +157,7 @@ defmodule BACnet.Protocol.ObjectTypes.NotificationClass do
   Appends a destination to Recipient_List. If the complete destination already
   exists, returns the original object. Existing entries keep their order.
   """
+  @doc group: "Functions Operational"
   @spec add_destination(t(), Destination.t()) :: {:ok, t()} | property_update_error()
   def add_destination(%__MODULE__{} = object, %Destination{} = destination) do
     with {:ok, destinations} <- get_property(object, :recipient_list) do
@@ -173,6 +174,7 @@ defmodule BACnet.Protocol.ObjectTypes.NotificationClass do
   keep their order. Returns `{:ok, updated, true}` when an entry was removed,
   or `{:ok, object, false}` if the destination was absent.
   """
+  @doc group: "Functions Operational"
   @spec remove_destination(t(), Destination.t()) ::
           {:ok, updated :: t(), removed :: boolean()} | property_update_error()
   def remove_destination(%__MODULE__{} = object, %Destination{} = destination) do
@@ -200,6 +202,7 @@ defmodule BACnet.Protocol.ObjectTypes.NotificationClass do
   A transition with no matching recipients still returns its priority and
   acknowledgment settings. Network priority follows ASHRAE 135-2016 Table 13-6.
   """
+  @doc group: "Functions Operational"
   @spec routing_plan(t(), Constants.event_transition_bit(), DateTime.t()) :: routing_plan()
   def routing_plan(%__MODULE__{} = object, transition, %DateTime{} = local_datetime)
       when transition in [:to_offnormal, :to_fault, :to_normal] do

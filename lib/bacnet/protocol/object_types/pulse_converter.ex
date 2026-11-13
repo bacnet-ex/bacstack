@@ -208,6 +208,7 @@ defmodule BACnet.Protocol.ObjectTypes.PulseConverter do
   direct inputs ignore pulses. A configured Input_Reference selects reference
   acquisition instead.
   """
+  @doc group: "Functions Operational"
   @spec record_pulses(t(), non_neg_integer(), Context.t()) ::
           {:ok, Result.t(t())} | {:error, term()}
   def record_pulses(object, pulses, context)

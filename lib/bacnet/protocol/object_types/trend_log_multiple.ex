@@ -344,6 +344,7 @@ defmodule BACnet.Protocol.ObjectTypes.TrendLogMultiple do
   An unregistered log returns `{:error, :unknown_object}`. Remote snapshots
   return `{:error, :operation_not_available_for_remote_objects}`.
   """
+  @doc group: "Functions Operational"
   @spec get_log_buffer(t(), Context.t()) ::
           {:ok,
            {sequence_number :: non_neg_integer(), buffer_module :: module(),

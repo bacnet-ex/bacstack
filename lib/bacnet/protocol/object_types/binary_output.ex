@@ -294,6 +294,7 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryOutput do
   helper neither drives hardware nor measures its state, and the fallback does not define
   a universal safe state. Check `out_of_service` before applying a command to the adapter.
   """
+  @doc group: "Functions Operational"
   @spec get_output(t(), boolean()) :: boolean()
   def get_output(%__MODULE__{} = object, decoupled_output_state \\ false)
       when is_boolean(decoupled_output_state) do
@@ -314,15 +315,6 @@ defmodule BACnet.Protocol.ObjectTypes.BinaryOutput do
     if metadata.intrinsic_reporting or metadata.other[:auto_write_feedback] == true,
       do: Map.put_new(properties, :feedback_value, false),
       else: properties
-  end
-
-  @spec check_implicit_relationships(t(), :add | :remove) :: {:ok, t()} | {:error, term()}
-  defp check_implicit_relationships(object, operation) do
-    # Close the three-property history group regardless of its selected member.
-    with {:ok, first} <- super(object, operation),
-         {:ok, second} <- super(first, operation) do
-      super(second, operation)
-    end
   end
 
   @doc """
