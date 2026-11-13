@@ -4,6 +4,7 @@ defmodule BACnet.Stack.ClientHelperTest do
   alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.NPCI
+  alias BACnet.Protocol.NpciTarget
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.Services
   alias BACnet.Protocol.Services.Ack.ReadPropertyAck
@@ -472,7 +473,45 @@ defmodule BACnet.Stack.ClientHelperTest do
     send_iam(client, :remote, obj(:device, 11), 42)
 
     assert {:ok,
-            [{:remote, %Services.IAm{device: %ObjectIdentifier{instance: 11}, vendor_id: 42}}]} =
+            [
+              {:remote, nil,
+               %Services.IAm{device: %ObjectIdentifier{instance: 11}, vendor_id: 42}}
+            ]} =
+             Task.await(task)
+
+    flush_client()
+
+    # The subscribed path also starts a task and calls the client to subscribe,
+    # send and unsubscribe. A 10 ms window leaves only 5 ms for that work.
+    assert {:ok, []} = ClientHelper.who_is(client, 1_000)
+
+    assert {:ok, []} =
+             ClientHelper.who_is(client, 10, no_subscribe: true, apdu_destination: :direct)
+
+    assert_receive {:fake_transport_send, :direct, _raw, _opts}
+  end
+
+  test "who_is collects one i_am and stops at the limit with NPCI source", %{client: client} do
+    assert_raise ArgumentError, ~r/keyword list/, fn ->
+      ClientHelper.who_is(client, 20, [1])
+    end
+
+    task =
+      Task.async(fn ->
+        ClientHelper.who_is(client, 1_000, max: 1, low_limit: 1, high_limit: 20)
+      end)
+
+    assert_receive {:fake_transport_send, :broadcast, raw, _opts}
+    {:ok, %APDU.UnconfirmedServiceRequest{service: :who_is}} = APDU.decode(raw)
+
+    source = %NpciTarget{net: 1, address: 500}
+    send_iam(client, :remote, obj(:device, 11), 42, source: source)
+
+    assert {:ok,
+            [
+              {:remote, ^source,
+               %Services.IAm{device: %ObjectIdentifier{instance: 11}, vendor_id: 42}}
+            ]} =
              Task.await(task)
 
     flush_client()
@@ -1052,7 +1091,7 @@ defmodule BACnet.Stack.ClientHelperTest do
     service
   end
 
-  defp send_iam(client, source, device, vendor) do
+  defp send_iam(client, source, device, vendor, npci \\ []) do
     {:ok, apdu} =
       Services.IAm.to_apdu(
         %Services.IAm{
@@ -1069,7 +1108,7 @@ defmodule BACnet.Stack.ClientHelperTest do
     send(
       client,
       {:bacnet_transport, {:bacnet_ipv4, FakeTransport}, source,
-       {:apdu, :original_broadcast, NPCI.new([]), raw}, self()}
+       {:apdu, :original_broadcast, NPCI.new(npci), raw}, self()}
     )
   end
 end

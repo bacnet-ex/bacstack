@@ -9,6 +9,7 @@ defmodule BACnet.Stack.ClientHelper do
   alias BACnet.Protocol.BACnetDate
   alias BACnet.Protocol.BACnetTime
   alias BACnet.Protocol.Constants
+  alias BACnet.Protocol.NpciTarget
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.ObjectsUtility
   alias BACnet.Protocol.PropertyRef
@@ -727,7 +728,9 @@ defmodule BACnet.Stack.ClientHelper do
   - `no_subscribe: boolean()` - Optional. Whether to spawn a new task.
   """
   @spec who_is(GenServer.server(), pos_integer(), Keyword.t()) ::
-          {:ok, [{source_address :: term(), Services.IAm.t()}]} | {:error, term()}
+          {:ok,
+           [{source_address :: term(), npci_source :: NpciTarget.t() | nil, Services.IAm.t()}]}
+          | {:error, term()}
   def who_is(server, timeout \\ 5000, opts \\ [])
       when is_integer(timeout) and timeout >= 10 and is_list(opts) do
     unless Keyword.keyword?(opts) do
@@ -1237,10 +1240,10 @@ defmodule BACnet.Stack.ClientHelper do
               {:bacnet_client, _ref,
                %APDU.UnconfirmedServiceRequest{
                  service: Constants.macro_assert_name(:unconfirmed_service_choice, :i_am)
-               } = apdu, {source_addr, _bvlc, _npci}, _pid} ->
+               } = apdu, {source_addr, _bvlc, npci}, _pid} ->
                 case Services.IAm.from_apdu(apdu) do
                   {:ok, service} ->
-                    {:cont, [{source_addr, service} | acc]}
+                    {:cont, [{source_addr, npci.source, service} | acc]}
 
                   {:error, err} ->
                     log_debug(fn ->

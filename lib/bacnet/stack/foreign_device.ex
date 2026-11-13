@@ -67,6 +67,7 @@ defmodule BACnet.Stack.ForeignDevice do
   alias BACnet.Protocol.BvlcResult
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.ForeignDeviceTableEntry
+  alias BACnet.Protocol.NpciTarget
   alias BACnet.Protocol.Services.IAm
   alias BACnet.Protocol.Services.WhoIs
   alias BACnet.Stack.Client
@@ -485,7 +486,7 @@ defmodule BACnet.Stack.ForeignDevice do
   except `apdu_destination` and `no_subscribe`.
   """
   @spec send_whois(server(), non_neg_integer(), Keyword.t()) ::
-          {:ok, [IAm.t()]} | {:error, term()}
+          {:ok, [{source_address :: term(), npci_source :: NpciTarget.t() | nil, IAm.t()}]}
   def send_whois(server, timeout \\ 5000, opts \\ [])
       when is_server(server) and is_integer(timeout) and timeout >= 100 and is_list(opts) do
     unless Keyword.keyword?(opts) do
@@ -714,14 +715,14 @@ defmodule BACnet.Stack.ForeignDevice do
             {:bacnet_client, _ref,
              %UnconfirmedServiceRequest{
                service: Constants.macro_assert_name(:unconfirmed_service_choice, :i_am)
-             } = apdu, {source_addr, _bvlc, _npci}, _pid} ->
+             } = apdu, {source_addr, _bvlc, npci}, _pid} ->
               case IAm.from_apdu(apdu) do
                 {:ok, service} ->
-                  {:cont, [{source_addr, service} | acc]}
+                  {:cont, [{source_addr, npci.source, service} | acc]}
 
                 {:error, err} ->
                   log_debug(fn ->
-                    "ClientHelper.who_is/3 encountered an error during " <>
+                    "ForeignDevice.send_whois/3 encountered an error during " <>
                       "APDU to service transformation, error: #{inspect(err)}"
                   end)
 

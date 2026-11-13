@@ -5,6 +5,7 @@ defmodule BACnet.Stack.ForeignDeviceTest do
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.ForeignDeviceTableEntry
   alias BACnet.Protocol.NPCI
+  alias BACnet.Protocol.NpciTarget
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.Services.IAm
   alias BACnet.Protocol.Services.WhoIs
@@ -353,7 +354,33 @@ defmodule BACnet.Stack.ForeignDeviceTest do
       {:bacnet_transport, :bacnet_ipv4, @bbmd, {:apdu, nil, NPCI.new([]), raw}, transport}
     )
 
-    assert {:ok, [{@bbmd, %IAm{vendor_id: 42}}]} = Task.await(task)
+    assert {:ok, [{@bbmd, nil, %IAm{vendor_id: 42}}]} = Task.await(task)
+
+    assert_raise ArgumentError, ~r/keyword list/, fn ->
+      ForeignDevice.send_whois(fd, 100, [1])
+    end
+  end
+
+  test "send_whois collects an I-Am and stops at max with NPCI source", %{
+    client: client,
+    transport: transport
+  } do
+    fd = start_registered_fd!(client)
+
+    task = Task.async(fn -> ForeignDevice.send_whois(fd, 1_000, max: 1, receive_timeout: 30) end)
+
+    assert_receive {:fake_transport_send, @bbmd, _apdu, _opts}
+    raw = i_am_binary()
+
+    source = %NpciTarget{net: 1, address: 500}
+
+    send(
+      client,
+      {:bacnet_transport, :bacnet_ipv4, @bbmd, {:apdu, nil, NPCI.new(source: source), raw},
+       transport}
+    )
+
+    assert {:ok, [{@bbmd, ^source, %IAm{vendor_id: 42}}]} = Task.await(task)
 
     assert_raise ArgumentError, ~r/keyword list/, fn ->
       ForeignDevice.send_whois(fd, 100, [1])
