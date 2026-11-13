@@ -152,6 +152,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AccumulatorTest do
       refute :present_value in Accumulator.get_readonly_properties()
       refute Accumulator.property_writable?(stored.object, :present_value)
       refute Accumulator.property_writable?(stored.object, :pulse_rate)
+      assert Accumulator.property_writable?(stored.object, :units)
       assert {:error, :write_access_denied} = write(stored, :present_value, 17)
       assert {:error, :write_access_denied} = write(stored, :pulse_rate, 17)
 
@@ -385,6 +386,137 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AccumulatorTest do
 
       assert {:error, :operation_not_available_for_remote_objects} =
                Accumulator.record_pulses(remote, 1, context(nil, :periodic, 0))
+
+      remote_context = context(nil, :periodic, 0)
+      assert :ok = Accumulator.validate_execution(remote, remote_context)
+
+      assert {:error, :operation_not_available_for_remote_objects} =
+               Accumulator.prepare_write(remote, remote, %{
+                 remote_context
+                 | trigger: {:property_write, :present_value, nil, nil}
+               })
+
+      assert {:ok, %Result{object: ^remote, state: :snapshot, next_execution: nil}} =
+               Accumulator.execute(remote, %{remote_context | state: :snapshot})
+    end
+
+    test "rejects execution state that is not a retained accumulator snapshot" do
+      stored = initialize(%{})
+
+      for state <- [
+            nil,
+            :bad,
+            %{stored.state | present_value: -1},
+            %{stored.state | remainder: 99},
+            %{stored.state | identifier: :meter}
+          ] do
+        assert {:error, :invalid_execution_state} =
+                 Accumulator.validate_execution(stored.object, %{
+                   context(stored, :periodic, 1)
+                   | state: state
+                 })
+      end
+    end
+
+    test "rejects a rate window or logging snapshot that does not match the retained shape" do
+      stored = initialize(%{})
+
+      for window <- [
+            :open,
+            %{period: 0, deadline: 1, pulses: 1},
+            %{period: 1, deadline: 1, pulses: -1}
+          ] do
+        assert {:error, :invalid_execution_state} =
+                 Accumulator.validate_execution(stored.object, %{
+                   context(stored, :periodic, 1)
+                   | state: %{stored.state | rate_window: window}
+                 })
+      end
+
+      for logging <- [
+            :record,
+            %{reader: :trend_log, acquired: false, accumulated: 0, status: :normal},
+            %{reader: nil, acquired: true, accumulated: -1, status: :normal},
+            %{reader: nil, acquired: true, accumulated: 0, status: :bogus}
+          ] do
+        assert {:error, :invalid_execution_state} =
+                 Accumulator.validate_execution(stored.object, %{
+                   context(stored, :periodic, 1)
+                   | state: %{stored.state | logging: logging}
+                 })
+      end
+    end
+
+    test "a preset creates Value_Change_Time when that property is absent" do
+      stored = initialize(%{present_value: 4, max_present_value: 8})
+      {:ok, stripped} = Accumulator.remove_property(stored.object, :value_change_time)
+      refute Accumulator.has_property?(stripped, :value_change_time)
+      {:ok, with_set} = Accumulator.add_property(stripped, :value_set, 0)
+      refute Accumulator.has_property?(with_set, :value_change_time)
+
+      {:ok, preset} = write(%{stored | object: with_set}, :value_set, 7, 100)
+      assert preset.object.present_value == 7
+      assert preset.object.value_before_change == 4
+      assert preset.object.value_change_time == BACnetDateTime.from_datetime(wall_time(100))
+    end
+
+    test "selecting Logging_Object creates Logging_Record and resumption uses the retained count" do
+      reader = %ObjectIdentifier{type: :trend_log, instance: 2}
+      stored = initialize(%{present_value: 4})
+      refute Accumulator.has_property?(stored.object, :logging_record)
+      {:ok, object} = Accumulator.add_property(stored.object, :logging_object, reader)
+      refute Accumulator.has_property?(object, :logging_record)
+
+      {:ok, counted} = record(%{stored | object: object}, 0, 100)
+
+      assert [%AccumulatorRecord{status: :starting, present_value: 0}] =
+               counted.object.logging_record
+
+      {:ok, acquired} = read_log(counted, 150, reader)
+      {:ok, isolated} = write(acquired, :out_of_service, true, 160)
+      {:ok, simulated} = write(isolated, :present_value, 20, 170)
+      {:ok, resumed} = write(simulated, :out_of_service, false, 180)
+      assert resumed.object.out_of_service == false
+      assert resumed.object.present_value == acquired.object.present_value
+
+      {:ok, counted} = record(resumed, 3, 190)
+      {:ok, logged} = read_log(counted, 200, reader)
+
+      assert [%AccumulatorRecord{status: :normal, accumulated_value: accumulated}] =
+               logged.object.logging_record
+
+      assert accumulated >= 0
+      assert logged.object.present_value >= resumed.object.present_value
+    end
+
+    test "initialization out of service has no physical reliability report" do
+      {:ok, object} =
+        Accumulator.create(
+          1,
+          "Meter",
+          %{
+            scale: 1.0,
+            prescale: %Prescale{multiplier: 1, modulo_divide: 1},
+            out_of_service: true,
+            reliability: :process_error
+          }
+        )
+
+      {:ok, stored} = Lifecycle.execute(object, context(nil, :initialization, 0))
+      assert stored.object.out_of_service
+      assert stored.object.reliability == :process_error
+      assert stored.state.physical_reliability == nil
+      assert stored.state.manual_reliability == :process_error
+    end
+
+    test "an out-of-service write other than reliability keeps the simulated report" do
+      stored = initialize(%{reliability: :process_error})
+      {:ok, isolated} = write(stored, :out_of_service, true, 10)
+      {:ok, simulated} = write(isolated, :reliability, :communication_failure, 20)
+      {:ok, renamed} = write(simulated, :units, :kilowatt_hours, 30)
+      assert renamed.object.units == :kilowatt_hours
+      assert renamed.object.reliability == :communication_failure
+      assert renamed.state.manual_reliability == :communication_failure
     end
 
     defp initialize(properties, opts \\ []) do

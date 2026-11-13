@@ -193,6 +193,14 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BitstringValueTest do
     assert {:error, :invalid_execution_state} =
              Lifecycle.execute(stored.object, %{ctx | state: %{stored.state | value: {:invalid}}})
 
+    wrong_id = %{stored.state.identifier | instance: 11}
+
+    assert {:error, :invalid_execution_state} =
+             Lifecycle.execute(stored.object, %{
+               ctx
+               | state: %{stored.state | identifier: wrong_id}
+             })
+
     assert {:error, :invalid_execution_state} =
              Lifecycle.execute(stored.object, %{ctx | state: :invalid})
 

@@ -234,6 +234,10 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryInputTest do
   end
 
   test "local logical simulation cannot overwrite an OOS value" do
+    reported = initialize(%{out_of_service: true, reliability: :communication_failure})
+    assert reported.object.out_of_service
+    assert reported.object.reliability == :communication_failure
+
     stored = initialize(%{out_of_service: true})
 
     assert {:error, :out_of_service} =
@@ -458,6 +462,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryInputTest do
     for state <- [
           :bad,
           %{stored.state | physical_reliability: :invalid},
+          %{stored.state | physical_reliability: 1},
           %{stored.state | history: %{stored.state.history | active_remainder: 1000}},
           %{
             stored.state
@@ -785,14 +790,18 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryInputTest do
     assert {:ok, %Result{object: ^object, state: :remote, next_execution: nil}} =
              BinaryInput.execute(object, ctx)
 
+    assert :ok = BinaryInput.validate_execution(object, ctx)
+
     assert {:error, :operation_not_available_for_remote_objects} =
              BinaryInput.set_input(object, true)
 
+    write_context = %{ctx | trigger: {:property_write, :present_value, nil, nil}}
+
     assert {:error, :operation_not_available_for_remote_objects} =
-             Lifecycle.prepare_write(object, object, %{
-               ctx
-               | trigger: {:property_write, :present_value, nil, nil}
-             })
+             BinaryInput.prepare_write(object, object, write_context)
+
+    assert {:error, :operation_not_available_for_remote_objects} =
+             Lifecycle.prepare_write(object, object, write_context)
   end
 
   test "write access is checked against the original service state" do

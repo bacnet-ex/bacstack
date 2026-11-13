@@ -1139,6 +1139,191 @@ defmodule BACnet.Test.Protocol.ObjectTypes.EventEnrollmentTest do
     )
   end
 
+  test "disabling detection while reliability evaluation is inhibited clears the fault" do
+    object =
+      enrollment(%{
+        event_parameters: range(0),
+        event_detection_enable: false,
+        reliability_evaluation_inhibit: true,
+        reliability: :configuration_error
+      })
+
+    read = fn _reference -> flunk("disabled enrollment tried to read") end
+
+    assert {:ok, reset} = EventEnrollment.execute(object, context(:periodic, 0, read))
+    assert reset.object.event_state == :normal
+    assert reset.object.reliability == :no_fault_detected
+  end
+
+  test "an inhibited offnormal enrollment faults when monitored status flags cannot be read" do
+    object =
+      enrollment(%{
+        event_parameters: range(0),
+        event_algorithm_inhibit: false,
+        event_algorithm_inhibit_ref: ObjectsMacro.get_default_object_ref()
+      })
+
+    assert {:ok, alarm} = EventEnrollment.execute(object, context(:periodic, 0, input(11)))
+    assert alarm.object.event_state == :high_limit
+
+    assert {:ok, inhibited} =
+             EventEnrollment.update_property(alarm.object, :event_algorithm_inhibit, true)
+
+    read = fn
+      %{property_identifier: :status_flags} -> {:error, :timeout}
+      %{property_identifier: :reliability} -> {:ok, :no_fault_detected}
+      %{property_identifier: :present_value} -> {:ok, 11}
+    end
+
+    assert {:ok, failed} =
+             EventEnrollment.execute(
+               inhibited,
+               context(:periodic, 1, read, state: alarm.state)
+             )
+
+    assert_fault_transition(failed, :high_limit, :fault, :configuration_error)
+  end
+
+  test "inhibited reliability evaluation clears an existing fault when acquisition fails" do
+    object =
+      enrollment(%{
+        event_parameters: range(0),
+        reliability_evaluation_inhibit: false
+      })
+
+    read = fn
+      %{property_identifier: :reliability} -> {:ok, :unreliable_other}
+      reference -> input(11).(reference)
+    end
+
+    assert {:ok, fault} = EventEnrollment.execute(object, context(:periodic, 0, read))
+    assert fault.object.event_state == :fault
+
+    assert {:ok, inhibited} =
+             EventEnrollment.update_property(fault.object, :reliability_evaluation_inhibit, true)
+
+    assert {:ok, cleared} =
+             EventEnrollment.execute(
+               inhibited,
+               context(:periodic, 1, fn _reference -> {:error, :timeout} end, state: fault.state)
+             )
+
+    assert cleared.object.event_state == :normal
+    assert cleared.object.reliability == :no_fault_detected
+  end
+
+  test "a retained ChangeOfState delay that is already due produces no wakeup" do
+    active = %PropertyState{type: :binary_value, value: true}
+
+    object =
+      enrollment(%{
+        object_property_reference: reference(:binary_input, :present_value, nil),
+        event_parameters: %EventParameters.ChangeOfState{
+          alarm_values: [active],
+          time_delay: 5
+        }
+      })
+
+    assert {:ok, pending} = EventEnrollment.execute(object, context(:periodic, 0, input(true)))
+    assert pending.object.event_state == :normal
+    assert %Wakeup{} = pending.next_execution
+
+    assert {:ok, expired} =
+             EventEnrollment.execute(
+               pending.object,
+               context(:periodic, 6_000, input(false), state: pending.state)
+             )
+
+    assert expired.object.event_state == :normal
+    assert expired.next_execution == nil
+    assert EventEnrollment.transition(expired) == nil
+  end
+
+  test "an uninitialized monitored reference is a configuration fault" do
+    assert {:ok, object} =
+             EventEnrollment.create(1, "Enrollment", %{
+               notification_class: 7,
+               event_parameters: range(0)
+             })
+
+    read = fn reference ->
+      flunk("unconfigured enrollment tried to read #{inspect(reference)}")
+    end
+
+    assert {:ok, result} = EventEnrollment.execute(object, context(:initialization, 0, read))
+    assert_fault_transition(result, :normal, :fault, :configuration_error)
+  end
+
+  test "a corrupted delay timestamp is reported as a configuration fault" do
+    object = enrollment(%{event_parameters: range(5)})
+    assert {:ok, pending} = EventEnrollment.execute(object, context(:periodic, 0, input(11)))
+    assert pending.object.event_state == :normal
+    state = put_in(pending.state.event.dt_offnormal, :bogus).state
+
+    assert {:ok, failed} =
+             EventEnrollment.execute(
+               pending.object,
+               context(:periodic, 1, input(11), state: state)
+             )
+
+    assert_fault_transition(failed, :normal, :fault, :configuration_error)
+  end
+
+  test "a faulted monitored value that is already encoded is kept" do
+    reference = reference(:binary_output, :present_value, nil)
+    encoding = Encoding.create!({:enumerated, 1})
+
+    object =
+      enrollment(%{
+        object_property_reference: reference,
+        event_parameters: range(0)
+      })
+
+    read = fn
+      ^reference ->
+        {:ok, encoding}
+
+      %{property_identifier: :reliability} ->
+        {:ok, :unreliable_other}
+
+      %{property_identifier: :status_flags} ->
+        {:ok, StatusFlags.from_bitstring({false, false, false, false})}
+    end
+
+    assert {:ok, fault} = EventEnrollment.execute(object, context(:periodic, 0, read))
+    assert_fault_transition(fault, :normal, :fault, :monitored_object_fault)
+
+    monitored =
+      Enum.find(EventEnrollment.transition(fault).event_values.property_values, fn value ->
+        value.property_identifier == :present_value
+      end)
+
+    assert monitored.property_value == encoding
+  end
+
+  test "an unknown numeric monitored property is a configuration fault" do
+    command = reference(:binary_output, 600, nil)
+    feedback = reference(:binary_output, :feedback_value, nil)
+
+    object =
+      enrollment(%{
+        object_property_reference: command,
+        event_parameters: %EventParameters.CommandFailure{
+          feedback_value: feedback,
+          time_delay: 0
+        }
+      })
+
+    read = fn
+      ^command -> {:ok, true}
+      ^feedback -> {:ok, false}
+      reference -> input(true).(reference)
+    end
+
+    assert {:ok, fault} = EventEnrollment.execute(object, context(:periodic, 0, read))
+    assert_fault_transition(fault, :normal, :fault, :configuration_error)
+  end
+
   defp inhibit(result, value, options \\ []) do
     assert {:ok, object} =
              EventEnrollment.update_property(result.object, :event_algorithm_inhibit, true)

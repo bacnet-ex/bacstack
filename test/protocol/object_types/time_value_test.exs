@@ -199,6 +199,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.TimeValueTest do
     for state <- [
           nil,
           %{stored.state | value: %{@earlier | second: :unspecified}},
+          %{stored.state | value: nil},
           %{stored.state | identifier: wrong_id}
         ] do
       assert {:error, :invalid_execution_state} =
@@ -211,10 +212,18 @@ defmodule BACnet.Test.Protocol.ObjectTypes.TimeValueTest do
     properties = Map.put(properties, :present_value, %{@earlier | second: :unspecified})
     {:ok, remote} = TimeValue.create(11, "Remote", properties, remote_object: 42)
 
+    assert :ok = TimeValue.validate_execution(remote, ctx)
+
+    assert {:ok, %Result{object: ^remote, state: :snapshot, next_execution: nil}} =
+             TimeValue.execute(remote, %{ctx | state: :snapshot})
+
     assert {:ok, %Result{object: ^remote, state: :snapshot, next_execution: nil}} =
              Lifecycle.execute(remote, %{ctx | state: :snapshot})
 
     write_context = context(stored, {:property_write, :present_value, nil, nil})
+
+    assert {:error, :operation_not_available_for_remote_objects} =
+             TimeValue.prepare_write(remote, remote, write_context)
 
     assert {:error, :operation_not_available_for_remote_objects} =
              Lifecycle.prepare_write(remote, remote, write_context)

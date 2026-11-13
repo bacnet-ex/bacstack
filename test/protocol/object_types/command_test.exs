@@ -511,6 +511,40 @@ defmodule BACnet.Test.Protocol.ObjectTypes.CommandTest do
 
     assert {:error, :operation_not_available_for_remote_objects} =
              Lifecycle.prepare_write(object, object, context(write_trigger(), state: :retained))
+
+    assert {:ok, updated} = Command.update_property(object, :present_value, 4)
+    assert updated.present_value == 4
+    assert :ok = Command.validate_execution(object, context(:periodic, state: :retained))
+
+    assert {:error, :operation_not_available_for_remote_objects} =
+             Command.prepare_write(object, object, context(write_trigger(), state: :retained))
+
+    assert {:ok, %Result{object: ^object, state: :retained, next_execution: nil}} =
+             Command.execute(object, context(:periodic, state: :retained))
+  end
+
+  test "optional properties other than action text are added directly" do
+    {:ok, described} = Command.add_property(command(), :description, "Zone command")
+    assert described.description == "Zone command"
+  end
+
+  test "an in-process position past the entry list is rejected" do
+    object = command([[action()]], %{present_value: 1, in_process: true})
+
+    state = %{
+      phase: :ready,
+      action_code: 1,
+      entries: [action()],
+      position: 2,
+      all_success: true,
+      halt: false,
+      delay: 0,
+      deadline: nil,
+      failures: []
+    }
+
+    assert {:error, :invalid_execution_state} =
+             Command.execute(object, context(:continuation, state: state))
   end
 
   test "numeric present-value triggers work and intrinsic metadata does not block execution" do

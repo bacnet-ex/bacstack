@@ -302,6 +302,68 @@ defmodule BACnet.Test.Protocol.ObjectTypes.PulseConverterTest do
              PulseConverter.record_pulses(remote, 1, ctx)
   end
 
+  test "a count that cannot be represented as a real is rejected" do
+    stored = initialize(%{count: 0, scale_factor: 1.0})
+
+    assert {:error, {:property_out_of_range, :count}} =
+             record(stored, Bitwise.bsl(1, 1024), 100)
+
+    assert stored.object.count == 0
+  end
+
+  test "a reference increase with an unusable device clock is not applied" do
+    stored = initialize(%{count: 5, input_reference: source_ref()}, read_source({:ok, 10}))
+    now = DateTime.new!(~D[1899-06-01], ~T[12:00:00], "Etc/UTC")
+
+    ctx =
+      Context.new(:periodic,
+        now: now,
+        monotonic_time: 100,
+        state: stored.state,
+        read_property: read_source({:ok, 12})
+      )
+
+    assert {:error, :invalid_wall_time} = Lifecycle.execute(stored.object, ctx)
+    assert stored.object.count == 5
+  end
+
+  test "the first referenced sample selects reliability when it was not configured" do
+    {:ok, object} = PulseConverter.create(1, "Converter", %{count: 1, scale_factor: 2.0})
+    refute PulseConverter.has_property?(object, :reliability)
+    {:ok, object} = PulseConverter.add_property(object, :input_reference, source_ref())
+    refute PulseConverter.has_property?(object, :reliability)
+
+    {:ok, stored} =
+      Lifecycle.execute(object, context(nil, :initialization, 0, read_source({:ok, 8})))
+
+    assert PulseConverter.has_property?(stored.object, :reliability)
+    assert stored.object.reliability == :no_fault_detected
+    assert stored.state.physical_reliability == :no_fault_detected
+  end
+
+  test "dropping a referenced input clears the sampled reliability report" do
+    stored = initialize(%{count: 5, input_reference: source_ref()}, read_source({:ok, 10}))
+    {:ok, failed} = poll(stored, 100, {:error, :timeout})
+    assert failed.object.reliability == :communication_failure
+    assert is_map(failed.state.source)
+
+    {:ok, direct} = PulseConverter.remove_property(failed.object, :input_reference)
+    refute PulseConverter.has_property?(direct, :input_reference)
+
+    {:ok, cleared} =
+      Lifecycle.execute(direct, context(%{failed | object: direct}, :periodic, 200))
+
+    assert cleared.state.physical_reliability == :no_fault_detected
+    assert cleared.object.reliability == :no_fault_detected
+  end
+
+  test "initialization out of service has no physical reliability report" do
+    stored = initialize(%{out_of_service: true, reliability: :process_error})
+    assert stored.object.out_of_service
+    assert stored.object.reliability == :process_error
+    assert stored.state.physical_reliability == nil
+  end
+
   test "reports a high limit after scaling a pulse" do
     stored =
       initialize(

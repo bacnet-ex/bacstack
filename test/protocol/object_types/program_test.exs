@@ -107,6 +107,11 @@ defmodule BACnet.Test.Protocol.ObjectTypes.ProgramTest do
 
     assert {:ok, ^halted} = event(halted, {:completed, old_token, :ok})
     assert {:error, {:invalid_program_request, :run}} = request(halted, :run)
+    {:ok, candidate} = Program.update_property(halted.object, :program_change, :run)
+
+    assert {:error, {:invalid_program_request, :run}} =
+             Program.execute(candidate, write_context(halted))
+
     assert {:ok, restarted} = request(halted, :restart)
     assert {:ok, loading} = continue(restarted)
     assert loading.object.program_state == :loading
@@ -217,6 +222,13 @@ defmodule BACnet.Test.Protocol.ObjectTypes.ProgramTest do
 
     application = %{context | trigger: {:application_write, :program_change, nil, nil}}
     assert {:ok, ^candidate} = Program.prepare_write(overridden, candidate, application)
+  end
+
+  test "descriptive writes are accepted while a program request is ready" do
+    stored = initialize(:idle, %{description: "old"})
+    context = Context.new({:property_write, :description, nil, nil}, state: stored.state)
+    {:ok, candidate} = Program.update_property(stored.object, :description, "new")
+    assert {:ok, ^candidate} = Program.prepare_write(stored.object, candidate, context)
   end
 
   test "location events update selected locations and runtime-owned properties are read-only" do

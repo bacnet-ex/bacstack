@@ -227,10 +227,18 @@ defmodule BACnet.Test.Protocol.ObjectTypes.TimePatternValueTest do
     properties = Map.put(properties, :present_value, %{@earlier | hour: :unspecified})
     {:ok, remote} = TimePatternValue.create(11, "Remote", properties, remote_object: 42)
 
+    assert :ok = TimePatternValue.validate_execution(remote, ctx)
+
+    assert {:ok, %Result{object: ^remote, state: :snapshot, next_execution: nil}} =
+             TimePatternValue.execute(remote, %{ctx | state: :snapshot})
+
     assert {:ok, %Result{object: ^remote, state: :snapshot, next_execution: nil}} =
              Lifecycle.execute(remote, %{ctx | state: :snapshot})
 
     write_context = context(stored, {:property_write, :present_value, nil, nil})
+
+    assert {:error, :operation_not_available_for_remote_objects} =
+             TimePatternValue.prepare_write(remote, remote, write_context)
 
     assert {:error, :operation_not_available_for_remote_objects} =
              Lifecycle.prepare_write(remote, remote, write_context)

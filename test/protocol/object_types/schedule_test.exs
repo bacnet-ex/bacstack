@@ -917,10 +917,90 @@ defmodule BACnet.Test.Protocol.ObjectTypes.ScheduleTest do
     {:ok, result} = Lifecycle.execute(object, %{context() | state: :opaque})
     assert result == %Result{object: object, state: :opaque, next_execution: nil}
 
+    write = %{context() | trigger: {:property_write, :schedule_default, nil, nil}}
+
     assert {:error, :operation_not_available_for_remote_objects} =
-             Lifecycle.prepare_write(object, object, %{
+             Lifecycle.prepare_write(object, object, write)
+
+    assert :ok = Schedule.validate_execution(object, %{context() | state: :opaque})
+
+    assert {:error, :operation_not_available_for_remote_objects} =
+             Schedule.prepare_write(object, object, write)
+
+    assert {:ok, %Result{object: ^object, state: :opaque, next_execution: nil}} =
+             Schedule.execute(object, %{context() | state: :opaque})
+  end
+
+  test "atom and tuple write failures are configuration faults" do
+    reference = %DeviceObjectPropertyRef{
+      device_identifier: oid(:device, 42),
+      object_identifier: oid(:analog_value, 9),
+      property_identifier: :present_value,
+      property_array_index: nil
+    }
+
+    object =
+      schedule(%{
+        schedule_default: enc(:enumerated, 1),
+        list_of_object_property_references: [reference]
+      })
+
+    for reason <- [:unknown_object, {:unknown_property, :present_value}] do
+      ctx = %{
+        context()
+        | write_property: fn _reference, _value, _priority -> {:error, reason} end
+      }
+
+      assert {:ok, published} = Lifecycle.execute(object, ctx)
+      assert published.next_execution == :immediate
+
+      assert {:ok, finished} =
+               Lifecycle.execute(published.object, %{
+                 ctx
+                 | state: published.state,
+                   trigger: :continuation
+               })
+
+      assert finished.object.reliability == :configuration_error
+      assert finished.state.failures == [{reference, reason}]
+      assert finished.state.failure_kind == :write
+    end
+  end
+
+  test "a non-boolean calendar value is an invalid calendar reference" do
+    calendar = oid(:calendar, 2)
+    exception = %{event([tv(0, 0, enc(:boolean, true))]) | period: calendar}
+
+    object =
+      schedule(%{
+        schedule_default: enc(:boolean, false),
+        exception_schedule: BACnetArray.from_list([exception])
+      })
+
+    {:ok, failed} =
+      Lifecycle.execute(object, %{
+        context()
+        | read_property: fn _reference -> {:ok, 1} end
+      })
+
+    assert failed.object.reliability == :configuration_error
+    assert failed.object.present_value.type == :null
+
+    assert [{identifier, {:invalid_calendar_value, ^calendar}}] = failed.state.failures
+    assert identifier == Schedule.get_object_identifier(failed.object)
+  end
+
+  test "opaque runtime state is rejected after initialization" do
+    {:ok, stored} = Lifecycle.execute(schedule(), context())
+
+    assert {:error, :invalid_execution_state} =
+             Schedule.execute(stored.object, %{context() | trigger: :periodic, state: :bad})
+
+    assert {:error, :invalid_execution_state} =
+             Lifecycle.execute(stored.object, %{
                context()
-               | trigger: {:property_write, :schedule_default, nil, nil}
+               | trigger: :periodic,
+                 state: %{stored.state | value: :not_an_encoding}
              })
   end
 

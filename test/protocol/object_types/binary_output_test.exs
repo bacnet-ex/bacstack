@@ -631,11 +631,15 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryOutputTest do
     assert {:ok, %Result{object: ^object, state: :remote, next_execution: nil}} =
              BinaryOutput.execute(object, ctx)
 
+    assert :ok = BinaryOutput.validate_execution(object, ctx)
+
+    write_context = %{ctx | trigger: {:property_write, :present_value, nil, 8}}
+
     assert {:error, :operation_not_available_for_remote_objects} =
-             Lifecycle.prepare_write(object, object, %{
-               ctx
-               | trigger: {:property_write, :present_value, nil, 8}
-             })
+             BinaryOutput.prepare_write(object, object, write_context)
+
+    assert {:error, :operation_not_available_for_remote_objects} =
+             Lifecycle.prepare_write(object, object, write_context)
   end
 
   test "a host drives pending commands, elapsed seconds, hold timers and fresh reads" do

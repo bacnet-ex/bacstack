@@ -416,6 +416,33 @@ defmodule BACnet.Test.Protocol.ObjectTypes.IntegerValueTest do
 
       assert {:error, :operation_not_available_for_remote_objects} =
                IntegerValue.prepare_write(remote, remote, ctx)
+
+      assert :ok = IntegerValue.validate_execution(remote, ctx)
+
+      assert {:ok, %Result{object: ^remote, state: :snapshot, next_execution: nil}} =
+               IntegerValue.execute(remote, ctx)
+    end
+
+    test "out-of-service edits keep the previously stored manual reliability" do
+      stored =
+        initialize(%{
+          out_of_service: true,
+          reliability: :process_error,
+          description: "Offset"
+        })
+
+      assert stored.object.reliability == :process_error
+      assert stored.state.manual_reliability == :process_error
+
+      {:ok, renamed} = write(stored, :description, "Simulated offset")
+      assert renamed.object.description == "Simulated offset"
+      assert renamed.object.reliability == :process_error
+      assert renamed.state.manual_reliability == :process_error
+
+      {:ok, inhibited} = write(renamed, :reliability_evaluation_inhibit, true)
+      assert inhibited.object.reliability == :process_error
+      assert inhibited.object.status_flags.fault
+      assert inhibited.state.manual_reliability == :process_error
     end
 
     defp initialize(properties, options \\ []) do

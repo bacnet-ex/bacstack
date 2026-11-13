@@ -31,6 +31,14 @@ defmodule BACnet.Test.Protocol.ObjectTypes.GroupTest do
     assert {:error, {:value_failed_property_validation, :list_of_group_members}} =
              Group.create(1, "View", %{list_of_group_members: []})
 
+    assert {:ok, remote} =
+             Group.create(1, "Remote", %{list_of_group_members: [], present_value: []},
+               remote_object: 42
+             )
+
+    assert remote.list_of_group_members == []
+    assert remote._metadata.remote_object == 42
+
     refute Group.property_writable?(object(), :present_value)
     assert Group.property_writable?(object(), :list_of_group_members)
   end
@@ -279,7 +287,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.GroupTest do
   end
 
   test "Group and Global Group present-value nesting is rejected for all identifier forms" do
-    for type <- [:group, :global_group],
+    for type <- [:group, :global_group, 0x0B, 0x1A],
         selector <- [:present_value, 85, :all, :required, 8, 105] do
       specification = %AccessSpecification{
         object_identifier: %ObjectIdentifier{type: type, instance: 2},
@@ -289,6 +297,13 @@ defmodule BACnet.Test.Protocol.ObjectTypes.GroupTest do
       assert {:error, {:value_failed_property_validation, :list_of_group_members}} =
                Group.create(1, "Nested", %{list_of_group_members: [specification]})
     end
+  end
+
+  test "an unknown numeric member property is an invalid datatype" do
+    stored = read(object([member(2, [property(600)])]), fn _reference -> {:ok, 1} end)
+
+    assert hd(hd(stored.object.present_value).results).error ==
+             %BACnetError{class: :property, code: :invalid_datatype}
   end
 
   test "Group metadata and OPTIONAL selection are permitted without nesting values" do

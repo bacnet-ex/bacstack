@@ -665,6 +665,49 @@ defmodule BACnet.Test.Protocol.ObjectTypes.AveragingTest do
 
     assert {:error, :operation_not_available_for_remote_objects} =
              Lifecycle.prepare_write(remote, remote, ctx)
+
+    assert {:error, :operation_not_available_for_remote_objects} =
+             Averaging.prepare_write(remote, remote, ctx)
+  end
+
+  test "retained samples must be missed or a real timestamp pair" do
+    stored = initial()
+
+    state = %{stored.state | next_slot: 2, samples: [{1.0, :not_a_timestamp}]}
+
+    assert {:error, :invalid_execution_state} =
+             Averaging.validate_execution(
+               stored.object,
+               context(:timer, state: state, monotonic_time: 1000)
+             )
+  end
+
+  test "integers that cannot be converted to a real are missed samples" do
+    stored = initial()
+    missed = step(stored, 1000, Bitwise.bsl(1, 1024))
+    assert missed.object.attempted_samples == 1
+    assert missed.object.valid_samples == 0
+    assert missed.state.last_error == {reference(), :invalid_sample_value}
+  end
+
+  test "a missing statistic property aborts the sample update" do
+    stored = initial()
+    metadata = stored.object._metadata
+
+    object = %{
+      stored.object
+      | _metadata: %{
+          metadata
+          | properties_list: List.delete(metadata.properties_list, :min_value)
+        }
+    }
+
+    refute Averaging.has_property?(object, :min_value)
+    assert object.min_value == :inf
+
+    assert_raise MatchError, ~r/unknown_property/, fn ->
+      step(%{stored | object: object}, 1000, 4.0)
+    end
   end
 
   test "intrinsic reporting creation stays unsupported but does not block lifecycle execution" do

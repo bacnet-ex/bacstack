@@ -348,6 +348,10 @@ defmodule BACnet.Test.Protocol.ObjectTypes.DeviceTest do
       assert Device.validate_execution(device, context) == {:error, :invalid_device_event}
       assert Device.execute(device, context) == {:error, :invalid_device_event}
 
+      invalid = %{context | options: [device_event: :not_an_event]}
+      assert Device.validate_execution(device, invalid) == {:error, :invalid_device_event}
+      assert Device.execute(device, invalid) == {:error, :invalid_device_event}
+
       now = ~U[2155-01-01 00:00:00Z]
       periodic = Context.new(:periodic, now: now)
       assert :ok = Device.validate_execution(device, periodic)
@@ -448,8 +452,11 @@ defmodule BACnet.Test.Protocol.ObjectTypes.DeviceTest do
     @impl true
     @spec time_zone_periods_from_wall_datetime(Calendar.naive_datetime(), Calendar.time_zone()) ::
             {:ok, Calendar.TimeZoneDatabase.time_zone_period()}
+            | {:ambiguous, Calendar.TimeZoneDatabase.time_zone_period(),
+               Calendar.TimeZoneDatabase.time_zone_period()}
             | {:gap, {Calendar.TimeZoneDatabase.time_zone_period(), NaiveDateTime.t()},
                {Calendar.TimeZoneDatabase.time_zone_period(), NaiveDateTime.t()}}
+            | {:error, term()}
     def time_zone_periods_from_wall_datetime(datetime, timezone)
 
     def time_zone_periods_from_wall_datetime(%NaiveDateTime{hour: hour}, "Test/Gap")
@@ -460,6 +467,20 @@ defmodule BACnet.Test.Protocol.ObjectTypes.DeviceTest do
       do: {:gap, {@standard, ~N[2026-03-29 02:00:00]}, {@summer, ~N[2026-03-29 03:00:00]}}
 
     def time_zone_periods_from_wall_datetime(_datetime, "Test/Gap"), do: {:ok, @summer}
+
+    def time_zone_periods_from_wall_datetime(
+          %NaiveDateTime{hour: 1, minute: minute},
+          "Test/Overlap"
+        )
+        when minute >= 30,
+        do: {:ambiguous, @summer, @standard}
+
+    def time_zone_periods_from_wall_datetime(%NaiveDateTime{hour: hour}, "Test/Overlap")
+        when hour < 2,
+        do: {:ok, @summer}
+
+    def time_zone_periods_from_wall_datetime(_datetime, "Test/Overlap"), do: {:ok, @standard}
+    def time_zone_periods_from_wall_datetime(_datetime, "Test/Broken"), do: {:error, :fake}
   end
 
   describe "periodic time synchronization" do
@@ -578,6 +599,55 @@ defmodule BACnet.Test.Protocol.ObjectTypes.DeviceTest do
       assert DateTime.compare(deadline, ~U[2026-03-29 01:15:00Z]) == :eq
       assert deadline.hour == 3
       assert deadline.minute == 15
+    end
+
+    test "an aligned deadline in a local overlap keeps the offset still ahead of now" do
+      device =
+        device(%{
+          align_intervals: true,
+          interval_offset: 0,
+          time_synchronization_interval: 30,
+          time_synchronization_recipients: [device_recipient(42)]
+        })
+
+      now = DateTime.from_naive!(~N[2026-10-25 01:00:00], "Test/Overlap", TimezoneDatabase)
+      context = Context.new(:initialization, now: now, timezone_database: TimezoneDatabase)
+
+      assert {:ok, %Result{next_execution: %Wakeup{wall_time: deadline, monotonic_time: nil}}} =
+               Device.execute(device, context)
+
+      assert deadline.hour == 1
+      assert deadline.minute == 30
+      assert deadline.std_offset == 3600
+      assert DateTime.compare(deadline, now) == :gt
+    end
+
+    test "an aligned zone the database cannot resolve is an invalid device clock" do
+      device =
+        device(%{
+          align_intervals: true,
+          interval_offset: 0,
+          time_synchronization_interval: 30,
+          time_synchronization_recipients: [device_recipient(42)]
+        })
+
+      now = %DateTime{
+        calendar: Calendar.ISO,
+        year: 2026,
+        month: 10,
+        day: 25,
+        hour: 1,
+        minute: 0,
+        second: 0,
+        microsecond: {0, 0},
+        time_zone: "Test/Broken",
+        zone_abbr: "STD",
+        utc_offset: 3600,
+        std_offset: 0
+      }
+
+      context = Context.new(:initialization, now: now, timezone_database: TimezoneDatabase)
+      assert {:error, {:invalid_device_clock, :fake}} = Device.execute(device, context)
     end
 
     test "an interval that does not divide an hour or day is relative even with alignment enabled" do

@@ -192,6 +192,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.DateValueTest do
     for state <- [
           nil,
           %{stored.state | value: %{@earlier | day: :last}},
+          %{stored.state | value: nil},
           %{stored.state | identifier: wrong_id}
         ] do
       assert {:error, :invalid_execution_state} =
@@ -204,10 +205,18 @@ defmodule BACnet.Test.Protocol.ObjectTypes.DateValueTest do
     properties = Map.put(properties, :present_value, %{@earlier | day: :last})
     {:ok, remote} = DateValue.create(11, "Remote", properties, remote_object: 42)
 
+    assert :ok = DateValue.validate_execution(remote, ctx)
+
+    assert {:ok, %Result{object: ^remote, state: :snapshot, next_execution: nil}} =
+             DateValue.execute(remote, %{ctx | state: :snapshot})
+
     assert {:ok, %Result{object: ^remote, state: :snapshot, next_execution: nil}} =
              Lifecycle.execute(remote, %{ctx | state: :snapshot})
 
     write_context = context(stored, {:property_write, :present_value, nil, nil})
+
+    assert {:error, :operation_not_available_for_remote_objects} =
+             DateValue.prepare_write(remote, remote, write_context)
 
     assert {:error, :operation_not_available_for_remote_objects} =
              Lifecycle.prepare_write(remote, remote, write_context)

@@ -345,6 +345,11 @@ defmodule BACnet.Test.Protocol.ObjectTypes.MultistateInputTest do
       assert {:error, :invalid_execution_state} =
                Lifecycle.execute(stored.object, context(nil, :periodic))
 
+      {:ok, another} = MultistateInput.create(11, "Other", %{number_of_states: 4})
+
+      assert {:error, :invalid_execution_state} =
+               Lifecycle.execute(another, context(stored, :periodic))
+
       id = MultistateInput.get_object_identifier(stored.object)
       null = Encoding.create!({:null, nil})
       assert {:ok, :undefined} = ObjectsUtility.cast_property_to_value(id, :interface_value, null)
@@ -375,6 +380,41 @@ defmodule BACnet.Test.Protocol.ObjectTypes.MultistateInputTest do
 
       assert {:error, :operation_not_available_for_remote_objects} =
                MultistateInput.prepare_write(remote, remote, ctx)
+
+      assert :ok = MultistateInput.validate_execution(remote, ctx)
+
+      assert {:ok, %Result{object: ^remote, state: :snapshot, next_execution: nil}} =
+               MultistateInput.execute(remote, ctx)
+    end
+
+    test "Interface_Value rejects invalid native values and non-positive encodings" do
+      id = MultistateInput.get_object_identifier(initialize(%{}).object)
+
+      for invalid <- [0, :unknown] do
+        assert {:error, {:invalid_property_value, {:interface_value, ^invalid}}} =
+                 ObjectsUtility.cast_value_to_property(id, :interface_value, invalid)
+      end
+
+      for tags <- [{:unsigned_integer, 0}, {:signed_integer, 2}] do
+        encoded = Encoding.create!(tags)
+
+        assert {:error, {:invalid_property_value, {:interface_value, ^encoded}}} =
+                 ObjectsUtility.cast_property_to_value(id, :interface_value, encoded)
+      end
+    end
+
+    test "a missing state-text index is rejected and a count change without labels leaves it absent" do
+      stored = initialize(%{number_of_states: 4})
+      refute MultistateInput.has_property?(stored.object, :state_text)
+
+      sparse = %{stored.object | state_text: BACnetArray.from_list(["1", :undefined, "3", "4"])}
+
+      assert {:error, {:invalid_configuration, :state_text}} =
+               Lifecycle.execute(sparse, context(stored, :periodic))
+
+      {:ok, grown} = write(stored, :number_of_states, 6, :application_write)
+      assert grown.object.number_of_states == 6
+      refute MultistateInput.has_property?(grown.object, :state_text)
     end
 
     defp initialize(properties, opts \\ []) do

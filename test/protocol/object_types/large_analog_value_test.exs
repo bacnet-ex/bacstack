@@ -435,6 +435,11 @@ defmodule BACnet.Test.Protocol.ObjectTypes.LargeAnalogValueTest do
       assert {:error, :invalid_execution_state} =
                Lifecycle.execute(stored.object, %{ctx | state: nil})
 
+      {:ok, another} = LargeAnalogValue.create(11, "Another")
+
+      assert {:error, :invalid_execution_state} =
+               Lifecycle.execute(another, context(stored, :periodic))
+
       properties =
         Map.take(stored.object, [
           :present_value,
@@ -452,6 +457,54 @@ defmodule BACnet.Test.Protocol.ObjectTypes.LargeAnalogValueTest do
 
       assert {:error, :operation_not_available_for_remote_objects} =
                LargeAnalogValue.prepare_write(remote, remote, ctx)
+
+      assert :ok = LargeAnalogValue.validate_execution(remote, ctx)
+
+      assert {:ok, %Result{object: ^remote, state: :snapshot, next_execution: nil}} =
+               LargeAnalogValue.execute(remote, ctx)
+    end
+
+    test "non-float commands skip the Double range check" do
+      {:ok, direct} =
+        LargeAnalogValue.create(1, "Precise", %{
+          min_present_value: 0.0,
+          max_present_value: 1.0
+        })
+
+      assert {:error, {:invalid_property_type, :present_value}} =
+               LargeAnalogValue.update_property(direct, :present_value, 1)
+
+      {:ok, commandable} = LargeAnalogValue.create(10, "Commandable", %{relinquish_default: 0.0})
+
+      configured = %{
+        commandable
+        | priority_array: %{commandable.priority_array | priority_8: 1}
+      }
+
+      assert {:ok, %{object: %{present_value: 1, priority_array: %{priority_8: 1}}}} =
+               Lifecycle.execute(configured, context(nil, :initialization))
+    end
+
+    test "out-of-service edits keep the previously stored manual reliability" do
+      stored =
+        initialize(%{
+          out_of_service: true,
+          reliability: :process_error,
+          description: "Precise"
+        })
+
+      assert stored.object.reliability == :process_error
+      assert stored.state.manual_reliability == :process_error
+
+      {:ok, renamed} = write(stored, :description, "Simulated precise")
+      assert renamed.object.description == "Simulated precise"
+      assert renamed.object.reliability == :process_error
+      assert renamed.state.manual_reliability == :process_error
+
+      {:ok, inhibited} = write(renamed, :reliability_evaluation_inhibit, true)
+      assert inhibited.object.reliability == :process_error
+      assert inhibited.object.status_flags.fault
+      assert inhibited.state.manual_reliability == :process_error
     end
 
     defp initialize(properties, options \\ []) do

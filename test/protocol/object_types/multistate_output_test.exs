@@ -364,6 +364,11 @@ defmodule BACnet.Test.Protocol.ObjectTypes.MultistateOutputTest do
         assert {:error, {:invalid_property_value, {:interface_value, ^encoded}}} =
                  ObjectsUtility.cast_property_to_value(id, :interface_value, encoded)
       end
+
+      for invalid <- [0, :unknown] do
+        assert {:error, {:invalid_property_value, {:interface_value, ^invalid}}} =
+                 ObjectsUtility.cast_value_to_property(id, :interface_value, invalid)
+      end
     end
 
     test "count changes resize labels while label updates cannot resize the state set" do
@@ -415,6 +420,11 @@ defmodule BACnet.Test.Protocol.ObjectTypes.MultistateOutputTest do
                  | state: %{stored.state | identifier: nil}
                })
 
+      {:ok, another} = MultistateOutput.create(11, "Another", %{number_of_states: 4})
+
+      assert {:error, :invalid_execution_state} =
+               Lifecycle.execute(another, context(stored, :periodic))
+
       properties =
         Map.take(stored.object, [
           :present_value,
@@ -434,6 +444,43 @@ defmodule BACnet.Test.Protocol.ObjectTypes.MultistateOutputTest do
 
       assert {:error, :operation_not_available_for_remote_objects} =
                MultistateOutput.prepare_write(remote, remote, ctx)
+
+      assert :ok = MultistateOutput.validate_execution(remote, ctx)
+
+      assert {:ok, %Result{object: ^remote, state: :snapshot, next_execution: nil}} =
+               MultistateOutput.execute(remote, ctx)
+    end
+
+    test "sparse state text is rejected when an index is missing" do
+      stored = initialize(%{number_of_states: 4})
+      sparse = %{stored.object | state_text: BACnetArray.from_list(["1", :undefined, "3", "4"])}
+
+      assert {:error, {:invalid_configuration, :state_text}} =
+               Lifecycle.execute(sparse, context(stored, :periodic))
+    end
+
+    test "out-of-service initialization has no physical sample and later edits keep manual reliability" do
+      stored =
+        initialize(%{
+          out_of_service: true,
+          reliability: :process_error,
+          description: "Fan"
+        })
+
+      assert stored.object.out_of_service
+      assert stored.object.reliability == :process_error
+      assert stored.state.physical_reliability == nil
+      assert stored.state.manual_reliability == :process_error
+
+      {:ok, renamed} = write(stored, :description, "Supply fan")
+      assert renamed.object.description == "Supply fan"
+      assert renamed.object.reliability == :process_error
+      assert renamed.state.manual_reliability == :process_error
+
+      {:ok, inhibited} = write(renamed, :reliability_evaluation_inhibit, true)
+      assert inhibited.object.reliability == :process_error
+      assert inhibited.object.status_flags.fault
+      assert inhibited.state.manual_reliability == :process_error
     end
 
     defp initialize(properties, opts \\ []) do

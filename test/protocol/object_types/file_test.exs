@@ -320,6 +320,25 @@ defmodule BACnet.Test.Protocol.ObjectTypes.FileTest do
              File.record_modification(remote, %{file_size: 0, record_count: nil}, @modified_at)
   end
 
+  @link_speed_file "/sys/class/net/lo/speed"
+  @tag skip:
+         (case DiskFile.stat(@link_speed_file) do
+            {:ok, %DiskFile.Stat{type: :regular, access: :read}} -> false
+            _other -> true
+          end)
+  test "disk reads return the pread error from a regular file that rejects reads" do
+    {:ok, file} = File.create(1, "Link speed", %{}, file_path: @link_speed_file)
+
+    read = %AtomicReadFile{
+      object_identifier: File.get_object_identifier(file),
+      stream_access: true,
+      start_position: 0,
+      requested_count: 1
+    }
+
+    assert {:error, {:file_io, :einval}} = File.read_file(file, read)
+  end
+
   @sysfs_file "/sys/devices/system/cpu/kernel_max"
   @tag skip:
          (case DiskFile.stat(@sysfs_file) do

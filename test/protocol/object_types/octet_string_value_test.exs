@@ -153,10 +153,18 @@ defmodule BACnet.Test.Protocol.ObjectTypes.OctetStringValueTest do
 
     {:ok, remote} = OctetStringValue.create(11, "Remote", properties, remote_object: 42)
 
+    assert :ok = OctetStringValue.validate_execution(remote, ctx)
+
+    assert {:ok, %Result{object: ^remote, state: :snapshot, next_execution: nil}} =
+             OctetStringValue.execute(remote, %{ctx | state: :snapshot})
+
     assert {:ok, %Result{object: ^remote, state: :snapshot, next_execution: nil}} =
              Lifecycle.execute(remote, %{ctx | state: :snapshot})
 
     write_context = context(stored, {:property_write, :present_value, nil, nil})
+
+    assert {:error, :operation_not_available_for_remote_objects} =
+             OctetStringValue.prepare_write(remote, remote, write_context)
 
     assert {:error, :operation_not_available_for_remote_objects} =
              Lifecycle.prepare_write(remote, remote, write_context)

@@ -9,6 +9,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.NetworkPortTest do
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.ObjectsUtility
   alias BACnet.Protocol.ObjectTypes.NetworkPort
+  alias BACnet.Protocol.VmacEntry
 
   use ExUnit.Case, async: true
 
@@ -323,6 +324,40 @@ defmodule BACnet.Test.Protocol.ObjectTypes.NetworkPortTest do
 
       assert {:ok, static} = NetworkPort.update_operating_property(port, :ip_dhcp_enable, false)
       assert prepare(static, :command, :renew_dhcp) == {:error, {:property, :value_out_of_range}}
+    end
+
+    test "IPv6 foreign registration and automatic addressing accept renew commands" do
+      handler = fn _port -> :ok end
+
+      foreign =
+        port(ipv6_properties(%{bacnet_ipv6_mode: :foreign}),
+          network_port_runtime: %{renew_fd_registration: handler}
+        )
+
+      assert {:ok, _accepted, _context} = prepare(foreign, :command, :renew_fd_registration)
+
+      automatic =
+        port(ipv6_properties(%{ipv6_auto_addressing_enable: true}),
+          network_port_runtime: %{renew_dhcp: handler}
+        )
+
+      assert {:ok, _accepted, _context} = prepare(automatic, :command, :renew_dhcp)
+    end
+
+    test "DHCP renewal and autonegotiation reject missing or disabled optional features" do
+      ipv4 = %{port() | network_type: :ipv4}
+
+      assert prepare(ipv4, :command, :renew_dhcp) ==
+               {:error, {:property, :optional_functionality_not_supported}}
+
+      assert prepare(port(ipv6_properties(%{})), :command, :renew_dhcp) ==
+               {:error, {:property, :optional_functionality_not_supported}}
+
+      assert prepare(port(%{link_speed_autonegotiate: false}), :command, :restart_autonegotiation) ==
+               {:error, {:property, :value_out_of_range}}
+
+      assert prepare(port(), :command, :restart_autonegotiation) ==
+               {:error, {:property, :optional_functionality_not_supported}}
     end
 
     test "MS/TP discovery and PTP disconnect dispatch their registered actions" do
@@ -747,6 +782,27 @@ defmodule BACnet.Test.Protocol.ObjectTypes.NetworkPortTest do
                {ip_tup, port},
                allow_partial: true
              )
+  end
+
+  defp ipv6_properties(overrides) do
+    address = {0x2001, 0x0DB8, 0, 0, 0, 0, 0, 1}
+
+    Map.merge(
+      %{
+        network_type: :ipv6,
+        protocol_level: :bacnet_application,
+        bacnet_ipv6_mode: :normal,
+        bacnet_ipv6_udp_port: 47_808,
+        bacnet_ipv6_multicast_address: {address, 47_808},
+        ipv6_address: address,
+        ipv6_prefix_length: 64,
+        ipv6_default_gateway: address,
+        virtual_mac_address_table: [
+          %VmacEntry{virtual_mac_address: <<1, 2, 3, 4, 5, 6>>, native_mac_address: <<9>>}
+        ]
+      },
+      overrides
+    )
   end
 
   defp port(properties \\ %{}, options \\ []) do

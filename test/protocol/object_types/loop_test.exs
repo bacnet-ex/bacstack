@@ -65,6 +65,16 @@ defmodule BACnet.Test.Protocol.ObjectTypes.LoopTest do
     refute_received {:write, _reference, _value, _priority}
   end
 
+  test "disabled intrinsic reporting restores an empty execution state" do
+    object = object(%{error_limit: 1.0}, intrinsic_reporting: true, pid_enabled: false)
+    ctx = context(:periodic, read_property: nil, write_property: nil)
+
+    assert {:ok, result} = Loop.execute(object, ctx)
+    assert result.state.identifier == Loop.get_object_identifier(object)
+    assert result.state.pending_write == nil
+    assert result.state.controller == nil
+  end
+
   test "reports a floating low limit alongside a PID command" do
     object = object(%{error_limit: 1.0}, intrinsic_reporting: true)
     assert {:ok, result} = Loop.execute(object, context(:initialization))
@@ -226,6 +236,13 @@ defmodule BACnet.Test.Protocol.ObjectTypes.LoopTest do
              Loop.set_pid_enabled(pending.object, false, %{ctx | state: pending.state})
 
     refute_received {:write, _reference, _value, _priority}
+
+    assert {:ok, held} =
+             Loop.execute(pending.object, %{ctx | trigger: :timer, state: pending.state})
+
+    refute_received {:write, _reference, _value, _priority}
+    assert held.state.pending_write == pending.state.pending_write
+    assert held.next_execution == :immediate
   end
 
   test "start and stop options respect limits and nil restores the defaults" do
@@ -913,6 +930,19 @@ defmodule BACnet.Test.Protocol.ObjectTypes.LoopTest do
                ctx
                | read_property: fn _reference -> {:ok, 19.0} end
              })
+
+    assert {:error, {:invalid_configuration, :min_output}} =
+             Loop.validate_execution(%{object() | min_output: :NaN}, ctx)
+
+    assert {:error, {:invalid_configuration, :pid_constants}} =
+             Loop.validate_execution(
+               %{
+                 object()
+                 | integral_constant: 1.0e-320,
+                   integral_constant_units: :per_second
+               },
+               ctx
+             )
   end
 
   test "an uninitialized controlled-variable reference needs no callbacks or wakeup" do
@@ -1102,7 +1132,8 @@ defmodule BACnet.Test.Protocol.ObjectTypes.LoopTest do
 
     for state <- [
           :invalid,
-          %{stored.state | identifier: %ObjectIdentifier{type: :loop, instance: 999}}
+          %{stored.state | identifier: %ObjectIdentifier{type: :loop, instance: 999}},
+          %{stored.state | pending_write: :bogus}
         ] do
       assert {:error, :invalid_execution_state} =
                Loop.validate_execution(stored.object, %{ctx | state: state})
