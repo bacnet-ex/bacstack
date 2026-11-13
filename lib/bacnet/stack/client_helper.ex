@@ -472,7 +472,7 @@ defmodule BACnet.Stack.ClientHelper do
              device,
              Constants.macro_assert_name(:property_identifier, :object_list),
              nil,
-             raw: true
+             Keyword.put(opts, :raw, true)
            ) do
       len = length(objects_list)
       pre_new_opts = Keyword.put(opts, :remote_device_id, device.instance)
