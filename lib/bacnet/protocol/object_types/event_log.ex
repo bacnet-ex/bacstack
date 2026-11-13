@@ -108,6 +108,7 @@ defmodule BACnet.Protocol.ObjectTypes.EventLog do
   alias BACnet.Protocol.ObjectExecution.Context
   alias BACnet.Protocol.ObjectExecution.LogLifecycle
   alias BACnet.Protocol.ObjectExecution.Result
+  alias BACnet.Stack.LogBufferBehaviour
   alias BACnet.Stack.TrendLogger
 
   require Constants

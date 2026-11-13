@@ -7,7 +7,6 @@ defmodule BACnet.Test.Protocol.ObjectTypes.BinaryValueTest do
   alias BACnet.Protocol.DeviceObjectPropertyRef
   alias BACnet.Protocol.EventTransitionBits
   alias BACnet.Protocol.NotificationParameters
-  alias BACnet.Protocol.DeviceObjectPropertyRef
   alias BACnet.Protocol.ObjectExecution.Context
   alias BACnet.Protocol.ObjectExecution.EventReporting
   alias BACnet.Protocol.ObjectExecution.Lifecycle
