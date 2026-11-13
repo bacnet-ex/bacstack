@@ -493,7 +493,7 @@ defmodule BACnet.Protocol.ObjectTypes.Loop do
   end
 
   @doc """
-  Returns whether the Loop selects built-in PID control.
+  Returns whether the Loop uses built-in PID control.
 
   Control runs in service when Loop reads a configured reference or receives an
   application reading.
