@@ -262,7 +262,9 @@ defmodule BACnet.Examples.GroupLifecycle do
           Enum.filter(present, &(&1 in module.get_optional_properties()))
       end
 
-    names |> Enum.reject(&(&1 == :property_list)) |> Enum.sort()
+    names
+    |> Enum.reject(&(&1 == :property_list))
+    |> Enum.sort()
   end
 
   @spec external_name(atom()) :: atom()

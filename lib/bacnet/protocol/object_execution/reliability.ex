@@ -7,10 +7,14 @@ defmodule BACnet.Protocol.ObjectExecution.Reliability do
   alias BACnet.Protocol.Constants
   alias BACnet.Protocol.ObjectExecution.Context
 
-  @typedoc "Reliability value retained for a selected property."
+  @typedoc """
+  Reliability value retained for a selected property.
+  """
   @type value :: Constants.reliability() | non_neg_integer() | nil
 
-  @typedoc "Reliability inputs to retain with the object's execution state."
+  @typedoc """
+  Reliability inputs to retain with the object's execution state.
+  """
   @type state :: %{reported_reliability: value(), manual_reliability: value()}
 
   @doc """

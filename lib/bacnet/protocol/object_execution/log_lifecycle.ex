@@ -14,7 +14,9 @@ defmodule BACnet.Protocol.ObjectExecution.LogLifecycle do
   alias BACnet.Protocol.ObjectTypes.EventLog
   alias BACnet.Stack.TrendLogger
 
-  @doc "Resolves the logger server from the context's `:trend_logger` option."
+  @doc """
+  Resolves the logger server from the context's `:trend_logger` option.
+  """
   @spec get_logger(Context.t()) :: {:ok, TrendLogger.server()} | {:error, term()}
   def get_logger(%Context{options: options}) do
     case Keyword.get(options, :trend_logger) do

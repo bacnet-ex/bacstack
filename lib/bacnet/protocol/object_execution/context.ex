@@ -83,7 +83,9 @@ defmodule BACnet.Protocol.ObjectExecution.Context do
   alias BACnet.Protocol.DeviceObjectRef
   alias BACnet.Protocol.ObjectIdentifier
 
-  @typedoc "Origin of a proposed or committed property write."
+  @typedoc """
+  Origin of a proposed or committed property write.
+  """
   @type write_origin :: :property_write | :application_write
 
   @typedoc """
@@ -95,7 +97,9 @@ defmodule BACnet.Protocol.ObjectExecution.Context do
            property_identifier :: Constants.property_identifier() | non_neg_integer(),
            array_index :: non_neg_integer() | nil, priority :: 1..16 | nil}
 
-  @typedoc "Reason for this lifecycle step."
+  @typedoc """
+  Reason for this lifecycle step.
+  """
   @type trigger ::
           :periodic
           | :initialization

@@ -4,8 +4,8 @@
 
 alias BACnet.Protocol.BACnetArray
 alias BACnet.Protocol.BACnetDateTime
-alias BACnet.Protocol.Services.IAm
 alias BACnet.Protocol.ObjectTypes.Device
+alias BACnet.Protocol.Services.IAm
 alias BACnet.Stack.Client
 alias BACnet.Stack.ClientHelper
 alias BACnet.Stack.Segmentator

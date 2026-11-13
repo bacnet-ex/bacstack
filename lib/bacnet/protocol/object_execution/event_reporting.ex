@@ -194,7 +194,9 @@ defmodule BACnet.Protocol.ObjectExecution.EventReporting do
 
   # Inhibition forces a return to normal even if the monitored condition remains
   # offnormal. Build that transition from the current algorithm inputs.
-  @doc "Builds the return-to-normal parameters when inhibition stops an active algorithm."
+  @doc """
+  Builds the return-to-normal parameters when inhibition stops an active algorithm.
+  """
   @spec normal_notification(struct()) ::
           NotificationParameters.notification_parameter() | nil
   def normal_notification(algorithm)

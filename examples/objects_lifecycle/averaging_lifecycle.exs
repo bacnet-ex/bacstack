@@ -102,7 +102,7 @@ defmodule BACnet.Examples.AveragingLifecycle do
   end
 
   @spec reference() :: DeviceObjectPropertyRef.t()
-  defp reference do
+  defp reference() do
     %DeviceObjectPropertyRef{
       device_identifier: nil,
       object_identifier: %ObjectIdentifier{type: :analog_value, instance: 2},
