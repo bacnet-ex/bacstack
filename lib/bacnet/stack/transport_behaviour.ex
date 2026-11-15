@@ -49,9 +49,9 @@ defmodule BACnet.Stack.TransportBehaviour do
   """
   @type transport_cb_frame ::
           {:bvlc, bvlc :: Protocol.bvlc()}
-          | {:network, bvlc :: Protocol.bvlc(), npci :: NPCI.t() | nil,
+          | {:network, bvlc :: Protocol.bvlc(), npci :: NPCI.t(),
              nsdu :: Protocol.NetworkLayerProtocolMessage.t()}
-          | {:apdu, bvlc :: Protocol.bvlc(), npci :: NPCI.t() | nil, apdu :: binary()}
+          | {:apdu, bvlc :: Protocol.bvlc(), npci :: NPCI.t(), apdu :: binary()}
           | {:proprietary, type :: term(), destination :: term(), data :: iodata()}
 
   @typedoc """

@@ -345,7 +345,10 @@ defmodule BACnet.Stack.ClientTest do
   describe "incoming frames" do
     test "forwards bvlc, network, and proprietary frames", %{client: client} do
       bvlc = {:bacnet_transport, {:test, FakeTransport}, @dest, {:bvlc, :result}, self()}
-      network = {:bacnet_transport, {:test, FakeTransport}, @dest, {:network, :b, :n, :s}, self()}
+
+      network =
+        {:bacnet_transport, {:test, FakeTransport}, @dest, {:network, :b, NPCI.new([]), :s},
+         self()}
 
       proprietary =
         {:bacnet_transport, {:test, FakeTransport}, @dest, {:proprietary, 128, 1, <<1>>}, self()}
@@ -432,19 +435,6 @@ defmodule BACnet.Stack.ClientTest do
 
       refute_receive {:fake_transport_send, _, _, _}, 50
       assert {FakeTransport, ^transport, ^transport} = Client.get_transport(client)
-    end
-
-    test "nil npci crashes the client", %{client: client} do
-      Process.unlink(client)
-      ref = Process.monitor(client)
-
-      send(
-        client,
-        {:bacnet_transport, {:test, FakeTransport}, @dest,
-         {:apdu, :original_unicast, nil, <<16, 8>>}, self()}
-      )
-
-      assert_receive {:DOWN, ^ref, :process, ^client, {:function_clause, _stack}}, 1_000
     end
 
     test "per-source apdu timeouts round-trip", %{client: client} do

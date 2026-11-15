@@ -1002,7 +1002,8 @@ defmodule BACnet.Stack.Client do
   end
 
   def handle_info(
-        {:bacnet_transport, _proto, source_address, {:network, _bvlc, _npci, _nsdu}, _portal} =
+        {:bacnet_transport, _proto, source_address, {:network, _bvlc, %NPCI{} = _npci, _nsdu},
+         _portal} =
           data,
         %State{notification_receiver: dest} = state
       ) do
@@ -1033,8 +1034,8 @@ defmodule BACnet.Stack.Client do
   end
 
   def handle_info(
-        {:bacnet_transport, _proto, source_address, {:apdu, bvlc, npci, raw_apdu} = cb_data,
-         portal} = data,
+        {:bacnet_transport, _proto, source_address,
+         {:apdu, bvlc, %NPCI{} = npci, raw_apdu} = cb_data, portal} = data,
         %State{} = state
       ) do
     log_debug(fn ->
