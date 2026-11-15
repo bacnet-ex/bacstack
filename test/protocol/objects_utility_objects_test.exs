@@ -1,6 +1,6 @@
 defmodule BACnet.Test.Protocol.ObjectsUtilityObjectsTest do
-  alias BACnet.Protocol.ObjectIdentifier
-  alias BACnet.Protocol.ObjectsUtility
+  alias BACnet.Protocol.ObjectIdentifier, warn: false
+  alias BACnet.Protocol.ObjectsUtility, warn: false
 
   import BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper
 

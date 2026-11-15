@@ -13,13 +13,14 @@ defmodule BACnet.Test.Support.Protocol.ObjectExecutionTestHost do
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.ObjectsUtility
 
-  @type t :: %__MODULE__{key: reference()}
-  @type record :: %{
+  @type data :: %{
           object: struct(),
           state: term(),
           options: keyword(),
           next_execution: nil | :immediate | Wakeup.t()
         }
+
+  @type t :: %__MODULE__{key: reference()}
   @enforce_keys [:key]
   defstruct @enforce_keys
 
@@ -53,7 +54,7 @@ defmodule BACnet.Test.Support.Protocol.ObjectExecutionTestHost do
     host
   end
 
-  @spec snapshot(t(), ObjectIdentifier.t()) :: record()
+  @spec snapshot(t(), ObjectIdentifier.t()) :: data()
   def snapshot(host, identifier), do: Map.fetch!(data(host).records, identifier)
 
   @spec writes(t()) :: [{DeviceObjectPropertyRef.t(), value :: term(), priority :: 1..16 | nil}]

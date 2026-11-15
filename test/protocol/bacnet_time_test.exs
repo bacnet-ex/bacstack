@@ -11,6 +11,9 @@ defmodule BACnet.Protocol.BACnetTimeTest do
 
   defp patch_hundredth(%Time{microsecond: {_us, 0}} = dt), do: dt
 
+  defp patch_hundredth(%Time{microsecond: {us, _prec}} = dt) when us < 10_000,
+    do: %{dt | microsecond: {0, 0}}
+
   defp patch_hundredth(%Time{} = dt) do
     %{dt | microsecond: {div(elem(dt.microsecond, 0), 10_000) * 10_000, 6}}
   end
