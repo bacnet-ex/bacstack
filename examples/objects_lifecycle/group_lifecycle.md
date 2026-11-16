@@ -26,8 +26,8 @@ to account for the instance's conditional and proprietary properties.
 
 Supply a nonempty list of `BACnet.Protocol.AccessSpecification` values. Each contains a local
 object identifier and a nonempty property list. Explicit properties use
-`BACnet.Protocol.AccessSpecification.Property` with `property_value: nil`, and may include an
-array index. Selectors use `:all`, `:required` or `:optional`.
+`BACnet.Protocol.AccessSpecification.Property` with `property_value: nil` and `priority: nil`.
+They may include an array index. Selectors use `:all`, `:required` or `:optional`.
 
 Members must reside in the same device. Their specifications have no device field, and Group
 passes local references to its callbacks. A Group may read metadata of another Group or Global

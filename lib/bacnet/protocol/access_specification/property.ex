@@ -5,7 +5,8 @@ defmodule BACnet.Protocol.AccessSpecification.Property do
   When used for reading (Read Property Multiple), the `property_value` field is
   nil and the structure simply names which property (and optional array index)
   should be returned. When used for writing (Write Property Multiple), the
-  `property_value` field carries the new value to be written.
+  `property_value` field carries the new value to be written, with an optional
+  write `priority`.
 
   The Property submodule is deliberately kept small and reusable so that the
   same type can serve both the read and write paths of the multiple-property
@@ -27,13 +28,15 @@ defmodule BACnet.Protocol.AccessSpecification.Property do
   @type t :: %__MODULE__{
           property_identifier: Constants.property_identifier() | non_neg_integer(),
           property_array_index: non_neg_integer() | nil,
-          property_value: Encoding.t() | nil
+          property_value: Encoding.t() | [Encoding.t()] | nil,
+          priority: 1..16 | nil
         }
 
   @fields [
     :property_identifier,
     :property_array_index,
-    :property_value
+    :property_value,
+    :priority
   ]
   @enforce_keys @fields
   defstruct @fields
@@ -81,14 +84,24 @@ defmodule BACnet.Protocol.AccessSpecification.Property do
               end
             else
               {:ok, nil}
-            end) do
+            end),
+         {:ok, priority} <- encode_priority(Map.get(property, :priority)) do
       params = [
         {:tagged, {0, property_identifier, byte_size(property_identifier)}},
         array_index,
-        prop_value
+        prop_value,
+        priority
       ]
 
       {:ok, Enum.reject(params, &is_nil/1)}
+    end
+  end
+
+  defp encode_priority(nil), do: {:ok, nil}
+
+  defp encode_priority(priority) do
+    with {:ok, encoded, _header} <- ApplicationTags.encode_value({:unsigned_integer, priority}) do
+      {:ok, {:tagged, {3, encoded, byte_size(encoded)}}}
     end
   end
 
@@ -123,7 +136,8 @@ defmodule BACnet.Protocol.AccessSpecification.Property do
          {:ok, property_array_index, rest} <-
            pattern_extract_tags(rest, {:tagged, {1, _t, _l}}, :unsigned_integer, true),
          {:ok, prop_value, rest} <-
-           pattern_extract_tags(rest, {:constructed, {2, _t, _l}}, nil, true) do
+           pattern_extract_tags(rest, {:constructed, {2, _t, _l}}, nil, true),
+         {:ok, priority, rest} <- parse_priority(prop_value, rest) do
       item =
         case Constants.by_value(
                :property_identifier,
@@ -137,6 +151,7 @@ defmodule BACnet.Protocol.AccessSpecification.Property do
             %__MODULE__{
               property_identifier: propident,
               property_array_index: property_array_index,
+              priority: priority,
               property_value:
                 case prop_value do
                   {:constructed, {2, tags, _len}} when is_list(tags) ->
@@ -158,6 +173,11 @@ defmodule BACnet.Protocol.AccessSpecification.Property do
     end
   end
 
+  defp parse_priority(nil, rest), do: {:ok, nil, rest}
+
+  defp parse_priority(_value, rest),
+    do: pattern_extract_tags(rest, {:tagged, {3, _t, _l}}, :unsigned_integer, true)
+
   @doc """
   Validates whether the given access specification property is in form valid.
 
@@ -173,11 +193,14 @@ defmodule BACnet.Protocol.AccessSpecification.Property do
         %__MODULE__{
           property_identifier: prop_identifier,
           property_array_index: array_index
-        } = _t
+        } = property
       ) do
+    priority = Map.get(property, :priority)
+
     (Constants.has_by_name(:property_identifier, prop_identifier) or
        (is_integer(prop_identifier) and prop_identifier >= 0 and
           prop_identifier <= Constants.macro_by_name(:asn1, :max_instance_and_property_id))) and
-      (is_nil(array_index) or (is_integer(array_index) and array_index >= 0))
+      (is_nil(array_index) or (is_integer(array_index) and array_index >= 0)) and
+      (is_nil(priority) or priority in 1..16)
   end
 end

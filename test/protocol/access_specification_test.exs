@@ -16,11 +16,13 @@ defmodule BACnet.Protocol.AccessSpecificationTest do
                  %AccessSpecification.Property{
                    property_identifier: :ack_required,
                    property_array_index: nil,
+                   priority: nil,
                    property_value: nil
                  },
                  %AccessSpecification.Property{
                    property_identifier: :deadband,
                    property_array_index: nil,
+                   priority: nil,
                    property_value: nil
                  }
                ]
@@ -67,11 +69,13 @@ defmodule BACnet.Protocol.AccessSpecificationTest do
                  %AccessSpecification.Property{
                    property_identifier: :ack_required,
                    property_array_index: nil,
+                   priority: nil,
                    property_value: nil
                  },
                  %AccessSpecification.Property{
                    property_identifier: :deadband,
                    property_array_index: nil,
+                   priority: nil,
                    property_value: nil
                  }
                ]
@@ -86,6 +90,7 @@ defmodule BACnet.Protocol.AccessSpecificationTest do
                  %AccessSpecification.Property{
                    property_identifier: 4.2,
                    property_array_index: nil,
+                   priority: nil,
                    property_value: nil
                  }
                ]
@@ -100,11 +105,13 @@ defmodule BACnet.Protocol.AccessSpecificationTest do
                  %AccessSpecification.Property{
                    property_identifier: :ack_required,
                    property_array_index: nil,
+                   priority: nil,
                    property_value: nil
                  },
                  %AccessSpecification.Property{
                    property_identifier: :deadband,
                    property_array_index: nil,
+                   priority: nil,
                    property_value: nil
                  }
                ]
@@ -117,6 +124,7 @@ defmodule BACnet.Protocol.AccessSpecificationTest do
                  %AccessSpecification.Property{
                    property_identifier: :ack_required,
                    property_array_index: nil,
+                   priority: nil,
                    property_value: nil
                  },
                  :all,
@@ -140,6 +148,7 @@ defmodule BACnet.Protocol.AccessSpecificationTest do
                  %AccessSpecification.Property{
                    property_identifier: :present_value,
                    property_array_index: nil,
+                   priority: nil,
                    property_value: nil
                  }
                ]
@@ -152,6 +161,7 @@ defmodule BACnet.Protocol.AccessSpecificationTest do
                  %AccessSpecification.Property{
                    property_identifier: :hello_there,
                    property_array_index: nil,
+                   priority: nil,
                    property_value: nil
                  }
                ]
@@ -164,6 +174,7 @@ defmodule BACnet.Protocol.AccessSpecificationTest do
                  %AccessSpecification.Property{
                    property_identifier: :there,
                    property_array_index: nil,
+                   priority: nil,
                    property_value: nil
                  }
                ]
@@ -176,6 +187,7 @@ defmodule BACnet.Protocol.AccessSpecificationTest do
                  %AccessSpecification.Property{
                    property_identifier: :there,
                    property_array_index: nil,
+                   priority: nil,
                    property_value: nil
                  }
                ]

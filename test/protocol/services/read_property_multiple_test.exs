@@ -33,11 +33,13 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyMultipleTest do
                     %AccessSpecification.Property{
                       property_identifier: :present_value,
                       property_array_index: nil,
+                      priority: nil,
                       property_value: nil
                     },
                     %AccessSpecification.Property{
                       property_identifier: :reliability,
                       property_array_index: nil,
+                      priority: nil,
                       property_value: nil
                     }
                   ]
@@ -72,11 +74,13 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyMultipleTest do
                     %AccessSpecification.Property{
                       property_identifier: :present_value,
                       property_array_index: nil,
+                      priority: nil,
                       property_value: nil
                     },
                     %AccessSpecification.Property{
                       property_identifier: :reliability,
                       property_array_index: nil,
+                      priority: nil,
                       property_value: nil
                     }
                   ]
@@ -90,11 +94,13 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyMultipleTest do
                     %AccessSpecification.Property{
                       property_identifier: :present_value,
                       property_array_index: nil,
+                      priority: nil,
                       property_value: nil
                     },
                     %AccessSpecification.Property{
                       property_identifier: :reliability,
                       property_array_index: nil,
+                      priority: nil,
                       property_value: nil
                     }
                   ]
@@ -197,11 +203,13 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyMultipleTest do
                        %AccessSpecification.Property{
                          property_identifier: :priority_array,
                          property_array_index: 15,
+                         priority: nil,
                          property_value: nil
                        },
                        %AccessSpecification.Property{
                          property_identifier: :reliability,
                          property_array_index: nil,
+                         priority: nil,
                          property_value: nil
                        }
                      ]
@@ -254,11 +262,13 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyMultipleTest do
                        %AccessSpecification.Property{
                          property_identifier: :priority_array,
                          property_array_index: 15,
+                         priority: nil,
                          property_value: nil
                        },
                        %AccessSpecification.Property{
                          property_identifier: :reliability,
                          property_array_index: nil,
+                         priority: nil,
                          property_value: nil
                        }
                      ]
@@ -272,11 +282,13 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyMultipleTest do
                        %AccessSpecification.Property{
                          property_identifier: :priority_array,
                          property_array_index: 15,
+                         priority: nil,
                          property_value: nil
                        },
                        %AccessSpecification.Property{
                          property_identifier: :reliability,
                          property_array_index: nil,
+                         priority: nil,
                          property_value: nil
                        }
                      ]
@@ -302,6 +314,7 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyMultipleTest do
                        %AccessSpecification.Property{
                          property_identifier: :priority_array,
                          property_array_index: :hello,
+                         priority: nil,
                          property_value: nil
                        }
                      ]
@@ -322,6 +335,7 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyMultipleTest do
             %AccessSpecification.Property{
               property_identifier: :present_value,
               property_array_index: nil,
+              priority: nil,
               property_value: nil
             }
           ]
@@ -399,11 +413,13 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyMultipleTest do
                        %AccessSpecification.Property{
                          property_identifier: :priority_array,
                          property_array_index: 15,
+                         priority: nil,
                          property_value: nil
                        },
                        %AccessSpecification.Property{
                          property_identifier: :reliability,
                          property_array_index: nil,
+                         priority: nil,
                          property_value: nil
                        }
                      ]

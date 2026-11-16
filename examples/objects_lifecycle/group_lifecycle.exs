@@ -154,7 +154,12 @@ defmodule BACnet.Examples.GroupLifecycle do
 
   @spec property(atom()) :: Property.t()
   defp property(name),
-    do: %Property{property_identifier: name, property_array_index: nil, property_value: nil}
+    do: %Property{
+      property_identifier: name,
+      property_array_index: nil,
+      property_value: nil,
+      priority: nil
+    }
 
   @spec context(pid(), Context.trigger(), integer()) :: Context.t()
   defp context(store, trigger, milliseconds) do

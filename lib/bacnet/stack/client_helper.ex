@@ -1044,6 +1044,7 @@ defmodule BACnet.Stack.ClientHelper do
          %AccessSpecification.Property{
            property_identifier: property_identifier,
            property_array_index: index,
+           priority: nil,
            property_value: value
          }
          | acc
@@ -1094,6 +1095,7 @@ defmodule BACnet.Stack.ClientHelper do
            %AccessSpecification.Property{
              property_identifier: property_identifier,
              property_array_index: index,
+             priority: nil,
              property_value: Enum.reverse(list)
            }
            | acc
@@ -1131,6 +1133,7 @@ defmodule BACnet.Stack.ClientHelper do
            %AccessSpecification.Property{
              property_identifier: property_identifier,
              property_array_index: index,
+             priority: nil,
              property_value: val
            }
            | acc
@@ -1209,6 +1212,7 @@ defmodule BACnet.Stack.ClientHelper do
     %AccessSpecification.Property{
       property_identifier: identifier,
       property_array_index: nil,
+      priority: nil,
       property_value: nil
     }
   end

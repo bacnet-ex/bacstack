@@ -34,6 +34,7 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
                     %AccessSpecification.Property{
                       property_identifier: :present_value,
                       property_array_index: nil,
+                      priority: nil,
                       property_value: %Encoding{
                         encoding: :primitive,
                         extras: [],
@@ -52,6 +53,7 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
                     %AccessSpecification.Property{
                       property_identifier: :present_value,
                       property_array_index: nil,
+                      priority: 8,
                       property_value: %Encoding{
                         encoding: :primitive,
                         extras: [],
@@ -70,6 +72,7 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
                     %AccessSpecification.Property{
                       property_identifier: :present_value,
                       property_array_index: nil,
+                      priority: nil,
                       property_value: %Encoding{
                         encoding: :primitive,
                         extras: [],
@@ -93,7 +96,13 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
                  tagged: {0, <<0, 128, 0, 5>>, 4},
                  constructed: {1, [tagged: {0, "U", 1}, constructed: {2, {:real, 67.0}, 0}], 0},
                  tagged: {0, <<0, 128, 0, 6>>, 4},
-                 constructed: {1, [tagged: {0, "U", 1}, constructed: {2, {:real, 67.0}, 0}], 0},
+                 constructed:
+                   {1,
+                    [
+                      tagged: {0, "U", 1},
+                      constructed: {2, {:real, 67.0}, 0},
+                      tagged: {3, <<8>>, 1}
+                    ], 0},
                  tagged: {0, <<0, 128, 0, 7>>, 4},
                  constructed: {1, [tagged: {0, "U", 1}, constructed: {2, {:real, 72.0}, 0}], 0}
                ]
@@ -147,7 +156,13 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
                 tagged: {0, <<0, 128, 0, 5>>, 4},
                 constructed: {1, [tagged: {0, "U", 1}, constructed: {2, {:real, 67.0}, 0}], 0},
                 tagged: {0, <<0, 128, 0, 6>>, 4},
-                constructed: {1, [tagged: {0, "U", 1}, constructed: {2, {:real, 67.0}, 0}], 0},
+                constructed:
+                  {1,
+                   [
+                     tagged: {0, "U", 1},
+                     constructed: {2, {:real, 67.0}, 0},
+                     tagged: {3, <<8>>, 1}
+                   ], 0},
                 tagged: {0, <<0, 128, 0, 7>>, 4},
                 constructed: {1, [tagged: {0, "U", 1}, constructed: {2, {:real, 72.0}, 0}], 0}
               ]
@@ -164,6 +179,7 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
                        %AccessSpecification.Property{
                          property_identifier: :present_value,
                          property_array_index: nil,
+                         priority: nil,
                          property_value: %Encoding{
                            encoding: :primitive,
                            extras: [],
@@ -182,6 +198,7 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
                        %AccessSpecification.Property{
                          property_identifier: :present_value,
                          property_array_index: nil,
+                         priority: 8,
                          property_value: %Encoding{
                            encoding: :primitive,
                            extras: [],
@@ -200,6 +217,7 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
                        %AccessSpecification.Property{
                          property_identifier: :present_value,
                          property_array_index: nil,
+                         priority: nil,
                          property_value: %Encoding{
                            encoding: :primitive,
                            extras: [],
@@ -230,6 +248,7 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
                        %AccessSpecification.Property{
                          property_identifier: :present_value,
                          property_array_index: :hello,
+                         priority: nil,
                          property_value: %Encoding{
                            encoding: :primitive,
                            extras: [],
@@ -255,6 +274,7 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
             %AccessSpecification.Property{
               property_identifier: :present_value,
               property_array_index: nil,
+              priority: nil,
               property_value: Encoding.create!({:real, 1.0})
             }
           ]
@@ -314,6 +334,7 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
                        %AccessSpecification.Property{
                          property_identifier: :present_value,
                          property_array_index: nil,
+                         priority: nil,
                          property_value: %Encoding{
                            encoding: :primitive,
                            extras: [],
@@ -332,6 +353,7 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
                        %AccessSpecification.Property{
                          property_identifier: :present_value,
                          property_array_index: nil,
+                         priority: nil,
                          property_value: %Encoding{
                            encoding: :primitive,
                            extras: [],
@@ -350,6 +372,7 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
                        %AccessSpecification.Property{
                          property_identifier: :present_value,
                          property_array_index: nil,
+                         priority: nil,
                          property_value: %Encoding{
                            encoding: :primitive,
                            extras: [],

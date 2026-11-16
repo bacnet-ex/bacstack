@@ -716,6 +716,7 @@ defmodule BACnet.Stack.ClientHelperTest do
           %BACnet.Protocol.AccessSpecification.Property{
             property_identifier: :present_value,
             property_array_index: nil,
+            priority: nil,
             property_value: real(4.0)
           }
         ])
@@ -751,6 +752,7 @@ defmodule BACnet.Stack.ClientHelperTest do
                %BACnet.Protocol.AccessSpecification.Property{
                  property_identifier: :present_value,
                  property_array_index: nil,
+                 priority: nil,
                  property_value: nil
                }
              ])

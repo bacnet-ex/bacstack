@@ -334,6 +334,7 @@ defmodule BACnet.Test.Protocol.ObjectTypes.GroupTest do
             %Property{
               property_identifier: :present_value,
               property_array_index: nil,
+              priority: nil,
               property_value: enc(:real, 1.0)
             }
           ]
@@ -716,7 +717,12 @@ defmodule BACnet.Test.Protocol.ObjectTypes.GroupTest do
     }
 
   defp property(name, index \\ nil),
-    do: %Property{property_identifier: name, property_array_index: index, property_value: nil}
+    do: %Property{
+      property_identifier: name,
+      property_array_index: index,
+      property_value: nil,
+      priority: nil
+    }
 
   defp object(members \\ [member(2)]) do
     {:ok, object} = Group.create(1, "View", %{list_of_group_members: members})

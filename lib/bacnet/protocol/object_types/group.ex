@@ -151,7 +151,7 @@ defmodule BACnet.Protocol.ObjectTypes.Group do
       iex> member = %AccessSpecification{
       ...>   object_identifier: %ObjectIdentifier{type: :analog_value, instance: 2},
       ...>   properties: [%Property{property_identifier: :present_value,
-      ...>     property_array_index: nil, property_value: nil}]}
+      ...>     property_array_index: nil, property_value: nil, priority: nil}]}
       iex> {:ok, group} = Group.create(1600, "ZoneGroup", %{list_of_group_members: [member]})
       iex> context = Context.new({:property_read, :present_value, nil},
       ...>   now: ~U[2026-11-09 08:00:00Z], monotonic_time: 0,
@@ -480,6 +480,7 @@ defmodule BACnet.Protocol.ObjectTypes.Group do
     property = %Property{
       property_identifier: name,
       property_array_index: index,
+      priority: nil,
       property_value: nil
     }
 
