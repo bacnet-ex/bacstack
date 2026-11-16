@@ -46,7 +46,7 @@ defmodule BACstack.MixProject do
 
   def application() do
     [
-      extra_applications: [:inets, :logger]
+      extra_applications: [:inets, :logger] ++ sc_applications()
     ]
   end
 
@@ -103,7 +103,40 @@ defmodule BACstack.MixProject do
       {:req, "~> 0.5.15", only: [:dev, :test], optional: true, runtime: false},
       {:telemetry, "~> 1.3", optional: true},
       {:typedstruct, "~> 0.5.3"}
-    ]
+    ] ++ sc_deps()
+  end
+
+  @spec sc_deps() :: [{atom(), String.t(), Keyword.t()}]
+  defp sc_deps() do
+    if String.to_integer(System.otp_release()) >= 27 do
+      [
+        {:cowboy, "~> 2.21.0", optional: true},
+        {:gun, "~> 2.8.0", optional: true},
+        {:x509, "~> 0.9.2", optional: true}
+      ]
+    else
+      []
+    end
+  end
+
+  @spec sc_applications() :: [atom()]
+  defp sc_applications() do
+    if sc_enabled?() do
+      [:public_key]
+    else
+      []
+    end
+  end
+
+  @doc """
+  Check for whether BACnet/SC modules should be compiled.
+  Returns true if all dependencies are present and OTP27+ used.
+  """
+  @spec sc_enabled?() :: boolean()
+  def sc_enabled?() do
+    String.to_integer(System.otp_release()) >= 27 and
+      Code.ensure_loaded?(:cowboy) and Code.ensure_loaded?(:gun) and
+      Code.ensure_loaded?(:public_key) and Code.ensure_loaded?(X509.Certificate)
   end
 
   defp package() do
@@ -270,9 +303,32 @@ defmodule BACstack.MixProject do
           BACnet.Protocol.BroadcastDistributionTableEntry,
           BACnet.Protocol.ForeignDeviceTableEntry
         ],
-        Stack: [~r"Stack\.[^.]+$", ~r"Stack\.Transport\.[^.]+$"],
+        "Protocol: BACnet/SC": [
+          BACnet.Protocol.SecureConnect.BVLC,
+          BACnet.Protocol.SecureConnect.FailedConnectionRequest,
+          BACnet.Protocol.SecureConnect.Health,
+          BACnet.Protocol.SecureConnect.HubConnection,
+          BACnet.Protocol.SecureConnect.HubFunctionConnection
+        ],
+        Stack: [
+          ~r"Stack\.[^.]+$",
+          ~r"Stack\.Transport\.[^.]+$",
+          BACnet.Stack.Transport.ScTransport.Audit,
+          BACnet.Stack.Transport.ScTransport.Audit.Event,
+          BACnet.Stack.Transport.ScTransport.Audit.Status,
+          BACnet.Stack.Transport.ScTransport.Credentials,
+          BACnet.Stack.Transport.ScTransport.Hub,
+          BACnet.Stack.Transport.ScTransport.Hub.Failure,
+          BACnet.Stack.Transport.ScTransport.Hub.Status,
+          BACnet.Stack.Transport.ScTransport.ManagedPort,
+          BACnet.Stack.Transport.ScTransport.Node,
+          BACnet.Stack.Transport.ScTransport.Node.Advertisement,
+          BACnet.Stack.Transport.ScTransport.Node.ConnectionStatus,
+          BACnet.Stack.Transport.ScTransport.Node.Status
+        ],
         "BACstack Internals": [
           BACnet.BeamTypes,
+          BACnet.Protocol.SecureConnect.Sequence,
           BACnet.Protocol.Services.Behaviour,
           BACnet.Protocol.Services.Common,
           BACnet.Protocol.Services.Protocol,
@@ -289,6 +345,21 @@ defmodule BACstack.MixProject do
           BACnet.Stack.Segmentator.State,
           BACnet.Stack.SegmentsStore.Sequence,
           BACnet.Stack.SegmentsStore.State,
+          BACnet.Stack.Transport.ScTransport.Activation,
+          BACnet.Stack.Transport.ScTransport.Config,
+          BACnet.Stack.Transport.ScTransport.Connection,
+          BACnet.Stack.Transport.ScTransport.Connection.State,
+          BACnet.Stack.Transport.ScTransport.Diagnostics,
+          BACnet.Stack.Transport.ScTransport.Diagnostics.GunEvents,
+          BACnet.Stack.Transport.ScTransport.Hosted,
+          BACnet.Stack.Transport.ScTransport.Hub.Session,
+          BACnet.Stack.Transport.ScTransport.Hub.State,
+          BACnet.Stack.Transport.ScTransport.Hub.WebSocket,
+          BACnet.Stack.Transport.ScTransport.ManagedPort.State,
+          BACnet.Stack.Transport.ScTransport.Management,
+          BACnet.Stack.Transport.ScTransport.Node.State,
+          BACnet.Stack.Transport.ScTransport.Objects,
+          BACnet.Stack.Transport.ScTransport.Store,
           BACnet.Stack.TrendLogger.Log,
           BACnet.Stack.TrendLogger.State
         ],

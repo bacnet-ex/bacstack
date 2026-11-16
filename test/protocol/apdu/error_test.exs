@@ -94,7 +94,7 @@ defmodule BACnet.Test.Protocol.APDU.ErrorTest do
     assert decoded.code == :write_access_denied
     assert decoded.payload == [boolean: true]
 
-    numbered = %{error | invoke_id: 255, service: 250, class: 200, code: 201}
+    numbered = %{error | invoke_id: 255, service: 250, class: 200, code: 65_535}
     assert {:ok, ^numbered} = APDU.decode(raw(numbered))
 
     assert_raise RuntimeError, ~r/Unable to encode payload in error encode/, fn ->

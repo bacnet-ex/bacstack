@@ -48,6 +48,9 @@ defmodule Mix.Tasks.Bacnet.BuildDocsExtras do
     build_constants(:object_type, BACnet.Protocol.Constants.Object)
     build_constants(:property_identifier, BACnet.Protocol.Constants.PropertyIdentifier)
 
+    build_example("bacnet_sc_certificates")
+    build_example("bacnet_sc_managed_port")
+    build_example("bacnet_sc")
     build_example("who_is")
 
     Mix.shell().info("Done building extras")
@@ -81,7 +84,7 @@ defmodule Mix.Tasks.Bacnet.BuildDocsExtras do
         &Regex.replace(~r"^[#]+(.+)", &1, "<!--t: \\1 -->" <> "\n<!--s: #{source_file} -->")
       )
 
-    File.write!(Path.join(extras_dir, "gen_#{type}.md"), md)
+    File.write!(Path.join(extras_dir, "gen_constants_#{type}.md"), md)
   end
 
   defp build_example(filename) do
@@ -127,6 +130,6 @@ defmodule Mix.Tasks.Bacnet.BuildDocsExtras do
     - if working on bacstack: `mix run examples/#{filename}.exs`
     """
 
-    File.write!(Path.join(extras_dir, "gen_#{filename}.md"), md)
+    File.write!(Path.join(extras_dir, "gen_example_#{filename}.md"), md)
   end
 end

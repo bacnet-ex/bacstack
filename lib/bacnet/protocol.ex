@@ -49,6 +49,7 @@ defmodule BACnet.Protocol do
   alias BACnet.Protocol.NetworkLayerProtocolMessage
   alias BACnet.Protocol.NPCI
   alias BACnet.Protocol.NpciTarget
+  alias BACnet.Protocol.SecureConnect.BVLC, as: ScBvlc
 
   require Constants
 
@@ -66,12 +67,12 @@ defmodule BACnet.Protocol do
           | APDU.Reject.t()
 
   @typedoc """
-  BACnet Virtual Link Control (BVLC), used in BACnet/IP (Annex J).
+  BACnet Virtual Link Control (BVLC) metadata for BACnet datalink layers,
+  including BACnet/IP (Annex J) and BACnet/SC (Annex AB).
 
-  This is the union of everything that can appear after a BVLL header (Type 0x81)
-  on the wire. The five simple carriers are represented as atoms so that higher
-  layers (especially `BACnet.Stack.Transport.IPv4Transport`) do not have to
-  allocate structs for the common case of ordinary unicast/broadcast traffic.
+  BACnet/SC uses a `BACnet.Protocol.SecureConnect.BVLC` struct. The BACnet/IP
+  variants represent the fields after its BVLL header (type 0x81). Simple
+  unicast and broadcast carriers use atoms.
 
   | Variant                              | Produced by BVLC Function   | Description                                                 |
   |--------------------------------------|-----------------------------|-------------------------------------------------------------|
@@ -89,6 +90,7 @@ defmodule BACnet.Protocol do
           | :distribute_broadcast_to_network
           | :original_broadcast
           | :original_unicast
+          | ScBvlc.t()
 
   @npci_version NPCI.get_version()
 

@@ -220,10 +220,12 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
   In addition to the common options, Device supports:
   - `supports_backup_restore` - Enables the full set of backup/restore properties.
   - `supports_restart` - Selects the restart reason, timestamp, and recipient properties.
+  - `supports_secure_connect` - Requires Device_UUID at protocol revision 22 or later.
   """
   @type object_opts ::
           {:supports_backup_restore, boolean()}
           | {:supports_restart, boolean()}
+          | {:supports_secure_connect, boolean()}
           | common_object_opts()
 
   @typedoc """
@@ -307,6 +309,17 @@ defmodule BACnet.Protocol.ObjectTypes.Device do
 
     # Protocol Revision: 0 = Property is absent (implementation prior to the first protocol revision!)
     field(:protocol_revision, non_neg_integer(), required: true, readonly: true, default: 0)
+
+    field(:device_uuid, binary(),
+      readonly: true,
+      validator_fun: &match?(<<_bin::size(128)>>, &1),
+      annotation: [
+        required_when: fn _props, meta ->
+          meta.revision >= 22 and meta.other[:supports_secure_connect] == true
+        end,
+        forbidden_when: {:opts, :revision, :<, 22}
+      ]
+    )
 
     field(:protocol_services_supported, ServicesSupported.t(),
       required: true,

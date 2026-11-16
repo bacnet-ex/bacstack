@@ -16,6 +16,7 @@ Currently implemented transport layers:
 - BACnet/IPv4: The most mature transport and also most widely supported one in general (next to MS/TP)
 - BACnet/MS/TP: An experimental transport that requires [circuits_uart](https://hex.pm/packages/circuits_uart)
   and an USB RS485 adapter (or any serial device/tty supported by circuits_uart)
+- BACnet/SC: An experimental transport using websocket and TLS 1.3 - both node and hub roles are implemented, see [SC extra](extras/bacnet_sc.md)
 
 Support for other transport layers can be straight forward added on top of it.
 

@@ -70,17 +70,16 @@ defmodule BACnet.Protocol.Constants do
   The following revisions are supported (to be):
   - Revision 14 (135-2012)
   - Revision 19 (135-2016)
-  - Revision 22 (135-2022)
+  - Revision 22 (135-2020)
+  - Revision 24 (135-2020 with addenda)
 
   The default BACnet Revision is 14 (2012).
   """
   defconst(:protocol_revision, :default, :revision_14)
-  # Revision 14 = 135-2012
   defconst(:protocol_revision, :revision_14, 14)
-  # TODO: Support Protocol Revision 19 and 22
-  # Revision 19 = 135-2016
-  # defconst(:protocol_revision, :revision_19, 19)
-  # defconst(:protocol_revision, :revision_22, 22)
+  defconst(:protocol_revision, :revision_19, 19)
+  defconst(:protocol_revision, :revision_22, 22)
+  defconst(:protocol_revision, :revision_24, 24)
 
   @typedoc """
   The maximum APDU length supported by BACnet. Each device (respectively
@@ -676,6 +675,12 @@ defmodule BACnet.Protocol.Constants do
   defconst(:network_port_command, :restart_autonegotiation, 0x05)
   defconst(:network_port_command, :disconnect, 0x06)
   defconst(:network_port_command, :restart_port, 0x07)
+  defconst(:network_port_command, :generate_csr_file, 0x08)
+  defconst(:network_port_command, :validate_changes, 0x09)
+
+  defconst(:sc_hub_connector_state, :no_hub_connection, 0x00)
+  defconst(:sc_hub_connector_state, :connected_to_primary, 0x01)
+  defconst(:sc_hub_connector_state, :connected_to_failover, 0x02)
 
   ###############################
 

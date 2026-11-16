@@ -220,9 +220,14 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
   alias BACnet.Protocol.ObjectExecution.Context
   alias BACnet.Protocol.ObjectExecution.IntrinsicReporting
   alias BACnet.Protocol.ObjectExecution.Result
+  alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.ObjectOperations
   alias BACnet.Protocol.ObjectsMacro
   alias BACnet.Protocol.RouterEntry
+  alias BACnet.Protocol.SecureConnect.FailedConnectionRequest
+  alias BACnet.Protocol.SecureConnect.Health
+  alias BACnet.Protocol.SecureConnect.HubConnection
+  alias BACnet.Protocol.SecureConnect.HubFunctionConnection
   alias BACnet.Protocol.VmacEntry
 
   require Constants
@@ -235,11 +240,13 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
 
   In addition to the common options, Network Port supports:
   - `supports_command_execution` - Selects the Command property.
+  - `supports_sc_hub` - Requires the hub function properties on a revision 24 or later SC port.
   - `network_port_runtime` - Binds host actions to this port.
   """
   @type object_opts ::
           {:intrinsic_reporting, boolean()}
           | {:supports_command_execution, boolean()}
+          | {:supports_sc_hub, boolean()}
           | {:network_port_runtime, runtime()}
           | common_object_opts()
 
@@ -344,16 +351,17 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
             :optional
           end
         end,
-        required_when: fn props, _object ->
-          Map.get(props, :network_type) in [
-            :arcnet,
-            :ethernet,
-            :lontalk,
-            :mstp,
-            :serial,
-            :virtual,
-            :zigbee
-          ]
+        required_when: fn props, meta ->
+          sc_port?(props, meta) or
+            Map.get(props, :network_type) in [
+              :arcnet,
+              :ethernet,
+              :lontalk,
+              :mstp,
+              :serial,
+              :virtual,
+              :zigbee
+            ]
         end
       ]
     )
@@ -671,16 +679,143 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
     # Required if the network represented by this object requires VMAC addressing
     field(:virtual_mac_address_table, [VmacEntry.t()],
       annotation: [
-        required_when: fn props, _object ->
-          Map.get(props, :network_type) in [:ipv6, :sc, :zigbee]
+        required_when: fn props, meta ->
+          Map.get(props, :network_type) in [:ipv6, :zigbee] or
+            (props[:network_type] == :sc and meta.revision < 24)
         end
       ]
     )
 
+    field(:max_bvlc_length_accepted, non_neg_integer(),
+      readonly: true,
+      annotation: [required_when: &sc_port?/2]
+    )
+
+    field(:max_npdu_length_accepted, non_neg_integer(),
+      readonly: true,
+      annotation: [required_when: &sc_port?/2]
+    )
+
+    field(:sc_primary_hub_uri, String.t(),
+      default: "",
+      annotation: [required_when: &sc_port?/2]
+    )
+
+    field(:sc_failover_hub_uri, String.t(),
+      default: "",
+      annotation: [required_when: &sc_port?/2]
+    )
+
+    field(:sc_minimum_reconnect_time, 2..300,
+      default: 10,
+      annotation: [required_when: &sc_port?/2]
+    )
+
+    field(:sc_maximum_reconnect_time, 2..600,
+      default: 600,
+      annotation: [required_when: &sc_port?/2]
+    )
+
+    field(:sc_connect_wait_timeout, 5..300,
+      default: 10,
+      annotation: [required_when: &sc_port?/2]
+    )
+
+    field(:sc_disconnect_wait_timeout, 5..300,
+      default: 10,
+      annotation: [required_when: &sc_port?/2]
+    )
+
+    field(:sc_heartbeat_timeout, 3..300,
+      default: 300,
+      annotation: [required_when: &sc_port?/2]
+    )
+
+    field(:sc_hub_connector_state, Constants.sc_hub_connector_state(),
+      readonly: true,
+      default: :no_hub_connection,
+      annotation: [required_when: &sc_port?/2]
+    )
+
+    field(:operational_certificate_file, ObjectIdentifier.t(),
+      readonly: true,
+      annotation: [required_when: &sc_port?/2]
+    )
+
+    field(:issuer_certificate_files, BACnetArray.t(ObjectIdentifier.t(), 2),
+      readonly: true,
+      annotation: [required_when: &sc_port?/2]
+    )
+
+    field(:certificate_signing_request_file, ObjectIdentifier.t(),
+      readonly: true,
+      annotation: [required_when: &sc_port?/2]
+    )
+
+    field(:sc_hub_function_enable, boolean(),
+      default: false,
+      annotation: [required_when: &sc_hub_port?/2]
+    )
+
+    field(:sc_hub_function_accept_uris, BACnetArray.t(String.t()),
+      default: BACnetArray.new(),
+      annotation: [required_when: &sc_hub_port?/2]
+    )
+
+    field(:sc_hub_function_connection_status, [HubFunctionConnection.t()],
+      readonly: true,
+      default: [],
+      annotation: [required_when: &sc_hub_port?/2]
+    )
+
+    field(:sc_failed_connection_requests, [FailedConnectionRequest.t()],
+      readonly: true,
+      default: [],
+      annotation: [required_when: &sc_hub_port?/2]
+    )
+
+    field(:sc_primary_hub_connection_status, HubConnection.t(), readonly: true)
+    field(:sc_failover_hub_connection_status, HubConnection.t(), readonly: true)
+    field(:sc_hub_function_binding, String.t(), readonly: true)
+    field(:command_validation_result, Health.t(), readonly: true)
+    field(:current_health, Health.t(), readonly: true)
+
     field(:routing_table, [RouterEntry.t()], readonly: true)
   end
 
+  @spec sc_port?(map(), internal_metadata()) :: boolean()
+  defp sc_port?(props, meta) do
+    props[:network_type] == :sc and props[:protocol_level] == :bacnet_application and
+      meta.revision >= 24
+  end
+
+  @spec sc_hub_port?(map(), internal_metadata()) :: boolean()
+  defp sc_hub_port?(props, meta) do
+    sc_port?(props, meta) and meta.other[:supports_sc_hub] == true
+  end
+
+  @doc """
+  Marks a staged change outside the object’s properties, such as a
+  certificate upload. The change participates in the same activation
+  and discard lifecycle as pending property writes.
+  """
+  @spec stage_external_change(t()) :: {:ok, t()} | {:error, :missing_active_configuration}
+  def stage_external_change(%__MODULE__{network_type: :sc} = object) do
+    with {:ok, originals} <- pending_originals(object) do
+      {:ok, put_originals(%{object | changes_pending: true}, originals)}
+    end
+  end
+
   @pending_properties [
+    :sc_primary_hub_uri,
+    :sc_failover_hub_uri,
+    :sc_minimum_reconnect_time,
+    :sc_maximum_reconnect_time,
+    :sc_connect_wait_timeout,
+    :sc_disconnect_wait_timeout,
+    :sc_heartbeat_timeout,
+    :sc_hub_function_enable,
+    :sc_hub_function_accept_uris,
     :bacnet_ip_global_address,
     :bacnet_ip_mode,
     :bacnet_ip_multicast_address,
@@ -716,6 +851,8 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
   ]
   @configuration_properties [:network_number_quality | @pending_properties]
   @commands [
+    :generate_csr_file,
+    :validate_changes,
     :discard_changes,
     :renew_fd_registration,
     :restart_slave_discovery,
@@ -1002,7 +1139,7 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
       object.out_of_service and command not in [:restart_port, :disconnect, :discard_changes] ->
         {:error, {:property, :value_out_of_range}}
 
-      object.changes_pending and command != :discard_changes ->
+      object.changes_pending and command not in [:discard_changes, :validate_changes] ->
         {:error, {:property, :invalid_value_in_this_state}}
 
       command == :discard_changes ->
@@ -1065,6 +1202,10 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
 
   defp validate_command_configuration(%__MODULE__{network_type: :ptp}, :disconnect), do: :ok
   defp validate_command_configuration(_object, :restart_port), do: :ok
+
+  defp validate_command_configuration(%__MODULE__{network_type: :sc}, command)
+       when command in [:generate_csr_file, :validate_changes],
+       do: :ok
 
   defp validate_command_configuration(_object, _command),
     do: {:error, {:property, :value_out_of_range}}

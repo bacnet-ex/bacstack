@@ -83,7 +83,7 @@ defmodule BACnet.Protocol.AccessSpecification do
              nil,
              false
            ),
-         {:ok, properties} <- parse_access_spec_property_list(proplist) do
+         {:ok, properties} <- parse_access_spec_property_list(List.wrap(proplist)) do
       access_spec = %__MODULE__{
         object_identifier: object,
         properties: properties
