@@ -101,6 +101,20 @@ defmodule BACnet.Test.Protocol.APDUDecodingTest do
              APDU.decode_confirmed_request(<<10>>)
   end
 
+  test "decoding invalid segmented confirmed service request with invalid window_size" do
+    assert {:error, :invalid_apdu_data} =
+             APDU.decode_confirmed_request(
+               <<10, 117, 1, 0, 0, 12, 145, 0, 117, 11, 0, 104, 101, 108, 108, 111, 32, 119, 111,
+                 114, 108, 100, 101, 6, 0, 0, 42, 0, 12, 0>>
+             )
+
+    assert {:error, :invalid_apdu_data} =
+             APDU.decode_confirmed_request(
+               <<10, 117, 1, 0, 128, 12, 145, 0, 117, 11, 0, 104, 101, 108, 108, 111, 32, 119,
+                 111, 114, 108, 100, 101, 6, 0, 0, 42, 0, 12, 0>>
+             )
+  end
+
   test "decoding confirmed service request with empty APDU data" do
     assert {:error, :invalid_apdu_confirmed_request_data} = APDU.decode_confirmed_request(<<0>>)
   end
@@ -127,6 +141,11 @@ defmodule BACnet.Test.Protocol.APDUDecodingTest do
 
     assert {:ok, %APDU.ConfirmedServiceRequest{max_apdu: 1476}} =
              APDU.decode_confirmed_request(<<2, 5, 0, 15>>)
+  end
+
+  test "decoding invalid confirmed service request with invalid max APDU pattern" do
+    assert {:error, :invalid_max_size_bits} =
+             APDU.decode_confirmed_request(<<2, 6, 0, 15>>)
   end
 
   test "decoding confirmed service request all possible max segments" do

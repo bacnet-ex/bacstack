@@ -52,6 +52,9 @@ defmodule BACnet.Stack.SegmentsStore do
 
     @typedoc """
     Representative type for its purpose.
+
+    `initial_sequence_number` anchors the receive window. Wire sequence numbers
+    wrap modulo 256; `count_segments` tracks the total number of accepted segments.
     """
     @type t :: %__MODULE__{
             endpoint: SegmentationEndpoint.t(),
@@ -374,33 +377,6 @@ defmodule BACnet.Stack.SegmentsStore do
           new_state = %State{state | sequences: Map.delete(state.sequences, id)}
           {{:error, :invalid_proposed_window_size, true}, new_state}
 
-        incomplete.sequence_number == 0 and has_id ->
-          # Invalid APDU, as sequence number 0 received even though we have an active sequence
-          abort = %APDU.Abort{
-            sent_by_server: incomplete.server,
-            invoke_id: incomplete.invoke_id,
-            reason: Constants.macro_assert_name(:abort_reason, :invalid_apdu_in_this_state)
-          }
-
-          Telemetry.execute_segments_store_sequence_error(
-            self(),
-            module,
-            portal,
-            source_addr,
-            incomplete,
-            send_opts,
-            abort,
-            :invalid_sequence_number,
-            state
-          )
-
-          log_transport_send_error(module.send(portal, source_addr, abort, send_opts))
-
-          Process.cancel_timer(Map.fetch!(state.sequences, id).timer)
-
-          new_state = %State{state | sequences: Map.delete(state.sequences, id)}
-          {{:error, :invalid_apdu_in_this_state_already_present, true}, new_state}
-
         incomplete.sequence_number != 0 and not has_id ->
           # Invalid APDU, as sequence number is not 0 and we have no active sequence
           abort = %APDU.Abort{
@@ -462,7 +438,8 @@ defmodule BACnet.Stack.SegmentsStore do
 
                 {{:error, :too_many_segments, true}, :drop}
 
-              incomplete.sequence_number == (sequence.last_sequence_number || -1) + 1 ->
+              incomplete.sequence_number ==
+                  Integer.mod((sequence.last_sequence_number || -1) + 1, 256) ->
                 Telemetry.execute_segments_store_sequence_segment(
                   self(),
                   sequence,
@@ -470,7 +447,7 @@ defmodule BACnet.Stack.SegmentsStore do
                   state
                 )
 
-                # Expected sequence number (last number + 1)
+                # Clauses 5.4.4.4 and 5.4.5.2: LastSequenceNumber + 1, modulo 256
                 handle_segment_expected_segment(
                   sequence,
                   incomplete,
@@ -481,7 +458,7 @@ defmodule BACnet.Stack.SegmentsStore do
 
               true ->
                 {err_code, new} =
-                  if incomplete.sequence_number == sequence.last_sequence_number do
+                  if duplicate_in_window?(sequence, incomplete.sequence_number) do
                     Telemetry.execute_segments_store_sequence_error(
                       self(),
                       module,
@@ -725,27 +702,34 @@ defmodule BACnet.Stack.SegmentsStore do
         timeout_count: 0
     }
 
-    # Do not send segment ACK if it's the first segment - it has already been ACK'ed
-    if not incomplete.more_follows or
-         (Integer.mod(incomplete.sequence_number, sequence.window_size) == 0 and
-            incomplete.sequence_number > 0) do
-      log_debug(fn ->
-        "SegmentsStore: Sending segment ACK on reaching window or end for #{inspect(source_addr)}:#{incomplete.invoke_id}"
-      end)
+    # LastSegmentOfGroupReceived (Clauses 5.4.4.4 and 5.4.5.2) compares
+    # against the last acknowledged segment plus ActualWindowSize, modulo 256 -
+    # the first segment has already been acknowledged when creating the sequence
+    new =
+      if not incomplete.more_follows or
+           incomplete.sequence_number ==
+             Integer.mod(sequence.initial_sequence_number + sequence.window_size, 256) do
+        log_debug(fn ->
+          "SegmentsStore: Sending segment ACK on reaching window or end for #{inspect(source_addr)}:#{incomplete.invoke_id}"
+        end)
 
-      # Send ACK on last segment or if window size reached
-      ack = %APDU.SegmentACK{
-        negative_ack: false,
-        sent_by_server: sequence.server,
-        invoke_id: sequence.invoke_id,
-        sequence_number: new.last_sequence_number,
-        actual_window_size: sequence.window_size
-      }
+        # Send ACK on last segment or if window size reached
+        ack = %APDU.SegmentACK{
+          negative_ack: false,
+          sent_by_server: sequence.server,
+          invoke_id: sequence.invoke_id,
+          sequence_number: new.last_sequence_number,
+          actual_window_size: sequence.window_size
+        }
 
-      Telemetry.execute_segments_store_sequence_ack(self(), sequence, ack, state)
+        Telemetry.execute_segments_store_sequence_ack(self(), sequence, ack, state)
 
-      log_transport_send_error(module.send(portal, source_addr, ack, sequence.send_opts))
-    end
+        log_transport_send_error(module.send(portal, source_addr, ack, sequence.send_opts))
+
+        %Sequence{new | initial_sequence_number: new.last_sequence_number, duplicate_count: 0}
+      else
+        new
+      end
 
     if incomplete.more_follows do
       if is_integer(state.opts.max_segments) and new.count_segments >= state.opts.max_segments do
@@ -799,6 +783,18 @@ defmodule BACnet.Stack.SegmentsStore do
     end
   end
 
+  @spec duplicate_in_window?(Sequence.t(), byte()) :: boolean()
+  defp duplicate_in_window?(%Sequence{} = sequence, sequence_number) do
+    # DuplicateInWindow, Clause 5.4.2.2, as called by 5.4.4.4 and 5.4.5.2
+    first = Integer.mod(sequence.initial_sequence_number + 1, 256)
+    received_count = Integer.mod(sequence.last_sequence_number - first, 256)
+
+    received_count <= sequence.window_size and
+      (Integer.mod(sequence_number - first, 256) <= received_count or
+         (received_count == 0 and
+            Integer.mod(first - sequence_number, 256) <= sequence.window_size))
+  end
+
   @spec handle_segment_duplicated_segment(
           Sequence.t(),
           {module(), pid() | port()},
@@ -811,8 +807,8 @@ defmodule BACnet.Stack.SegmentsStore do
          source_addr,
          %State{} = state
        ) do
-    dup_count =
-      if sequence.duplicate_count + 1 >= sequence.window_size do
+    {dup_count, initial_sequence_number} =
+      if sequence.duplicate_count >= sequence.window_size do
         log_debug(fn ->
           "SegmentsStore: Received duplicated segment #{sequence.last_sequence_number}, " <>
             "sending NAK for #{inspect(source_addr)}:#{sequence.invoke_id}"
@@ -830,21 +826,29 @@ defmodule BACnet.Stack.SegmentsStore do
 
         log_transport_send_error(module.send(portal, source_addr, ack, sequence.send_opts))
 
-        0
+        # TooManyDuplicateSegmentsReceived resets InitialSequenceNumber for
+        # SEGMENTED_REQUEST (5.4.5.2); SEGMENTED_CONF (5.4.4.4) keeps it
+        initial =
+          if sequence.server,
+            do: sequence.last_sequence_number,
+            else: sequence.initial_sequence_number
+
+        {0, initial}
       else
         log_debug(fn ->
           "SegmentsStore: Received duplicated segment #{sequence.last_sequence_number} " <>
             "for #{inspect(source_addr)}:#{sequence.invoke_id}"
         end)
 
-        sequence.duplicate_count + 1
+        {sequence.duplicate_count + 1, sequence.initial_sequence_number}
       end
 
     {:duplicated_segments,
      %Sequence{
        sequence
        | last_sequence_time: System.monotonic_time(:millisecond),
-         duplicate_count: dup_count
+         duplicate_count: dup_count,
+         initial_sequence_number: initial_sequence_number
      }}
   end
 
@@ -880,7 +884,9 @@ defmodule BACnet.Stack.SegmentsStore do
     {:segments_out_of_order,
      %Sequence{
        sequence
-       | last_sequence_time: System.monotonic_time(:millisecond)
+       | last_sequence_time: System.monotonic_time(:millisecond),
+         initial_sequence_number: sequence.last_sequence_number,
+         duplicate_count: 0
      }}
   end
 

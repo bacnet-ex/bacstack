@@ -171,7 +171,8 @@ defmodule BACnet.Protocol.APDU.ComplexACK do
               "Maximum APDU size must exceed the segmented header size of #{byte_size(header) + 2} bytes"
       end
 
-      0..255//1
+      # Clause 20.1.2.7 allows more than 256 segments, the resulting seq number is modulo 256
+      0..1_000_000_000//1
       |> Enum.reduce_while({data, []}, fn
         _index, {<<>>, segments} ->
           {:halt, segments}

@@ -55,8 +55,10 @@ defmodule BACnet.Stack.Segmentator do
   @default_apdu_retries 3
   @default_apdu_timeout 3000
 
-  # 50ms time is given for a remote device to interrupt the sequence stream (negative ACK)
-  @sequence_send_timer 50
+  # 1ms time is just so we can check in between for a Segment-ACK arriving,
+  # so a remote device to can interrupt the sequence stream (negative ACK)
+  # without handling our "flood"
+  @sequence_send_timer 1
 
   defmodule Sequence do
     @moduledoc """
@@ -68,6 +70,9 @@ defmodule BACnet.Stack.Segmentator do
 
     @typedoc """
     Representative type for its purpose.
+
+    `sequence_number` is the absolute index of the first segment in the outstanding window.
+    The `segments` map also uses absolute indices rather than 8-bit sequence numbers.
     """
     @type t :: %__MODULE__{
             endpoint: SegmentationEndpoint.t(),
@@ -78,6 +83,7 @@ defmodule BACnet.Stack.Segmentator do
             invoke_id: byte(),
             server: boolean(),
             sequence_number: non_neg_integer(),
+            last_sent_segment: non_neg_integer(),
             window_size: pos_integer(),
             retry_count: non_neg_integer(),
             segments: map(),
@@ -98,6 +104,7 @@ defmodule BACnet.Stack.Segmentator do
       :invoke_id,
       :server,
       :sequence_number,
+      :last_sent_segment,
       :window_size,
       :retry_count,
       :segments,
@@ -490,6 +497,7 @@ defmodule BACnet.Stack.Segmentator do
                 server: EncoderProtocol.response?(apdu_struct),
                 invoke_id: apdu_struct.invoke_id,
                 sequence_number: 0,
+                last_sent_segment: 0,
                 # Window size will be overwritten by SegmentACK later
                 window_size: 1,
                 retry_count: 0,
@@ -497,10 +505,10 @@ defmodule BACnet.Stack.Segmentator do
                 segments: segments,
                 monotonic_time: System.monotonic_time(),
                 timer:
-                  Process.send_after(
+                  :erlang.start_timer(
+                    state.opts.apdu_timeout + @apdu_timer_offset,
                     self(),
-                    {:timer, id},
-                    state.opts.apdu_timeout + @apdu_timer_offset
+                    {:timer, id}
                   ),
                 seq_timer: nil,
                 callback_to: callback_to,
@@ -656,11 +664,12 @@ defmodule BACnet.Stack.Segmentator do
   end
 
   def handle_call(
-        {:ack, destination, %APDU.SegmentACK{negative_ack: false} = apdu},
+        {:ack, destination, %APDU.SegmentACK{} = apdu},
         _from,
         %State{} = state
       ) do
-    # Received positive ACK from a remote BACnet device
+    # Clause 5.3.4(c): a NAK acknowledges all segments through sequence-number
+    # and requests retransmission starting with the next sequential segment
     log_debug(fn ->
       "Segmentator: Received ACK request for " <>
         "#{inspect(destination)}:#{inspect(apdu.invoke_id)}"
@@ -675,10 +684,10 @@ defmodule BACnet.Stack.Segmentator do
       )
 
     {reply, new_state} =
-      case Map.fetch(state.sequences, id) do
+      case fetch_ack_sequence(state.sequences, id, apdu.sequence_number) do
         # Reached end of segments, mission completed
-        {:ok, %Sequence{segments: segments} = sequence}
-        when apdu.sequence_number + 1 >= map_size(segments) ->
+        {:ok, %Sequence{segments: segments} = sequence, segment_number}
+        when segment_number + 1 == map_size(segments) ->
           if sequence.timer do
             Process.cancel_timer(sequence.timer)
           end
@@ -695,7 +704,7 @@ defmodule BACnet.Stack.Segmentator do
 
           {:ok, %State{state | sequences: Map.delete(state.sequences, id)}}
 
-        {:ok, %Sequence{} = sequence} ->
+        {:ok, %Sequence{} = sequence, segment_number} ->
           if sequence.timer do
             Process.cancel_timer(sequence.timer)
           end
@@ -711,65 +720,20 @@ defmodule BACnet.Stack.Segmentator do
               id,
               %Sequence{
                 sequence
-                | window_size: apdu.actual_window_size
+                | window_size: apdu.actual_window_size,
+                  retry_count: 0
               },
-              apdu.sequence_number + 1,
+              segment_number + 1,
               state
             )
 
           new_state = %State{state | sequences: Map.put(state.sequences, id, new_sequence)}
           {:ok, new_state}
 
-        # Unknown sequence, silently ignore
-        :error ->
-          {:ok, state}
-      end
-
-    {:reply, reply, new_state}
-  end
-
-  def handle_call(
-        {:ack, destination, %APDU.SegmentACK{negative_ack: true} = apdu},
-        _from,
-        %State{} = state
-      ) do
-    # Received negative ACK from a remote BACnet device, start sending from given sequence number
-    log_debug(fn ->
-      "Segmentator: Received NAK request for " <>
-        "#{inspect(destination)}:#{inspect(apdu.invoke_id)}"
-    end)
-
-    id =
-      SegmentationEndpoint.sequence_key(
-        state.sequences,
-        destination,
-        apdu.invoke_id,
-        SegmentationEndpoint.incoming_role(apdu)
-      )
-
-    {reply, new_state} =
-      case Map.fetch(state.sequences, id) do
-        {:ok, %Sequence{} = sequence} ->
-          if sequence.timer do
-            Process.cancel_timer(sequence.timer)
-          end
-
-          if sequence.seq_timer do
-            Process.cancel_timer(sequence.seq_timer)
-          end
-
-          Telemetry.execute_segmentator_sequence_ack(self(), sequence, apdu, state)
-
-          new_sequence =
-            send_window(
-              id,
-              %Sequence{sequence | window_size: apdu.actual_window_size},
-              apdu.sequence_number,
-              state
-            )
-
-          new_state = %State{state | sequences: Map.put(state.sequences, id, new_sequence)}
-          {:ok, new_state}
+        # DuplicateACK_Received (Clauses 5.4.4.2 and 5.4.5.4): only restart the timer
+        {:duplicate, sequence} ->
+          new_sequence = restart_segment_timer(id, sequence, state)
+          {:ok, %State{state | sequences: Map.put(state.sequences, id, new_sequence)}}
 
         # Unknown sequence, silently ignore
         :error ->
@@ -833,15 +797,14 @@ defmodule BACnet.Stack.Segmentator do
   end
 
   @doc false
-  def handle_info({:timer, id}, %State{} = state) do
-    # Check if timer is still relevant (sequence has not been dropped yet)
-    # Sequence is dropped on abort or completion
-    # If still relevant, send same sequence segment(s) again as missing ACK
+  def handle_info({:timeout, timer_ref, {:timer, id}}, %State{} = state) do
+    # An expired timer may already be queued when an ACK cancels or replaces it
+    # Only the active timer may retry or terminate the current sequence
 
     new_state =
       case Map.fetch(state.sequences, id) do
         # Abort mission, drop sequence
-        {:ok, %Sequence{module: module, retry_count: retry_count} = sequence}
+        {:ok, %Sequence{module: module, retry_count: retry_count, timer: ^timer_ref} = sequence}
         when retry_count >= state.opts.apdu_retries ->
           if sequence.seq_timer do
             # Cancel any active sequence segment timer
@@ -899,7 +862,7 @@ defmodule BACnet.Stack.Segmentator do
 
           %State{state | sequences: Map.delete(state.sequences, id)}
 
-        {:ok, %Sequence{} = sequence} ->
+        {:ok, %Sequence{timer: ^timer_ref} = sequence} ->
           if sequence.seq_timer do
             # Cancel any active sequence segment timer
             Process.cancel_timer(sequence.seq_timer)
@@ -935,20 +898,24 @@ defmodule BACnet.Stack.Segmentator do
                 })
           }
 
-        # Unknown sequence, silently ignore
-        :error ->
+        # Unknown sequence or expired timer from an earlier window/transfer
+        _other ->
           state
       end
 
     {:noreply, new_state}
   end
 
-  def handle_info({:seq_timer, id, seq_number_next, seq_number_end}, %State{} = state) do
-    # Send the next segment, as we did not receive a negative ACK in the given time window
+  def handle_info(
+        {:timeout, timer_ref, {:seq_timer, id, seq_number_next, seq_number_end}},
+        %State{} = state
+      ) do
+    # A cancelled pacing timeout can still be in the mailbox after a SegmentACK
+    # Its reference must match before it can send another segment
 
     new_state =
       case Map.fetch(state.sequences, id) do
-        {:ok, %Sequence{} = sequence} ->
+        {:ok, %Sequence{seq_timer: ^timer_ref} = sequence} ->
           new_sequence =
             send_segments(
               id,
@@ -960,12 +927,47 @@ defmodule BACnet.Stack.Segmentator do
 
           %State{state | sequences: Map.put(state.sequences, id, new_sequence)}
 
-        # Unknown sequence, silently ignore
-        :error ->
+        # Unknown sequence or expired timer from an earlier window/transfer
+        _other ->
           state
       end
 
     {:noreply, new_state}
+  end
+
+  @spec fetch_ack_sequence(map(), SegmentationEndpoint.sequence_key() | nil, byte()) ::
+          {:ok, Sequence.t(), non_neg_integer()} | {:duplicate, Sequence.t()} | :error
+  defp fetch_ack_sequence(sequences, id, sequence_number) do
+    case Map.fetch(sequences, id) do
+      {:ok, %Sequence{} = sequence} ->
+        # InWindow, Clause 5.4.2.1: use the outstanding window's size, not the
+        # size announced in this ACK - absolute indices remain monotonic across wraps
+        offset = Integer.mod(sequence_number - rem(sequence.sequence_number, 256), 256)
+        segment_number = sequence.sequence_number + offset
+
+        if offset < sequence.window_size and segment_number <= sequence.last_sent_segment do
+          {:ok, sequence, segment_number}
+        else
+          {:duplicate, sequence}
+        end
+
+      :error ->
+        :error
+    end
+  end
+
+  @spec restart_segment_timer(SegmentationEndpoint.sequence_key(), Sequence.t(), State.t()) ::
+          Sequence.t()
+  defp restart_segment_timer(id, %Sequence{} = sequence, %State{} = state) do
+    if sequence.timer do
+      Process.cancel_timer(sequence.timer)
+    end
+
+    %Sequence{
+      sequence
+      | timer:
+          :erlang.start_timer(state.opts.apdu_timeout + @apdu_timer_offset, self(), {:timer, id})
+    }
   end
 
   defp send_window(id, %Sequence{} = sequence, first_segment, %State{} = state) do
@@ -989,34 +991,42 @@ defmodule BACnet.Stack.Segmentator do
          %State{} = state
        )
        when window_size == 1 or seq_number_start == seq_number_end do
-    case module.send(
-           sequence.portal,
-           sequence.destination,
-           Map.fetch!(sequence.segments, seq_number_start),
-           sequence.send_opts
-         ) do
-      :ok ->
-        Telemetry.execute_segmentator_sequence_segment(self(), sequence, seq_number_start, state)
+    sequence =
+      case module.send(
+             sequence.portal,
+             sequence.destination,
+             Map.fetch!(sequence.segments, seq_number_start),
+             sequence.send_opts
+           ) do
+        :ok ->
+          Telemetry.execute_segmentator_sequence_segment(
+            self(),
+            sequence,
+            seq_number_start,
+            state
+          )
 
-      {:error, _err} = error ->
-        log_transport_send_error(error)
+          %Sequence{
+            sequence
+            | last_sent_segment: max(sequence.last_sent_segment, seq_number_start)
+          }
 
-        Telemetry.execute_segmentator_exception(
-          self(),
-          :error,
-          error,
-          [Telemetry.make_stacktrace_from_env(__ENV__)],
-          %{sequence: sequence},
-          state
-        )
-    end
+        {:error, _err} = error ->
+          log_transport_send_error(error)
 
-    %Sequence{
-      sequence
-      | timer:
-          Process.send_after(self(), {:timer, id}, state.opts.apdu_timeout + @apdu_timer_offset),
-        seq_timer: nil
-    }
+          Telemetry.execute_segmentator_exception(
+            self(),
+            :error,
+            error,
+            [Telemetry.make_stacktrace_from_env(__ENV__)],
+            %{sequence: sequence},
+            state
+          )
+
+          sequence
+      end
+
+    restart_segment_timer(id, %Sequence{sequence | seq_timer: nil}, state)
   end
 
   defp send_segments(
@@ -1026,37 +1036,55 @@ defmodule BACnet.Stack.Segmentator do
          seq_number_end,
          %State{} = state
        ) do
-    case module.send(
-           sequence.portal,
-           sequence.destination,
-           Map.fetch!(sequence.segments, seq_number_start),
-           sequence.send_opts
-         ) do
-      :ok ->
-        Telemetry.execute_segmentator_sequence_segment(self(), sequence, seq_number_start, state)
-
-      {:error, _err} = error ->
-        log_transport_send_error(error)
-
-        Telemetry.execute_segmentator_exception(
-          self(),
-          :error,
-          error,
-          [Telemetry.make_stacktrace_from_env(__ENV__)],
-          %{sequence: sequence},
-          state
-        )
+    # A duplicate ACK may have restarted SegmentTimer while this window was paced
+    if sequence.timer do
+      Process.cancel_timer(sequence.timer)
     end
+
+    sequence =
+      case module.send(
+             sequence.portal,
+             sequence.destination,
+             Map.fetch!(sequence.segments, seq_number_start),
+             sequence.send_opts
+           ) do
+        :ok ->
+          Telemetry.execute_segmentator_sequence_segment(
+            self(),
+            sequence,
+            seq_number_start,
+            state
+          )
+
+          %Sequence{
+            sequence
+            | last_sent_segment: max(sequence.last_sent_segment, seq_number_start)
+          }
+
+        {:error, _err} = error ->
+          log_transport_send_error(error)
+
+          Telemetry.execute_segmentator_exception(
+            self(),
+            :error,
+            error,
+            [Telemetry.make_stacktrace_from_env(__ENV__)],
+            %{sequence: sequence},
+            state
+          )
+
+          sequence
+      end
 
     # New apdu timeout is set in the last window segment
     %Sequence{
       sequence
       | timer: nil,
         seq_timer:
-          Process.send_after(
+          :erlang.start_timer(
+            @sequence_send_timer,
             self(),
-            {:seq_timer, id, seq_number_start + 1, seq_number_end},
-            @sequence_send_timer
+            {:seq_timer, id, seq_number_start + 1, seq_number_end}
           )
     }
   end

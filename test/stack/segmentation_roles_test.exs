@@ -165,7 +165,10 @@ defmodule BACnet.Stack.SegmentationRolesTest do
 
       case termination do
         :timeout ->
-          send(context.sender, {:timer, {context.endpoint, :responder, invoke_id}})
+          id = {context.endpoint, :responder, invoke_id}
+          timer = :sys.get_state(context.sender).sequences[id].timer
+          Process.cancel_timer(timer)
+          send(context.sender, {:timeout, timer, {:timer, id}})
           assert :ok = Segmentator.configure(context.sender, [])
           sync(context.client)
 

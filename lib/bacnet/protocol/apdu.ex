@@ -226,7 +226,9 @@ defmodule BACnet.Protocol.APDU do
           more_follows::size(1), seg_resp_accepted::size(1), _filler::size(1), _any::size(1),
           max_segments::size(3), max_apdu::size(4), apdu_data::binary>>
       ) do
-    with {:ok, {invoke_id, seq_number, window_size, service, data}} <-
+    with {:ok, _max_apdu_int} <- max_apdu_to_int(max_apdu),
+         # {:ok, _max_segments_int} <- max_segments_to_int_atom(max_segments),
+         {:ok, {invoke_id, seq_number, window_size, service, data}} <-
            data_segments_info_extract(apdu_data, true) do
       incomplete = %IncompleteAPDU{
         # Remove the segmented bit for the header
@@ -252,13 +254,15 @@ defmodule BACnet.Protocol.APDU do
           _more_follows::size(1), seg_resp_accepted::size(1), _filler::size(1), _any::size(1),
           max_segments::size(3), max_apdu::size(4), data::binary>>
       ) do
-    with {:ok, {invoke_id, seq_number, window_size, service, tags}} <-
+    with {:ok, max_apdu_int} <- max_apdu_to_int(max_apdu),
+         {:ok, max_segments_int} <- max_segments_to_int_atom(max_segments),
+         {:ok, {invoke_id, seq_number, window_size, service, tags}} <-
            data_segments_info_extract(data, false),
          {:ok, values} <- read_tags_until_exhaust(tags) do
       request = %__MODULE__.ConfirmedServiceRequest{
         segmented_response_accepted: seg_resp_accepted == 1,
-        max_apdu: max_apdu_to_int(max_apdu),
-        max_segments: max_segments_to_int_atom(max_segments),
+        max_apdu: max_apdu_int,
+        max_segments: max_segments_int,
         invoke_id: invoke_id,
         sequence_number: seq_number,
         proposed_window_size: window_size,
@@ -355,7 +359,7 @@ defmodule BACnet.Protocol.APDU do
   # The 1::size(1) after pdu_type means it is segmented
   def decode_complex_ack(
         <<Constants.macro_by_name(:pdu_type, :complex_ack)::size(4), 1::size(1),
-          more_follows::size(1), 0::size(2), apdu_data::binary>>
+          more_follows::size(1), _reserved::size(2), apdu_data::binary>>
       ) do
     case data_segments_info_extract(apdu_data, true) do
       {:ok, {invoke_id, seq_number, window_size, service, data}} ->
@@ -382,7 +386,7 @@ defmodule BACnet.Protocol.APDU do
   # The 0::size(1) after pdu_type means it is not segmented
   def decode_complex_ack(
         <<Constants.macro_by_name(:pdu_type, :complex_ack)::size(4), 0::size(1),
-          _more_follows::size(1), 0::size(2), apdu_data::binary>>
+          _more_follows::size(1), _reserved::size(2), apdu_data::binary>>
       ) do
     with {:ok, {invoke_id, seq_number, window_size, service, tags}} <-
            data_segments_info_extract(apdu_data, false),
@@ -602,7 +606,8 @@ defmodule BACnet.Protocol.APDU do
          <<invoke_id::size(8), seq_number::size(8), window_size::size(8), service::size(8),
            tags::binary>>,
          true
-       ) do
+       )
+       when window_size >= 1 and window_size <= 127 do
     {:ok, {invoke_id, seq_number, window_size, service, tags}}
   end
 
@@ -649,36 +654,50 @@ defmodule BACnet.Protocol.APDU do
 
   defp extract_error_code_and_class(_term), do: {:error, :unknown_tag_encoding}
 
-  @spec max_segments_to_int_atom(byte()) :: non_neg_integer() | :unspecified | :more_than_64
+  @spec max_segments_to_int_atom(byte()) ::
+          {:ok, non_neg_integer() | :unspecified | :more_than_64}
   defp max_segments_to_int_atom(Constants.macro_by_name(:max_segments_accepted, :segments_0)),
-    do: :unspecified
+    do: {:ok, :unspecified}
 
   defp max_segments_to_int_atom(Constants.macro_by_name(:max_segments_accepted, :segments_2)),
-    do: 2
+    do: {:ok, 2}
 
   defp max_segments_to_int_atom(Constants.macro_by_name(:max_segments_accepted, :segments_4)),
-    do: 4
+    do: {:ok, 4}
 
   defp max_segments_to_int_atom(Constants.macro_by_name(:max_segments_accepted, :segments_8)),
-    do: 8
+    do: {:ok, 8}
 
   defp max_segments_to_int_atom(Constants.macro_by_name(:max_segments_accepted, :segments_16)),
-    do: 16
+    do: {:ok, 16}
 
   defp max_segments_to_int_atom(Constants.macro_by_name(:max_segments_accepted, :segments_32)),
-    do: 32
+    do: {:ok, 32}
 
   defp max_segments_to_int_atom(Constants.macro_by_name(:max_segments_accepted, :segments_64)),
-    do: 64
+    do: {:ok, 64}
 
   defp max_segments_to_int_atom(Constants.macro_by_name(:max_segments_accepted, :segments_65)),
-    do: :more_than_64
+    do: {:ok, :more_than_64}
 
-  @spec max_apdu_to_int(byte()) :: non_neg_integer()
-  defp max_apdu_to_int(Constants.macro_by_name(:max_apdu_length_accepted, :octets_50)), do: 50
-  defp max_apdu_to_int(Constants.macro_by_name(:max_apdu_length_accepted, :octets_128)), do: 128
-  defp max_apdu_to_int(Constants.macro_by_name(:max_apdu_length_accepted, :octets_206)), do: 206
-  defp max_apdu_to_int(Constants.macro_by_name(:max_apdu_length_accepted, :octets_480)), do: 480
-  defp max_apdu_to_int(Constants.macro_by_name(:max_apdu_length_accepted, :octets_1024)), do: 1024
-  defp max_apdu_to_int(Constants.macro_by_name(:max_apdu_length_accepted, :octets_1476)), do: 1476
+  @spec max_apdu_to_int(byte()) :: {:ok, non_neg_integer()} | {:error, term()}
+  defp max_apdu_to_int(Constants.macro_by_name(:max_apdu_length_accepted, :octets_50)),
+    do: {:ok, 50}
+
+  defp max_apdu_to_int(Constants.macro_by_name(:max_apdu_length_accepted, :octets_128)),
+    do: {:ok, 128}
+
+  defp max_apdu_to_int(Constants.macro_by_name(:max_apdu_length_accepted, :octets_206)),
+    do: {:ok, 206}
+
+  defp max_apdu_to_int(Constants.macro_by_name(:max_apdu_length_accepted, :octets_480)),
+    do: {:ok, 480}
+
+  defp max_apdu_to_int(Constants.macro_by_name(:max_apdu_length_accepted, :octets_1024)),
+    do: {:ok, 1024}
+
+  defp max_apdu_to_int(Constants.macro_by_name(:max_apdu_length_accepted, :octets_1476)),
+    do: {:ok, 1476}
+
+  defp max_apdu_to_int(_rest), do: {:error, :invalid_max_size_bits}
 end

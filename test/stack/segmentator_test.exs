@@ -51,14 +51,14 @@ defmodule BACnet.Stack.SegmentatorTest do
     assert_receive {:fake_transport_postponed, @dest, []}
     assert_sequence(@dest, 0)
 
-    send(segmentator, {:timer, key(transport, 1)})
-    send(segmentator, {:timer, key(transport, 1)})
-    send(segmentator, {:timer, key(transport, 1)})
+    fire_timer(segmentator, key(transport, 1))
+    fire_timer(segmentator, key(transport, 1))
+    fire_timer(segmentator, key(transport, 1))
     assert_sequence(@dest, 0)
     assert_sequence(@dest, 0)
     assert_sequence(@dest, 0)
 
-    send(segmentator, {:timer, key(transport, 1)})
+    fire_timer(segmentator, key(transport, 1))
     refute_receive {:fake_transport_send, _, _, _}, 30
     refute_receive {:fake_transport_send, _, %APDU.Abort{}, _}, 0
   end
@@ -82,7 +82,7 @@ defmodule BACnet.Stack.SegmentatorTest do
     assert_sequence(@dest, 0)
 
     assert :ok = Segmentator.configure(segmentator, apdu_retries: 0, apdu_timeout: 60_000)
-    send(segmentator, {:timer, key(transport, 2)})
+    fire_timer(segmentator, key(transport, 2))
     assert_receive {:timeout, :configured}
     refute_receive {:fake_transport_send, _, %APDU.Abort{}, _}, 0
 
@@ -458,6 +458,8 @@ defmodule BACnet.Stack.SegmentatorTest do
   } do
     open_pair(segmentator, transport, 16, callback_msg: :finished)
 
+    advance_pair(segmentator, 16)
+
     assert :ok =
              Segmentator.handle_apdu(
                segmentator,
@@ -480,6 +482,8 @@ defmodule BACnet.Stack.SegmentatorTest do
     open_pair(segmentator, transport, 17,
       send_opts: [callback_to: :not_a_pid, callback_msg: :nope]
     )
+
+    advance_pair(segmentator, 17)
 
     assert :ok =
              Segmentator.handle_apdu(
@@ -509,6 +513,138 @@ defmodule BACnet.Stack.SegmentatorTest do
              )
 
     assert_sequence(@dest, 1)
+  end
+
+  for kind <- [:request, :ack], negative_ack <- [false, true] do
+    @tag :segmentator_ack_window
+    test "#{kind} ACK negative=#{negative_ack} cannot advance outside the outstanding sent segments",
+         %{transport: transport} do
+      kind = unquote(kind)
+      negative_ack = unquote(negative_ack)
+      {state, id} = callback_sequence(transport, kind)
+      state = callback_ack(state, kind, 0, 4)
+      assert_sequence(@dest, 1)
+      sequence = state.sequences[id]
+
+      # Drive callbacks directly so the 1 ms pacing timer cannot race this test.
+      # The final segment is deterministically still unsent.
+      Process.cancel_timer(sequence.seq_timer)
+
+      {state, timers} =
+        Enum.reduce([0, 4, 5, 255], {state, []}, fn number, {state, timers} ->
+          before = state.sequences[id]
+          state = callback_ack(state, kind, number, 127, negative_ack)
+          after_ack = state.sequences[id]
+
+          # DuplicateACK_Received restarts only SegmentTimer. In particular, the
+          # ACK's advertised window cannot expand the window used by InWindow.
+          assert Map.delete(after_ack, :timer) == Map.delete(before, :timer)
+          assert after_ack.timer != before.timer
+          assert is_integer(Process.read_timer(after_ack.timer))
+          if before.timer, do: assert(Process.read_timer(before.timer) == false)
+          refute_received {:fake_transport_send, @dest, _data, _opts}
+          refute_received {:done, :callback_window}
+          {state, [after_ack.timer | timers]}
+        end)
+
+      state =
+        Enum.reduce(2..4, state, fn number, state ->
+          state = fire_pacing(state, id, number, 4)
+          assert_sequence(@dest, number)
+          state
+        end)
+
+      assert Enum.all?(timers, &(Process.read_timer(&1) == false))
+      state = callback_ack(state, kind, 4, 4)
+      assert_receive {:done, :callback_window}
+      assert state.sequences == %{}
+    end
+
+    @tag :segmentator_timer_race
+    test "#{kind} ACK negative=#{negative_ack} invalidates queued pacing and retry timeouts",
+         %{transport: transport} do
+      kind = unquote(kind)
+      {state, id} = callback_sequence(transport, kind)
+      first_timer = state.sequences[id].timer
+      state = callback_ack(state, kind, 0, 4)
+      assert_sequence(@dest, 1)
+      pacing_timer = state.sequences[id].seq_timer
+      Process.cancel_timer(pacing_timer)
+
+      # These expired messages represent timers already delivered to the mailbox.
+      # Cancellation alone cannot prevent their delivery after the ACK is handled.
+      expired = [
+        {:timeout, first_timer, {:timer, id}},
+        {:timeout, pacing_timer, {:seq_timer, id, 2, 4}}
+      ]
+
+      state = callback_ack(state, kind, 1, 1, unquote(negative_ack))
+      assert_sequence(@dest, 2)
+      retry_timer = state.sequences[id].timer
+
+      for message <- expired do
+        assert {:noreply, ^state} = Segmentator.handle_info(message, state)
+      end
+
+      refute_received {:fake_transport_send, @dest, _data, _opts}
+      refute_received {:timeout, :callback_window}
+
+      state =
+        Enum.reduce(2..4, state, fn number, state ->
+          state = callback_ack(state, kind, number, 1)
+          if number < 4, do: assert_sequence(@dest, number + 1)
+          state
+        end)
+
+      assert_receive {:done, :callback_window}
+      assert state.sequences == %{}
+      expired = [{:timeout, retry_timer, {:timer, id}} | expired]
+
+      for message <- expired do
+        assert {:noreply, ^state} = Segmentator.handle_info(message, state)
+      end
+
+      # Reusing the endpoint, role and invoke ID must not make old timers valid.
+      {state, ^id} = callback_sequence(transport, kind, state)
+
+      for message <- expired do
+        assert {:noreply, ^state} = Segmentator.handle_info(message, state)
+      end
+
+      refute_received {:fake_transport_send, @dest, _data, _opts}
+      refute_received {:timeout, :callback_window}
+    end
+  end
+
+  @tag :segmentator_ack_window
+  test "a new ACK resets the retry count for the next window", %{
+    segmentator: segmentator,
+    transport: transport
+  } do
+    open_pair(segmentator, transport, 91)
+    id = key(transport, 91)
+    fire_timer(segmentator, id)
+    assert_sequence(@dest, 0)
+    assert :sys.get_state(segmentator).sequences[id].retry_count == 1
+
+    advance_pair(segmentator, 91)
+    assert :sys.get_state(segmentator).sequences[id].retry_count == 0
+    fire_timer(segmentator, id)
+    assert_sequence(@dest, 1)
+    refute_received {:timeout, :pair}
+
+    assert :ok =
+             Segmentator.handle_apdu(
+               segmentator,
+               @dest,
+               ApduFactory.segment_ack(91,
+                 sent_by_server: true,
+                 sequence_number: 1,
+                 actual_window_size: 1
+               )
+             )
+
+    assert_receive {:done, :pair}
   end
 
   test "a wider window is paced by the sequence timer", %{
@@ -563,7 +699,179 @@ defmodule BACnet.Stack.SegmentatorTest do
     assert_receive {:done, :window}
   end
 
-  test "a negative ack resends from the given sequence number", %{
+  for kind <- [:request, :ack],
+      {segment_count, window} <- [{257, 1}, {520, 1}, {270, 7}, {270, 127}] do
+    @tag sequence_rollover: true, capture_log: [level: :warning]
+    test "#{kind} sends and completes #{segment_count} segments with sequence rollover and window #{window}",
+         %{segmentator: segmentator, transport: transport} do
+      kind = unquote(kind)
+      segment_count = unquote(segment_count)
+      window = unquote(window)
+      apdu = rollover_apdu(kind, segment_count, window)
+      apdu_size = if kind == :request, do: 56, else: 55
+      segments = EncoderProtocol.encode_segmented(apdu, apdu_size)
+      assert length(segments) == segment_count
+
+      assert :ok =
+               Segmentator.create_sequence(
+                 segmentator,
+                 trip(transport),
+                 @dest,
+                 apdu,
+                 apdu_size,
+                 0,
+                 callback_to: self(),
+                 callback_msg: :rollover
+               )
+
+      assert_receive {:fake_transport_postponed, @dest, []}
+
+      for {expected, index} <- Enum.with_index(segments) do
+        assert_rollover_segment(expected, index, segment_count)
+        refute_received {:done, :rollover}
+
+        if index == 0 or rem(index, window) == 0 or index == segment_count - 1 do
+          assert :ok =
+                   Segmentator.handle_apdu(
+                     segmentator,
+                     @dest,
+                     ApduFactory.segment_ack(90,
+                       sent_by_server: kind == :request,
+                       sequence_number: rem(index, 256),
+                       actual_window_size: window
+                     )
+                   )
+        end
+      end
+
+      assert_receive {:done, :rollover}
+      assert :sys.get_state(segmentator).sequences == %{}
+      refute_received {:fake_transport_send, @dest, _, _}
+      refute_received {:done, :rollover}
+    end
+  end
+
+  for kind <- [:request, :ack] do
+    @tag sequence_rollover: true, capture_log: [level: :warning]
+    test "#{kind} retransmits the current cycle after a negative ACK at sequence rollover",
+         %{segmentator: segmentator, transport: transport} do
+      kind = unquote(kind)
+      apdu = rollover_apdu(kind, 258, 1)
+      apdu_size = if kind == :request, do: 56, else: 55
+      segments = EncoderProtocol.encode_segmented(apdu, apdu_size)
+      assert length(segments) == 258
+
+      assert :ok =
+               Segmentator.create_sequence(
+                 segmentator,
+                 trip(transport),
+                 @dest,
+                 apdu,
+                 apdu_size,
+                 0,
+                 callback_to: self(),
+                 callback_msg: :rollover_retry
+               )
+
+      assert_receive {:fake_transport_postponed, @dest, []}
+
+      for {expected, index} <- Enum.with_index(Enum.take(segments, 256)) do
+        assert_rollover_segment(expected, index, 258)
+
+        assert :ok =
+                 Segmentator.handle_apdu(
+                   segmentator,
+                   @dest,
+                   ApduFactory.segment_ack(90,
+                     sent_by_server: kind == :request,
+                     sequence_number: rem(index, 256),
+                     actual_window_size: 1
+                   )
+                 )
+      end
+
+      expected = Enum.at(segments, 256)
+      assert_rollover_segment(expected, 256, 258)
+
+      # A timeout and a delayed ACK for 255 must both retain the current cycle.
+      role = if kind == :request, do: :requester, else: :responder
+      endpoint = SegmentationEndpoint.new(FakeTransport, transport, @dest)
+      fire_timer(segmentator, {endpoint, role, 90})
+      assert_rollover_segment(expected, 256, 258)
+
+      assert :ok =
+               Segmentator.handle_apdu(
+                 segmentator,
+                 @dest,
+                 ApduFactory.segment_ack(90,
+                   sent_by_server: kind == :request,
+                   sequence_number: 255,
+                   actual_window_size: 1
+                 )
+               )
+
+      refute_received {:fake_transport_send, @dest, _, _}
+
+      # Neither ACK nor NAK may refer past the final absolute segment.
+      sequences = :sys.get_state(segmentator).sequences
+
+      for negative_ack <- [false, true] do
+        assert :ok =
+                 Segmentator.handle_apdu(
+                   segmentator,
+                   @dest,
+                   ApduFactory.segment_ack(90,
+                     sent_by_server: kind == :request,
+                     negative_ack: negative_ack,
+                     sequence_number: 2,
+                     actual_window_size: 1
+                   )
+                 )
+
+        current = :sys.get_state(segmentator).sequences
+        assert Map.keys(current) == Map.keys(sequences)
+
+        for {id, before} <- sequences do
+          assert Map.delete(current[id], :timer) == Map.delete(before, :timer)
+          assert Process.read_timer(before.timer) == false
+        end
+
+        refute_received {:fake_transport_send, @dest, _, _}
+      end
+
+      assert :ok =
+               Segmentator.handle_apdu(
+                 segmentator,
+                 @dest,
+                 ApduFactory.segment_ack(90,
+                   sent_by_server: kind == :request,
+                   negative_ack: true,
+                   sequence_number: 0,
+                   actual_window_size: 1
+                 )
+               )
+
+      assert_rollover_segment(Enum.at(segments, 257), 257, 258)
+      refute_received {:done, :rollover_retry}
+
+      assert :ok =
+               Segmentator.handle_apdu(
+                 segmentator,
+                 @dest,
+                 ApduFactory.segment_ack(90,
+                   sent_by_server: kind == :request,
+                   sequence_number: 1,
+                   actual_window_size: 1
+                 )
+               )
+
+      assert_receive {:done, :rollover_retry}
+      assert :sys.get_state(segmentator).sequences == %{}
+      refute_received {:fake_transport_send, @dest, _, _}
+    end
+  end
+
+  test "a negative ack resends after the acknowledged sequence number", %{
     segmentator: segmentator,
     transport: transport
   } do
@@ -581,7 +889,7 @@ defmodule BACnet.Stack.SegmentatorTest do
                )
              )
 
-    assert_sequence(@dest, 0)
+    assert_sequence(@dest, 1)
   end
 
   test "an out of range window aborts the sequence", %{
@@ -663,10 +971,10 @@ defmodule BACnet.Stack.SegmentatorTest do
     assert_receive {:fake_transport_postponed, @dest, []}
     assert_sequence(@dest, 0)
 
-    send(segmentator, {:timer, key(transport, 25)})
+    fire_timer(segmentator, key(transport, 25))
     assert_sequence(@dest, 0)
 
-    send(segmentator, {:timer, key(transport, 25)})
+    fire_timer(segmentator, key(transport, 25))
     assert_receive {:timeout, :timed}
     refute_receive {:fake_transport_send, _, %APDU.Abort{}, _}, 0
     refute_receive {:fake_transport_send, _, _, _}, 0
@@ -678,10 +986,11 @@ defmodule BACnet.Stack.SegmentatorTest do
   } do
     open_pair(segmentator, transport, 26, callback_msg: :retry_err)
     assert :ok = FakeTransport.set_send_result(transport, {:error, :down})
-    send(segmentator, {:timer, key(transport, 26)})
+    fire_timer(segmentator, key(transport, 26))
     assert_sequence(@dest, 0)
 
     assert :ok = FakeTransport.set_send_result(transport, :ok)
+    advance_pair(segmentator, 26)
 
     assert :ok =
              Segmentator.handle_apdu(
@@ -694,8 +1003,8 @@ defmodule BACnet.Stack.SegmentatorTest do
   end
 
   test "unknown timer messages are ignored", %{segmentator: segmentator, transport: transport} do
-    send(segmentator, {:timer, key(transport, 99)})
-    send(segmentator, {:seq_timer, key(transport, 99), 1, 2})
+    send(segmentator, {:timeout, make_ref(), {:timer, key(transport, 99)}})
+    send(segmentator, {:timeout, make_ref(), {:seq_timer, key(transport, 99), 1, 2}})
 
     assert :ok =
              Segmentator.create_sequence(
@@ -716,6 +1025,21 @@ defmodule BACnet.Stack.SegmentatorTest do
     transport: transport
   } do
     open_window(segmentator, transport, 30, :complete)
+    assert_sequence(@dest, 2)
+
+    assert :ok =
+             Segmentator.handle_apdu(
+               segmentator,
+               @dest,
+               ApduFactory.segment_ack(30,
+                 sent_by_server: true,
+                 sequence_number: 2,
+                 actual_window_size: 2
+               )
+             )
+
+    assert_sequence(@dest, 3)
+    assert_sequence(@dest, 4)
 
     assert :ok =
              Segmentator.handle_apdu(
@@ -744,7 +1068,7 @@ defmodule BACnet.Stack.SegmentatorTest do
                )
              )
 
-    assert_sequence(@dest, 1)
+    assert_sequence(@dest, 2)
 
     open_window(segmentator, transport, 32, :nak)
 
@@ -755,7 +1079,7 @@ defmodule BACnet.Stack.SegmentatorTest do
                ApduFactory.segment_ack(32,
                  sent_by_server: true,
                  negative_ack: true,
-                 sequence_number: 2,
+                 sequence_number: 1,
                  actual_window_size: 1
                )
              )
@@ -782,23 +1106,37 @@ defmodule BACnet.Stack.SegmentatorTest do
   end
 
   test "the final timeout and a retry cancel a running sequence timer", %{transport: transport} do
-    {:ok, segmentator} = Segmentator.start_link(apdu_timeout: 60_000, apdu_retries: 0)
-    open_window(segmentator, transport, 35, :final)
-    send(segmentator, {:timer, key(transport, 35)})
-    assert_receive {:timeout, :final}
-    refute_receive {:fake_transport_send, @dest, %APDU.Abort{}, _}, 0
+    for retries <- [0, 2] do
+      {:ok, state, :hibernate} = Segmentator.init(%{apdu_timeout: 60_000, apdu_retries: retries})
+      {state, id} = callback_sequence(transport, :request, state)
+      state = callback_ack(state, :request, 0, 4)
+      assert_sequence(@dest, 1)
+      pacing_timer = state.sequences[id].seq_timer
+      Process.cancel_timer(pacing_timer)
 
-    {:ok, segmentator} = Segmentator.start_link(apdu_timeout: 60_000, apdu_retries: 2)
-    open_window(segmentator, transport, 36, :retry)
-    assert :ok = FakeTransport.set_send_result(transport, {:error, :down})
-    send(segmentator, {:timer, key(transport, 36)})
+      # A duplicate ACK restarts SegmentTimer while pacing remains outstanding.
+      state = callback_ack(state, :request, 0, 4)
+      timer = state.sequences[id].timer
+      Process.cancel_timer(timer)
+      assert {:noreply, state} = Segmentator.handle_info({:timeout, timer, {:timer, id}}, state)
+      assert Process.read_timer(pacing_timer) == false
 
-    # Retry the outstanding window from its first segment, not its last one
-    assert_sequence(@dest, 1)
+      if retries == 0 do
+        assert_receive {:timeout, :callback_window}
+        assert state.sequences == %{}
+      else
+        assert_sequence(@dest, 1)
+        assert state.sequences[id].retry_count == 1
+        assert state.sequences[id].seq_timer != pacing_timer
+      end
 
-    assert :ok = FakeTransport.set_send_result(transport, :ok)
-    assert :ok = Segmentator.handle_apdu(segmentator, @dest, ApduFactory.abort(36))
-    assert_receive {:cancelled, :retry}
+      # A pacing timeout delivered before cancellation must not run afterwards.
+      assert {:noreply, ^state} =
+               Segmentator.handle_info({:timeout, pacing_timer, {:seq_timer, id, 2, 4}}, state)
+
+      refute_received {:fake_transport_send, @dest, _data, _opts}
+      refute_received {:fake_transport_send, @dest, %APDU.Abort{}, _opts}
+    end
   end
 
   test "a failed send inside an open window keeps the sequence", %{
@@ -885,9 +1223,9 @@ defmodule BACnet.Stack.SegmentatorTest do
 
     # A retry must repeat this partial window, without returning to the
     # previous window or starting beyond the final segment
-    send(
+    fire_timer(
       segmentator,
-      {:timer, {SegmentationEndpoint.new(FakeTransport, transport, @dest), :responder, 1}}
+      {SegmentationEndpoint.new(FakeTransport, transport, @dest), :responder, 1}
     )
 
     assert_segment(1)
@@ -937,7 +1275,7 @@ defmodule BACnet.Stack.SegmentatorTest do
       ApduFactory.segment_ack(1,
         sent_by_server: false,
         negative_ack: true,
-        sequence_number: 1,
+        sequence_number: 0,
         actual_window_size: 4
       )
 
@@ -952,9 +1290,9 @@ defmodule BACnet.Stack.SegmentatorTest do
 
     # A retry must repeat this partial window, without returning to the
     # previous window or starting beyond the final segment
-    send(
+    fire_timer(
       segmentator,
-      {:timer, {SegmentationEndpoint.new(FakeTransport, transport, @dest), :responder, 1}}
+      {SegmentationEndpoint.new(FakeTransport, transport, @dest), :responder, 1}
     )
 
     assert_segment(1)
@@ -1001,8 +1339,8 @@ defmodule BACnet.Stack.SegmentatorTest do
                )
              )
 
-    assert_sequence(@dest, 0)
-    assert_sequence(@dest, 1, 1_000)
+    assert_sequence(@dest, 1)
+    assert_sequence(@dest, 2, 1_000)
     refute_receive {:fake_transport_send, @dest, _, _}, 150
 
     assert :ok =
@@ -1089,20 +1427,24 @@ defmodule BACnet.Stack.SegmentatorTest do
                  )
                )
 
-      assert_sequence(@dest, 1)
+      assert_sequence(@dest, 2)
 
       last = map_size(sequences[{endpoint, :requester, 60}].segments) - 1
 
-      assert :ok =
-               Segmentator.handle_apdu(
-                 segmentator,
-                 endpoint,
-                 ApduFactory.segment_ack(60,
-                   sent_by_server: true,
-                   sequence_number: last,
-                   actual_window_size: 1
+      for number <- 2..last do
+        assert :ok =
+                 Segmentator.handle_apdu(
+                   segmentator,
+                   endpoint,
+                   ApduFactory.segment_ack(60,
+                     sent_by_server: true,
+                     sequence_number: number,
+                     actual_window_size: 1
+                   )
                  )
-               )
+
+        if number < last, do: assert_sequence(@dest, number + 1)
+      end
 
       assert_receive {:done, ^endpoint}
       assert :sys.get_state(segmentator).sequences == other_sequences
@@ -1177,14 +1519,14 @@ defmodule BACnet.Stack.SegmentatorTest do
 
     sequences = :sys.get_state(segmentator).sequences
 
-    send(segmentator, {:timer, {first, :requester, 62}})
+    fire_timer(segmentator, {first, :requester, 62})
     assert_sequence(@dest, 0)
     assert :sys.get_state(segmentator).sequences[{first, :requester, 62}].retry_count == 1
 
     assert :sys.get_state(segmentator).sequences[{second, :requester, 62}] ==
              sequences[{second, :requester, 62}]
 
-    send(segmentator, {:timer, {first, :requester, 62}})
+    fire_timer(segmentator, {first, :requester, 62})
     assert_receive {:timeout, ^first}
     assert :sys.get_state(segmentator).sequences == Map.delete(sequences, {first, :requester, 62})
 
@@ -1295,10 +1637,10 @@ defmodule BACnet.Stack.SegmentatorTest do
                  Segmentator.handle_apdu(sender, peer, %{
                    ack
                    | negative_ack: true,
-                     sequence_number: 1
+                     sequence_number: 0
                  })
 
-        assert_sequence(@dest, 1)
+        refute_received {:fake_transport_send, @dest, _, _}
         timer = :sys.get_state(sender).sequences[id].timer
 
         for number <- 1..last do
@@ -1392,11 +1734,11 @@ defmodule BACnet.Stack.SegmentatorTest do
       assert_sequence(@dest, 1)
       assert_sequence(@dest, 2)
       assert Map.delete(:sys.get_state(sender).sequences, id) == other
-      send(sender, {:timer, id})
+      fire_timer(sender, id)
       assert_sequence(@dest, 1)
       assert_sequence(@dest, 2)
       assert Map.delete(:sys.get_state(sender).sequences, id) == other
-      send(sender, {:timer, id})
+      fire_timer(sender, id)
       assert_receive {:timeout, {^role, 82}}
       assert :sys.get_state(sender).sequences == other
       [{{_endpoint, other_role, 82}, _sequence}] = Map.to_list(other)
@@ -1449,6 +1791,63 @@ defmodule BACnet.Stack.SegmentatorTest do
     )
   end
 
+  defp callback_sequence(transport, kind, state \\ nil) do
+    state =
+      if state do
+        state
+      else
+        {:ok, state, :hibernate} = Segmentator.init(%{apdu_timeout: 60_000, apdu_retries: 1})
+        state
+      end
+
+    apdu_size = if kind == :request, do: 56, else: 55
+    apdu = rollover_apdu(kind, 5, 4)
+    opts = [callback_to: self(), callback_msg: :callback_window]
+
+    assert {:reply, :ok, state} =
+             Segmentator.handle_call(
+               {:create, trip(transport), @dest, apdu, opts, apdu_size, 0},
+               nil,
+               state
+             )
+
+    assert_sequence(@dest, 0)
+    role = if kind == :request, do: :requester, else: :responder
+    {state, {SegmentationEndpoint.new(FakeTransport, transport, @dest), role, 90}}
+  end
+
+  defp callback_ack(state, kind, number, window, negative_ack \\ false) do
+    ack =
+      ApduFactory.segment_ack(90,
+        sent_by_server: kind == :request,
+        sequence_number: number,
+        actual_window_size: window,
+        negative_ack: negative_ack
+      )
+
+    assert {:reply, :ok, state} = Segmentator.handle_call({:ack, @dest, ack}, nil, state)
+    state
+  end
+
+  defp fire_pacing(state, id, next, last) do
+    timer = state.sequences[id].seq_timer
+    assert is_reference(timer)
+    Process.cancel_timer(timer)
+
+    assert {:noreply, state} =
+             Segmentator.handle_info({:timeout, timer, {:seq_timer, id, next, last}}, state)
+
+    state
+  end
+
+  defp fire_timer(segmentator, id) do
+    timer = :sys.get_state(segmentator).sequences[id].timer
+    assert is_reference(timer)
+    Process.cancel_timer(timer)
+    send(segmentator, {:timeout, timer, {:timer, id}})
+    assert :ok = Segmentator.configure(segmentator, [])
+  end
+
   defp key(transport, invoke_id) do
     {SegmentationEndpoint.new(FakeTransport, transport, @dest), :requester, invoke_id}
   end
@@ -1456,6 +1855,21 @@ defmodule BACnet.Stack.SegmentatorTest do
   defp assert_segment(number) do
     assert_receive {:fake_transport_send, :peer, bytes, _opts}, 1_000
     assert {:incomplete, %{sequence_number: ^number}} = APDU.decode(IO.iodata_to_binary(bytes))
+  end
+
+  defp advance_pair(segmentator, invoke_id) do
+    assert :ok =
+             Segmentator.handle_apdu(
+               segmentator,
+               @dest,
+               ApduFactory.segment_ack(invoke_id,
+                 sent_by_server: true,
+                 sequence_number: 0,
+                 actual_window_size: 1
+               )
+             )
+
+    assert_sequence(@dest, 1)
   end
 
   defp open_pair(segmentator, transport, invoke_id, opts \\ []) do
@@ -1524,9 +1938,40 @@ defmodule BACnet.Stack.SegmentatorTest do
 
   defp trip(transport), do: {FakeTransport, transport, transport}
 
+  defp rollover_apdu(kind, segment_count, window) do
+    # Different data in each segment exposes a resend from the wrong cycle.
+    payload =
+      for index <- 0..(segment_count * 50 - 21), into: <<>> do
+        <<rem(div(index, 50), 251)>>
+      end
+
+    case kind do
+      :request ->
+        confirmed_request(90, window, payload)
+
+      :ack ->
+        %{complex_ack(90, window) | payload: [octet_string: payload]}
+    end
+  end
+
+  defp assert_rollover_segment(expected, index, segment_count) do
+    assert_receive {:fake_transport_send, @dest, data, _opts}, 1_000
+    binary = IO.iodata_to_binary(data)
+    assert binary == IO.iodata_to_binary(expected)
+    assert {:incomplete, segment} = APDU.decode(binary)
+    assert segment.sequence_number == rem(index, 256)
+    assert segment.more_follows == index < segment_count - 1
+  end
+
   # Keep the default fixture within two complete 50-byte APDUs, including headers
-  defp confirmed_request(invoke_id, window, bytes \\ 70) do
-    {:ok, value} = Encoding.create({:octet_string, :binary.copy(<<7>>, bytes)})
+  defp confirmed_request(invoke_id, window, bytes \\ 70)
+
+  defp confirmed_request(invoke_id, window, bytes) when is_integer(bytes) do
+    confirmed_request(invoke_id, window, :binary.copy(<<7>>, bytes))
+  end
+
+  defp confirmed_request(invoke_id, window, payload) when is_binary(payload) do
+    {:ok, value} = Encoding.create({:octet_string, payload})
 
     {:ok, request} =
       WriteProperty.to_apdu(

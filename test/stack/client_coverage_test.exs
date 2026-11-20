@@ -1474,20 +1474,27 @@ defmodule BACnet.Stack.ClientCoverageTest do
 
     sequence = :sys.get_state(segmentator).sequences[{endpoint, :responder, 1}]
 
-    raw =
-      EncoderProtocol.encode(
-        ApduFactory.segment_ack(1,
-          sequence_number: map_size(sequence.segments) - 1
+    for number <- 0..(map_size(sequence.segments) - 1) do
+      assert_receive {:fake_transport_send, ^origin, bytes, _opts}
+                     when is_binary(bytes) or is_list(bytes)
+
+      assert {:incomplete, %{sequence_number: ^number}} =
+               APDU.decode(IO.iodata_to_binary(bytes))
+
+      raw =
+        EncoderProtocol.encode(
+          ApduFactory.segment_ack(1, sequence_number: number, actual_window_size: 1)
         )
+
+      send(
+        client,
+        {:bacnet_transport, {:test, FakeTransport}, :bbmd,
+         {:apdu, forwarded, npci, IO.iodata_to_binary(raw)}, transport}
       )
 
-    send(
-      client,
-      {:bacnet_transport, {:test, FakeTransport}, :bbmd,
-       {:apdu, forwarded, npci, IO.iodata_to_binary(raw)}, transport}
-    )
+      sync(client)
+    end
 
-    sync(client)
     assert :sys.get_state(segmentator).sequences == %{}
   end
 

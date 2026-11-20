@@ -8,6 +8,7 @@ defmodule BACnet.Stack.SegmentsStoreTest do
   alias BACnet.Protocol.Services.WriteProperty
   alias BACnet.Stack.EncoderProtocol
   alias BACnet.Stack.SegmentationEndpoint
+  alias BACnet.Stack.Segmentator
   alias BACnet.Stack.SegmentsStore
   alias BACnet.Test.Stack.ApduFactory
   alias BACnet.Test.Stack.FakeTransport
@@ -167,18 +168,22 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     refute_received {:fake_transport_send, _, %APDU.Abort{}, _}
   end
 
-  test "sequence 0 is rejected once a sequence exists", %{store: store, transport: transport} do
-    [first, second | _remaining_segments] = pieces(:request, 8, 1, 80)
+  test "a repeated initial segment is NAK'd without dropping the sequence", %{
+    store: store,
+    transport: transport
+  } do
+    [first, last] = pieces(:request, 8, 1, 80)
     assert :incomplete = feed(store, transport, first)
     assert_ack(@dest, 8, 0, 1, true)
 
-    assert {:error, :invalid_apdu_in_this_state_already_present, true} =
-             feed(store, transport, first)
+    assert {:error, :segments_out_of_order, false} = feed(store, transport, first)
+    assert_nak(@dest, 8, 0, 1, true)
+    assert :sys.get_state(store).sequences[key(transport, 8)].count_segments == 1
 
-    assert_abort(@dest, 8, :invalid_apdu_in_this_state, true)
-
-    assert {:error, :invalid_apdu_in_this_state_missing_id, true} = feed(store, transport, second)
-    assert_abort(@dest, 8, :invalid_apdu_in_this_state, true)
+    assert {:ok, binary} = feed(store, transport, last)
+    assert_ack(@dest, 8, 1, 1, true)
+    assert binary == joined([first, last])
+    assert :sys.get_state(store).sequences == %{}
   end
 
   test "a non-zero sequence without a stored sequence is rejected", %{
@@ -228,6 +233,196 @@ defmodule BACnet.Stack.SegmentsStoreTest do
 
     assert {:ok, _binary} = feed(store, transport, last)
     assert_ack(@dest, 11, 1, 1, true)
+  end
+
+  for kind <- [:request, :ack],
+      {segment_count, window} <- [{257, 1}, {520, 2}, {520, 7}, {520, 127}] do
+    @tag sequence_rollover: true, capture_log: [level: :warning]
+    test "#{kind} reassembles #{segment_count} segments with sequence rollover and window #{window}",
+         %{store: store, transport: transport} do
+      kind = unquote(kind)
+      segment_count = unquote(segment_count)
+      window = unquote(window)
+      segments = rollover_pieces(kind, segment_count, window)
+      assert length(segments) == segment_count
+
+      for {segment, index} <- Enum.with_index(segments) do
+        assert segment.sequence_number == rem(index, 256)
+        assert segment.more_follows == index < segment_count - 1
+
+        if segment.more_follows do
+          assert :incomplete = feed(store, transport, segment)
+        else
+          assert {:ok, binary} = feed(store, transport, segment)
+          assert binary == joined(segments)
+          assert {:ok, %{invoke_id: 90}} = APDU.decode(binary)
+        end
+
+        # Window boundaries count received segments, including across 255 -> 0.
+        if index == 0 or rem(index, window) == 0 or not segment.more_follows do
+          assert_ack(@dest, 90, rem(index, 256), window, kind == :request)
+        else
+          refute_received {:fake_transport_send, @dest, _, _}
+        end
+      end
+
+      assert :sys.get_state(store).sequences == %{}
+      refute_received {:fake_transport_send, @dest, _, _}
+    end
+  end
+
+  for kind <- [:request, :ack], missing <- [255, 256] do
+    @tag sequence_rollover: true, capture_log: [level: :warning]
+    test "#{kind} recovers a missing segment at absolute index #{missing} with a new ACK window",
+         %{store: store, transport: transport} do
+      kind = unquote(kind)
+      missing = unquote(missing)
+      segments = rollover_pieces(kind, 520, 7)
+      feed_prefix(store, transport, Enum.take(segments, missing))
+
+      assert {:error, :segments_out_of_order, false} =
+               feed(store, transport, Enum.at(segments, missing + 1))
+
+      assert_nak(@dest, 90, rem(missing - 1, 256), 7, kind == :request)
+
+      role = if kind == :request, do: :responder, else: :requester
+      sequence = :sys.get_state(store).sequences[key(transport, 90, role)]
+      assert sequence.count_segments == missing
+      assert sequence.initial_sequence_number == rem(missing - 1, 256)
+      assert sequence.duplicate_count == 0
+
+      assert finish_rollover(store, transport, segments, missing, missing - 1) == joined(segments)
+      assert :sys.get_state(store).sequences == %{}
+    end
+  end
+
+  for kind <- [:request, :ack] do
+    @tag sequence_rollover: true, capture_log: [level: :warning]
+    test "#{kind} discards duplicates throughout a window crossing 255 to 0",
+         %{store: store, transport: transport} do
+      kind = unquote(kind)
+      segments = rollover_pieces(kind, 520, 7)
+      feed_prefix(store, transport, Enum.take(segments, 257))
+      role = if kind == :request, do: :responder, else: :requester
+      id = key(transport, 90, role)
+
+      # All these segments belong to the received portion of the current window,
+      # including earlier duplicates rather than just the most recent segment.
+      for {index, duplicate_count} <- Enum.with_index([253, 254, 255, 256, 253, 254, 255], 1) do
+        assert {:error, :duplicated_segments, false} =
+                 feed(store, transport, Enum.at(segments, index))
+
+        sequence = :sys.get_state(store).sequences[id]
+        assert sequence.count_segments == 257
+        assert sequence.duplicate_count == duplicate_count
+        refute_received {:fake_transport_send, @dest, _data, _opts}
+      end
+
+      assert {:error, :duplicated_segments, false} =
+               feed(store, transport, Enum.at(segments, 256))
+
+      assert_nak(@dest, 90, 0, 7, kind == :request)
+      sequence = :sys.get_state(store).sequences[id]
+      assert sequence.count_segments == 257
+      assert sequence.duplicate_count == 0
+
+      # The two receiving states specify different InitialSequenceNumber updates
+      # for TooManyDuplicateSegmentsReceived (5.4.5.2 and 5.4.4.4).
+      anchor = if kind == :request, do: 256, else: 252
+      assert sequence.initial_sequence_number == rem(anchor, 256)
+      assert finish_rollover(store, transport, segments, 257, anchor) == joined(segments)
+      assert :sys.get_state(store).sequences == %{}
+    end
+  end
+
+  for kind <- [:request, :ack] do
+    @tag sequence_rollover: true, capture_log: [level: :warning]
+    test "#{kind} recognizes a previous-window duplicate across rollover and resets its counter at the next ACK",
+         %{store: store, transport: transport} do
+      kind = unquote(kind)
+      segments = rollover_pieces(kind, 520, 7)
+      feed_prefix(store, transport, Enum.take(segments, 261))
+
+      # DuplicateInWindow step (4): one segment of the new window is received;
+      # a repeated segment from the previous window must still be discarded.
+      assert {:error, :duplicated_segments, false} =
+               feed(store, transport, Enum.at(segments, 255))
+
+      refute_received {:fake_transport_send, @dest, _data, _opts}
+      role = if kind == :request, do: :responder, else: :requester
+      id = key(transport, 90, role)
+      assert :sys.get_state(store).sequences[id].duplicate_count == 1
+
+      assert finish_rollover(store, transport, Enum.take(segments, 267), 261, 259) == nil
+      sequence = :sys.get_state(store).sequences[id]
+      assert sequence.count_segments == 267
+      assert sequence.initial_sequence_number == 10
+      assert sequence.duplicate_count == 0
+
+      assert finish_rollover(store, transport, segments, 267, 266) == joined(segments)
+      assert :sys.get_state(store).sequences == %{}
+    end
+  end
+
+  for kind <- [:request, :ack], drop_segment <- [false, true] do
+    @tag sequence_rollover: true, capture_log: [level: :warning]
+    test "#{kind} exchanges 520 segments with Segmentator, losing segment 255=#{drop_segment}",
+         %{store: store, transport: transport} do
+      kind = unquote(kind)
+      drop_segment = unquote(drop_segment)
+      # Losing the first segment of a window can produce a NAK for the previous
+      # window. Recovery then uses Segmentator's retry timer rather than that NAK.
+      sender = start_supervised!({Segmentator, apdu_timeout: 50, apdu_retries: 1})
+      segments = rollover_pieces(kind, 520, 127)
+      expected = joined(segments)
+      assert {:ok, apdu} = APDU.decode(expected)
+      apdu = %{apdu | sequence_number: 0, proposed_window_size: 127}
+      apdu_size = @segment_payload_size + if(kind == :request, do: 6, else: 5)
+
+      assert :ok =
+               Segmentator.create_sequence(
+                 sender,
+                 {FakeTransport, transport, transport},
+                 @dest,
+                 apdu,
+                 apdu_size,
+                 0,
+                 callback_to: self(),
+                 callback_msg: :rollover_exchange
+               )
+
+      assert_receive {:fake_transport_postponed, @dest, []}
+
+      result =
+        exchange_segments(
+          sender,
+          store,
+          transport,
+          drop_segment,
+          %{binary: nil, done: false, dropped: false},
+          2_000
+        )
+
+      assert result.binary == expected
+      assert result.dropped == drop_segment
+      assert :sys.get_state(sender).sequences == %{}
+      assert :sys.get_state(store).sequences == %{}
+    end
+  end
+
+  for kind <- [:request, :ack] do
+    @tag sequence_rollover: true, capture_log: [level: :warning]
+    test "#{kind} keeps the total segment count when lowering the limit after rollover",
+         %{store: store, transport: transport} do
+      kind = unquote(kind)
+      segments = rollover_pieces(kind, 520, 7)
+      feed_prefix(store, transport, Enum.take(segments, 257))
+      assert :ok = SegmentsStore.configure(store, max_segments: 64)
+
+      assert {:error, :too_many_segments, true} = feed(store, transport, Enum.at(segments, 257))
+      assert_abort(@dest, 90, :buffer_overflow, kind == :request)
+      assert :sys.get_state(store).sequences == %{}
+    end
   end
 
   test "a sequence that finishes on the segment limit is returned", %{transport: transport} do
@@ -291,7 +486,7 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     assert {:ok, %APDU.ComplexACK{invoke_id: 16}} = APDU.decode(binary)
   end
 
-  test "duplicates are counted and a full window sends a nak", %{
+  test "Ndup duplicates are silently dropped before the next duplicate sends a NAK", %{
     store: store,
     transport: transport
   } do
@@ -300,7 +495,7 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     assert_ack(@dest, 17, 0, 4, true)
     assert :incomplete = feed(store, transport, second)
 
-    for _attempt <- 1..3 do
+    for _attempt <- 1..4 do
       assert {:error, :duplicated_segments, false} = feed(store, transport, second)
       refute_received {:fake_transport_send, @dest, _, _}
     end
@@ -315,8 +510,8 @@ defmodule BACnet.Stack.SegmentsStoreTest do
               actual_window_size: 4
             }, _opts} = take_ack()
 
-    assert {:error, :duplicated_segments, false} = feed(store, transport, second)
-    refute_received {:fake_transport_send, @dest, _, _}
+    assert {:error, :segments_out_of_order, false} = feed(store, transport, second)
+    assert_nak(@dest, 17, 1, 4, true)
 
     assert :incomplete = feed(store, transport, third)
   end
@@ -586,11 +781,15 @@ defmodule BACnet.Stack.SegmentsStoreTest do
   end
 
   test "a failed nak send still reports the duplicate", %{store: store, transport: transport} do
-    [first, second | _remaining_segments] = pieces(:request, 32, 1, 160)
+    [first, second | _remaining_segments] = pieces(:request, 32, 4, 160)
     assert :incomplete = feed(store, transport, first)
-    assert_ack(@dest, 32, 0, 1, true)
+    assert_ack(@dest, 32, 0, 4, true)
     assert :incomplete = feed(store, transport, second)
-    assert_ack(@dest, 32, 1, 1, true)
+
+    for _attempt <- 1..4 do
+      assert {:error, :duplicated_segments, false} = feed(store, transport, second)
+      refute_received {:fake_transport_send, @dest, _data, _opts}
+    end
 
     assert :ok = FakeTransport.set_send_result(transport, {:error, :down})
     assert {:error, :duplicated_segments, false} = feed(store, transport, second)
@@ -866,10 +1065,13 @@ defmodule BACnet.Stack.SegmentsStoreTest do
           assert_abort(@dest, 82, :window_size_out_of_range, role == :responder)
 
         :duplicate ->
-          assert {:error, :invalid_apdu_in_this_state_already_present, true} =
+          assert {:error, :segments_out_of_order, false} =
                    feed_endpoint(store, endpoint, hd(transfers[role]))
 
-          assert_abort(@dest, 82, :invalid_apdu_in_this_state, role == :responder)
+          assert_nak(@dest, 82, 0, 1, role == :responder)
+          assert Map.delete(:sys.get_state(store).sequences, id) == Map.delete(sequences, id)
+          assert {:ok, _binary} = feed_endpoint(store, endpoint, List.last(transfers[role]))
+          assert_ack(@dest, 82, 1, 1, role == :responder)
 
         :timeout ->
           fire_timer(store, id)
@@ -880,6 +1082,134 @@ defmodule BACnet.Stack.SegmentsStoreTest do
       assert {:ok, _binary} = feed_endpoint(store, endpoint, List.last(transfers[other_role]))
       assert_ack(@dest, 82, 1, 1, other_role == :responder)
     end
+  end
+
+  defp exchange_segments(
+         _sender,
+         _store,
+         _transport,
+         _drop,
+         %{binary: binary, done: true} = result,
+         _remaining
+       )
+       when is_binary(binary), do: result
+
+  defp exchange_segments(sender, store, transport, drop, result, remaining) when remaining > 0 do
+    result =
+      receive do
+        {:fake_transport_send, @dest, %APDU.SegmentACK{} = ack, _opts} ->
+          assert :ok = Segmentator.handle_apdu(sender, @dest, ack)
+          result
+
+        {:fake_transport_send, @dest, bytes, _opts} when is_binary(bytes) or is_list(bytes) ->
+          assert {:incomplete, segment} = APDU.decode(IO.iodata_to_binary(bytes))
+
+          if drop and not result.dropped and segment.sequence_number == 255 do
+            %{result | dropped: true}
+          else
+            case feed(store, transport, segment) do
+              :incomplete ->
+                result
+
+              {:ok, binary} ->
+                %{result | binary: binary}
+
+              {:error, reason, false}
+              when reason in [:segments_out_of_order, :duplicated_segments] ->
+                result
+
+              other ->
+                flunk("Unexpected reassembly result: #{inspect(other)}")
+            end
+          end
+
+        {:fake_transport_send, @dest, %APDU.Abort{} = abort, _opts} ->
+          flunk("Unexpected abort: #{inspect(abort)}")
+
+        {:done, :rollover_exchange} ->
+          %{result | done: true}
+      after
+        1_000 -> flunk("Segment exchange stalled: #{inspect(result)}")
+      end
+
+    exchange_segments(sender, store, transport, drop, result, remaining - 1)
+  end
+
+  defp exchange_segments(_sender, _store, _transport, _drop, _result, 0),
+    do: flunk("Segment exchange exceeded its message limit")
+
+  defp feed_prefix(store, transport, segments) do
+    for {segment, index} <- Enum.with_index(segments) do
+      assert :incomplete = feed(store, transport, segment)
+
+      if index == 0 or rem(index, segment.window_size) == 0 do
+        assert_ack(
+          @dest,
+          segment.invoke_id,
+          segment.sequence_number,
+          segment.window_size,
+          segment.server
+        )
+      else
+        refute_received {:fake_transport_send, @dest, _data, _opts}
+      end
+    end
+  end
+
+  defp finish_rollover(store, transport, segments, first_index, anchor) do
+    segments
+    |> Enum.drop(first_index)
+    |> Enum.with_index(first_index)
+    |> Enum.reduce(nil, fn {segment, index}, _previous ->
+      binary =
+        if segment.more_follows do
+          assert :incomplete = feed(store, transport, segment)
+          nil
+        else
+          assert {:ok, binary} = feed(store, transport, segment)
+          binary
+        end
+
+      if rem(index - anchor, segment.window_size) == 0 or not segment.more_follows do
+        assert_ack(
+          @dest,
+          segment.invoke_id,
+          segment.sequence_number,
+          segment.window_size,
+          segment.server
+        )
+      else
+        refute_received {:fake_transport_send, @dest, _data, _opts}
+      end
+
+      binary
+    end)
+  end
+
+  defp rollover_pieces(kind, segment_count, window) do
+    payload =
+      for index <- 0..(segment_count * @segment_payload_size - 21),
+          into: <<>>,
+          do: <<rem(div(index, @segment_payload_size), 251)>>
+
+    segments = pieces(kind, 90, window, payload)
+    assert length(segments) == segment_count
+    segments
+  end
+
+  defp test_payload(payload, _value) when is_binary(payload), do: payload
+  defp test_payload(bytes, value), do: :binary.copy(<<value>>, bytes)
+
+  defp assert_nak(dest, invoke_id, sequence_number, window, server) do
+    assert {%APDU.SegmentACK{
+              negative_ack: true,
+              sent_by_server: ^server,
+              invoke_id: ^invoke_id,
+              sequence_number: ^sequence_number,
+              actual_window_size: ^window
+            }, opts} = take_ack(dest)
+
+    opts
   end
 
   defp open_role_pair(store, transport, invoke_id) do
@@ -952,7 +1282,7 @@ defmodule BACnet.Stack.SegmentsStoreTest do
   end
 
   defp pieces(:request, invoke_id, window, bytes) do
-    {:ok, value} = Encoding.create({:octet_string, :binary.copy(<<7>>, bytes)})
+    {:ok, value} = Encoding.create({:octet_string, test_payload(bytes, 7)})
 
     {:ok, request} =
       WriteProperty.to_apdu(
@@ -971,7 +1301,7 @@ defmodule BACnet.Stack.SegmentsStoreTest do
 
   defp pieces(:ack, invoke_id, window, bytes) do
     ack = %{
-      ApduFactory.complex_ack(invoke_id, [{:octet_string, :binary.copy(<<9>>, bytes)}])
+      ApduFactory.complex_ack(invoke_id, [{:octet_string, test_payload(bytes, 9)}])
       | sequence_number: 0,
         proposed_window_size: window
     }
