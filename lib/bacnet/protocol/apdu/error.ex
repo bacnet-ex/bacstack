@@ -83,6 +83,16 @@ defmodule BACnet.Protocol.APDU.Error do
 
     require Constants
 
+    @constructed_error_services [
+      :add_list_element,
+      :confirmed_private_transfer,
+      :create_object,
+      :remove_list_element,
+      :subscribe_cov_property_multiple,
+      :vt_close,
+      :write_property_multiple
+    ]
+
     @doc """
     Whether the struct expects a reply (i.e. Confirmed Service Request).
 
@@ -136,12 +146,7 @@ defmodule BACnet.Protocol.APDU.Error do
         end
 
       {class, code} =
-        if apdu.payload == [] do
-          {:ok, class} = ApplicationTags.encode({:enumerated, enum_class})
-          {:ok, code} = ApplicationTags.encode({:enumerated, enum_code})
-
-          {class, code}
-        else
+        if apdu.service in @constructed_error_services do
           {:ok, binary} =
             ApplicationTags.encode(
               {:constructed,
@@ -153,6 +158,11 @@ defmodule BACnet.Protocol.APDU.Error do
             )
 
           {binary, <<>>}
+        else
+          {:ok, class} = ApplicationTags.encode({:enumerated, enum_class})
+          {:ok, code} = ApplicationTags.encode({:enumerated, enum_code})
+
+          {class, code}
         end
 
       payload =

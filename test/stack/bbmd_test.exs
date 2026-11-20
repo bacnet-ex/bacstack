@@ -48,6 +48,10 @@ defmodule BACnet.Stack.BBMDTest do
       BBMD.start_link(client: client, bdt_readonly: :yes)
     end
 
+    assert_raise ArgumentError, ~r/allow_legacy_write_bdt/, fn ->
+      BBMD.start_link(client: client, allow_legacy_write_bdt: :yes)
+    end
+
     assert_raise ArgumentError, ~r/client/, fn ->
       BBMD.start_link(client: "nope")
     end
@@ -243,7 +247,7 @@ defmodule BACnet.Stack.BBMDTest do
     assert BBMD.get_foreign_device_table(bbmd) == []
   end
 
-  test "delete foreign device removes a row and acknowledges a missing one", %{
+  test "delete foreign device removes a row and rejects a missing one", %{
     client: client,
     transport: transport
   } do
@@ -257,8 +261,39 @@ defmodule BACnet.Stack.BBMDTest do
     assert fd_row(bbmd, {10, 9, 9, 9}, 47_808)
 
     send(bbmd, bvlc_msg(transport, @origin, delete_function(@fd)))
-    assert_result(bbmd, @origin, :successful_completion)
+    assert_nak(bbmd, @origin, :delete_foreign_device_table_entry_nak)
     assert fd_row(bbmd, {10, 9, 9, 9}, 47_808)
+  end
+
+  for ttl <- [65_504, 65_505, 65_506, 65_535] do
+    test "Read-FDT caps remaining time for TTL #{ttl} without shortening the timer", %{
+      client: client,
+      transport: transport
+    } do
+      ttl = unquote(ttl)
+      bbmd = start_bbmd!(client)
+      register!(bbmd, transport, @fd, ttl)
+      state = :sys.get_state(bbmd)
+      registration = Map.fetch!(state.registrations, @fd)
+
+      assert registration.ttl == ttl
+
+      timer_ms = (ttl + 30) * 1_000
+      assert Process.read_timer(registration.timer) in (timer_ms - 5_000)..timer_ms
+
+      assert [%ForeignDeviceTableEntry{time_to_live: ^ttl, remaining_time: remaining}] =
+               BBMD.get_foreign_device_table(bbmd)
+
+      assert remaining in min(ttl + 25, 65_535)..min(ttl + 30, 65_535)
+
+      send(bbmd, bvlc_msg(transport, @origin, read_function(:bvlc_read_foreign_device_table)))
+      BBMD.get_foreign_device_table(bbmd)
+
+      assert_received {:fake_transport_send, @origin, data, opts}
+      assert opts[:bvlc] == <<7>>
+      assert <<192, 168, 5, 5, 47_810::16, ^ttl::16, wire_remaining::16>> = data
+      assert wire_remaining in min(ttl + 25, 65_535)..min(ttl + 30, 65_535)
+    end
   end
 
   test "remove_foreign_device removes that registration", %{
@@ -350,10 +385,31 @@ defmodule BACnet.Stack.BBMDTest do
     assert BBMD.get_broadcast_distribution_table(bad_bbmd) == [bdt({1, 2, 3}, 47_808)]
   end
 
-  test "write broadcast distribution table replaces, rejects invalid payloads, and honours readonly",
+  test "Write-BDT is rejected by default even when bdt_readonly is false", %{
+    client: client,
+    transport: transport
+  } do
+    original = bdt({192, 168, 1, 1}, 47_808)
+
+    for opts <- [[], [bdt_readonly: false], [allow_legacy_write_bdt: false], [bdt_readonly: true]] do
+      bbmd = start_bbmd!(client, [bdt: [original]] ++ opts)
+
+      for payload <- [[], [bdt({172, 16, 0, 9}, 47_808)], :invalid] do
+        send(bbmd, bvlc_msg(transport, @origin, write_function(payload)))
+        assert_nak(bbmd, @origin, :write_broadcast_distribution_table_nak)
+        assert BBMD.get_broadcast_distribution_table(bbmd) == [original]
+      end
+
+      added = bdt({10, 1, 0, 1}, 47_808)
+      assert :ok = BBMD.add_bdt_entry(bbmd, added)
+      assert BBMD.get_broadcast_distribution_table(bbmd) == [original, added]
+    end
+  end
+
+  test "legacy Write-BDT replaces the table, rejects invalid payloads, and honours readonly",
        %{client: client, transport: transport} do
     original = bdt({192, 168, 1, 1}, 47_808)
-    bbmd = start_bbmd!(client, bdt: [original])
+    bbmd = start_bbmd!(client, bdt: [original], allow_legacy_write_bdt: true)
     replacement = [bdt({172, 16, 0, 9}, 47_808, {255, 255, 255, 255}), bdt({10, 1, 0, 1}, 47_809)]
 
     send(bbmd, bvlc_msg(transport, @origin, write_function(replacement)))
@@ -368,7 +424,8 @@ defmodule BACnet.Stack.BBMDTest do
           :nope,
           [bdt({1, 2, 3, 4}, 0)],
           [bdt({1, 2, 3, 4}, 1, {255, 256, 0, 0})],
-          [:nope]
+          [:nope],
+          [hd(replacement), :nope]
         ] do
       send(bbmd, bvlc_msg(transport, @origin, write_function(payload)))
       assert_nak(bbmd, @origin, :write_broadcast_distribution_table_nak)
@@ -376,7 +433,9 @@ defmodule BACnet.Stack.BBMDTest do
 
     assert BBMD.get_broadcast_distribution_table(bbmd) == []
 
-    readonly = start_bbmd!(client, bdt: [original], bdt_readonly: true)
+    readonly =
+      start_bbmd!(client, bdt: [original], allow_legacy_write_bdt: true, bdt_readonly: true)
+
     send(readonly, bvlc_msg(transport, @origin, write_function(replacement)))
     assert_nak(readonly, @origin, :write_broadcast_distribution_table_nak)
     assert BBMD.get_broadcast_distribution_table(readonly) == [original]
@@ -384,34 +443,41 @@ defmodule BACnet.Stack.BBMDTest do
     assert BBMD.get_broadcast_distribution_table(readonly) == [original, hd(replacement)]
   end
 
-  test "an original broadcast is forwarded to other foreign devices without a local rebroadcast",
+  test "a local original broadcast reaches BDT peers and foreign devices without a local rebroadcast",
        %{
          client: client,
          transport: transport,
          who_is: who_is
        } do
+    source = {{10, 0, 0, 42}, 47_808}
+    remote_broadcast = {{192, 168, 1, 255}, 47_808}
+    remote_unicast = {{172, 16, 0, 9}, 47_808}
+    :ok = FakeTransport.set_routed(transport, [remote_broadcast, remote_unicast])
+
     bbmd =
       start_bbmd!(client,
         bdt: [
           bdt({10, 0, 0, 8}, 47_808),
           bdt({127, 0, 0, 1}, 47_808, {255, 0, 0, 0}),
-          bdt({192, 168, 1, 0}, 47_808)
+          bdt({10, 0, 0, 9}, 47_808),
+          bdt({192, 168, 1, 0}, 47_808),
+          bdt({172, 16, 0, 9}, 47_808, {255, 255, 255, 255})
         ]
       )
 
     register!(bbmd, transport, @fd, 60)
     register!(bbmd, transport, @other_fd, 60)
 
-    send(bbmd, client_msg(who_is, @origin, :original_broadcast, npci()))
+    send(bbmd, client_msg(who_is, source, :original_broadcast, npci()))
     assert BBMD.get_foreign_device_table(bbmd) != []
 
     sent = drain()
 
-    for dest <- [@fd, @other_fd] do
-      assert Enum.any?(sent, fn item -> match_forward(item, dest, who_is, @origin) end)
+    for dest <- [@fd, @other_fd, remote_broadcast, remote_unicast] do
+      assert Enum.any?(sent, fn item -> match_forward(item, dest, who_is, source) end)
     end
 
-    refute Enum.any?(sent, fn {dest, _data, _opts} -> dest == {{192, 168, 1, 255}, 47_808} end)
+    assert length(sent) == 4
     refute Enum.any?(sent, fn {dest, _data, _opts} -> dest == @broadcast end)
   end
 
@@ -420,7 +486,14 @@ defmodule BACnet.Stack.BBMDTest do
     transport: transport,
     who_is: who_is
   } do
-    :ok = FakeTransport.set_routed(transport, [@origin])
+    :ok =
+      FakeTransport.set_routed(transport, [
+        @origin,
+        {{192, 168, 1, 255}, 47_808},
+        {{192, 168, 2, 255}, 47_808},
+        {{192, 168, 2, 255}, 47_809},
+        {{172, 16, 0, 9}, 47_808}
+      ])
 
     bbmd =
       start_bbmd!(client,
@@ -461,7 +534,8 @@ defmodule BACnet.Stack.BBMDTest do
     transport: transport,
     who_is: who_is
   } do
-    :ok = FakeTransport.set_routed(transport, [@origin])
+    :ok = FakeTransport.set_routed(transport, [@origin, {{192, 168, 1, 255}, 47_808}])
+
     :ok = FakeTransport.set_send_result(transport, {:error, :unreachable})
     bbmd = start_bbmd!(client, bdt: [bdt({192, 168, 1, 0}, 47_808)])
     register!(bbmd, transport, @fd, 60)
@@ -503,7 +577,7 @@ defmodule BACnet.Stack.BBMDTest do
     transport: transport,
     who_is: who_is
   } do
-    :ok = FakeTransport.set_routed(transport, [@fd])
+    :ok = FakeTransport.set_routed(transport, [@fd, {{192, 168, 1, 255}, 47_808}])
     bbmd = start_bbmd!(client, bdt: [bdt({192, 168, 1, 0}, 47_808)])
     register!(bbmd, transport, @fd, 60)
     register!(bbmd, transport, @other_fd, 60)
@@ -591,7 +665,7 @@ defmodule BACnet.Stack.BBMDTest do
     assert opts[:bvlc] == nil
   end
 
-  test "a forwarded npdu is sent to foreign devices and broadcast when the peer is routed", %{
+  test "a forwarded npdu without an own BDT entry assumes unicast reception", %{
     client: client,
     transport: transport,
     who_is: who_is
@@ -611,6 +685,48 @@ defmodule BACnet.Stack.BBMDTest do
     sent = drain()
     assert Enum.any?(sent, fn item -> match_forward(item, @fd, who_is, origin) end)
     assert Enum.any?(sent, fn item -> match_forward(item, @broadcast, who_is, origin) end)
+  end
+
+  for {mode, mask} <- [unicast: {255, 255, 255, 255}, directed: {255, 255, 255, 0}],
+      routed <- [true, false] do
+    test "Forwarded-NPDU uses the own #{mode} BDT entry with routed source #{routed}", %{
+      client: client,
+      transport: transport,
+      who_is: who_is
+    } do
+      source = if unquote(routed), do: @origin, else: {{10, 0, 0, 9}, 47_808}
+      :ok = FakeTransport.set_routed(transport, if(unquote(routed), do: [source], else: []))
+      mask = unquote(Macro.escape(mask))
+
+      other_mask =
+        if mask == {255, 255, 255, 255}, do: {255, 255, 255, 0}, else: {255, 255, 255, 255}
+
+      bbmd =
+        start_bbmd!(client,
+          bdt: [
+            bdt(elem(@local, 0), 47_809, other_mask),
+            bdt(elem(@local, 0), elem(@local, 1), mask),
+            bdt(elem(@origin, 0), elem(@origin, 1), other_mask)
+          ]
+        )
+
+      register!(bbmd, transport, @fd, 60)
+      npdu = %BvlcForwardedNPDU{originating_ip: {192, 168, 9, 9}, originating_port: 47_808}
+      origin = {{192, 168, 9, 9}, 47_808}
+
+      send(bbmd, client_msg(who_is, source, npdu, npci()))
+      BBMD.get_foreign_device_table(bbmd)
+      sent = drain()
+      assert Enum.count(sent, &match_forward(&1, @fd, who_is, origin)) == 1
+
+      if unquote(routed) and unquote(mode) == :unicast do
+        assert Enum.count(sent, &match_forward(&1, @broadcast, who_is, origin)) == 1
+        assert length(sent) == 2
+      else
+        refute Enum.any?(sent, fn {dest, _data, _opts} -> dest == @broadcast end)
+        assert length(sent) == 1
+      end
+    end
   end
 
   test "a forwarded npdu with an address that cannot be encoded is dropped", %{

@@ -122,9 +122,9 @@ defmodule BACnet.Protocol.APDU.SegmentACK do
                 "got: #{inspect(sequence_number)}"
       end
 
-      unless actual_window_size >= 0 and actual_window_size <= 255 do
+      unless actual_window_size >= 1 and actual_window_size <= 127 do
         raise ArgumentError,
-              "Actual window size must be between 0 and 255 inclusive, " <>
+              "Actual window size must be between 1 and 127 inclusive, " <>
                 "got: #{inspect(actual_window_size)}"
       end
 

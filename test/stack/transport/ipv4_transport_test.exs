@@ -129,7 +129,7 @@ defmodule BACnet.Stack.Transport.IPv4TransportTest do
              IPv4Transport.send(portal, {{127, 0, 0, 1}, peer_port}, <<16, 8>>,
                bvlc: <<0x09, 1, 2>>,
                destination: %NpciTarget{net: 65_535, address: nil},
-               source: %NpciTarget{net: 1, address: 9}
+               source: %NpciTarget{net: 1, address: <<9>>}
              )
 
     assert <<0x81, 0x09, _len::size(16), 1, 2, rest::binary>> = recv_udp(peer)

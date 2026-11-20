@@ -414,7 +414,8 @@ defmodule BACnet.Protocol.APDU do
   def decode_segment_ack(
         <<Constants.macro_by_name(:pdu_type, :segment_ack)::size(4), apdu_type::size(4),
           invoke_id::size(8), seq_number::size(8), window_size::size(8)>>
-      ) do
+      )
+      when window_size >= 1 and window_size <= 127 do
     ack = %__MODULE__.SegmentACK{
       negative_ack: Bitwise.band(apdu_type, 0x02) == 0x02,
       sent_by_server: Bitwise.band(apdu_type, 0x01) == 0x01,

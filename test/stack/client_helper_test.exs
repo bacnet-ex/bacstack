@@ -504,7 +504,7 @@ defmodule BACnet.Stack.ClientHelperTest do
     assert_receive {:fake_transport_send, :broadcast, raw, _opts}
     {:ok, %APDU.UnconfirmedServiceRequest{service: :who_is}} = APDU.decode(raw)
 
-    source = %NpciTarget{net: 1, address: 500}
+    source = %NpciTarget{net: 1, address: <<1, 244>>}
     send_iam(client, :remote, obj(:device, 11), 42, source: source)
 
     assert {:ok,

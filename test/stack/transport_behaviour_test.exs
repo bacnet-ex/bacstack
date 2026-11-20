@@ -115,8 +115,8 @@ defmodule BACnet.Stack.TransportBehaviourTest do
                )
              )
 
-    destination = %NpciTarget{net: 4, address: 9}
-    source = %NpciTarget{net: 2, address: 5}
+    destination = %NpciTarget{net: 4, address: <<9>>}
+    source = %NpciTarget{net: 2, address: <<5>>}
 
     assert {:ok, {npci, <<0x10>>}} =
              TransportBehaviour.build_bacnet_packet(<<0x10>>, false,
@@ -150,7 +150,7 @@ defmodule BACnet.Stack.TransportBehaviourTest do
 
     assert_raise ArgumentError, ~r/source/, fn ->
       TransportBehaviour.build_bacnet_packet(<<0x10>>, false,
-        source: %NpciTarget{net: 65_535, address: 1}
+        source: %NpciTarget{net: 65_535, address: <<1>>}
       )
     end
 

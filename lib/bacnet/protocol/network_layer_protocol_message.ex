@@ -1,6 +1,6 @@
 defmodule BACnet.Protocol.NetworkLayerProtocolMessage do
   @moduledoc """
-  Network layer messages are used for prividing the basis for
+  Network layer messages are used for providing the basis for
   router auto-configuration, router maintenance and
   network layer congestion control.
 
@@ -13,6 +13,15 @@ defmodule BACnet.Protocol.NetworkLayerProtocolMessage do
   broadcast on a remote network, or broadcast globally to all devices on all networks.
 
   See also ASHRAE 135 Clause 6.4.
+
+  I-Am-Router-To-Network requires at least one network number. Empty network
+  lists are allowed for Router-Busy-To-Network and Router-Available-To-Network
+  and apply to all networks served by the router.
+
+  Routing table messages accept at most 255 port entries. For
+  Initialize-Routing-Table, `data: []` encodes a table query (`<<6, 0>>`). For
+  Initialize-Routing-Table-Ack, `data: []` encodes the data-free acknowledgment
+  of a table update (`<<7>>`); a non-empty list encodes the table query response.
   """
 
   alias BACnet.Protocol.ApplicationTags
@@ -45,7 +54,7 @@ defmodule BACnet.Protocol.NetworkLayerProtocolMessage do
   """
   @type data ::
           (who_is_router_to_network :: dnet() | nil)
-          | (i_am_router_to_network :: [dnet()])
+          | (i_am_router_to_network :: nonempty_list(dnet()))
           | (i_could_be_router_to_network :: {dnet(), perf_index :: byte()})
           | (reject_message_to_network ::
                {dnet, reason :: byte(), reason_string :: String.t() | :undefined})
@@ -90,6 +99,9 @@ defmodule BACnet.Protocol.NetworkLayerProtocolMessage do
 
   @doc """
   Encode the network layer protocol message into binary data.
+
+  Returns `{:error, :too_many_ports}` for routing tables with more than 255 entries
+  and `{:error, :invalid_data}` for an empty I-Am-Router-To-Network list.
   """
   @spec encode(t()) :: {:ok, binary()} | {:error, term()}
   def encode(message)
@@ -119,7 +131,7 @@ defmodule BACnet.Protocol.NetworkLayerProtocolMessage do
         network_message_type: :i_am_router_to_network,
         data: dnet_list
       })
-      when is_list(dnet_list) do
+      when is_list(dnet_list) and dnet_list != [] do
     with {:ok, {_count, dnets}} <- nsdu_encode_dnet_list(dnet_list) do
       message =
         <<Constants.macro_by_name(:network_layer_message_type, :i_am_router_to_network),
@@ -194,6 +206,13 @@ defmodule BACnet.Protocol.NetworkLayerProtocolMessage do
 
       {:ok, message}
     end
+  end
+
+  def encode(%__MODULE__{
+        network_message_type: :initialize_routing_table_ack,
+        data: []
+      }) do
+    {:ok, <<Constants.macro_by_name(:network_layer_message_type, :initialize_routing_table_ack)>>}
   end
 
   def encode(%__MODULE__{
@@ -308,6 +327,9 @@ defmodule BACnet.Protocol.NetworkLayerProtocolMessage do
           {:ok, {count :: non_neg_integer(), binary()}} | {:error, term()}
   defp nsdu_encode_routing_table_ports(ports_list) when is_list(ports_list) do
     Enum.reduce_while(ports_list, {:ok, {0, <<>>}}, fn
+      _entry, {:ok, {255, _acc}} ->
+        {:halt, {:error, :too_many_ports}}
+
       {dnet, port_id, bin}, {:ok, {count, acc}}
       when is_integer(dnet) and dnet in 0..65_535 and is_integer(port_id) and port_id in 0..255 and
              is_binary(bin) and byte_size(bin) <= 255 ->

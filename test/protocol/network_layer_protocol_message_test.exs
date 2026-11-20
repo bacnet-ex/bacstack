@@ -45,7 +45,7 @@ defmodule BACnet.Protocol.NetworkLayerProtocolMessageTest do
   end
 
   test "encoding BACnet NSDU I-Am-Router-To-Network empty list" do
-    assert {:ok, <<1>>} =
+    assert {:error, :invalid_data} =
              NetworkLayerProtocolMessage.encode(%NetworkLayerProtocolMessage{
                network_message_type: :i_am_router_to_network,
                msg_type: nil,
@@ -156,6 +156,17 @@ defmodule BACnet.Protocol.NetworkLayerProtocolMessageTest do
              })
   end
 
+  test "encoding BACnet NSDU busy and available messages without DNETs" do
+    for {type, code} <- [{:router_busy_to_network, 4}, {:router_available_to_network, 5}] do
+      assert {:ok, <<^code>>} =
+               NetworkLayerProtocolMessage.encode(%NetworkLayerProtocolMessage{
+                 network_message_type: type,
+                 msg_type: nil,
+                 data: []
+               })
+    end
+  end
+
   test "encoding BACnet NSDU Initialize-Routing-Table" do
     assert {:ok, <<6, 2, 0, 44, 0, 6, 0, 99, 48, 57, 255, 254, 0, 45, 1, 2, 23, 24>>} =
              NetworkLayerProtocolMessage.encode(%NetworkLayerProtocolMessage{
@@ -206,8 +217,8 @@ defmodule BACnet.Protocol.NetworkLayerProtocolMessageTest do
              })
   end
 
-  test "encoding BACnet NSDU Initialize-Routing-Table-Ack empty table" do
-    assert {:ok, <<7, 0>>} =
+  test "encoding BACnet NSDU Initialize-Routing-Table-Ack without data" do
+    assert {:ok, <<7>>} =
              NetworkLayerProtocolMessage.encode(%NetworkLayerProtocolMessage{
                network_message_type: :initialize_routing_table_ack,
                msg_type: nil,
@@ -236,6 +247,44 @@ defmodule BACnet.Protocol.NetworkLayerProtocolMessageTest do
                msg_type: nil,
                data: [{35, 1, :binary.copy(<<99>>, 256)}, {45, 1, <<23, 24>>}]
              })
+  end
+
+  test "encoding BACnet NSDU routing tables with 255 ports" do
+    ports = for port <- 0..254, do: {port + 1, port, <<>>}
+    payload = for port <- 0..254, into: <<>>, do: <<port + 1::16, port, 0>>
+
+    for {type, code} <- [{:initialize_routing_table, 6}, {:initialize_routing_table_ack, 7}] do
+      assert {:ok, <<^code, 255, ^payload::binary>>} =
+               NetworkLayerProtocolMessage.encode(%NetworkLayerProtocolMessage{
+                 network_message_type: type,
+                 msg_type: nil,
+                 data: ports
+               })
+    end
+  end
+
+  test "encoding BACnet NSDU routing tables rejects more than 255 ports" do
+    for type <- [:initialize_routing_table, :initialize_routing_table_ack], count <- [256, 257] do
+      assert {:error, :too_many_ports} =
+               NetworkLayerProtocolMessage.encode(%NetworkLayerProtocolMessage{
+                 network_message_type: type,
+                 msg_type: nil,
+                 data: List.duplicate({44, 1, <<>>}, count)
+               })
+    end
+  end
+
+  test "encoding BACnet NSDU routing tables with maximum port info length" do
+    info = :binary.copy(<<7>>, 255)
+
+    for {type, code} <- [{:initialize_routing_table, 6}, {:initialize_routing_table_ack, 7}] do
+      assert {:ok, <<^code, 1, 0, 44, 255, 255, ^info::binary>>} =
+               NetworkLayerProtocolMessage.encode(%NetworkLayerProtocolMessage{
+                 network_message_type: type,
+                 msg_type: nil,
+                 data: [{44, 255, info}]
+               })
+    end
   end
 
   test "encoding BACnet NSDU Establish-Connection-To-Network" do

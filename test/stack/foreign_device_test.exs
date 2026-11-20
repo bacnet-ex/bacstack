@@ -61,8 +61,22 @@ defmodule BACnet.Stack.ForeignDeviceTest do
       ForeignDevice.start_link(bbmd: @bbmd, client: client, reply_rfd: :yes)
     end
 
-    assert_raise ArgumentError, ~r/ttl/, fn ->
-      ForeignDevice.start_link(bbmd: @bbmd, client: client, ttl: 0)
+    for ttl <- [0, -1, 65_536, 100_000, 1.0, :invalid] do
+      assert_raise ArgumentError, ~r/ttl/, fn ->
+        ForeignDevice.start_link(bbmd: @bbmd, client: client, ttl: ttl)
+      end
+    end
+  end
+
+  for ttl <- [1, 65_535] do
+    test "registration encodes TTL #{ttl} without truncation", %{client: client} do
+      ttl = unquote(ttl)
+      assert {:ok, fd} = ForeignDevice.start_link(bbmd: @bbmd, client: client, ttl: ttl)
+      assert ForeignDevice.get_status(fd) == :waiting_for_ack
+      assert_received {:fake_transport_send, @bbmd, data, opts}
+      assert data == <<ttl::16>>
+      assert opts[:bvlc] == <<5>>
+      assert opts[:npci] == false
     end
   end
 
@@ -372,7 +386,7 @@ defmodule BACnet.Stack.ForeignDeviceTest do
     assert_receive {:fake_transport_send, @bbmd, _apdu, _opts}
     raw = i_am_binary()
 
-    source = %NpciTarget{net: 1, address: 500}
+    source = %NpciTarget{net: 1, address: <<1, 244>>}
 
     send(
       client,

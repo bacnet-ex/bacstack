@@ -849,7 +849,7 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     transport: transport
   } do
     other_portal = start_supervised!({FakeTransport, owner: self()})
-    target = %NpciTarget{net: 10, address: 7}
+    target = %NpciTarget{net: 10, address: <<7>>}
 
     endpoints = [
       SegmentationEndpoint.new(FakeTransport, transport, @dest, destination: target),
@@ -888,7 +888,7 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     store: store,
     transport: transport
   } do
-    target = %NpciTarget{net: 10, address: 7}
+    target = %NpciTarget{net: 10, address: <<7>>}
 
     first_endpoint =
       SegmentationEndpoint.new(FakeTransport, transport, @dest, destination: target)
@@ -957,7 +957,7 @@ defmodule BACnet.Stack.SegmentsStoreTest do
     store: store,
     transport: transport
   } do
-    target = %NpciTarget{net: 10, address: 7}
+    target = %NpciTarget{net: 10, address: <<7>>}
     other_target = %{target | net: 20}
     [first, last] = pieces(:ack, 62, 1, 80)
 

@@ -32,8 +32,10 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntry do
     (function 0x08) and when the BBMD itself needs to remove an entry. Both
     time fields **must be `nil`**. The encoder deliberately emits the short form.
 
-  Maximum TTL / remaining value is 65535 (J.5.2.1.1). The BBMD in this library
-  caps the number of concurrent FDT entries (default 512, configurable).
+  Maximum TTL / remaining value is 65535 (J.5.2.1). The BBMD reports at most
+  65535 seconds remaining, while its expiry timer runs for the requested TTL
+  plus 30 seconds (J.5.2.3). The BBMD also caps the number of concurrent FDT
+  entries (default 512, configurable).
 
   ## Construction & Gotchas
 
@@ -61,8 +63,8 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntry do
       iex> ForeignDeviceTableEntry.encode(del)
       {:ok, <<10, 1, 2, 3, 186, 192>>}
 
-  Passing a mix of nil and integer values, or an out-of-range port, produces
-  `{:error, :invalid_data}`.
+  The binary encoder rejects a mix of nil and integer time values. Both encoders
+  reject integer time values and ports outside `0..65535` with `{:error, :invalid_data}`.
 
   ### See Also
 
@@ -87,8 +89,8 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntry do
   @type t :: %__MODULE__{
           ip: :inet.ip4_address(),
           port: :inet.port_number(),
-          time_to_live: non_neg_integer() | nil,
-          remaining_time: non_neg_integer() | nil
+          time_to_live: 0..65_535 | nil,
+          remaining_time: 0..65_535 | nil
         }
 
   @fields [:ip, :port, :time_to_live, :remaining_time]
@@ -137,7 +139,7 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntry do
           remaining_time: nil
         } = _entry
       )
-      when is_integer(port) do
+      when is_integer(port) and port in 0..65_535 do
     {:ok, <<ip_a, ip_b, ip_c, ip_d, port::size(16)>>}
   end
 
@@ -149,7 +151,9 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntry do
           remaining_time: rem
         } = _entry
       )
-      when is_integer(port) and is_integer(ttl) and is_integer(rem) do
+      when is_integer(port) and port in 0..65_535 and
+             is_integer(ttl) and ttl in 0..65_535 and
+             is_integer(rem) and rem in 0..65_535 do
     {:ok, <<ip_a, ip_b, ip_c, ip_d, port::size(16), ttl::size(16), rem::size(16)>>}
   end
 
@@ -194,7 +198,10 @@ defmodule BACnet.Protocol.ForeignDeviceTableEntry do
           time_to_live: ttl,
           remaining_time: rem
         } = _entry
-      ) do
+      )
+      when is_integer(port) and port in 0..65_535 and
+             (is_nil(ttl) or (is_integer(ttl) and ttl in 0..65_535)) and
+             (is_nil(rem) or (is_integer(rem) and rem in 0..65_535)) do
     ttl = ttl || 0
     rem = rem || 0
 

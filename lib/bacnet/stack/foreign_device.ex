@@ -166,7 +166,7 @@ defmodule BACnet.Stack.ForeignDevice do
           {:bbmd, {:inet.ip4_address(), port :: 1..65_535}}
           | {:client, client()}
           | {:reply_rfd, boolean()}
-          | {:ttl, pos_integer()}
+          | {:ttl, 1..65_535}
           | GenServer.option()
 
   @typedoc """
@@ -184,7 +184,7 @@ defmodule BACnet.Stack.ForeignDevice do
     - `reply_rfd: boolean()` - Optional. Enables replying to `Register-Foreign-Device` packets from other BACnet clients.
       Defaults to `true`. If multiple `BACnet.Stack.ForeignDevice` processes are running on the same client/transport,
       all except for one MUST have this option disabled.
-    - `ttl: pos_integer()` - Optional. The time in seconds until the Foreign Device Registration expires. Defaults to `60`.
+    - `ttl: 1..65_535` - Optional. The time in seconds until the Foreign Device Registration expires. Defaults to `60`.
   """
   @spec start_link(start_options()) :: GenServer.on_start()
   def start_link(opts) do
@@ -530,6 +530,10 @@ defmodule BACnet.Stack.ForeignDevice do
 
   @doc """
   Writes the Broadcast Distribution Table of the BBMD.
+
+  This BVLL operation is intended for legacy BBMDs implementing BACnet 135-2012
+  or earlier. From Protocol_Revision 17 onwards, BBMDs must reject it with
+  Write-BDT-NAK - configure their Network Port object's BDT property instead.
 
   This function will only read the BBMD address from the Foreign Device server,
   all communication to the BBMD is done in the caller process using a `Task`.
@@ -1197,6 +1201,7 @@ defmodule BACnet.Stack.ForeignDevice do
     end
   end
 
+  @spec validate_start_link_opts(Keyword.t()) :: :ok
   defp validate_start_link_opts(opts) do
     case opts[:reply_rfd] do
       nil ->
@@ -1230,12 +1235,13 @@ defmodule BACnet.Stack.ForeignDevice do
       nil ->
         :ok
 
-      term when is_integer(term) and term > 0 ->
+      term when is_integer(term) and term in 1..65_535 ->
         :ok
 
       term ->
         raise ArgumentError,
-          message: "start_link/1 expected ttl to be a positive integer, got: #{inspect(term)}"
+          message:
+            "start_link/1 expected ttl to be an integer in 1..65_535, got: #{inspect(term)}"
     end
   end
 

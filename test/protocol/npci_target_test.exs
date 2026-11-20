@@ -8,24 +8,34 @@ defmodule BACnet.Protocol.NpciTargetTest do
 
   doctest NpciTarget
 
+  test "zero-valued station addresses retain their length and are not broadcasts" do
+    for length <- 1..7 do
+      target = %NpciTarget{net: 1, address: :binary.copy(<<0>>, length)}
+      assert byte_size(target.address) == length
+      assert NpciTarget.is_remote_station(target)
+      refute NpciTarget.is_remote_broadcast(target)
+      refute NpciTarget.is_global_broadcast(target)
+    end
+  end
+
   test "is global broadcast" do
-    assert true == NpciTarget.is_global_broadcast(%NpciTarget{net: 65_535, address: 1})
+    assert true == NpciTarget.is_global_broadcast(%NpciTarget{net: 65_535, address: <<1>>})
     assert true == NpciTarget.is_global_broadcast(%NpciTarget{net: 65_535, address: nil})
-    assert false == NpciTarget.is_global_broadcast(%NpciTarget{net: 1, address: 1})
+    assert false == NpciTarget.is_global_broadcast(%NpciTarget{net: 1, address: <<1>>})
     assert false == NpciTarget.is_global_broadcast(%NpciTarget{net: 1, address: nil})
   end
 
   test "is remote broadcast" do
     assert true == NpciTarget.is_remote_broadcast(%NpciTarget{net: 65_535, address: nil})
     assert true == NpciTarget.is_remote_broadcast(%NpciTarget{net: 1, address: nil})
-    assert false == NpciTarget.is_remote_broadcast(%NpciTarget{net: 65_535, address: 1})
-    assert false == NpciTarget.is_remote_broadcast(%NpciTarget{net: 1, address: 1})
+    assert false == NpciTarget.is_remote_broadcast(%NpciTarget{net: 65_535, address: <<1>>})
+    assert false == NpciTarget.is_remote_broadcast(%NpciTarget{net: 1, address: <<1>>})
   end
 
   test "is remote station" do
-    assert true == NpciTarget.is_remote_station(%NpciTarget{net: 65_534, address: 1})
-    assert true == NpciTarget.is_remote_station(%NpciTarget{net: 1, address: 1})
-    assert false == NpciTarget.is_remote_station(%NpciTarget{net: 65_535, address: 1})
+    assert true == NpciTarget.is_remote_station(%NpciTarget{net: 65_534, address: <<1>>})
+    assert true == NpciTarget.is_remote_station(%NpciTarget{net: 1, address: <<1>>})
+    assert false == NpciTarget.is_remote_station(%NpciTarget{net: 65_535, address: <<1>>})
     assert false == NpciTarget.is_remote_station(%NpciTarget{net: 1, address: nil})
   end
 end

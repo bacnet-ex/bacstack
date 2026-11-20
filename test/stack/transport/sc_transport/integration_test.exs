@@ -63,8 +63,8 @@ defmodule BACnet.Test.Stack.Transport.ScTransport.IntegrationTest do
   test "audits TLS peer identity, routed write retries, and the reply", context do
     {hub, writer, target} = audit_peers(context, :writes)
     expected_fingerprint = :crypto.hash(:sha256, :sys.get_state(writer).config.credentials.cert)
-    source = %NpciTarget{net: 10, address: 4}
-    destination = %NpciTarget{net: 20, address: 7}
+    source = %NpciTarget{net: 10, address: <<4>>}
+    destination = %NpciTarget{net: 20, address: <<7>>}
     request = audit_write(13, 20.5)
 
     assert :ok = Node.send(writer, @managed, request, source: source, destination: destination)
@@ -113,7 +113,7 @@ defmodule BACnet.Test.Stack.Transport.ScTransport.IntegrationTest do
     # The link peers are correct, but this is from a different downstream device.
     assert :ok =
              Node.send(target, @peer, ack,
-               source: %{destination | address: 8},
+               source: %{destination | address: <<8>>},
                destination: source
              )
 

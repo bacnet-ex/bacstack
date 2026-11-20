@@ -293,6 +293,14 @@ defmodule BACnet.Test.Protocol.APDUDecodingTest do
              APDU.decode_segment_ack(<<4::size(4), 0::size(4), 0>>)
   end
 
+  test "decoding segment ACK with invalid window size" do
+    assert {:error, :invalid_apdu_segment_ack_data} =
+             APDU.decode_segment_ack(<<65, 70, 0, 0>>)
+
+    assert {:error, :invalid_apdu_segment_ack_data} =
+             APDU.decode_segment_ack(<<65, 70, 0, 128>>)
+  end
+
   test "decoding abort" do
     # Abort
     # sent by server = true

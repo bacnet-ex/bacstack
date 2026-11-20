@@ -2802,7 +2802,17 @@ defmodule BACnet.Stack.Client do
     end)
   end
 
+  @spec format_npci_target(NpciTarget.t()) :: String.t()
   defp format_npci_target(%NpciTarget{} = target) do
-    "#{target.net}.#{target.address}"
+    address =
+      if target.address do
+        Enum.map_join(:binary.bin_to_list(target.address), ":", fn octet ->
+          Base.encode16(<<octet>>)
+        end)
+      else
+        "broadcast"
+      end
+
+    "#{target.net}.#{address}"
   end
 end

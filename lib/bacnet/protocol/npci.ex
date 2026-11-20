@@ -52,6 +52,9 @@ defmodule BACnet.Protocol.NPCI do
   @doc """
   Creates a new NPCI struct with the given fields.
 
+  Source and destination targets are validated as described in `encode/2`.
+  Invalid fields raise `ArgumentError`.
+
   The following default values are applied:
   ```ex
   priority: :normal,
@@ -84,10 +87,12 @@ defmodule BACnet.Protocol.NPCI do
 
         {:destination, value}, acc
         when is_nil(value) or (is_struct(value, NpciTarget) and value.net in 1..65_535) ->
+          if value, do: validate_target!(value, :destination)
           %{acc | destination: value}
 
         {:source, value}, acc
         when is_nil(value) or (is_struct(value, NpciTarget) and value.net in 1..65_534) ->
+          if value, do: validate_target!(value, :source)
           %{acc | source: value}
 
         {:hopcount, value}, acc when is_nil(value) or value in 1..255 ->
@@ -108,7 +113,13 @@ defmodule BACnet.Protocol.NPCI do
   @doc """
   Creates a NPCI iodata from the NPCI struct.
 
-  If `destination` is not nil, but `net` is nil, `net` will default to `1`.
+  Present targets require an explicit network number: 1..65535 for destinations
+  and 1..65534 for sources. Addresses are binaries of one to seven octets and are
+  preserved exactly, including leading zeros. A destination address of `nil`
+  denotes a broadcast - a present source must have a nonempty address.
+
+  Invalid targets raise `ArgumentError`, including when the NPCI was built directly
+  rather than through `new/1`.
   """
   @spec encode(t(), Keyword.t()) :: iodata()
   def encode(%__MODULE__{} = npci, _opts \\ []) do
@@ -117,7 +128,7 @@ defmodule BACnet.Protocol.NPCI do
     {destination_specifier, destination} =
       case npci.destination do
         %NpciTarget{} = target ->
-          npci_target(npci, target)
+          npci_target(target, :destination)
 
         nil ->
           {0, <<>>}
@@ -129,14 +140,8 @@ defmodule BACnet.Protocol.NPCI do
 
     {source_specifier, source} =
       case npci.source do
-        %NpciTarget{net: 65_535} ->
-          raise ArgumentError, "Invalid source, net 65535 is not allowed"
-
-        %NpciTarget{address: nil} ->
-          raise ArgumentError, "Invalid source, address nil is not allowed"
-
         %NpciTarget{} = target ->
-          npci_target(npci, target)
+          npci_target(target, :source)
 
         nil ->
           {0, <<>>}
@@ -172,54 +177,34 @@ defmodule BACnet.Protocol.NPCI do
   defp intify(true), do: 1
   defp intify(false), do: 0
 
-  @spec npci_target(t(), NpciTarget.t()) :: {0..1, binary()}
-  defp npci_target(%__MODULE__{} = _npci, %NpciTarget{} = target) do
-    if target.net == 0 or target.net == nil do
-      raise ArgumentError, "Invalid net, must be in the range of 1..65535"
+  @spec npci_target(NpciTarget.t(), :destination | :source) :: {1, binary()}
+  defp npci_target(%NpciTarget{} = target, role) do
+    validate_target!(target, role)
+    address = target.address || <<>>
+    {1, <<target.net::size(16), byte_size(address)::size(8), address::binary>>}
+  end
+
+  @spec validate_target!(NpciTarget.t(), :destination | :source) :: :ok
+  defp validate_target!(%NpciTarget{} = target, role) do
+    max_net = if role == :source, do: 65_534, else: 65_535
+
+    if not (is_integer(target.net) and target.net in 1..max_net) do
+      raise ArgumentError, "Invalid #{role} net, must be in the range of 1..#{max_net}"
     end
 
-    {len, addr_bin} =
-      case target.address do
-        nil ->
-          {0, <<>>}
+    case target.address do
+      nil when role == :destination ->
+        :ok
 
-        # {ipaddr, port}
-        # when is_tuple(ipaddr) and tuple_size(ipaddr) == 4 and port in 1..65_535 ->
-        #   addr =
-        #     ipaddr
-        #     |> Tuple.to_list()
-        #     |> List.to_string()
-        #
-        #   finaddr = <<addr::binary, port::size(16)>>
-        #
-        #   {byte_size(finaddr), finaddr}
-        #
-        # netaddr when is_tuple(netaddr) when tuple_size(netaddr) in 1..6 ->
-        #   addr =
-        #     netaddr
-        #     |> Tuple.to_list()
-        #     |> List.to_string()
-        #
-        #   {byte_size(addr), addr}
-        #
-        # netaddr when netaddr in 0..255 ->
-        #   {1, <<netaddr::size(8)>>}
+      address when is_binary(address) and byte_size(address) in 1..7 ->
+        :ok
 
-        netaddr when is_integer(netaddr) and netaddr >= 0 and netaddr <= 72_057_594_037_927_935 ->
-          int_length = div(byte_size(Integer.to_string(netaddr, 2)) + 7, 8)
-          bin = <<netaddr::integer-size(int_length)-unit(8)>>
-          {int_length, bin}
+      address ->
+        nil_hint = if role == :destination, do: " or nil", else: ""
 
-        term ->
-          raise ArgumentError,
-                "Invalid destination address, expected nil or " <>
-                  "a positive integer with max. 48 bits set, " <>
-                  "got: #{inspect(term)}"
-      end
-
-    net = target.net || 1
-    addr = <<net::size(16), len::size(8), addr_bin::binary>>
-
-    {1, addr}
+        raise ArgumentError,
+              "Invalid #{role} address, expected a binary of 1..7 octets#{nil_hint}, " <>
+                "got: #{inspect(address)}"
+    end
   end
 end

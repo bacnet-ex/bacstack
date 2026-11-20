@@ -11,6 +11,76 @@ defmodule BACnet.Protocol.NpciTest do
 
   doctest NPCI
 
+  test "encoding preserves address octets and lengths for both target roles" do
+    addresses = [
+      <<0>>,
+      <<0, 0>>,
+      <<0, 0, 1>>,
+      <<0, 0x1A, 0x2B, 0x80, 0xFF, 0x5E>>,
+      <<0, 1, 2, 3, 4, 5, 6>>,
+      <<255, 255, 255, 255, 255, 255, 255>>
+    ]
+
+    for address <- addresses do
+      target = %NpciTarget{net: 1, address: address}
+      length = byte_size(address)
+
+      assert IO.iodata_to_binary(NPCI.encode(NPCI.new(destination: target))) ==
+               <<1, 32, 0, 1, length, address::binary, 255>>
+
+      assert IO.iodata_to_binary(NPCI.encode(NPCI.new(source: target))) ==
+               <<1, 8, 0, 1, length, address::binary>>
+    end
+  end
+
+  test "new and encode reject invalid address representations for either role" do
+    for role <- [:destination, :source],
+        address <- [<<>>, <<0::64>>, 0, 7, -1, :invalid, [1], <<1::1>>] do
+      target = %NpciTarget{net: 1, address: address}
+
+      assert_raise ArgumentError, ~r/Invalid #{role} address/, fn ->
+        NPCI.new([{role, target}])
+      end
+
+      npci = Map.put(NPCI.new([]), role, target)
+
+      assert_raise ArgumentError, ~r/Invalid #{role} address/, fn ->
+        NPCI.encode(npci)
+      end
+    end
+
+    target = %NpciTarget{net: 1, address: nil}
+    assert NPCI.new(destination: target).destination == target
+
+    assert IO.iodata_to_binary(NPCI.encode(NPCI.new(destination: target))) ==
+             <<1, 32, 0, 1, 0, 255>>
+
+    assert_raise ArgumentError, ~r/Invalid source address/, fn ->
+      NPCI.new(source: target)
+    end
+  end
+
+  test "new and direct encode reject out-of-range and noninteger network numbers" do
+    for {role, max_net} <- [destination: 65_535, source: 65_534] do
+      for net <- [nil, -1, 0, max_net + 1, 131_073, 1.0, :invalid] do
+        target = %NpciTarget{net: net, address: <<1>>}
+
+        assert_raise ArgumentError, fn -> NPCI.new([{role, target}]) end
+        npci = Map.put(NPCI.new([]), role, target)
+
+        assert_raise ArgumentError, ~r/Invalid #{role} net/, fn -> NPCI.encode(npci) end
+      end
+
+      for net <- [1, max_net] do
+        target = %NpciTarget{net: net, address: <<1>>}
+        npci = NPCI.new([{role, target}])
+        assert Map.fetch!(npci, role) == target
+        expected = <<net::16, 1, 1>>
+        assert Enum.at(NPCI.encode(npci), if(role == :destination, do: 1, else: 2)) == expected
+      end
+    end
+  end
+
   test "NPCI version" do
     assert 0x01 == NPCI.get_version()
   end
@@ -128,7 +198,7 @@ defmodule BACnet.Protocol.NpciTest do
              source: nil,
              hopcount: nil,
              is_network_message: false
-           } = NPCI.new(destination: %NpciTarget{net: 1, address: 255})
+           } = NPCI.new(destination: %NpciTarget{net: 1, address: <<255>>})
   end
 
   test "create new NPCI with invalid destination" do
@@ -139,7 +209,7 @@ defmodule BACnet.Protocol.NpciTest do
 
   test "create new NPCI with invalid destination net" do
     assert_raise ArgumentError, fn ->
-      NPCI.new(destination: %NpciTarget{net: 65_536, address: 255})
+      NPCI.new(destination: %NpciTarget{net: 65_536, address: <<255>>})
     end
   end
 
@@ -160,7 +230,7 @@ defmodule BACnet.Protocol.NpciTest do
              source: %NpciTarget{},
              hopcount: nil,
              is_network_message: false
-           } = NPCI.new(source: %NpciTarget{net: 1, address: 255})
+           } = NPCI.new(source: %NpciTarget{net: 1, address: <<255>>})
   end
 
   test "create new NPCI with invalid source" do
@@ -171,7 +241,7 @@ defmodule BACnet.Protocol.NpciTest do
 
   test "create new NPCI with invalid source net" do
     assert_raise ArgumentError, fn ->
-      NPCI.new(source: %NpciTarget{net: 65_535, address: 255})
+      NPCI.new(source: %NpciTarget{net: 65_535, address: <<255>>})
     end
   end
 
@@ -301,7 +371,7 @@ defmodule BACnet.Protocol.NpciTest do
         priority: :normal,
         expects_reply: false,
         destination: nil,
-        source: %NpciTarget{net: 65_535, address: 1},
+        source: %NpciTarget{net: 65_535, address: <<1>>},
         hopcount: nil,
         is_network_message: false
       })
@@ -366,7 +436,7 @@ defmodule BACnet.Protocol.NpciTest do
         priority: :normal,
         expects_reply: false,
         destination: nil,
-        source: %NpciTarget{net: nil, address: 1},
+        source: %NpciTarget{net: nil, address: <<1>>},
         hopcount: nil,
         is_network_message: false
       })
@@ -378,7 +448,7 @@ defmodule BACnet.Protocol.NpciTest do
       NPCI.encode(%NPCI{
         priority: :normal,
         expects_reply: false,
-        destination: %NpciTarget{net: 0, address: 1},
+        destination: %NpciTarget{net: 0, address: <<1>>},
         source: nil,
         hopcount: nil,
         is_network_message: false
@@ -511,7 +581,7 @@ defmodule BACnet.Protocol.NpciTest do
              NPCI.encode(%NPCI{
                priority: :normal,
                expects_reply: true,
-               destination: %NpciTarget{net: 1, address: 128},
+               destination: %NpciTarget{net: 1, address: <<128>>},
                source: nil,
                hopcount: nil,
                is_network_message: false
@@ -535,7 +605,7 @@ defmodule BACnet.Protocol.NpciTest do
              NPCI.encode(%NPCI{
                priority: :normal,
                expects_reply: true,
-               destination: %NpciTarget{net: 1, address: 128},
+               destination: %NpciTarget{net: 1, address: <<128>>},
                source: nil,
                hopcount: 8,
                is_network_message: false
@@ -547,7 +617,7 @@ defmodule BACnet.Protocol.NpciTest do
              NPCI.encode(%NPCI{
                priority: :normal,
                expects_reply: true,
-               destination: %NpciTarget{net: 1, address: 128},
+               destination: %NpciTarget{net: 1, address: <<128>>},
                source: nil,
                hopcount: 0,
                is_network_message: false
@@ -559,7 +629,7 @@ defmodule BACnet.Protocol.NpciTest do
              NPCI.encode(%NPCI{
                priority: :normal,
                expects_reply: true,
-               destination: %NpciTarget{net: 1, address: 128},
+               destination: %NpciTarget{net: 1, address: <<128>>},
                source: nil,
                hopcount: 256,
                is_network_message: false
@@ -572,7 +642,7 @@ defmodule BACnet.Protocol.NpciTest do
                priority: :normal,
                expects_reply: true,
                destination: nil,
-               source: %NpciTarget{net: 1, address: 128},
+               source: %NpciTarget{net: 1, address: <<128>>},
                hopcount: nil,
                is_network_message: false
              })

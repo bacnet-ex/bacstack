@@ -190,6 +190,11 @@ defmodule BACnet.Protocol do
 
   @doc """
   Decodes the NPCI header of a BACnet packet.
+
+  DADR and SADR are returned as binaries, preserving their exact lengths and leading
+  zero octets. A zero DLEN is represented by a destination address of `nil`.
+  Invalid network numbers, empty source addresses, addresses longer than seven
+  octets, and truncated target fields return `:invalid_destination` or `:invalid_source`.
   """
   @spec decode_npci(binary()) ::
           {:ok, {NPCI.t(), rest :: binary()}} | {:error, term()}
@@ -199,8 +204,9 @@ defmodule BACnet.Protocol do
     with {:ok, {destination, rest}} <-
            (if Bitwise.band(npci, 0x20) > 0 do
               case rest do
-                <<net::size(16), addr_length::size(8), address::integer-size(addr_length)-unit(8),
-                  restn::binary>> ->
+                <<net::size(16), addr_length::size(8), address::binary-size(addr_length),
+                  restn::binary>>
+                when net in 1..65_535 and addr_length <= 7 ->
                   target = %NpciTarget{
                     net: net,
                     address: if(addr_length > 0, do: address)
@@ -217,11 +223,12 @@ defmodule BACnet.Protocol do
          {:ok, {source, rest}} <-
            (if Bitwise.band(npci, 0x08) > 0 do
               case rest do
-                <<net::size(16), addr_length::size(8), address::integer-size(addr_length)-unit(8),
-                  restn::binary>> ->
+                <<net::size(16), addr_length::size(8), address::binary-size(addr_length),
+                  restn::binary>>
+                when net in 1..65_534 and addr_length in 1..7 ->
                   target = %NpciTarget{
                     net: net,
-                    address: if(addr_length > 0, do: address)
+                    address: address
                   }
 
                   {:ok, {target, restn}}
@@ -285,6 +292,13 @@ defmodule BACnet.Protocol do
 
   @doc """
   Decodes the NSDU of a BACnet packet.
+
+  DNET lists must contain complete two-octet network numbers, and routing table
+  data must contain exactly the advertised number of complete port entries.
+  Malformed lists return `{:error, :invalid_data}`.
+
+  A data-free Initialize-Routing-Table-Ack (`<<7>>`) is decoded with `data: []`.
+  A zero-entry table response (`<<7, 0>>`) is also accepted as `data: []`.
   """
   @spec decode_nsdu(binary()) :: {:ok, NetworkLayerProtocolMessage.t()} | {:error, term()}
   def decode_nsdu(data)
@@ -317,7 +331,8 @@ defmodule BACnet.Protocol do
   def decode_nsdu(
         <<Constants.macro_by_name(:network_layer_message_type, :i_am_router_to_network),
           rest::binary>>
-      ) do
+      )
+      when byte_size(rest) > 0 and rem(byte_size(rest), 2) == 0 do
     message = %NetworkLayerProtocolMessage{
       network_message_type: :i_am_router_to_network,
       msg_type: nil,
@@ -356,7 +371,8 @@ defmodule BACnet.Protocol do
   def decode_nsdu(
         <<Constants.macro_by_name(:network_layer_message_type, :router_busy_to_network),
           rest::binary>>
-      ) do
+      )
+      when rem(byte_size(rest), 2) == 0 do
     message = %NetworkLayerProtocolMessage{
       network_message_type: :router_busy_to_network,
       msg_type: nil,
@@ -369,7 +385,8 @@ defmodule BACnet.Protocol do
   def decode_nsdu(
         <<Constants.macro_by_name(:network_layer_message_type, :router_available_to_network),
           rest::binary>>
-      ) do
+      )
+      when rem(byte_size(rest), 2) == 0 do
     message = %NetworkLayerProtocolMessage{
       network_message_type: :router_available_to_network,
       msg_type: nil,
@@ -381,12 +398,26 @@ defmodule BACnet.Protocol do
 
   def decode_nsdu(
         <<Constants.macro_by_name(:network_layer_message_type, :initialize_routing_table),
-          _num_ports, rest::binary>>
+          num_ports, rest::binary>>
+      ) do
+    with {:ok, ports} <- nsdu_parse_routing_table_ports(rest, num_ports, []) do
+      message = %NetworkLayerProtocolMessage{
+        network_message_type: :initialize_routing_table,
+        msg_type: nil,
+        data: ports
+      }
+
+      {:ok, message}
+    end
+  end
+
+  def decode_nsdu(
+        <<Constants.macro_by_name(:network_layer_message_type, :initialize_routing_table_ack)>>
       ) do
     message = %NetworkLayerProtocolMessage{
-      network_message_type: :initialize_routing_table,
+      network_message_type: :initialize_routing_table_ack,
       msg_type: nil,
-      data: nsdu_parse_routing_table_ports(rest)
+      data: []
     }
 
     {:ok, message}
@@ -394,15 +425,17 @@ defmodule BACnet.Protocol do
 
   def decode_nsdu(
         <<Constants.macro_by_name(:network_layer_message_type, :initialize_routing_table_ack),
-          _num_ports, rest::binary>>
+          num_ports, rest::binary>>
       ) do
-    message = %NetworkLayerProtocolMessage{
-      network_message_type: :initialize_routing_table_ack,
-      msg_type: nil,
-      data: nsdu_parse_routing_table_ports(rest)
-    }
+    with {:ok, ports} <- nsdu_parse_routing_table_ports(rest, num_ports, []) do
+      message = %NetworkLayerProtocolMessage{
+        network_message_type: :initialize_routing_table_ack,
+        msg_type: nil,
+        data: ports
+      }
 
-    {:ok, message}
+      {:ok, message}
+    end
   end
 
   def decode_nsdu(
@@ -487,46 +520,31 @@ defmodule BACnet.Protocol do
   end
 
   @spec nsdu_parse_dnet_list(binary()) :: [non_neg_integer()]
-  defp nsdu_parse_dnet_list(binary)
-
-  defp nsdu_parse_dnet_list(<<>>) do
-    []
+  defp nsdu_parse_dnet_list(bin) when rem(byte_size(bin), 2) == 0 do
+    for <<dnet::size(16) <- bin>>, do: dnet
   end
 
-  defp nsdu_parse_dnet_list(bin) do
-    {_rest, dnet} =
-      Enum.reduce_while(1..65_535//1, {bin, []}, fn
-        _entry, {<<dnet::size(16), rest::binary>>, acc} ->
-          {:cont, {rest, [dnet | acc]}}
-
-        _entry, {_bin, acc} ->
-          {:halt, {nil, acc}}
-      end)
-
-    Enum.reverse(dnet)
-  end
-
-  @spec nsdu_parse_routing_table_ports(binary()) :: [
+  @spec nsdu_parse_routing_table_ports(binary(), byte(), [
           {dnet :: non_neg_integer(), port_id :: byte(), port_info :: binary()}
-        ]
-  defp nsdu_parse_routing_table_ports(binary)
+        ]) ::
+          {:ok, [{non_neg_integer(), byte(), binary()}]} | {:error, :invalid_data}
+  defp nsdu_parse_routing_table_ports(bin, num_ports, acc)
 
-  defp nsdu_parse_routing_table_ports(<<>>) do
-    []
+  defp nsdu_parse_routing_table_ports(<<>>, 0, acc) do
+    {:ok, Enum.reverse(acc)}
   end
 
-  defp nsdu_parse_routing_table_ports(bin) do
-    {_rest, ports} =
-      Enum.reduce_while(1..65_535//1, {bin, []}, fn
-        _entry,
-        {<<dnet::size(16), port_id, length, bin::binary-size(length), rest::binary>>, acc} ->
-          {:cont, {rest, [{dnet, port_id, bin} | acc]}}
+  defp nsdu_parse_routing_table_ports(
+         <<dnet::size(16), port_id, length, info::binary-size(length), rest::binary>>,
+         num_ports,
+         acc
+       )
+       when num_ports > 0 do
+    nsdu_parse_routing_table_ports(rest, num_ports - 1, [{dnet, port_id, info} | acc])
+  end
 
-        _entry, {_bin, acc} ->
-          {:halt, {nil, acc}}
-      end)
-
-    Enum.reverse(ports)
+  defp nsdu_parse_routing_table_ports(_bin, _num_ports, _acc) do
+    {:error, :invalid_data}
   end
 
   @spec nsdu_reject_reason_to_string(non_neg_integer()) :: String.t() | :undefined

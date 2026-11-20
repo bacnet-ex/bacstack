@@ -1375,7 +1375,7 @@ defmodule BACnet.Stack.SegmentatorTest do
     transport: transport
   } do
     other_portal = start_supervised!({FakeTransport, owner: self()})
-    target = %NpciTarget{net: 10, address: 7}
+    target = %NpciTarget{net: 10, address: <<7>>}
 
     endpoints = [
       SegmentationEndpoint.new(FakeTransport, transport, @dest, destination: target),
@@ -1457,7 +1457,7 @@ defmodule BACnet.Stack.SegmentatorTest do
   } do
     first =
       SegmentationEndpoint.new(FakeTransport, transport, @dest,
-        destination: %NpciTarget{net: 10, address: 7}
+        destination: %NpciTarget{net: 10, address: <<7>>}
       )
 
     second = %{first | npci: %{first.npci | net: 20}}
@@ -1507,7 +1507,7 @@ defmodule BACnet.Stack.SegmentatorTest do
 
     first =
       SegmentationEndpoint.new(FakeTransport, transport, @dest,
-        destination: %NpciTarget{net: 10, address: 7}
+        destination: %NpciTarget{net: 10, address: <<7>>}
       )
 
     second = %{first | npci: %{first.npci | net: 20}}
@@ -1570,7 +1570,7 @@ defmodule BACnet.Stack.SegmentatorTest do
     segmentator: segmentator,
     transport: transport
   } do
-    target = %NpciTarget{net: 10, address: 7}
+    target = %NpciTarget{net: 10, address: <<7>>}
     other_target = %{target | net: 20}
     endpoint = SegmentationEndpoint.new(FakeTransport, transport, @dest, destination: target)
 

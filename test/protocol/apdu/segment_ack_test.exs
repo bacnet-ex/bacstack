@@ -69,7 +69,7 @@ defmodule BACnet.Test.Protocol.APDU.SegmentAckTest do
       assert {:ok, ^apdu} = APDU.decode(raw(apdu))
     end
 
-    for actual_window_size <- [0, 255] do
+    for actual_window_size <- [1, 127] do
       apdu = %{ack | actual_window_size: actual_window_size}
       assert {:ok, ^apdu} = APDU.decode(raw(apdu))
     end
@@ -84,6 +84,14 @@ defmodule BACnet.Test.Protocol.APDU.SegmentAckTest do
 
     assert_raise ArgumentError, ~r/Actual window size/, fn ->
       EncoderProtocol.encode(%{ack | actual_window_size: -1})
+    end
+
+    assert_raise ArgumentError, ~r/Actual window size/, fn ->
+      EncoderProtocol.encode(%{ack | actual_window_size: 0})
+    end
+
+    assert_raise ArgumentError, ~r/Actual window size/, fn ->
+      EncoderProtocol.encode(%{ack | actual_window_size: 128})
     end
 
     refute_segmentation(ack)

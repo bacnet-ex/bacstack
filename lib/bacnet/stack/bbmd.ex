@@ -31,6 +31,19 @@ defmodule BACnet.Stack.BBMD do
   is stated in J.4.3. Proxy mode (see the `:proxy_mode` start option) is a
   local deviation documented in the option description.
 
+  By default, Write-BDT requests return NAK `0x0010`, as required from
+  Protocol_Revision 17 onwards. Hosts configure the BDT through `:bdt`,
+  `add_bdt_entry/2` and `remove_bdt_entry/2` - a host exposing a Network Port
+  object must connect its BDT property to these APIs. For BACnet 135-2012 and
+  earlier operation, `:allow_legacy_write_bdt` explicitly enables BVLL writes.
+
+  Forwarded-NPDU distribution uses the mask in this BBMD's own BDT entry
+  (matching its local IP address and UDP port). An all-ones mask selects
+  unicast reception and local rebroadcast - other masks select directed
+  broadcast reception and suppress local rebroadcast. A source on the local
+  subnet also suppresses rebroadcast. If the own entry is absent, unicast
+  reception is assumed. Configure an own entry for directed broadcast operation.
+
   ### See Also
 
   - `BACnet.Protocol`
@@ -138,6 +151,7 @@ defmodule BACnet.Stack.BBMD do
             },
             paused: boolean(),
             opts: %{
+              allow_legacy_write_bdt: boolean(),
               bdt_readonly: boolean(),
               max_fd_registrations: pos_integer(),
               proxy_mode: boolean()
@@ -173,6 +187,7 @@ defmodule BACnet.Stack.BBMD do
   """
   @type start_option ::
           {:bdt, [BroadcastDistributionTableEntry.t()]}
+          | {:allow_legacy_write_bdt, boolean()}
           | {:bdt_readonly, boolean()}
           | {:client, client()}
           | {:max_fd_registrations, pos_integer()}
@@ -191,8 +206,11 @@ defmodule BACnet.Stack.BBMD do
 
   The following options are available, in addition to `t:GenServer.options/0`:
     - `bdt: [BroadcastDistributionTableEntry.t()]` - Optional. The Broadcast Distribution Table to distribute broadcasts to peers.
-    - `bdt_readonly: boolean()` - Optional. Whether the Broadcast Distribution Table is readonly on the BACnet side.
-      By default the BDT can be written to and changed. Setting this to `true` will only allow writes through the Elixir side.
+    - `allow_legacy_write_bdt: boolean()` - Optional. Accept BVLL Write-Broadcast-Distribution-Table requests
+      for BACnet 135-2012 and earlier (Protocol_Revision below 17). Defaults to `false`.
+      Keep disabled for Protocol_Revision 17 and later, where J.4.4.2 requires NAK `0x0010`.
+    - `bdt_readonly: boolean()` - Optional. Reject BVLL BDT writes even when `:allow_legacy_write_bdt` is enabled.
+      Defaults to `false`. Local Elixir API changes remain available regardless of either option.
     - `client: client()` - Required. The client & transport information.
     - `max_fd_registrations: pos_integer()` - Optional. The amount of Foreign Device registrations that can be accepted
       are limited by this option (defaults to `512`). That is by design to not allow an unlimited number of registrations to be
@@ -218,6 +236,7 @@ defmodule BACnet.Stack.BBMD do
     {opts2, genserver_opts} =
       Keyword.split(opts, [
         :bdt,
+        :allow_legacy_write_bdt,
         :bdt_readonly,
         :client,
         :max_fd_registrations,
@@ -307,6 +326,7 @@ defmodule BACnet.Stack.BBMD do
   end
 
   @doc false
+  @spec init(map()) :: {:ok, State.t()} | {:stop, term()}
   def init(opts) do
     client = Map.fetch!(opts, :client)
     {trans_mod, transport, portal} = Client.get_transport(client)
@@ -317,6 +337,7 @@ defmodule BACnet.Stack.BBMD do
       actual_opts =
         opts
         |> Map.drop([:bdt, :client, :paused, :override_port])
+        |> Map.put_new(:allow_legacy_write_bdt, false)
         |> Map.put_new(:bdt_readonly, false)
         |> Map.put_new(:max_fd_registrations, @fd_table_max_size)
         |> Map.put_new(:proxy_mode, false)
@@ -337,6 +358,8 @@ defmodule BACnet.Stack.BBMD do
   end
 
   @doc false
+  @spec handle_call(term(), GenServer.from(), State.t()) ::
+          {:reply, term(), State.t()} | {:noreply, State.t()} | {:stop, :normal, :ok, State.t()}
   def handle_call(:pause_fd_registration, _from, %State{} = state) do
     log_debug(fn -> "BBMD: Received pause_fd_registration request" end)
 
@@ -414,6 +437,7 @@ defmodule BACnet.Stack.BBMD do
   end
 
   @doc false
+  @spec handle_info(term(), State.t()) :: {:noreply, State.t()}
   def handle_info(
         {:bacnet_transport, {_protocol_id, trans_mod}, source_address,
          {:bvlc,
@@ -538,7 +562,7 @@ defmodule BACnet.Stack.BBMD do
     reg_key = {fd_entry.ip, fd_entry.port}
 
     # Cancel timer and remove registration from state, if present
-    new_state =
+    {new_state, result_code} =
       case Map.fetch(state.registrations, reg_key) do
         {:ok, %Registration{} = reg} ->
           log_debug(fn ->
@@ -550,17 +574,20 @@ defmodule BACnet.Stack.BBMD do
           Telemetry.execute_bbmd_del_fd_registration(self(), source_address, reg, state)
 
           Process.cancel_timer(reg.timer)
-          %State{state | registrations: Map.delete(state.registrations, reg_key)}
+
+          {%State{state | registrations: Map.delete(state.registrations, reg_key)},
+           Constants.macro_by_name(:bvlc_result_format, :successful_completion)}
 
         :error ->
-          state
+          {state,
+           Constants.macro_by_name(:bvlc_result_format, :delete_foreign_device_table_entry_nak)}
       end
 
-    # Send an acknowledge, even if we didn't find it, so it was probably best that it's gone
+    # J.5.2.1.2 requires NAK when no matching registration exists.
     trans_mod.send(
       portal,
       source_address,
-      <<Constants.macro_by_name(:bvlc_result_format, :successful_completion)::size(16)>>,
+      <<result_code::size(16)>>,
       bvlc: <<Constants.macro_by_name(:bvlc_result_purpose, :bvlc_result)>>,
       npci: false
     )
@@ -713,7 +740,7 @@ defmodule BACnet.Stack.BBMD do
     )
 
     new_state =
-      if not state.opts.bdt_readonly and
+      if state.opts.allow_legacy_write_bdt and not state.opts.bdt_readonly and
            is_list(bdt) and
            Enum.all?(bdt, fn entry ->
              is_struct(entry, BroadcastDistributionTableEntry) and is_ip4_addr(entry.ip) and
@@ -730,19 +757,21 @@ defmodule BACnet.Stack.BBMD do
 
         %State{state | bdt: bdt}
       else
-        Logger.info(fn ->
-          "BBMD has encountered an invalid BDT while trying " <>
-            "to handle write broadcast distribution table for BVLC"
-        end)
+        if state.opts.allow_legacy_write_bdt and not state.opts.bdt_readonly do
+          Logger.info(fn ->
+            "BBMD has encountered an invalid BDT while trying " <>
+              "to handle write broadcast distribution table for BVLC"
+          end)
 
-        Telemetry.execute_bbmd_exception(
-          self(),
-          :error,
-          :invalid_bdt_payload,
-          [Telemetry.make_stacktrace_from_env(__ENV__)],
-          %{},
-          state
-        )
+          Telemetry.execute_bbmd_exception(
+            self(),
+            :error,
+            :invalid_bdt_payload,
+            [Telemetry.make_stacktrace_from_env(__ENV__)],
+            %{},
+            state
+          )
+        end
 
         trans_mod.send(
           portal,
@@ -1016,10 +1045,10 @@ defmodule BACnet.Stack.BBMD do
 
         distribute_broadcast_to_fdt(new_bvlc, apdu, npci, state, source_address)
 
-        # Check if messages was received NOT through directed broadcast
-        # (if peer is routed, it was not directed broadcast but unicast)
-        # In that case, we do a local broadcast
-        if trans_mod.destination_routed?(state.client.transport, source_address) do
+        # J.4.5: directed broadcasts and messages from the local subnet have
+        # already reached local devices. The own BDT mask selects reception mode.
+        if forwarded_npdu_unicast?(state) and
+             trans_mod.destination_routed?(state.client.transport, source_address) do
           case Client.send(state.client.ref, state.client.broadcast_addr, apdu,
                  bvlc:
                    <<Constants.macro_by_name(:bvlc_result_purpose, :bvlc_forwarded_npdu),
@@ -1137,8 +1166,22 @@ defmodule BACnet.Stack.BBMD do
      }}
   end
 
-  # credo:disable-for-lines:50 Credo.Check.Refactor.CyclomaticComplexity
+  @spec validate_start_link_opts(Keyword.t()) :: :ok
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp validate_start_link_opts(opts) do
+    case opts[:allow_legacy_write_bdt] do
+      nil ->
+        :ok
+
+      term when is_boolean(term) ->
+        :ok
+
+      term ->
+        raise ArgumentError,
+          message:
+            "start_link/1 expected allow_legacy_write_bdt to be a boolean, got: #{inspect(term)}"
+    end
+
     case opts[:bdt] do
       nil ->
         :ok
@@ -1268,7 +1311,7 @@ defmodule BACnet.Stack.BBMD do
         ip: ip,
         port: port,
         time_to_live: reg.ttl,
-        remaining_time: max(NaiveDateTime.diff(reg.expires_at, time_now, :second), 0)
+        remaining_time: min(max(NaiveDateTime.diff(reg.expires_at, time_now, :second), 0), 65_535)
       }
     end)
   end
@@ -1317,7 +1360,7 @@ defmodule BACnet.Stack.BBMD do
          apdu,
          npci,
          %State{client: %{transport_module: trans_mod, transport: trans_pid}} = state,
-         {orig_ip, orig_port} = source_address
+         {orig_ip, orig_port}
        ) do
     for %BroadcastDistributionTableEntry{} = bdt <- state.bdt,
         bdt.ip != elem(state.client.ip_addr, 0),
@@ -1328,16 +1371,15 @@ defmodule BACnet.Stack.BBMD do
       ip4 = :inet.ntoa(bdt.ip)
       mask = calculate_bitlength(bdt.mask)
 
-      # Parse it and use it to check if the source of the broadcast is in the same
-      # subnet as the BDT entry, if not, we skip broadcasting, as the hosts in that subnet
-      # already received it directly
+      # Skip local destinations and the origin subnet, whose devices have
+      # already received this broadcast.
       case CIDR.parse("#{ip4}/#{mask}") do
         %CIDR{} = cidr ->
           destination = {cidr.last, bdt.port}
 
           cond do
             # As defined by ASHRAE 135 Annex J.4.5
-            not trans_mod.destination_routed?(trans_pid, source_address) ->
+            not trans_mod.destination_routed?(trans_pid, destination) ->
               log_debug(fn ->
                 "BBMD: Skip distribute broadcast APDU to destination " <>
                   format_ip(destination) <>
@@ -1392,6 +1434,15 @@ defmodule BACnet.Stack.BBMD do
     end
 
     :ok
+  end
+
+  @spec forwarded_npdu_unicast?(State.t()) :: boolean()
+  defp forwarded_npdu_unicast?(%State{} = state) do
+    case Enum.find(state.bdt, &({&1.ip, &1.port} == state.client.ip_addr)) do
+      nil -> true
+      %BroadcastDistributionTableEntry{mask: {255, 255, 255, 255}} -> true
+      %BroadcastDistributionTableEntry{} -> false
+    end
   end
 
   @spec distribute_broadcast_to_fdt(

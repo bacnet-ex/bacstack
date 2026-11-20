@@ -8,8 +8,11 @@ defmodule BACnet.Protocol.BroadcastDistributionTableEntry do
 
   Each entry contains the IP address and UDP port of the peer together with
   a subnet mask.
-  The Broadcast Distribution Table is configured either locally or via the
-  Write Broadcast Distribution Table service.
+  From Protocol_Revision 17 onwards, the Broadcast Distribution Table is
+  configured through the Network Port object's BBMD_Broadcast_Distribution_Table
+  property. Earlier revisions also support the BVLL Write Broadcast Distribution
+  Table service. `BACnet.Stack.BBMD` provides local configuration APIs and an
+  explicit `:allow_legacy_write_bdt` option for that older service.
 
   ## BACnet Specification References
 
@@ -63,7 +66,7 @@ defmodule BACnet.Protocol.BroadcastDistributionTableEntry do
   - `BACnet.Protocol` - central BVLL decoding that eventually yields BDT entries via BvlcFunction
   - `BACnet.Protocol.BvlcFunction` - the Write-BDT and Read-BDT-Ack messages that carry lists of these entries
   - `BACnet.Protocol.BvlcResult` - NAK that may be returned when a Write-BDT fails
-  - `BACnet.Stack.BBMD` - the component that owns and uses the BDT (start option `:bdt`, readonly flag, distribution logic)
+  - `BACnet.Stack.BBMD` - the component that owns and uses the BDT (start option `:bdt`, local APIs, legacy writes and distribution logic)
   """
 
   # TODO: Throw argument error in encode if not valid

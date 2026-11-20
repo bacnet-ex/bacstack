@@ -1314,7 +1314,7 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
   test "encoding invalid segment ACK 3" do
     assert {:error,
             %ArgumentError{
-              message: "Actual window size must be between 0 and 255 inclusive, got: 256"
+              message: "Actual window size must be between 1 and 127 inclusive, got: 256"
             }} =
              APDU.SegmentACK.encode(%APDU.SegmentACK{
                negative_ack: false,
@@ -1515,7 +1515,7 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
   end
 
   test "encoding error 2" do
-    assert {:ok, <<80, 2, 18, 145, 5, 145, 0>>} =
+    assert {:ok, <<80, 2, 18, 14, 145, 5, 145, 0, 15>>} =
              APDU.Error.encode(%APDU.Error{
                class: :services,
                code: :other,
@@ -1548,7 +1548,7 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
   end
 
   test "encoding error 5 (class as number)" do
-    assert {:ok, <<80, 2, 18, 145, 5, 145, 0>>} =
+    assert {:ok, <<80, 2, 18, 14, 145, 5, 145, 0, 15>>} =
              APDU.Error.encode(%APDU.Error{
                class: 5,
                code: :other,
@@ -1559,7 +1559,7 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
   end
 
   test "encoding error 6 (code as number)" do
-    assert {:ok, <<80, 2, 18, 145, 5, 145, 0>>} =
+    assert {:ok, <<80, 2, 18, 14, 145, 5, 145, 0, 15>>} =
              APDU.Error.encode(%APDU.Error{
                class: :services,
                code: 0,
@@ -1571,7 +1571,7 @@ defmodule BACnet.Test.Protocol.APDUEncodingTest do
 
   @tag :encoder_protocol
   test "encoding error 7 (encoder protocol)" do
-    assert <<80, 2, 18, 145, 5, 145, 0>> =
+    assert <<80, 2, 18, 14, 145, 5, 145, 0, 15>> =
              EncoderProtocol.encode(%APDU.Error{
                class: :services,
                code: :other,

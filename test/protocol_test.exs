@@ -109,6 +109,54 @@ defmodule BACnet.ProtocolTest do
              )
   end
 
+  test "NPCI decoding preserves both addresses, their lengths, hop count and payload" do
+    for length <- 1..7,
+        address <- [:binary.copy(<<0>>, length), <<0, :binary.copy(<<255>>, length - 1)::binary>>] do
+      wire =
+        <<1, 40, 0, 1, length, address::binary, 255, 254, length, address::binary, 17, 0x10, 8>>
+
+      assert {:ok, {npci, <<0x10, 8>>}} = Protocol.decode_npci(wire)
+      assert npci.destination == %NpciTarget{net: 1, address: address}
+      assert npci.source == %NpciTarget{net: 65_534, address: address}
+      assert npci.hopcount == 17
+      assert IO.iodata_to_binary([NPCI.encode(npci), <<0x10, 8>>]) == wire
+    end
+  end
+
+  test "NPCI decoding accepts the network-number boundaries" do
+    for dnet <- [1, 65_535], snet <- [1, 65_534] do
+      assert {:ok, {%NPCI{destination: destination, source: source}, <<>>}} =
+               Protocol.decode_npci(<<1, 40, dnet::16, 0, snet::16, 1, 0, 255>>)
+
+      assert destination == %NpciTarget{net: dnet, address: nil}
+      assert source == %NpciTarget{net: snet, address: <<0>>}
+    end
+  end
+
+  test "NPCI decoding rejects reserved network numbers and empty source addresses" do
+    assert {:error, :invalid_destination} = Protocol.decode_npci(<<1, 32, 0, 0, 0, 255>>)
+
+    for snet <- [0, 65_535] do
+      assert {:error, :invalid_source} = Protocol.decode_npci(<<1, 8, snet::16, 1, 42>>)
+    end
+
+    assert {:error, :invalid_source} = Protocol.decode_npci(<<1, 8, 0, 1, 0, 0x10, 8>>)
+  end
+
+  test "NPCI decoding rejects oversized and truncated target addresses" do
+    for {control, reason} <- [{32, :invalid_destination}, {8, :invalid_source}] do
+      assert {:error, ^reason} = Protocol.decode_npci(<<1, control, 0, 1, 8, 0::64, 255>>)
+      assert {:error, ^reason} = Protocol.decode_npci(<<1, control, 0, 1, 255, 0::2040, 255>>)
+
+      for length <- 1..7 do
+        truncated = :binary.copy(<<0>>, length - 1)
+
+        assert {:error, ^reason} =
+                 Protocol.decode_npci(<<1, control, 0, 1, length, truncated::binary>>)
+      end
+    end
+  end
+
   test "decoding BACnet NPCI invalid gracefully" do
     assert {:error, :invalid_npci} = Protocol.decode_npci(<<10, 08>>)
   end
@@ -143,7 +191,7 @@ defmodule BACnet.ProtocolTest do
                priority: :normal,
                expects_reply: false,
                destination: nil,
-               source: %NpciTarget{net: 3, address: 108},
+               source: %NpciTarget{net: 3, address: <<108>>},
                hopcount: nil,
                is_network_message: false
              }, <<48, 16, 6>>}} = Protocol.decode_npci(<<1, 8, 0, 3, 1, 108, 48, 16, 6>>)
@@ -158,7 +206,7 @@ defmodule BACnet.ProtocolTest do
             {%NPCI{
                priority: :normal,
                expects_reply: true,
-               destination: %NpciTarget{net: 2, address: 85},
+               destination: %NpciTarget{net: 2, address: <<85>>},
                source: nil,
                hopcount: 255,
                is_network_message: false
@@ -289,13 +337,39 @@ defmodule BACnet.ProtocolTest do
   end
 
   test "decoding BACnet NSDU I-Am-Router-To-Network empty list" do
-    assert {:ok,
-            %NetworkLayerProtocolMessage{
-              network_message_type: :i_am_router_to_network,
-              msg_type: nil,
-              data: []
-            }} =
-             Protocol.decode_nsdu(<<1>>)
+    assert {:error, :invalid_data} = Protocol.decode_nsdu(<<1>>)
+  end
+
+  test "decoding BACnet NSDU DNET lists rejects incomplete network numbers" do
+    for code <- [1, 4, 5], payload <- [<<0>>, <<0, 44, 0>>, <<0, 44, 0, 85, 255>>] do
+      assert {:error, :invalid_data} = Protocol.decode_nsdu(<<code, payload::binary>>)
+    end
+  end
+
+  test "decoding BACnet NSDU DNET lists with a single network" do
+    for {type, code} <- [
+          {:i_am_router_to_network, 1},
+          {:router_busy_to_network, 4},
+          {:router_available_to_network, 5}
+        ] do
+      assert {:ok,
+              %NetworkLayerProtocolMessage{
+                network_message_type: ^type,
+                msg_type: nil,
+                data: [44]
+              }} = Protocol.decode_nsdu(<<code, 0, 44>>)
+    end
+  end
+
+  test "decoding BACnet NSDU busy and available messages without DNETs" do
+    for {type, code} <- [{:router_busy_to_network, 4}, {:router_available_to_network, 5}] do
+      assert {:ok,
+              %NetworkLayerProtocolMessage{
+                network_message_type: ^type,
+                msg_type: nil,
+                data: []
+              }} = Protocol.decode_nsdu(<<code>>)
+    end
   end
 
   test "decoding BACnet NSDU I-Could-Be-Router-To-Network" do
@@ -439,6 +513,74 @@ defmodule BACnet.ProtocolTest do
               data: []
             }} =
              Protocol.decode_nsdu(<<7, 0>>)
+  end
+
+  test "decoding BACnet NSDU Initialize-Routing-Table-Ack without data" do
+    assert {:ok,
+            %NetworkLayerProtocolMessage{
+              network_message_type: :initialize_routing_table_ack,
+              msg_type: nil,
+              data: []
+            }} = Protocol.decode_nsdu(<<7>>)
+
+    assert {:error, :invalid_data} = Protocol.decode_nsdu(<<6>>)
+  end
+
+  test "decoding BACnet NSDU routing tables requires the advertised port count" do
+    for code <- [6, 7],
+        payload <- [
+          <<0, 0, 44, 1, 0>>,
+          <<1>>,
+          <<2, 0, 44, 1, 0>>,
+          <<1, 0, 44, 1, 0, 0, 45, 2, 0>>,
+          <<255, 0, 44, 1, 0>>
+        ] do
+      assert {:error, :invalid_data} = Protocol.decode_nsdu(<<code, payload::binary>>)
+    end
+  end
+
+  test "decoding BACnet NSDU routing tables rejects truncated entries and trailing bytes" do
+    for code <- [6, 7],
+        payload <- [
+          <<0, 255>>,
+          <<1, 0>>,
+          <<1, 0, 44>>,
+          <<1, 0, 44, 1>>,
+          <<1, 0, 44, 1, 2>>,
+          <<1, 0, 44, 1, 2, 7>>,
+          <<1, 0, 44, 1, 0, 255>>,
+          <<1, 0, 44, 1, 0, 0, 45>>,
+          <<2, 0, 44, 1, 0, 0, 45, 2, 2, 7>>
+        ] do
+      assert {:error, :invalid_data} = Protocol.decode_nsdu(<<code, payload::binary>>)
+    end
+  end
+
+  test "decoding BACnet NSDU routing tables with 255 ports" do
+    ports = for port <- 0..254, do: {port + 1, port, <<>>}
+    payload = for port <- 0..254, into: <<>>, do: <<port + 1::16, port, 0>>
+
+    for {type, code} <- [{:initialize_routing_table, 6}, {:initialize_routing_table_ack, 7}] do
+      assert {:ok,
+              %NetworkLayerProtocolMessage{
+                network_message_type: ^type,
+                msg_type: nil,
+                data: ^ports
+              }} = Protocol.decode_nsdu(<<code, 255, payload::binary>>)
+    end
+  end
+
+  test "decoding BACnet NSDU routing tables with maximum port info length" do
+    info = :binary.copy(<<7>>, 255)
+
+    for {type, code} <- [{:initialize_routing_table, 6}, {:initialize_routing_table_ack, 7}] do
+      assert {:ok,
+              %NetworkLayerProtocolMessage{
+                network_message_type: ^type,
+                msg_type: nil,
+                data: [{44, 255, ^info}]
+              }} = Protocol.decode_nsdu(<<code, 1, 0, 44, 255, 255, info::binary>>)
+    end
   end
 
   test "decoding BACnet NSDU Establish-Connection-To-Network" do

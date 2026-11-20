@@ -1,4 +1,5 @@
 defmodule BACnet.Stack.ClientTest do
+  alias BACnet.Protocol
   alias BACnet.Protocol.APDU
   alias BACnet.Protocol.NPCI
   alias BACnet.Protocol.NpciTarget
@@ -7,6 +8,7 @@ defmodule BACnet.Stack.ClientTest do
   alias BACnet.Stack.SegmentationEndpoint
   alias BACnet.Stack.Segmentator
   alias BACnet.Stack.SegmentsStore
+  alias BACnet.Stack.TransportBehaviour
   alias BACnet.Test.Stack.ApduFactory
   alias BACnet.Test.Stack.FakeTransport
 
@@ -116,7 +118,7 @@ defmodule BACnet.Stack.ClientTest do
     test "copies npci_source into send opts when the caller omits source", %{
       client: client
     } do
-      source = %NpciTarget{net: 2, address: 9}
+      source = %NpciTarget{net: 2, address: <<9>>}
       assert :ok = Client.configure(client, npci_source: source)
       assert :ok = Client.send(client, @dest, ApduFactory.who_is())
 
@@ -125,8 +127,8 @@ defmodule BACnet.Stack.ClientTest do
     end
 
     test "a caller source wins over npci_source", %{client: client} do
-      configured = %NpciTarget{net: 2, address: 9}
-      caller = %NpciTarget{net: 3, address: 4}
+      configured = %NpciTarget{net: 2, address: <<9>>}
+      caller = %NpciTarget{net: 3, address: <<4>>}
       assert :ok = Client.configure(client, npci_source: configured)
       assert :ok = Client.send(client, @dest, ApduFactory.who_is(), source: caller)
 
@@ -295,14 +297,52 @@ defmodule BACnet.Stack.ClientTest do
       assert_received {:fake_transport_send, @dest, _data, _opts}
     end
 
+    test "a wire-decoded source with leading zeros completes the routed request", %{
+      client: client,
+      transport: transport
+    } do
+      target = %NpciTarget{net: 10, address: <<0, 0x80, 0xFF>>}
+
+      assert :ok =
+               FakeTransport.set_send_result(transport, fn @dest, raw, opts ->
+                 {:ok, {header, payload}} =
+                   TransportBehaviour.build_bacnet_packet(raw, false, opts)
+
+                 {:ok, {outgoing, request}} =
+                   Protocol.decode_npci(IO.iodata_to_binary([header, payload]))
+
+                 assert outgoing.destination == target
+                 {:ok, %APDU.ConfirmedServiceRequest{invoke_id: invoke_id}} = APDU.decode(request)
+
+                 reply = EncoderProtocol.encode(ApduFactory.simple_ack(invoke_id))
+                 wire = IO.iodata_to_binary([<<1, 8, 0, 10, 3, 0, 0x80, 0xFF>>, reply])
+                 {:ok, {incoming, ack}} = Protocol.decode_npci(wire)
+
+                 send(
+                   client,
+                   {:bacnet_transport, {:bacnet_ipv4, FakeTransport}, @dest,
+                    {:apdu, :original_unicast, incoming, ack}, transport}
+                 )
+
+                 :ok
+               end)
+
+      for opts <- [[destination: target], [npci: NPCI.new(destination: target)]] do
+        assert {:ok, %APDU.SimpleACK{invoke_id: 0}} =
+                 Client.send(client, @dest, ApduFactory.read_property(), opts)
+
+        assert_received {:fake_transport_send, @dest, _data, _opts}
+      end
+    end
+
     test "routed targets with the same address on different networks have independent transactions",
          %{
            client: client,
            transport: transport
          } do
       req = ApduFactory.read_property()
-      target_a = %NpciTarget{net: 10, address: 7}
-      target_b = %NpciTarget{net: 20, address: 7}
+      target_a = %NpciTarget{net: 10, address: <<7>>}
+      target_b = %NpciTarget{net: 20, address: <<7>>}
 
       task_a =
         Task.async(fn ->
@@ -387,6 +427,44 @@ defmodule BACnet.Stack.ClientTest do
       assert {:error, :app_timeout} = Client.reply(client, ref, ApduFactory.simple_ack(8))
     end
 
+    test "a reply preserves the wire-decoded SADR as DADR and logs its exact octets", %{
+      client: client,
+      transport: transport
+    } do
+      request = EncoderProtocol.encode(ApduFactory.read_property(invoke_id: 8))
+      source_header = <<1, 12, 0, 3, 6, 0, 0x1A, 0x2B, 0x80, 0xFF, 0x5E>>
+      {:ok, {npci, raw}} = Protocol.decode_npci(IO.iodata_to_binary([source_header, request]))
+
+      :sys.replace_state(client, fn state ->
+        Logger.put_process_level(self(), :debug)
+        state
+      end)
+
+      log =
+        ExUnit.CaptureLog.capture_log([level: :debug], fn ->
+          send(
+            client,
+            {:bacnet_transport, {:bacnet_ipv4, FakeTransport}, @dest,
+             {:apdu, :original_unicast, npci, raw}, transport}
+          )
+
+          sync(client)
+
+          assert_received {:bacnet_client, ref, %APDU.ConfirmedServiceRequest{invoke_id: 8},
+                           {@dest, :original_unicast, ^npci}, ^client}
+
+          assert :ok = Client.reply(client, ref, ApduFactory.simple_ack(8))
+          assert_received {:fake_transport_send, @dest, reply, opts}
+          assert opts[:destination] == npci.source
+          {:ok, {header, _payload}} = TransportBehaviour.build_bacnet_packet(reply, false, opts)
+
+          assert IO.iodata_to_binary(header) ==
+                   <<1, 32, 0, 3, 6, 0, 0x1A, 0x2B, 0x80, 0xFF, 0x5E, 255>>
+        end)
+
+      assert log =~ "NPCI-3.00:1A:2B:80:FF:5E"
+    end
+
     test "a confirmed request with no receiver is rejected", %{
       transport: transport,
       store: store,
@@ -438,7 +516,7 @@ defmodule BACnet.Stack.ClientTest do
     end
 
     test "per-source apdu timeouts round-trip", %{client: client} do
-      target = %NpciTarget{net: 10, address: 5}
+      target = %NpciTarget{net: 10, address: <<5>>}
       assert :ok = Client.add_apdu_timeout(client, @dest, nil, 250)
       assert {:ok, %{{@dest, nil} => 250}} = Client.get_apdu_timeouts(client)
       assert :ok = Client.set_apdu_timeouts(client, %{{@dest, target} => 10})

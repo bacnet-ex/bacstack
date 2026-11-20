@@ -249,8 +249,12 @@ defmodule BACnet.Stack.TransportBehaviour do
 
   The following gets validated:
   - `expects_reply` in NPCI is not set if broadcast
-  - Valid `destination` option (is a `NpciTarget` struct - `address` is not validated)
-  - Valid `source` option (is a `NpciTarget` struct - `address` is not validated)
+  - Valid `destination` option (a `NpciTarget` with network 1..65535 and a binary
+    address of one to seven octets, or `nil` for a broadcast address)
+  - Valid `source` option (a `NpciTarget` with network 1..65534 and a nonempty
+    binary address of one to seven octets)
+
+  Address lengths and leading zero octets are preserved. See `BACnet.Protocol.NpciTarget`.
 
   The following options of `c:send/4` are used:
   - `destination: NpciTarget.t()`

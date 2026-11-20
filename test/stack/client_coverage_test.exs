@@ -467,7 +467,7 @@ defmodule BACnet.Stack.ClientCoverageTest do
     transport: transport
   } do
     req = ApduFactory.read_property()
-    target = %NpciTarget{net: 4, address: 9}
+    target = %NpciTarget{net: 4, address: <<9>>}
 
     task =
       Task.async(fn ->
@@ -482,11 +482,14 @@ defmodule BACnet.Stack.ClientCoverageTest do
     deliver(client, @dest, ApduFactory.simple_ack(0), transport, NPCI.new(source: target))
     assert {:ok, %APDU.SimpleACK{}} = Task.await(task)
 
-    npci = NPCI.new(destination: %NpciTarget{net: 4, address: 9})
+    npci = NPCI.new(destination: %NpciTarget{net: 4, address: <<9>>})
 
     task =
       Task.async(fn ->
-        Client.send(client, @dest, req, npci: npci, destination: %NpciTarget{net: 99, address: 9})
+        Client.send(client, @dest, req,
+          npci: npci,
+          destination: %NpciTarget{net: 99, address: <<9>>}
+        )
       end)
 
     assert_receive {:fake_transport_send, @dest, data, _opts}
@@ -498,7 +501,7 @@ defmodule BACnet.Stack.ClientCoverageTest do
       @dest,
       ApduFactory.simple_ack(0),
       transport,
-      NPCI.new(source: %NpciTarget{net: 4, address: 9})
+      NPCI.new(source: %NpciTarget{net: 4, address: <<9>>})
     )
 
     assert {:ok, %APDU.SimpleACK{}} = Task.await(task)
@@ -530,7 +533,7 @@ defmodule BACnet.Stack.ClientCoverageTest do
       @dest,
       ApduFactory.simple_ack(0),
       transport,
-      NPCI.new(source: %NpciTarget{net: 1, address: 9})
+      NPCI.new(source: %NpciTarget{net: 1, address: <<9>>})
     )
 
     assert {:ok, %APDU.SimpleACK{}} = Task.await(task)
@@ -779,7 +782,8 @@ defmodule BACnet.Stack.ClientCoverageTest do
     frame =
       {:bacnet_transport, {:test, FakeTransport}, @dest,
        {:apdu, :original_unicast,
-        NPCI.new(expects_reply: true, source: %NpciTarget{net: 2, address: 15}), raw}, transport}
+        NPCI.new(expects_reply: true, source: %NpciTarget{net: 2, address: <<15>>}), raw},
+       transport}
 
     send(client, frame)
     send(client, frame)
@@ -794,14 +798,15 @@ defmodule BACnet.Stack.ClientCoverageTest do
     client: client,
     transport: transport
   } do
-    assert :ok = Client.add_apdu_timeout(client, @dest, %NpciTarget{net: 2, address: 15}, 1)
+    assert :ok = Client.add_apdu_timeout(client, @dest, %NpciTarget{net: 2, address: <<15>>}, 1)
     raw = IO.iodata_to_binary(EncoderProtocol.encode(ApduFactory.read_property(invoke_id: 2)))
 
     send(
       client,
       {:bacnet_transport, {:test, FakeTransport}, @dest,
        {:apdu, :original_unicast,
-        NPCI.new(expects_reply: true, source: %NpciTarget{net: 2, address: 15}), raw}, transport}
+        NPCI.new(expects_reply: true, source: %NpciTarget{net: 2, address: <<15>>}), raw},
+       transport}
     )
 
     sync(client)
@@ -816,7 +821,8 @@ defmodule BACnet.Stack.ClientCoverageTest do
       client,
       {:bacnet_transport, {:test, FakeTransport}, @dest,
        {:apdu, :original_unicast,
-        NPCI.new(expects_reply: true, source: %NpciTarget{net: 2, address: 21}), raw}, transport}
+        NPCI.new(expects_reply: true, source: %NpciTarget{net: 2, address: <<21>>}), raw},
+       transport}
     )
 
     sync(client)
@@ -834,8 +840,8 @@ defmodule BACnet.Stack.ClientCoverageTest do
     client: client,
     transport: transport
   } do
-    target_a = %NpciTarget{net: 10, address: 7}
-    target_b = %NpciTarget{net: 20, address: 7}
+    target_a = %NpciTarget{net: 10, address: <<7>>}
+    target_b = %NpciTarget{net: 20, address: <<7>>}
     request = ApduFactory.read_property(invoke_id: 3)
 
     for target <- [target_a, target_b, target_a] do
@@ -866,8 +872,8 @@ defmodule BACnet.Stack.ClientCoverageTest do
          client: client,
          transport: transport
        } do
-    target_a = %NpciTarget{net: 10, address: 7}
-    target_b = %NpciTarget{net: 20, address: 7}
+    target_a = %NpciTarget{net: 10, address: <<7>>}
+    target_b = %NpciTarget{net: 20, address: <<7>>}
     assert :ok = Client.add_apdu_timeout(client, @dest, nil, 60_000)
     assert :ok = Client.add_apdu_timeout(client, @dest, target_a, 1)
     request = ApduFactory.read_property(invoke_id: 3)
@@ -892,7 +898,7 @@ defmodule BACnet.Stack.ClientCoverageTest do
     client: client,
     transport: transport
   } do
-    target = %NpciTarget{net: 10, address: 7}
+    target = %NpciTarget{net: 10, address: <<7>>}
     assert :ok = Client.configure(client, apdu_retries: 0)
 
     task =
@@ -952,7 +958,7 @@ defmodule BACnet.Stack.ClientCoverageTest do
       @dest,
       ApduFactory.simple_ack(4),
       transport,
-      NPCI.new(source: %NpciTarget{net: 2, address: 15})
+      NPCI.new(source: %NpciTarget{net: 2, address: <<15>>})
     )
 
     sync(client)
@@ -1023,7 +1029,7 @@ defmodule BACnet.Stack.ClientCoverageTest do
               ]
             }} = Task.await(task)
 
-    target = %NpciTarget{net: 2, address: 15}
+    target = %NpciTarget{net: 2, address: <<15>>}
 
     task =
       Task.async(fn ->
@@ -1120,7 +1126,7 @@ defmodule BACnet.Stack.ClientCoverageTest do
     assert failed_opts[:destination] == nil
 
     assert :ok = FakeTransport.set_send_result(transport, :ok)
-    source = %NpciTarget{net: 2, address: 15}
+    source = %NpciTarget{net: 2, address: <<15>>}
 
     send(
       client,
@@ -1156,8 +1162,8 @@ defmodule BACnet.Stack.ClientCoverageTest do
   } do
     assert :ok =
              Client.send(client, @dest, large_ack(),
-               source: %NpciTarget{net: 1, address: 1},
-               destination: %NpciTarget{net: 2, address: 2},
+               source: %NpciTarget{net: 1, address: <<1>>},
+               destination: %NpciTarget{net: 2, address: <<2>>},
                max_apdu_length: 50,
                max_segments: 16,
                segmentation_supported: :segmented_both
@@ -1182,7 +1188,7 @@ defmodule BACnet.Stack.ClientCoverageTest do
     transport: transport,
     store: store
   } do
-    targets = for net <- [10, 20], do: %NpciTarget{net: net, address: 7}
+    targets = for net <- [10, 20], do: %NpciTarget{net: net, address: <<7>>}
 
     tasks =
       for target <- targets do
@@ -1227,7 +1233,7 @@ defmodule BACnet.Stack.ClientCoverageTest do
     transport: transport,
     segmentator: segmentator
   } do
-    targets = for net <- [10, 20], do: %NpciTarget{net: net, address: 7}
+    targets = for net <- [10, 20], do: %NpciTarget{net: net, address: <<7>>}
 
     tasks =
       for target <- targets do
@@ -1310,7 +1316,7 @@ defmodule BACnet.Stack.ClientCoverageTest do
     other_client =
       start_supervised!({Client, Keyword.put(opts, :transport, {FakeTransport, other_portal})})
 
-    target = %NpciTarget{net: 10, address: 7}
+    target = %NpciTarget{net: 10, address: <<7>>}
 
     for {sender, portal} <- [{client, transport}, {other_client, other_portal}] do
       assert :ok = Client.unsubscribe(sender, self())
@@ -1368,7 +1374,7 @@ defmodule BACnet.Stack.ClientCoverageTest do
     store: store
   } do
     assert :ok = Client.unsubscribe(client, self())
-    targets = for net <- [10, 20], do: %NpciTarget{net: net, address: 7}
+    targets = for net <- [10, 20], do: %NpciTarget{net: net, address: <<7>>}
 
     endpoints =
       for target <- targets,
@@ -1439,7 +1445,7 @@ defmodule BACnet.Stack.ClientCoverageTest do
   } do
     forwarded = %BvlcForwardedNPDU{originating_ip: {10, 1, 2, 3}, originating_port: 47_808}
     origin = {forwarded.originating_ip, forwarded.originating_port}
-    target = %NpciTarget{net: 10, address: 7}
+    target = %NpciTarget{net: 10, address: <<7>>}
     npci = NPCI.new(source: target)
     [first | rest] = segmented_complex_ack(71)
 
@@ -1511,7 +1517,7 @@ defmodule BACnet.Stack.ClientCoverageTest do
     for wrong <- [
           %{endpoint | portal: self()},
           %{endpoint | transport_module: Limited},
-          %{endpoint | npci: %NpciTarget{net: 20, address: 7}},
+          %{endpoint | npci: %NpciTarget{net: 20, address: <<7>>}},
           %{endpoint | address: :other}
         ] do
       send(client, {:timeout, {:apdu_timer_setup, wrong, :requester, {@dest, nil, 0}}})

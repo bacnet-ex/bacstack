@@ -33,7 +33,7 @@ defmodule BACnet.Stack.SegmentationRolesTest do
          apdu_timeout: 60_000}
       )
 
-    target = %NpciTarget{net: 10, address: 7}
+    target = %NpciTarget{net: 10, address: <<7>>}
     endpoint = SegmentationEndpoint.new(FakeTransport, transport, @peer, destination: target)
 
     %{

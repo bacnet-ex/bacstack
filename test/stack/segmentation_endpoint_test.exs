@@ -43,7 +43,7 @@ defmodule BACnet.Stack.SegmentationEndpointTest do
 
   test "compatibility lookup resolves only one endpoint and local role" do
     endpoint = SegmentationEndpoint.new(FakeTransport, self(), :peer)
-    routed = %{endpoint | npci: %NpciTarget{net: 10, address: 7}}
+    routed = %{endpoint | npci: %NpciTarget{net: 10, address: <<7>>}}
     requester = {endpoint, :requester, 7}
     responder = {endpoint, :responder, 7}
     sequences = %{requester => :first, responder => :second, :unrelated => :ignore}
@@ -70,7 +70,7 @@ defmodule BACnet.Stack.SegmentationEndpointTest do
     endpoint =
       SegmentationEndpoint.new(FakeTransport, self(), :peer,
         npci: false,
-        destination: %NpciTarget{net: 10, address: 7}
+        destination: %NpciTarget{net: 10, address: <<7>>}
       )
 
     assert endpoint == SegmentationEndpoint.new(FakeTransport, self(), :peer)
@@ -80,7 +80,7 @@ defmodule BACnet.Stack.SegmentationEndpointTest do
     endpoint =
       SegmentationEndpoint.new(FakeTransport, self(), :peer,
         npci: NPCI.new([]),
-        destination: %NpciTarget{net: 10, address: 7}
+        destination: %NpciTarget{net: 10, address: <<7>>}
       )
 
     assert endpoint == SegmentationEndpoint.new(FakeTransport, self(), :peer)
