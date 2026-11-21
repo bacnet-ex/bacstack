@@ -1686,6 +1686,14 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
     %{struct | properties: new_props}
   end
 
+  defp amend_struct_spec_for_cause(
+         %AccessSpecification.Property{property_identifier: id, property_value: value} = struct,
+         _cause
+       )
+       when id in [:all, :required, :optional] and value != nil do
+    %{struct | property_identifier: :present_value}
+  end
+
   defp amend_struct_spec_for_cause(%AddressBinding{} = struct, _cause) do
     %{struct | address: generate_ascii_string(12)}
   end

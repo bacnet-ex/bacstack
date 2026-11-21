@@ -112,6 +112,50 @@ defmodule PropertyTest do
     assert {:error, :unknown_tag_encoding} = Property.parse(tagged: {0, <<>>, 0})
   end
 
+  test "decode invalid read access property invalid priority" do
+    assert {:error, :invalid_priority_for_read} =
+             Property.parse(
+               tagged: {0, <<Constants.macro_by_name(:property_identifier, :present_value)>>, 1},
+               tagged: {3, <<8>>, 1}
+             )
+  end
+
+  test "decode invalid write access property invalid priority" do
+    assert {:error, :invalid_priority} =
+             Property.parse(
+               tagged: {0, <<Constants.macro_by_name(:property_identifier, :present_value)>>, 1},
+               constructed: {2, {:real, 42.0}, 0},
+               tagged: {3, <<0>>, 1}
+             )
+
+    assert {:error, :invalid_priority} =
+             Property.parse(
+               tagged: {0, <<Constants.macro_by_name(:property_identifier, :present_value)>>, 1},
+               constructed: {2, {:real, 42.0}, 0},
+               tagged: {3, <<17>>, 1}
+             )
+  end
+
+  test "decode invalid write access property invalid special property identifiers" do
+    assert {:error, :invalid_property_identifier_for_write} =
+             Property.parse(
+               tagged: {0, <<Constants.macro_by_name(:property_identifier, :all)>>, 1},
+               constructed: {2, {:real, 42.0}, 0}
+             )
+
+    assert {:error, :invalid_property_identifier_for_write} =
+             Property.parse(
+               tagged: {0, <<Constants.macro_by_name(:property_identifier, :required)>>, 1},
+               constructed: {2, {:real, 42.0}, 0}
+             )
+
+    assert {:error, :invalid_property_identifier_for_write} =
+             Property.parse(
+               tagged: {0, <<Constants.macro_by_name(:property_identifier, :optional)>>, 1},
+               constructed: {2, {:real, 42.0}, 0}
+             )
+  end
+
   test "encode read access property" do
     assert {:ok,
             [
@@ -186,21 +230,20 @@ defmodule PropertyTest do
              })
   end
 
-  test "encode supplied write priority as context tag 3 after the value" do
-    property = %Property{
-      property_identifier: :present_value,
-      property_array_index: 2,
-      property_value: Encoding.create!({:real, 42.0}),
-      priority: 16
-    }
-
+  test "encode write access property with priority" do
     assert {:ok,
             [
               tagged: {0, <<Constants.macro_by_name(:property_identifier, :present_value)>>, 1},
               tagged: {1, <<2>>, 1},
               constructed: {2, {:real, 42.0}, 0},
               tagged: {3, <<16>>, 1}
-            ]} = Property.encode(property)
+            ]} =
+             Property.encode(%Property{
+               property_identifier: :present_value,
+               property_array_index: 2,
+               property_value: Encoding.create!({:real, 42.0}),
+               priority: 16
+             })
   end
 
   test "encode access property invalid atom" do
@@ -220,6 +263,34 @@ defmodule PropertyTest do
                property_array_index: :hello,
                priority: nil,
                property_value: nil
+             })
+  end
+
+  test "encode read access property invalid priority" do
+    assert {:error, :invalid_priority_for_read} =
+             Property.encode(%Property{
+               property_identifier: :present_value,
+               property_array_index: nil,
+               priority: 8,
+               property_value: nil
+             })
+  end
+
+  test "encode write access property invalid priority" do
+    assert {:error, :invalid_priority} =
+             Property.encode(%Property{
+               property_identifier: :present_value,
+               property_array_index: 2,
+               property_value: Encoding.create!({:real, 42.0}),
+               priority: 0
+             })
+
+    assert {:error, :invalid_priority} =
+             Property.encode(%Property{
+               property_identifier: :present_value,
+               property_array_index: 2,
+               property_value: Encoding.create!({:real, 42.0}),
+               priority: 17
              })
   end
 
@@ -288,6 +359,38 @@ defmodule PropertyTest do
                property_array_index: :there,
                priority: nil,
                property_value: :kenobi
+             })
+
+    assert false ==
+             Property.valid?(%Property{
+               property_identifier: :hello,
+               property_array_index: nil,
+               priority: 16,
+               property_value: nil
+             })
+
+    assert false ==
+             Property.valid?(%Property{
+               property_identifier: :all,
+               property_array_index: nil,
+               priority: nil,
+               property_value: Encoding.create!({:real, 42.0})
+             })
+
+    assert false ==
+             Property.valid?(%Property{
+               property_identifier: :required,
+               property_array_index: nil,
+               priority: nil,
+               property_value: Encoding.create!({:real, 42.0})
+             })
+
+    assert false ==
+             Property.valid?(%Property{
+               property_identifier: :optional,
+               property_array_index: nil,
+               priority: nil,
+               property_value: Encoding.create!({:real, 42.0})
              })
   end
 

@@ -96,7 +96,7 @@ defmodule BACnet.Protocol.BACnetTimestamp do
   @type t :: %__MODULE__{
           type: :time | :sequence_number | :datetime,
           time: BACnetTime.t() | nil,
-          sequence_number: non_neg_integer() | nil,
+          sequence_number: 0..65_535 | nil,
           datetime: BACnetDateTime.t() | nil
         }
 
@@ -122,7 +122,11 @@ defmodule BACnet.Protocol.BACnetTimestamp do
   end
 
   def encode(%__MODULE__{type: :sequence_number} = timestamp, opts) do
-    with {:ok, value, _header} <-
+    with nil <-
+           if(timestamp.sequence_number < 0 or timestamp.sequence_number > 65_535,
+             do: {:error, :invalid_sequence_number}
+           ),
+         {:ok, value, _header} <-
            ApplicationTags.encode_value({:unsigned_integer, timestamp.sequence_number}, opts) do
       {:ok, [{:tagged, {1, value, byte_size(value)}}]}
     end
@@ -186,14 +190,18 @@ defmodule BACnet.Protocol.BACnetTimestamp do
   defp do_parse({:tagged, {1, _value, _len}} = value) do
     case ApplicationTags.unfold_to_type(:unsigned_integer, value) do
       {:ok, {:unsigned_integer, seqnum}} ->
-        result = %__MODULE__{
-          type: :sequence_number,
-          sequence_number: seqnum,
-          datetime: nil,
-          time: nil
-        }
+        if seqnum > 65_535 do
+          {:error, :invalid_sequence_number}
+        else
+          result = %__MODULE__{
+            type: :sequence_number,
+            sequence_number: seqnum,
+            datetime: nil,
+            time: nil
+          }
 
-        {:ok, result}
+          {:ok, result}
+        end
 
       {:error, _term} = term ->
         term
@@ -242,7 +250,7 @@ defmodule BACnet.Protocol.BACnetTimestamp do
           sequence_number: num
         } = _t
       )
-      when is_integer(num) and num >= 0,
+      when is_integer(num) and num >= 0 and num <= 65_535,
       do: true
 
   def valid?(

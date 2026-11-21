@@ -154,6 +154,22 @@ defmodule BACnet.Protocol.PropertyValueTest do
     assert {:error, :invalid_data} = PropertyValue.parse(tagged: {0, "", 1})
   end
 
+  test "decode property value invalid priority" do
+    assert {:error, :invalid_priority} =
+             PropertyValue.parse(
+               tagged: {0, "U", 1},
+               constructed: {2, {:enumerated, 0}, 0},
+               tagged: {3, <<0>>, 1}
+             )
+
+    assert {:error, :invalid_priority} =
+             PropertyValue.parse(
+               tagged: {0, "U", 1},
+               constructed: {2, {:enumerated, 0}, 0},
+               tagged: {3, <<17>>, 1}
+             )
+  end
+
   test "decode all property values" do
     assert {:ok,
             [
@@ -254,6 +270,24 @@ defmodule BACnet.Protocol.PropertyValueTest do
                property_array_index: nil,
                property_value: Encoding.create!({:enumerated, 0}),
                priority: 5
+             })
+  end
+
+  test "encode property value invalid priority" do
+    assert {:error, :invalid_priority} =
+             PropertyValue.encode(%PropertyValue{
+               property_identifier: :present_value,
+               property_array_index: nil,
+               property_value: Encoding.create!({:enumerated, 0}),
+               priority: 0
+             })
+
+    assert {:error, :invalid_priority} =
+             PropertyValue.encode(%PropertyValue{
+               property_identifier: :present_value,
+               property_array_index: nil,
+               property_value: Encoding.create!({:enumerated, 0}),
+               priority: 17
              })
   end
 

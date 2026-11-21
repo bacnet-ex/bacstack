@@ -56,6 +56,7 @@ defmodule BACnet.Protocol.Services.WritePropertyMultiple do
   """
 
   alias BACnet.Protocol
+  alias BACnet.Protocol.AccessSpecification
   alias BACnet.Protocol.Constants
 
   require Constants
@@ -69,7 +70,7 @@ defmodule BACnet.Protocol.Services.WritePropertyMultiple do
   their new values and (for commandable properties) the priority to use for the write.
   """
   @type t :: %__MODULE__{
-          list: [Protocol.AccessSpecification.t()]
+          list: [AccessSpecification.t()]
         }
 
   @fields [
@@ -108,10 +109,24 @@ defmodule BACnet.Protocol.Services.WritePropertyMultiple do
     result =
       Enum.reduce_while(1..100_000//1, {request.parameters, []}, fn
         _iter, {tags, acc} ->
-          case Protocol.AccessSpecification.parse(tags) do
-            {:ok, {item, []}} -> {:halt, {:ok, [item | acc]}}
-            {:ok, {item, rest}} -> {:cont, {rest, [item | acc]}}
-            {:error, _term} = term -> {:halt, term}
+          case AccessSpecification.parse(tags) do
+            {:ok, {item, rest}} ->
+              cond do
+                Enum.any?(item.properties, fn
+                  %AccessSpecification.Property{property_value: nil} -> true
+                  _other -> false
+                end) ->
+                  {:halt, {:error, :missing_value_for_write}}
+
+                rest == [] ->
+                  {:halt, {:ok, [item | acc]}}
+
+                true ->
+                  {:cont, {rest, [item | acc]}}
+              end
+
+            {:error, _term} = term ->
+              {:halt, term}
           end
       end)
 
@@ -144,7 +159,7 @@ defmodule BACnet.Protocol.Services.WritePropertyMultiple do
     with {:ok, parameters} <-
            Enum.reduce_while(service.list, {:ok, []}, fn
              ras, {:ok, acc} ->
-               case Protocol.AccessSpecification.encode(ras) do
+               case AccessSpecification.encode(ras) do
                  {:ok, encoded} -> {:cont, {:ok, [encoded | acc]}}
                  term -> {:halt, term}
                end

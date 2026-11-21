@@ -61,6 +61,11 @@ defmodule BACnet.Protocol.BACnetTimestampTest do
     assert {:error, :invalid_tags} = BACnetTimestamp.parse(tagged: {1, <<>>, 0})
   end
 
+  test "decode invalid timestamp with sequence number too large" do
+    assert {:error, :invalid_sequence_number} =
+             BACnetTimestamp.parse(tagged: {1, <<255, 255, 255>>, 3})
+  end
+
   test "decode invalid timestamp with date time" do
     assert {:error, :invalid_tags} = BACnetTimestamp.parse(constructed: {2, [], 0})
   end
@@ -100,6 +105,26 @@ defmodule BACnet.Protocol.BACnetTimestampTest do
                sequence_number: nil,
                time: nil,
                type: :datetime
+             })
+  end
+
+  test "encode invalid timestamp with sequence number negative" do
+    assert {:error, :invalid_sequence_number} =
+             BACnetTimestamp.encode(%BACnetTimestamp{
+               datetime: nil,
+               sequence_number: -1,
+               time: nil,
+               type: :sequence_number
+             })
+  end
+
+  test "encode invalid timestamp with sequence number too large" do
+    assert {:error, :invalid_sequence_number} =
+             BACnetTimestamp.encode(%BACnetTimestamp{
+               datetime: nil,
+               sequence_number: 65_536,
+               time: nil,
+               type: :sequence_number
              })
   end
 
@@ -150,6 +175,22 @@ defmodule BACnet.Protocol.BACnetTimestampTest do
              BACnetTimestamp.valid?(%BACnetTimestamp{
                datetime: nil,
                sequence_number: :hello,
+               time: nil,
+               type: :sequence_number
+             })
+
+    assert false ==
+             BACnetTimestamp.valid?(%BACnetTimestamp{
+               datetime: nil,
+               sequence_number: -1,
+               time: nil,
+               type: :sequence_number
+             })
+
+    assert false ==
+             BACnetTimestamp.valid?(%BACnetTimestamp{
+               datetime: nil,
+               sequence_number: 65_536,
                time: nil,
                type: :sequence_number
              })

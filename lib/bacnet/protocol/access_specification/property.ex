@@ -58,7 +58,13 @@ defmodule BACnet.Protocol.AccessSpecification.Property do
   end
 
   def encode(%__MODULE__{} = property, _opts) do
-    with {:ok, property_identifier, _header} <-
+    with nil <-
+           if(
+             property.property_value != nil and
+               property.property_identifier in [:all, :required, :optional],
+             do: {:error, :invalid_property_identifier_for_write}
+           ),
+         {:ok, property_identifier, _header} <-
            ApplicationTags.encode_value(
              {:enumerated,
               Constants.by_name_atom(:property_identifier, property.property_identifier)}
@@ -83,9 +89,13 @@ defmodule BACnet.Protocol.AccessSpecification.Property do
                 {:ok, {:constructed, {2, base, 0}}}
               end
             else
-              {:ok, nil}
+              if property.priority != nil do
+                {:error, :invalid_priority_for_read}
+              else
+                {:ok, nil}
+              end
             end),
-         {:ok, priority} <- encode_priority(Map.get(property, :priority)) do
+         {:ok, priority} <- encode_priority(property.priority) do
       params = [
         {:tagged, {0, property_identifier, byte_size(property_identifier)}},
         array_index,
@@ -97,13 +107,18 @@ defmodule BACnet.Protocol.AccessSpecification.Property do
     end
   end
 
+  @spec encode_priority(1..16 | nil) :: {:ok | :error, term()}
+  defp encode_priority(priority)
+
   defp encode_priority(nil), do: {:ok, nil}
 
-  defp encode_priority(priority) do
+  defp encode_priority(priority) when priority >= 1 and priority <= 16 do
     with {:ok, encoded, _header} <- ApplicationTags.encode_value({:unsigned_integer, priority}) do
       {:ok, {:tagged, {3, encoded, byte_size(encoded)}}}
     end
   end
+
+  defp encode_priority(_priority), do: {:error, :invalid_priority}
 
   # A list is a sequence of values inside the property-value constructed tag,
   # the same way WriteProperty encodes a list of encodings.
@@ -137,7 +152,14 @@ defmodule BACnet.Protocol.AccessSpecification.Property do
            pattern_extract_tags(rest, {:tagged, {1, _t, _l}}, :unsigned_integer, true),
          {:ok, prop_value, rest} <-
            pattern_extract_tags(rest, {:constructed, {2, _t, _l}}, nil, true),
-         {:ok, priority, rest} <- parse_priority(prop_value, rest) do
+         {:ok, priority, rest} <-
+           pattern_extract_tags(rest, {:tagged, {3, _t, _l}}, :unsigned_integer, true),
+         nil <-
+           if(prop_value == nil and priority != nil, do: {:error, :invalid_priority_for_read}),
+         nil <-
+           if(priority != nil and (priority < 1 or priority > 16),
+             do: {:error, :invalid_priority}
+           ) do
       item =
         case Constants.by_value(
                :property_identifier,
@@ -145,38 +167,41 @@ defmodule BACnet.Protocol.AccessSpecification.Property do
                property_identifier
              ) do
           propident when propident in [:all, :required, :optional] ->
-            propident
+            if prop_value == nil do
+              {:ok, propident}
+            else
+              {:error, :invalid_property_identifier_for_write}
+            end
 
           propident ->
-            %__MODULE__{
-              property_identifier: propident,
-              property_array_index: property_array_index,
-              priority: priority,
-              property_value:
-                case prop_value do
-                  {:constructed, {2, tags, _len}} when is_list(tags) ->
-                    Enum.map(tags, &Encoding.create!/1)
+            {:ok,
+             %__MODULE__{
+               property_identifier: propident,
+               property_array_index: property_array_index,
+               priority: priority,
+               property_value:
+                 case prop_value do
+                   {:constructed, {2, tags, _len}} when is_list(tags) ->
+                     Enum.map(tags, &Encoding.create!/1)
 
-                  {:constructed, {2, tag, _len}} ->
-                    Encoding.create!(tag)
+                   {:constructed, {2, tag, _len}} ->
+                     Encoding.create!(tag)
 
-                  _else ->
-                    nil
-                end
-            }
+                   _else ->
+                     nil
+                 end
+             }}
         end
 
-      {:ok, {item, rest}}
+      case item do
+        {:ok, item} -> {:ok, {item, rest}}
+        err -> err
+      end
     else
       {:error, :missing_pattern} -> {:error, :invalid_tags}
       {:error, _err} = err -> err
     end
   end
-
-  defp parse_priority(nil, rest), do: {:ok, nil, rest}
-
-  defp parse_priority(_value, rest),
-    do: pattern_extract_tags(rest, {:tagged, {3, _t, _l}}, :unsigned_integer, true)
 
   @doc """
   Validates whether the given access specification property is in form valid.
@@ -195,12 +220,12 @@ defmodule BACnet.Protocol.AccessSpecification.Property do
           property_array_index: array_index
         } = property
       ) do
-    priority = Map.get(property, :priority)
-
     (Constants.has_by_name(:property_identifier, prop_identifier) or
        (is_integer(prop_identifier) and prop_identifier >= 0 and
           prop_identifier <= Constants.macro_by_name(:asn1, :max_instance_and_property_id))) and
       (is_nil(array_index) or (is_integer(array_index) and array_index >= 0)) and
-      (is_nil(priority) or priority in 1..16)
+      (is_nil(property.priority) or property.priority in 1..16) and
+      (property.property_value != nil or property.priority == nil) and
+      (property.property_value == nil or prop_identifier not in [:all, :required, :optional])
   end
 end

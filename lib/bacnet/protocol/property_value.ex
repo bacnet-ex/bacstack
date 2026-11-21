@@ -84,6 +84,10 @@ defmodule BACnet.Protocol.PropertyValue do
               {:ok, nil, nil}
             end),
          {:ok, value} <- do_encode_value(property.property_value),
+         nil <-
+           if(property.priority != nil and (property.priority < 1 or property.priority > 16),
+             do: {:error, :invalid_priority}
+           ),
          {:ok, priority, _header} <-
            (if property.priority do
               ApplicationTags.encode_value({:unsigned_integer, property.priority}, opts)
@@ -157,7 +161,11 @@ defmodule BACnet.Protocol.PropertyValue do
          {:ok, {:constructed, {2, value, _l}}, prop} <-
            pattern_extract_tags(prop, {:constructed, {2, _t, _l}}, nil, false),
          {:ok, priority, rest} <-
-           pattern_extract_tags(prop, {:tagged, {3, _t, _l}}, :unsigned_integer, true) do
+           pattern_extract_tags(prop, {:tagged, {3, _t, _l}}, :unsigned_integer, true),
+         nil <-
+           if(priority != nil and (priority < 1 or priority > 16),
+             do: {:error, :invalid_priority}
+           ) do
       propvalue = %__MODULE__{
         property_identifier:
           Constants.by_value(:property_identifier, property_identifier, property_identifier),

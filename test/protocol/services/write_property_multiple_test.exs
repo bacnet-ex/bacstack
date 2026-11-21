@@ -142,6 +142,23 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
              })
   end
 
+  test "decoding WritePropertyMultiple invalid missing value" do
+    assert {:error, :missing_value_for_write} =
+             WritePropertyMultiple.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :write_property_multiple,
+               parameters: [
+                 tagged: {0, <<0, 128, 0, 5>>, 4},
+                 constructed: {1, [tagged: {0, "U", 1}], 0}
+               ]
+             })
+  end
+
   test "encoding WritePropertyMultiple" do
     assert {:ok,
             %ConfirmedServiceRequest{
