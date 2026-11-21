@@ -220,11 +220,11 @@ defmodule BACnet.Protocol.Services.Common do
            ),
          {:ok, eventtype_raw, rest} <-
            pattern_extract_tags(rest, {:tagged, {6, _t, _l}}, :unsigned_integer, false),
-         {:ok, eventtype} <-
-           Constants.by_value_with_reason(
+         eventtype =
+           Constants.by_value(
              :event_type,
              eventtype_raw,
-             {:unknown_event_type, eventtype_raw}
+             eventtype_raw
            ),
          {:ok, message_text, rest} <-
            pattern_extract_tags(rest, {:tagged, {7, _t, _l}}, :character_string, true),
@@ -238,37 +238,40 @@ defmodule BACnet.Protocol.Services.Common do
            ),
          optional = notifytype == :ack_notification,
          {:ok, ack_required, rest} <-
-           pattern_extract_tags(rest, {:tagged, {9, _t, _l}}, :boolean, optional),
+           pattern_extract_tags(rest, {:tagged, {9, _t, _l}}, :boolean, true),
+         nil <- if(optional and ack_required != nil, do: {:error, :invalid_present_parameter}),
          {:ok, from_state_raw, rest} <-
-           pattern_extract_tags(rest, {:tagged, {10, _t, _l}}, :unsigned_integer, optional),
-         {:ok, from_state} <-
+           pattern_extract_tags(rest, {:tagged, {10, _t, _l}}, :unsigned_integer, true),
+         nil <- if(optional and from_state_raw != nil, do: {:error, :invalid_present_parameter}),
+         from_state =
            (case from_state_raw do
               nil ->
                 {:ok, nil}
 
               _term ->
-                Constants.by_value_with_reason(
+                Constants.by_value(
                   :event_state,
                   from_state_raw,
-                  {:unknown_event_state, from_state_raw}
+                  from_state_raw
                 )
             end),
          {:ok, to_state_raw, rest} <-
            pattern_extract_tags(rest, {:tagged, {11, _t, _l}}, :unsigned_integer, false),
-         {:ok, to_state} <-
+         to_state =
            (case to_state_raw do
               nil ->
                 {:ok, nil}
 
               _term ->
-                Constants.by_value_with_reason(
+                Constants.by_value(
                   :event_state,
                   to_state_raw,
-                  {:unknown_event_state, to_state_raw}
+                  to_state_raw
                 )
             end),
          {:ok, eventvalues_raw, _rest} <-
-           pattern_extract_tags(rest, {:constructed, {12, _t, _l}}, nil, optional),
+           pattern_extract_tags(rest, {:constructed, {12, _t, _l}}, nil, true),
+         nil <- if(optional and eventvalues_raw != nil, do: {:error, :invalid_present_parameter}),
          {:ok, event_values} <-
            (case eventvalues_raw do
               nil ->
@@ -334,11 +337,11 @@ defmodule BACnet.Protocol.Services.Common do
            ApplicationTags.encode_value({:unsigned_integer, service.notification_class}),
          {:ok, priority, _header} <-
            ApplicationTags.encode_value({:unsigned_integer, service.priority}),
-         {:ok, event_type_c} <-
-           Constants.by_name_with_reason(
+         event_type_c =
+           Constants.by_name(
              :event_type,
              service.event_type,
-             {:unknown_event_type, service.event_type}
+             service.event_type
            ),
          {:ok, eventtype, _header} <-
            ApplicationTags.encode_value({:unsigned_integer, event_type_c}),
@@ -376,29 +379,30 @@ defmodule BACnet.Protocol.Services.Common do
             end),
          {:ok, from_state} <-
            (if service.notify_type != :ack_notification and service.from_state do
-              with {:ok, from_state_c} <-
-                     Constants.by_name_with_reason(
-                       :event_state,
-                       service.from_state,
-                       {:unknown_event_state, service.from_state}
-                     ),
-                   {:ok, from_state, _header} <-
+              from_state_c =
+                Constants.by_name(
+                  :event_state,
+                  service.from_state,
+                  service.from_state
+                )
+
+              with {:ok, from_state, _header} <-
                      ApplicationTags.encode_value({:unsigned_integer, from_state_c}) do
                 {:ok, {:tagged, {10, from_state, byte_size(from_state)}}}
               end
             else
               {:ok, nil}
             end),
-         {:ok, to_state_c} <-
-           Constants.by_name_with_reason(
+         to_state_c =
+           Constants.by_name(
              :event_state,
              service.to_state,
-             {:unknown_event_state, service.to_state}
+             service.to_state
            ),
          {:ok, to_state, _header} <-
            ApplicationTags.encode_value({:unsigned_integer, to_state_c}),
          {:ok, event_values} <-
-           (if service.event_values do
+           (if service.notify_type != :ack_notification and service.event_values do
               case Protocol.NotificationParameters.encode(service.event_values, opts) do
                 {:ok, tags} -> {:ok, {:constructed, {12, tags, 0}}}
                 term -> term

@@ -29,7 +29,7 @@ defmodule BACnet.Protocol.EventInformation do
   """
   @type t :: %__MODULE__{
           object_identifier: ObjectIdentifier.t(),
-          event_state: Constants.event_state(),
+          event_state: Constants.event_state() | 0..65_535,
           acknowledged_transitions: EventTransitionBits.t(),
           event_timestamps: EventTimestamps.t(),
           notify_type: Constants.notify_type(),
@@ -57,11 +57,11 @@ defmodule BACnet.Protocol.EventInformation do
   def encode(%__MODULE__{} = event, opts \\ []) do
     with {:ok, obj, _header} <-
            ApplicationTags.encode_value({:object_identifier, event.object_identifier}),
-         {:ok, event_state_c} <-
-           Constants.by_name_with_reason(
+         event_state_c =
+           Constants.by_name(
              :event_state,
              event.event_state,
-             {:unknown_state, event.event_state}
+             event.event_state
            ),
          {:ok, event_state, _header} <-
            ApplicationTags.encode_value({:enumerated, event_state_c}),
@@ -106,11 +106,11 @@ defmodule BACnet.Protocol.EventInformation do
            pattern_extract_tags(tags, {:tagged, {0, _c, _l}}, :object_identifier, false),
          {:ok, event_state, rest} <-
            pattern_extract_tags(rest, {:tagged, {1, _c, _l}}, :enumerated, false),
-         {:ok, event_state_c} <-
-           Constants.by_value_with_reason(
+         event_state_c =
+           Constants.by_value(
              :event_state,
              event_state,
-             {:unknown_state, event_state}
+             event_state
            ),
          {:ok, {offnormal, fault, normal}, rest} <-
            pattern_extract_tags(rest, {:tagged, {2, _c, _l}}, :bitstring, false),
@@ -176,7 +176,8 @@ defmodule BACnet.Protocol.EventInformation do
           event_priorities: %EventPriorities{} = priorities
         } = _t
       ) do
-    ObjectIdentifier.valid?(obj_ref) and Constants.has_by_name(:event_state, state) and
+    ObjectIdentifier.valid?(obj_ref) and
+      (Constants.has_by_name(:event_state, state) or (is_integer(state) and state in 0..65_535)) and
       EventTransitionBits.valid?(ack_trans) and EventTimestamps.valid?(event) and
       Constants.has_by_name(:notify_type, type) and EventTransitionBits.valid?(enable) and
       EventPriorities.valid?(priorities)

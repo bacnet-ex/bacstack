@@ -110,7 +110,6 @@ defmodule BACnet.Test.Protocol.Services.UnconfirmedEventNotificationTest do
                  tagged: {4, <<1>>, 1},
                  tagged: {5, <<200>>, 1},
                  tagged: {6, <<6>>, 1},
-                 tagged: {8, <<0>>, 1},
                  tagged: {9, <<1>>, 1},
                  tagged: {10, <<3>>, 1},
                  tagged: {11, <<0>>, 1}
@@ -181,6 +180,115 @@ defmodule BACnet.Test.Protocol.Services.UnconfirmedEventNotificationTest do
              UnconfirmedEventNotification.from_apdu(%UnconfirmedServiceRequest{
                service: :unconfirmed_text_notification,
                parameters: []
+             })
+  end
+
+  test "decoding UnconfirmedEventNotification with unknown event type" do
+    assert {:ok,
+            %UnconfirmedEventNotification{
+              event_type: 255,
+              message_text: nil,
+              notify_type: :alarm,
+              ack_required: true,
+              from_state: :high_limit,
+              to_state: :normal
+            }} =
+             UnconfirmedEventNotification.from_apdu(%UnconfirmedServiceRequest{
+               service: :unconfirmed_event_notification,
+               parameters: [
+                 tagged: {0, "{", 1},
+                 tagged: {1, <<2, 15, 226, 104>>, 4},
+                 tagged: {2, <<0, 45, 198, 208>>, 4},
+                 constructed: {3, {:tagged, {0, <<2, 12, 49, 0>>, 4}}, 0},
+                 tagged: {4, <<1>>, 1},
+                 tagged: {5, <<200>>, 1},
+                 tagged: {6, <<255>>, 1},
+                 tagged: {8, <<0>>, 1},
+                 tagged: {9, <<1>>, 1},
+                 tagged: {10, <<3>>, 1},
+                 tagged: {11, <<0>>, 1},
+                 constructed:
+                   {12,
+                    {:constructed,
+                     {6,
+                      [
+                        tagged: {0, "U", 1},
+                        constructed: {2, {:real, 1.0}, 0},
+                        tagged: {3, "\a", 1}
+                      ], 0}}, 0}
+               ]
+             })
+  end
+
+  test "decoding UnconfirmedEventNotification with unknown event state" do
+    assert {:ok,
+            %UnconfirmedEventNotification{
+              event_type: :complex_event_type,
+              message_text: nil,
+              notify_type: :alarm,
+              ack_required: true,
+              from_state: 255,
+              to_state: :normal
+            }} =
+             UnconfirmedEventNotification.from_apdu(%UnconfirmedServiceRequest{
+               service: :unconfirmed_event_notification,
+               parameters: [
+                 tagged: {0, "{", 1},
+                 tagged: {1, <<2, 15, 226, 104>>, 4},
+                 tagged: {2, <<0, 45, 198, 208>>, 4},
+                 constructed: {3, {:tagged, {0, <<2, 12, 49, 0>>, 4}}, 0},
+                 tagged: {4, <<1>>, 1},
+                 tagged: {5, <<200>>, 1},
+                 tagged: {6, <<6>>, 1},
+                 tagged: {8, <<0>>, 1},
+                 tagged: {9, <<1>>, 1},
+                 tagged: {10, <<255>>, 1},
+                 tagged: {11, <<0>>, 1},
+                 constructed:
+                   {12,
+                    {:constructed,
+                     {6,
+                      [
+                        tagged: {0, "U", 1},
+                        constructed: {2, {:real, 1.0}, 0},
+                        tagged: {3, "\a", 1}
+                      ], 0}}, 0}
+               ]
+             })
+
+    assert {:ok,
+            %UnconfirmedEventNotification{
+              event_type: :complex_event_type,
+              message_text: nil,
+              notify_type: :alarm,
+              ack_required: true,
+              from_state: :high_limit,
+              to_state: 255
+            }} =
+             UnconfirmedEventNotification.from_apdu(%UnconfirmedServiceRequest{
+               service: :unconfirmed_event_notification,
+               parameters: [
+                 tagged: {0, "{", 1},
+                 tagged: {1, <<2, 15, 226, 104>>, 4},
+                 tagged: {2, <<0, 45, 198, 208>>, 4},
+                 constructed: {3, {:tagged, {0, <<2, 12, 49, 0>>, 4}}, 0},
+                 tagged: {4, <<1>>, 1},
+                 tagged: {5, <<200>>, 1},
+                 tagged: {6, <<6>>, 1},
+                 tagged: {8, <<0>>, 1},
+                 tagged: {9, <<1>>, 1},
+                 tagged: {10, <<3>>, 1},
+                 tagged: {11, <<255>>, 1},
+                 constructed:
+                   {12,
+                    {:constructed,
+                     {6,
+                      [
+                        tagged: {0, "U", 1},
+                        constructed: {2, {:real, 1.0}, 0},
+                        tagged: {3, "\a", 1}
+                      ], 0}}, 0}
+               ]
              })
   end
 
@@ -256,6 +364,166 @@ defmodule BACnet.Test.Protocol.Services.UnconfirmedEventNotificationTest do
                      }
                    ]
                  }
+               },
+               []
+             )
+  end
+
+  test "encoding UnconfirmedEventNotification with custom event type" do
+    assert {:ok,
+            %UnconfirmedServiceRequest{
+              service: :unconfirmed_event_notification,
+              parameters: [
+                tagged: {0, "{", 1},
+                tagged: {1, <<2, 15, 226, 104>>, 4},
+                tagged: {2, <<0, 45, 198, 208>>, 4},
+                constructed: {3, {:tagged, {0, <<2, 12, 49, 0>>, 4}}, 0},
+                tagged: {4, <<1>>, 1},
+                tagged: {5, <<200>>, 1},
+                tagged: {6, <<255>>, 1},
+                tagged: {8, <<0>>, 1},
+                tagged: {9, <<1>>, 1},
+                tagged: {10, <<3>>, 1},
+                tagged: {11, <<0>>, 1}
+              ]
+            }} =
+             UnconfirmedEventNotification.to_apdu(
+               %UnconfirmedEventNotification{
+                 process_identifier: 123,
+                 initiating_device: %ObjectIdentifier{
+                   type: :device,
+                   instance: 1_041_000
+                 },
+                 event_object: %ObjectIdentifier{
+                   type: :analog_input,
+                   instance: 3_000_016
+                 },
+                 timestamp: %BACnetTimestamp{
+                   type: :time,
+                   time: %BACnetTime{
+                     hour: 2,
+                     minute: 12,
+                     second: 49,
+                     hundredth: 0
+                   },
+                   sequence_number: nil,
+                   datetime: nil
+                 },
+                 notification_class: 1,
+                 priority: 200,
+                 event_type: 255,
+                 message_text: nil,
+                 notify_type: :alarm,
+                 ack_required: true,
+                 from_state: :high_limit,
+                 to_state: :normal,
+                 event_values: nil
+               },
+               []
+             )
+  end
+
+  test "encoding UnconfirmedEventNotification with custom event state" do
+    assert {:ok,
+            %UnconfirmedServiceRequest{
+              service: :unconfirmed_event_notification,
+              parameters: [
+                tagged: {0, "{", 1},
+                tagged: {1, <<2, 15, 226, 104>>, 4},
+                tagged: {2, <<0, 45, 198, 208>>, 4},
+                constructed: {3, {:tagged, {0, <<2, 12, 49, 0>>, 4}}, 0},
+                tagged: {4, <<1>>, 1},
+                tagged: {5, <<200>>, 1},
+                tagged: {6, <<6>>, 1},
+                tagged: {8, <<0>>, 1},
+                tagged: {9, <<1>>, 1},
+                tagged: {10, <<255>>, 1},
+                tagged: {11, <<0>>, 1}
+              ]
+            }} =
+             UnconfirmedEventNotification.to_apdu(
+               %UnconfirmedEventNotification{
+                 process_identifier: 123,
+                 initiating_device: %ObjectIdentifier{
+                   type: :device,
+                   instance: 1_041_000
+                 },
+                 event_object: %ObjectIdentifier{
+                   type: :analog_input,
+                   instance: 3_000_016
+                 },
+                 timestamp: %BACnetTimestamp{
+                   type: :time,
+                   time: %BACnetTime{
+                     hour: 2,
+                     minute: 12,
+                     second: 49,
+                     hundredth: 0
+                   },
+                   sequence_number: nil,
+                   datetime: nil
+                 },
+                 notification_class: 1,
+                 priority: 200,
+                 event_type: :complex_event_type,
+                 message_text: nil,
+                 notify_type: :alarm,
+                 ack_required: true,
+                 from_state: 255,
+                 to_state: :normal,
+                 event_values: nil
+               },
+               []
+             )
+
+    assert {:ok,
+            %UnconfirmedServiceRequest{
+              service: :unconfirmed_event_notification,
+              parameters: [
+                tagged: {0, "{", 1},
+                tagged: {1, <<2, 15, 226, 104>>, 4},
+                tagged: {2, <<0, 45, 198, 208>>, 4},
+                constructed: {3, {:tagged, {0, <<2, 12, 49, 0>>, 4}}, 0},
+                tagged: {4, <<1>>, 1},
+                tagged: {5, <<200>>, 1},
+                tagged: {6, <<6>>, 1},
+                tagged: {8, <<0>>, 1},
+                tagged: {9, <<1>>, 1},
+                tagged: {10, <<3>>, 1},
+                tagged: {11, <<255>>, 1}
+              ]
+            }} =
+             UnconfirmedEventNotification.to_apdu(
+               %UnconfirmedEventNotification{
+                 process_identifier: 123,
+                 initiating_device: %ObjectIdentifier{
+                   type: :device,
+                   instance: 1_041_000
+                 },
+                 event_object: %ObjectIdentifier{
+                   type: :analog_input,
+                   instance: 3_000_016
+                 },
+                 timestamp: %BACnetTimestamp{
+                   type: :time,
+                   time: %BACnetTime{
+                     hour: 2,
+                     minute: 12,
+                     second: 49,
+                     hundredth: 0
+                   },
+                   sequence_number: nil,
+                   datetime: nil
+                 },
+                 notification_class: 1,
+                 priority: 200,
+                 event_type: :complex_event_type,
+                 message_text: nil,
+                 notify_type: :alarm,
+                 ack_required: true,
+                 from_state: :high_limit,
+                 to_state: 255,
+                 event_values: nil
                },
                []
              )
@@ -363,6 +631,67 @@ defmodule BACnet.Test.Protocol.Services.UnconfirmedEventNotificationTest do
                },
                []
              )
+  end
+
+  test "decoding ConfirmedEventNotification invalid present event parameters" do
+    assert {:error, :invalid_present_parameter} =
+             UnconfirmedEventNotification.from_apdu(%UnconfirmedServiceRequest{
+               service: :unconfirmed_event_notification,
+               parameters: [
+                 tagged: {0, "{", 1},
+                 tagged: {1, <<2, 15, 226, 104>>, 4},
+                 tagged: {2, <<0, 45, 198, 208>>, 4},
+                 constructed: {3, {:tagged, {0, <<2, 12, 49, 0>>, 4}}, 0},
+                 tagged: {4, <<1>>, 1},
+                 tagged: {5, <<200>>, 1},
+                 tagged: {6, <<6>>, 1},
+                 tagged: {8, <<2>>, 1},
+                 tagged: {9, <<1>>, 1}
+               ]
+             })
+
+    assert {:error, :invalid_present_parameter} =
+             UnconfirmedEventNotification.from_apdu(%UnconfirmedServiceRequest{
+               service: :unconfirmed_event_notification,
+               parameters: [
+                 tagged: {0, "{", 1},
+                 tagged: {1, <<2, 15, 226, 104>>, 4},
+                 tagged: {2, <<0, 45, 198, 208>>, 4},
+                 constructed: {3, {:tagged, {0, <<2, 12, 49, 0>>, 4}}, 0},
+                 tagged: {4, <<1>>, 1},
+                 tagged: {5, <<200>>, 1},
+                 tagged: {6, <<6>>, 1},
+                 tagged: {8, <<2>>, 1},
+                 tagged: {10, <<3>>, 1}
+               ]
+             })
+
+    assert {:error, :invalid_present_parameter} =
+             UnconfirmedEventNotification.from_apdu(%UnconfirmedServiceRequest{
+               service: :unconfirmed_event_notification,
+               parameters: [
+                 tagged: {0, "{", 1},
+                 tagged: {1, <<2, 15, 226, 104>>, 4},
+                 tagged: {2, <<0, 45, 198, 208>>, 4},
+                 constructed: {3, {:tagged, {0, <<2, 12, 49, 0>>, 4}}, 0},
+                 tagged: {4, <<1>>, 1},
+                 tagged: {5, <<200>>, 1},
+                 tagged: {6, <<6>>, 1},
+                 tagged: {8, <<2>>, 1},
+                 tagged: {9, <<1>>, 1},
+                 tagged: {10, <<3>>, 1},
+                 tagged: {11, <<0>>, 1},
+                 constructed:
+                   {12,
+                    {:constructed,
+                     {6,
+                      [
+                        tagged: {0, "U", 1},
+                        constructed: {2, {:real, 1.0}, 0},
+                        tagged: {3, "\a", 1}
+                      ], 0}}, 0}
+               ]
+             })
   end
 
   test "protocol implementation get name" do

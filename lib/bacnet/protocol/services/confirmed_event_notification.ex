@@ -54,12 +54,12 @@ defmodule BACnet.Protocol.Services.ConfirmedEventNotification do
           timestamp: Protocol.BACnetTimestamp.t(),
           notification_class: non_neg_integer(),
           priority: Protocol.ApplicationTags.unsigned8(),
-          event_type: Constants.event_type(),
+          event_type: Constants.event_type() | 0..65_535,
           message_text: String.t() | nil,
           notify_type: Constants.notify_type(),
           ack_required: boolean() | nil,
-          from_state: Constants.event_state() | nil,
-          to_state: Constants.event_state() | nil,
+          from_state: Constants.event_state() | 0..65_535 | nil,
+          to_state: Constants.event_state() | 0..65_535 | nil,
           event_values: Protocol.NotificationParameters.notification_parameter() | nil
         }
 
