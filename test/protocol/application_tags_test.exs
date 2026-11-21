@@ -633,6 +633,36 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
              ApplicationTags.encode({:character_string, "❤"}, encoding: :iso_8859_1)
   end
 
+  test "encode date invalid year 1899" do
+    assert {:error, :invalid_value} =
+             ApplicationTags.encode(%BACnetDate{
+               year: 1899,
+               month: 12,
+               day: 1,
+               weekday: 1
+             })
+  end
+
+  test "encode date invalid year 0" do
+    assert {:error, :invalid_value} =
+             ApplicationTags.encode(%BACnetDate{
+               year: 0,
+               month: 12,
+               day: 1,
+               weekday: 1
+             })
+  end
+
+  test "encode elixir date invalid year 1899" do
+    assert {:error, :invalid_value} =
+             ApplicationTags.encode({:date, Date.new!(1899, 12, 9)})
+  end
+
+  test "encode elixir date invalid year 0" do
+    assert {:error, :invalid_value} =
+             ApplicationTags.encode({:date, Date.new!(0, 12, 9)})
+  end
+
   test "encode elixir date 2022-12-09" do
     assert {:ok, <<0xA4, 122, 12, 9, 5>>} =
              ApplicationTags.encode({:date, Date.new!(2022, 12, 9)})

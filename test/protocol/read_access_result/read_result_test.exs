@@ -114,6 +114,15 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResultTest do
              )
   end
 
+  test "decode read result error invalid both given" do
+    assert {:error, :invalid_value_and_error} =
+             ReadResult.parse(
+               tagged: {2, "U", 1},
+               constructed: {4, {:enumerated, 1}, 0},
+               constructed: {5, [enumerated: 2, enumerated: 65_535], 0}
+             )
+  end
+
   test "encode read result value" do
     assert {:ok,
             [

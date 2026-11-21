@@ -191,13 +191,13 @@ defmodule BACnet.Protocol.ApplicationTags do
   defguardp is_valid_undef2(term) when term == 255
 
   defguardp is_valid_date(year, month, day, weekday)
-            when (is_valid_undef(year) or year in 0..254 or year in 1900..2154) and
+            when (is_valid_undef(year) or year in 1900..2154) and
                    (is_valid_undef(month) or month in [:even, :odd] or month in 1..14) and
                    (is_valid_undef(day) or day in [:even, :odd, :last] or day in 1..34) and
                    (is_valid_undef(weekday) or weekday in 1..7)
 
   defguardp is_valid_date2(year, month, day, weekday)
-            when (is_valid_undef2(year) or year in 0..254 or year in 1900..2154) and
+            when (is_valid_undef2(year) or year in 0..254) and
                    (is_valid_undef2(month) or month in [:even, :odd] or month in 1..14) and
                    (is_valid_undef2(day) or day in [:even, :odd, :last] or day in 1..34) and
                    (is_valid_undef2(weekday) or weekday in 1..7)

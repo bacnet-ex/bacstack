@@ -141,6 +141,11 @@ defmodule BACnet.Protocol.Services.SubscribeCovProperty do
            pattern_extract_tags(rest, {:tagged, {2, _t, _l}}, :boolean, true),
          {:ok, lifetime, rest} <-
            pattern_extract_tags(rest, {:tagged, {3, _t, _l}}, :unsigned_integer, true),
+         nil <- if(lifetime == 0, do: {:error, :invalid_lifetime}),
+         nil <-
+           if(is_nil(issue_confirmed) != is_nil(lifetime),
+             do: {:error, :invalid_confirmed_lifetime_presence_combination}
+           ),
          {:ok, {:constructed, {4, property_tags, _len}}, rest} <-
            pattern_extract_tags(rest, {:constructed, {4, _t, _l}}, nil, false),
          {:ok, {property, _rest}} <- Protocol.PropertyRef.parse(List.wrap(property_tags)),
@@ -190,11 +195,15 @@ defmodule BACnet.Protocol.Services.SubscribeCovProperty do
                 {:ok, nil}
 
               _term ->
-                with {:ok, bytes, _header} <-
-                       ApplicationTags.encode_value(
-                         {:unsigned_integer, service.issue_confirmed_notifications}
-                       ) do
-                  {:ok, {:tagged, {2, bytes, byte_size(bytes)}}}
+                if service.lifetime == nil do
+                  {:error, :invalid_missing_lifetime}
+                else
+                  with {:ok, bytes, _header} <-
+                         ApplicationTags.encode_value(
+                           {:unsigned_integer, service.issue_confirmed_notifications}
+                         ) do
+                    {:ok, {:tagged, {2, bytes, byte_size(bytes)}}}
+                  end
                 end
             end),
          {:ok, lifetime} <-
@@ -203,9 +212,13 @@ defmodule BACnet.Protocol.Services.SubscribeCovProperty do
                 {:ok, nil}
 
               _term ->
-                with {:ok, bytes, _header} <-
-                       ApplicationTags.encode_value({:unsigned_integer, service.lifetime}) do
-                  {:ok, {:tagged, {3, bytes, byte_size(bytes)}}}
+                if service.issue_confirmed_notifications == nil do
+                  {:error, :invalid_missing_confirmed}
+                else
+                  with {:ok, bytes, _header} <-
+                         ApplicationTags.encode_value({:unsigned_integer, service.lifetime}) do
+                    {:ok, {:tagged, {3, bytes, byte_size(bytes)}}}
+                  end
                 end
             end),
          {:ok, monitored_property} <-

@@ -137,7 +137,7 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResult do
            pattern_extract_tags(rest, {:constructed, {5, _t, _l}}, nil, true),
          {:ok, error} <- create_error(error_raw),
          :ok <-
-           (if value == nil and error == nil do
+           (if (value == nil and error == nil) or (value != nil and error != nil) do
               {:error, :invalid_value_and_error}
             else
               :ok
@@ -220,7 +220,7 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResult do
 
   defp create_error({:constructed, {5, error, _len}}) do
     case BACnetError.parse(error) do
-      {:ok, {err, []}} ->
+      {:ok, {err, _rest}} ->
         {:ok, err}
 
       {:error, _err} = err ->

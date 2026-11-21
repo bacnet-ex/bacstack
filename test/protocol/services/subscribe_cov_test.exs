@@ -151,6 +151,24 @@ defmodule BACnet.Test.Protocol.Services.SubscribeCovTest do
              })
   end
 
+  test "decoding SubscribeCov invalid missing issue" do
+    assert {:error, :invalid_missing_confirmed} =
+             SubscribeCov.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :subscribe_cov,
+               parameters: [
+                 tagged: {0, <<255, 255, 255, 255>>, 4},
+                 tagged: {1, <<0, 0, 0, 10>>, 4},
+                 tagged: {3, <<0>>, 1}
+               ]
+             })
+  end
+
   test "decoding SubscribeCov invalid APDU" do
     assert {:error, :invalid_request} =
              SubscribeCov.from_apdu(%ConfirmedServiceRequest{
@@ -238,6 +256,23 @@ defmodule BACnet.Test.Protocol.Services.SubscribeCovTest do
                  },
                  issue_confirmed_notifications: true,
                  lifetime: 0
+               },
+               invoke_id: 1,
+               max_segments: 4
+             )
+  end
+
+  test "encoding SubscribeCov invalid missing issue confirmed" do
+    assert {:error, :invalid_missing_confirmed} =
+             SubscribeCov.to_apdu(
+               %SubscribeCov{
+                 process_identifier: 18,
+                 monitored_object: %ObjectIdentifier{
+                   type: :analog_input,
+                   instance: 10
+                 },
+                 issue_confirmed_notifications: nil,
+                 lifetime: 3600
                },
                invoke_id: 1,
                max_segments: 4

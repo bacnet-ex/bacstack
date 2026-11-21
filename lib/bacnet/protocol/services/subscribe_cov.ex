@@ -139,7 +139,11 @@ defmodule BACnet.Protocol.Services.SubscribeCov do
          {:ok, issue_confirmed, rest} <-
            pattern_extract_tags(rest, {:tagged, {2, _t, _l}}, :boolean, true),
          {:ok, lifetime, _rest} <-
-           pattern_extract_tags(rest, {:tagged, {3, _t, _l}}, :unsigned_integer, true) do
+           pattern_extract_tags(rest, {:tagged, {3, _t, _l}}, :unsigned_integer, true),
+         nil <-
+           if(is_nil(issue_confirmed) and not is_nil(lifetime),
+             do: {:error, :invalid_missing_confirmed}
+           ) do
       subscribe = %__MODULE__{
         process_identifier: process_identifier,
         monitored_object: monitored_object,
@@ -195,9 +199,13 @@ defmodule BACnet.Protocol.Services.SubscribeCov do
                 {:ok, nil}
 
               _term ->
-                with {:ok, bytes, _header} <-
-                       ApplicationTags.encode_value({:unsigned_integer, service.lifetime}) do
-                  {:ok, {:tagged, {3, bytes, byte_size(bytes)}}}
+                if service.issue_confirmed_notifications == nil do
+                  {:error, :invalid_missing_confirmed}
+                else
+                  with {:ok, bytes, _header} <-
+                         ApplicationTags.encode_value({:unsigned_integer, service.lifetime}) do
+                    {:ok, {:tagged, {3, bytes, byte_size(bytes)}}}
+                  end
                 end
             end) do
       parameters = [

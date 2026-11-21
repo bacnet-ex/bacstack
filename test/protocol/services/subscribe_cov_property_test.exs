@@ -211,6 +211,67 @@ defmodule BACnet.Test.Protocol.Services.SubscribeCovPropertyTest do
              })
   end
 
+  test "decoding SubscribeCovProperty invalid lifetime value" do
+    assert {:error, :invalid_lifetime} =
+             SubscribeCovProperty.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :subscribe_cov_property,
+               parameters: [
+                 tagged: {0, <<18>>, 1},
+                 tagged: {1, <<0, 0, 0, 10>>, 4},
+                 tagged: {2, <<1>>, 1},
+                 tagged: {3, <<0>>, 1},
+                 constructed: {4, {:tagged, {0, "U", 1}}, 0},
+                 tagged: {5, <<63, 128, 0, 0>>, 4}
+               ]
+             })
+  end
+
+  test "decoding SubscribeCovProperty invalid missing lifetime" do
+    assert {:error, :invalid_confirmed_lifetime_presence_combination} =
+             SubscribeCovProperty.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :subscribe_cov_property,
+               parameters: [
+                 tagged: {0, <<255, 255, 255, 255>>, 4},
+                 tagged: {1, <<0, 0, 0, 10>>, 4},
+                 tagged: {2, <<1>>, 1},
+                 constructed: {4, {:tagged, {0, "U", 1}}, 0},
+                 tagged: {5, <<63, 128, 0, 0>>, 4}
+               ]
+             })
+  end
+
+  test "decoding SubscribeCovProperty invalid missing issue confirmed" do
+    assert {:error, :invalid_confirmed_lifetime_presence_combination} =
+             SubscribeCovProperty.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :subscribe_cov_property,
+               parameters: [
+                 tagged: {0, <<255, 255, 255, 255>>, 4},
+                 tagged: {1, <<0, 0, 0, 10>>, 4},
+                 tagged: {3, "<", 1},
+                 constructed: {4, {:tagged, {0, "U", 1}}, 0},
+                 tagged: {5, <<63, 128, 0, 0>>, 4}
+               ]
+             })
+  end
+
   test "decoding SubscribeCovProperty invalid APDU" do
     assert {:error, :invalid_request} =
              SubscribeCovProperty.from_apdu(%ConfirmedServiceRequest{
@@ -377,6 +438,50 @@ defmodule BACnet.Test.Protocol.Services.SubscribeCovPropertyTest do
                    property_array_index: nil
                  },
                  cov_increment: 1.0
+               },
+               invoke_id: 1,
+               max_segments: 4
+             )
+  end
+
+  test "encoding SubscribeCovProperty invalid missing issue confirmed" do
+    assert {:error, :invalid_missing_confirmed} =
+             SubscribeCovProperty.to_apdu(
+               %SubscribeCovProperty{
+                 process_identifier: 18,
+                 monitored_object: %ObjectIdentifier{
+                   type: :analog_input,
+                   instance: 10
+                 },
+                 issue_confirmed_notifications: nil,
+                 lifetime: 3600,
+                 monitored_property: %PropertyRef{
+                   property_identifier: :present_value,
+                   property_array_index: nil
+                 },
+                 cov_increment: nil
+               },
+               invoke_id: 1,
+               max_segments: 4
+             )
+  end
+
+  test "encoding SubscribeCovProperty invalid missing lifetime" do
+    assert {:error, :invalid_missing_lifetime} =
+             SubscribeCovProperty.to_apdu(
+               %SubscribeCovProperty{
+                 process_identifier: 18,
+                 monitored_object: %ObjectIdentifier{
+                   type: :analog_input,
+                   instance: 10
+                 },
+                 issue_confirmed_notifications: false,
+                 lifetime: nil,
+                 monitored_property: %PropertyRef{
+                   property_identifier: :present_value,
+                   property_array_index: nil
+                 },
+                 cov_increment: nil
                },
                invoke_id: 1,
                max_segments: 4
