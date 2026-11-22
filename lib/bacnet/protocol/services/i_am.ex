@@ -85,7 +85,7 @@ defmodule BACnet.Protocol.Services.IAm do
       ) do
     case request.parameters do
       [
-        {:object_identifier, %Protocol.ObjectIdentifier{} = object_identifier},
+        {:object_identifier, %Protocol.ObjectIdentifier{type: :device} = object_identifier},
         {:unsigned_integer, apdu},
         {:enumerated, segmented},
         {:unsigned_integer, vendor_id} | _tail
@@ -130,7 +130,7 @@ defmodule BACnet.Protocol.Services.IAm do
           | {:error, term()}
   def to_apdu(
         %__MODULE__{
-          device: %Protocol.ObjectIdentifier{} = device,
+          device: %Protocol.ObjectIdentifier{type: :device} = device,
           max_apdu: apdu,
           segmentation_supported: seg,
           vendor_id: vendor

@@ -70,6 +70,65 @@ defmodule BACnet.Test.Protocol.Services.TimeSynchronizationTest do
              })
   end
 
+  test "decoding TimeSynchronization invalid unspecific date time" do
+    assert {:error, :invalid_date_time_not_specific} =
+             TimeSynchronization.from_apdu(%UnconfirmedServiceRequest{
+               service: :time_synchronization,
+               parameters: [
+                 date: %BACnetDate{
+                   year: 1992,
+                   month: 11,
+                   day: 17,
+                   weekday: :unspecified
+                 },
+                 time: %BACnetTime{
+                   hour: 22,
+                   minute: 45,
+                   second: 30,
+                   hundredth: 70
+                 }
+               ]
+             })
+
+    assert {:error, :invalid_date_time_not_specific} =
+             TimeSynchronization.from_apdu(%UnconfirmedServiceRequest{
+               service: :time_synchronization,
+               parameters: [
+                 date: %BACnetDate{
+                   year: 1992,
+                   month: 11,
+                   day: :last,
+                   weekday: 1
+                 },
+                 time: %BACnetTime{
+                   hour: 22,
+                   minute: 45,
+                   second: 30,
+                   hundredth: 70
+                 }
+               ]
+             })
+
+    assert {:error, :invalid_date_time_not_specific} =
+             TimeSynchronization.from_apdu(%UnconfirmedServiceRequest{
+               service: :time_synchronization,
+               parameters: [
+                 date: %BACnetDate{
+                   year: 1992,
+                   month: 11,
+                   day: 17,
+                   weekday: 1
+                 },
+                 time: %BACnetTime{
+                   hour: :unspecified,
+                   minute: 45,
+                   second: 30,
+                   hundredth: 70
+                 }
+               ]
+             })
+  end
+
   test "decoding TimeSynchronization invalid APDU" do
     assert {:error, :invalid_request} =
              TimeSynchronization.from_apdu(%UnconfirmedServiceRequest{
@@ -109,6 +168,65 @@ defmodule BACnet.Test.Protocol.Services.TimeSynchronizationTest do
                    hour: 22,
                    minute: 45,
                    second: 30,
+                   hundredth: 70
+                 }
+               },
+               []
+             )
+  end
+
+  test "encoding TimeSynchronization invalid unspecific date time" do
+    assert {:error, :invalid_date_time_not_specific} =
+             TimeSynchronization.to_apdu(
+               %TimeSynchronization{
+                 date: %BACnetDate{
+                   year: 1992,
+                   month: :unspecified,
+                   day: 17,
+                   weekday: 2
+                 },
+                 time: %BACnetTime{
+                   hour: 22,
+                   minute: 45,
+                   second: 30,
+                   hundredth: 70
+                 }
+               },
+               []
+             )
+
+    assert {:error, :invalid_date_time_not_specific} =
+             TimeSynchronization.to_apdu(
+               %TimeSynchronization{
+                 date: %BACnetDate{
+                   year: 1992,
+                   month: 12,
+                   day: :last,
+                   weekday: 2
+                 },
+                 time: %BACnetTime{
+                   hour: 22,
+                   minute: 45,
+                   second: 30,
+                   hundredth: 70
+                 }
+               },
+               []
+             )
+
+    assert {:error, :invalid_date_time_not_specific} =
+             TimeSynchronization.to_apdu(
+               %TimeSynchronization{
+                 date: %BACnetDate{
+                   year: 1992,
+                   month: 11,
+                   day: 17,
+                   weekday: 2
+                 },
+                 time: %BACnetTime{
+                   hour: 22,
+                   minute: 45,
+                   second: :unspecified,
                    hundredth: 70
                  }
                },

@@ -170,6 +170,15 @@ defmodule BACnet.Protocol.BACnetDateTime do
   end
 
   @doc """
+  Checks whether the given BACnet DateTime is a fully specific date-time value
+  (every component is a numeric value).
+  """
+  @spec fully_specific?(t()) :: boolean()
+  def fully_specific?(%__MODULE__{} = dt) do
+    BACnetDate.fully_specific?(dt.date) and BACnetTime.specific?(dt.time)
+  end
+
+  @doc """
   Converts the BACnet DateTime to a `DateTime`.
   """
   @spec to_datetime(t(), Calendar.time_zone(), Calendar.time_zone_database()) ::

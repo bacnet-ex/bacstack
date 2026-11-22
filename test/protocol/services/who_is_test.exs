@@ -53,6 +53,34 @@ defmodule BACnet.Test.Protocol.Services.WhoIsTest do
              })
   end
 
+  test "decoding WhoIs only one limit set" do
+    assert {:error, :invalid_request_parameters} =
+             WhoIs.from_apdu(%UnconfirmedServiceRequest{
+               service: :who_is,
+               parameters: [tagged: {0, <<50>>, 1}]
+             })
+
+    assert {:error, :invalid_request_parameters} =
+             WhoIs.from_apdu(%UnconfirmedServiceRequest{
+               service: :who_is,
+               parameters: [tagged: {1, <<50>>, 1}]
+             })
+  end
+
+  test "decoding WhoIs too large limit" do
+    assert {:error, :invalid_request_parameters} =
+             WhoIs.from_apdu(%UnconfirmedServiceRequest{
+               service: :who_is,
+               parameters: [tagged: {0, <<255, 255, 255, 255, 255>>, 5}, tagged: {0, <<50>>, 1}]
+             })
+
+    assert {:error, :invalid_request_parameters} =
+             WhoIs.from_apdu(%UnconfirmedServiceRequest{
+               service: :who_is,
+               parameters: [tagged: {0, <<50>>, 1}, tagged: {0, <<255, 255, 255, 255, 255>>, 5}]
+             })
+  end
+
   test "encoding WhoIs" do
     assert {:ok,
             %UnconfirmedServiceRequest{

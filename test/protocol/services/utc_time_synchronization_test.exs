@@ -63,6 +63,65 @@ defmodule BACnet.Test.Protocol.Services.UtcTimeSynchronizationTest do
              })
   end
 
+  test "decoding UtcTimeSynchronization invalid unspecific date time" do
+    assert {:error, :invalid_date_time_not_specific} =
+             UtcTimeSynchronization.from_apdu(%UnconfirmedServiceRequest{
+               service: :utc_time_synchronization,
+               parameters: [
+                 date: %BACnetDate{
+                   year: 1992,
+                   month: 11,
+                   day: 17,
+                   weekday: :unspecified
+                 },
+                 time: %BACnetTime{
+                   hour: 22,
+                   minute: 45,
+                   second: 30,
+                   hundredth: 70
+                 }
+               ]
+             })
+
+    assert {:error, :invalid_date_time_not_specific} =
+             UtcTimeSynchronization.from_apdu(%UnconfirmedServiceRequest{
+               service: :utc_time_synchronization,
+               parameters: [
+                 date: %BACnetDate{
+                   year: 1992,
+                   month: 11,
+                   day: :last,
+                   weekday: 1
+                 },
+                 time: %BACnetTime{
+                   hour: 22,
+                   minute: 45,
+                   second: 30,
+                   hundredth: 70
+                 }
+               ]
+             })
+
+    assert {:error, :invalid_date_time_not_specific} =
+             UtcTimeSynchronization.from_apdu(%UnconfirmedServiceRequest{
+               service: :utc_time_synchronization,
+               parameters: [
+                 date: %BACnetDate{
+                   year: 1992,
+                   month: 11,
+                   day: 17,
+                   weekday: 1
+                 },
+                 time: %BACnetTime{
+                   hour: :unspecified,
+                   minute: 45,
+                   second: 30,
+                   hundredth: 70
+                 }
+               ]
+             })
+  end
+
   test "decoding UtcTimeSynchronization invalid APDU" do
     assert {:error, :invalid_request} =
              UtcTimeSynchronization.from_apdu(%UnconfirmedServiceRequest{
@@ -109,6 +168,65 @@ defmodule BACnet.Test.Protocol.Services.UtcTimeSynchronizationTest do
                    hour: 22,
                    minute: 45,
                    second: 30,
+                   hundredth: 70
+                 }
+               },
+               []
+             )
+  end
+
+  test "encoding UtcTimeSynchronization invalid unspecific date time" do
+    assert {:error, :invalid_date_time_not_specific} =
+             UtcTimeSynchronization.to_apdu(
+               %UtcTimeSynchronization{
+                 date: %BACnetDate{
+                   year: 1992,
+                   month: :unspecified,
+                   day: 17,
+                   weekday: 2
+                 },
+                 time: %BACnetTime{
+                   hour: 22,
+                   minute: 45,
+                   second: 30,
+                   hundredth: 70
+                 }
+               },
+               []
+             )
+
+    assert {:error, :invalid_date_time_not_specific} =
+             UtcTimeSynchronization.to_apdu(
+               %UtcTimeSynchronization{
+                 date: %BACnetDate{
+                   year: 1992,
+                   month: 12,
+                   day: :last,
+                   weekday: 2
+                 },
+                 time: %BACnetTime{
+                   hour: 22,
+                   minute: 45,
+                   second: 30,
+                   hundredth: 70
+                 }
+               },
+               []
+             )
+
+    assert {:error, :invalid_date_time_not_specific} =
+             UtcTimeSynchronization.to_apdu(
+               %UtcTimeSynchronization{
+                 date: %BACnetDate{
+                   year: 1992,
+                   month: 11,
+                   day: 17,
+                   weekday: 2
+                 },
+                 time: %BACnetTime{
+                   hour: 22,
+                   minute: 45,
+                   second: :unspecified,
                    hundredth: 70
                  }
                },

@@ -102,11 +102,27 @@ defmodule BACnet.Protocol.BACnetDateTimeTest do
     assert {:ok, %DateTime{}} = BACnetDateTime.to_datetime(bdt)
   end
 
+  test "to datetime with timezone" do
+    dt = DateTime.utc_now()
+    bdt = BACnetDateTime.from_datetime(dt)
+
+    assert {:ok, %DateTime{}} =
+             BACnetDateTime.to_datetime(bdt, "Etc/UTC", Calendar.get_time_zone_database())
+  end
+
   test "to datetime!" do
     dt = DateTime.utc_now()
     bdt = BACnetDateTime.from_datetime(dt)
 
     assert %DateTime{} = BACnetDateTime.to_datetime!(bdt)
+  end
+
+  test "to datetime! with timezone" do
+    dt = DateTime.utc_now()
+    bdt = BACnetDateTime.from_datetime(dt)
+
+    assert %DateTime{} =
+             BACnetDateTime.to_datetime!(bdt, "Etc/UTC", Calendar.get_time_zone_database())
   end
 
   test "to naive datetime" do
@@ -134,6 +150,26 @@ defmodule BACnet.Protocol.BACnetDateTimeTest do
              BACnetDateTime.specific?(%BACnetDateTime{
                date: %{BACnetDate.utc_today() | year: :unspecified},
                time: %{BACnetTime.utc_now() | hour: :unspecified}
+             })
+  end
+
+  test "fully specific datetime" do
+    assert true ==
+             BACnetDateTime.fully_specific?(%BACnetDateTime{
+               date: BACnetDate.utc_today(),
+               time: BACnetTime.utc_now()
+             })
+
+    assert false ==
+             BACnetDateTime.fully_specific?(%BACnetDateTime{
+               date: %{BACnetDate.utc_today() | year: :unspecified},
+               time: %{BACnetTime.utc_now() | hour: :unspecified}
+             })
+
+    assert false ==
+             BACnetDateTime.fully_specific?(%BACnetDateTime{
+               date: %{BACnetDate.utc_today() | day: :last},
+               time: BACnetTime.utc_now()
              })
   end
 

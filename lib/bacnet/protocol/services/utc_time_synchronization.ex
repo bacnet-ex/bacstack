@@ -25,6 +25,8 @@ defmodule BACnet.Protocol.Services.UtcTimeSynchronization do
   """
 
   alias BACnet.Protocol
+  alias BACnet.Protocol.BACnetDate
+  alias BACnet.Protocol.BACnetTime
   alias BACnet.Protocol.Constants
   require Constants
 
@@ -36,8 +38,8 @@ defmodule BACnet.Protocol.Services.UtcTimeSynchronization do
   Broadcasts the current UTC date and time so devices can synchronize clocks across time zones.
   """
   @type t :: %__MODULE__{
-          date: Protocol.BACnetDate.t(),
-          time: Protocol.BACnetTime.t()
+          date: BACnetDate.t(),
+          time: BACnetTime.t()
         }
 
   @fields [
@@ -76,16 +78,20 @@ defmodule BACnet.Protocol.Services.UtcTimeSynchronization do
       ) do
     case request.parameters do
       [
-        {:date, %Protocol.BACnetDate{} = date},
-        {:time, %Protocol.BACnetTime{} = time}
+        {:date, %BACnetDate{} = date},
+        {:time, %BACnetTime{} = time}
         | _tail
       ] ->
-        sync = %__MODULE__{
-          date: date,
-          time: time
-        }
+        if BACnetDate.fully_specific?(date) and BACnetTime.specific?(time) do
+          sync = %__MODULE__{
+            date: date,
+            time: time
+          }
 
-        {:ok, sync}
+          {:ok, sync}
+        else
+          {:error, :invalid_date_time_not_specific}
+        end
 
       _term ->
         {:error, :invalid_request_parameters}
@@ -105,16 +111,20 @@ defmodule BACnet.Protocol.Services.UtcTimeSynchronization do
           {:ok, Protocol.APDU.UnconfirmedServiceRequest.t()}
           | {:error, term()}
   def to_apdu(
-        %__MODULE__{date: %Protocol.BACnetDate{} = date, time: %Protocol.BACnetTime{} = time} =
+        %__MODULE__{date: %BACnetDate{} = date, time: %BACnetTime{} = time} =
           _service,
         _request_data
       ) do
-    req = %Protocol.APDU.UnconfirmedServiceRequest{
-      service: @service_name,
-      parameters: [{:date, date}, {:time, time}]
-    }
+    if BACnetDate.fully_specific?(date) and BACnetTime.specific?(time) do
+      req = %Protocol.APDU.UnconfirmedServiceRequest{
+        service: @service_name,
+        parameters: [{:date, date}, {:time, time}]
+      }
 
-    {:ok, req}
+      {:ok, req}
+    else
+      {:error, :invalid_date_time_not_specific}
+    end
   end
 
   defimpl Protocol.Services.Protocol do

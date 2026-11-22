@@ -60,6 +60,22 @@ defmodule BACnet.Test.Protocol.Services.IAmTest do
              })
   end
 
+  test "decoding IAm invalid object identifier" do
+    assert {:error, :invalid_request_parameters} =
+             IAm.from_apdu(%UnconfirmedServiceRequest{
+               service: :i_am,
+               parameters: [
+                 object_identifier: %ObjectIdentifier{
+                   instance: 111,
+                   type: :analog_value
+                 },
+                 unsigned_integer: 50,
+                 enumerated: 3,
+                 unsigned_integer: 42
+               ]
+             })
+  end
+
   test "decoding IAm invalid vendor id" do
     assert {:error, :invalid_vendor_id_value} =
              IAm.from_apdu(%UnconfirmedServiceRequest{
@@ -127,6 +143,23 @@ defmodule BACnet.Test.Protocol.Services.IAmTest do
                },
                []
              )
+  end
+
+  test "encoding IAm invalid object identifier" do
+    assert_raise FunctionClauseError, fn ->
+      IAm.to_apdu(
+        %IAm{
+          device: %ObjectIdentifier{
+            instance: 111,
+            type: :analog_value
+          },
+          max_apdu: 1476,
+          segmentation_supported: Constants.macro_assert_name(:segmentation, :segmented_both),
+          vendor_id: 255
+        },
+        []
+      )
+    end
   end
 
   test "encoding IAm unknown segmentation" do

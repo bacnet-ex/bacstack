@@ -197,6 +197,26 @@ defmodule BACnet.Protocol.BACnetDate do
   end
 
   @doc """
+  Checks whether the given BACnet Date is a fully specific date value
+  (every component is a numeric value, `:last` is rejected).
+  """
+  @spec fully_specific?(t()) :: boolean()
+  def fully_specific?(%__MODULE__{} = time) do
+    case time do
+      %{year: :unspecified} -> false
+      %{month: :unspecified} -> false
+      %{month: :even} -> false
+      %{month: :odd} -> false
+      %{day: :unspecified} -> false
+      %{day: :even} -> false
+      %{day: :odd} -> false
+      %{day: :last} -> false
+      %{weekday: :unspecified} -> false
+      _else -> true
+    end
+  end
+
+  @doc """
   Converts the BACnet Date to a `Date`.
 
   If any of the fields are unspecified, the reference date (current UTC value) is used.

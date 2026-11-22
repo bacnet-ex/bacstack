@@ -392,6 +392,21 @@ defmodule BACnet.Protocol.BACnetDateTest do
     assert false == BACnetDate.specific?(%{base_date | weekday: :unspecified})
   end
 
+  test "fully specific date" do
+    base_date = BACnetDate.utc_today()
+    assert true == BACnetDate.fully_specific?(base_date)
+    assert true == BACnetDate.fully_specific?(BACnetDate.from_date(Date.utc_today()))
+    assert false == BACnetDate.fully_specific?(%{base_date | year: :unspecified})
+    assert false == BACnetDate.fully_specific?(%{base_date | month: :unspecified})
+    assert false == BACnetDate.fully_specific?(%{base_date | month: :even})
+    assert false == BACnetDate.fully_specific?(%{base_date | month: :odd})
+    assert false == BACnetDate.fully_specific?(%{base_date | day: :unspecified})
+    assert false == BACnetDate.fully_specific?(%{base_date | day: :even})
+    assert false == BACnetDate.fully_specific?(%{base_date | day: :odd})
+    assert false == BACnetDate.fully_specific?(%{base_date | day: :last})
+    assert false == BACnetDate.fully_specific?(%{base_date | weekday: :unspecified})
+  end
+
   test "utc today date" do
     dt = Date.utc_today()
     day = dt.day

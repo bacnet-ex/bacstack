@@ -42,12 +42,14 @@ defmodule BACnet.Protocol.Services.WhoIs do
 
   @behaviour Protocol.Services.Behaviour
 
+  @max_id Constants.macro_by_name(:asn1, :max_instance_and_property_id)
+
   @typedoc """
   Parameters for the Who-Is service (optional device instance range filters).
   """
   @type t :: %__MODULE__{
-          device_id_low_limit: non_neg_integer() | nil,
-          device_id_high_limit: non_neg_integer() | nil
+          device_id_low_limit: 0..unquote(@max_id) | nil,
+          device_id_high_limit: 0..unquote(@max_id) | nil
         }
 
   @fields [
@@ -81,7 +83,7 @@ defmodule BACnet.Protocol.Services.WhoIs do
           service: @service_name
         } = request
       ) do
-    with {id_low, id_high} <-
+    with {:ok, {id_low, id_high}} <-
            (case request.parameters do
               [
                 {:tagged, {0, low_limit, low_length}},
@@ -89,10 +91,21 @@ defmodule BACnet.Protocol.Services.WhoIs do
               ] ->
                 <<id_low::size(^low_length)-unit(8)>> = low_limit
                 <<id_high::size(^high_length)-unit(8)>> = high_limit
-                {id_low, id_high}
+
+                if id_low in 0..@max_id and id_high in 0..@max_id do
+                  {:ok, {id_low, id_high}}
+                else
+                  {:error, :invalid_request_parameters}
+                end
+
+              [
+                {:tagged, {tag, _num, _len}} | _tail
+              ]
+              when tag in [0, 1] ->
+                {:error, :invalid_request_parameters}
 
               _term ->
-                {nil, nil}
+                {:ok, {nil, nil}}
             end) do
       whois = %__MODULE__{
         device_id_low_limit: id_low,
@@ -122,15 +135,15 @@ defmodule BACnet.Protocol.Services.WhoIs do
           raise ArgumentError, "Low limit must be less than or equal to high limit"
         end
 
-        unless service.device_id_low_limit >= 0 and service.device_id_low_limit <= 4_194_303 do
+        unless service.device_id_low_limit >= 0 and service.device_id_low_limit <= @max_id do
           raise ArgumentError,
-                "Low limit must be between 0 and 4194303 inclusive, got: " <>
+                "Low limit must be between 0 and #{@max_id} inclusive, got: " <>
                   inspect(service.device_id_low_limit)
         end
 
-        unless service.device_id_high_limit >= 0 and service.device_id_high_limit <= 4_194_303 do
+        unless service.device_id_high_limit >= 0 and service.device_id_high_limit <= @max_id do
           raise ArgumentError,
-                "High limit must be between 0 and 4194303 inclusive, got: " <>
+                "High limit must be between 0 and #{@max_id} inclusive, got: " <>
                   inspect(service.device_id_high_limit)
         end
 
