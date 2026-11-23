@@ -11,6 +11,14 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
   @moduletag :apdu
   @moduletag :service
 
+  @object_identifier %ObjectIdentifier{type: :analog_value, instance: 5}
+  @property %AccessSpecification.Property{
+    property_identifier: :present_value,
+    property_array_index: nil,
+    property_value: Encoding.create!({:real, 67.0}),
+    priority: nil
+  }
+
   doctest WritePropertyMultiple
 
   test "get name" do
@@ -159,6 +167,21 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
              })
   end
 
+  test "decoding WritePropertyMultiple rejects the ALL read selector" do
+    assert {:error, :invalid_property_identifier} =
+             WritePropertyMultiple.from_apdu(write_request_apdu(tagged: {0, <<0x08>>, 1}))
+  end
+
+  test "decoding WritePropertyMultiple rejects the REQUIRED read selector" do
+    assert {:error, :invalid_property_identifier} =
+             WritePropertyMultiple.from_apdu(write_request_apdu(tagged: {0, <<0x69>>, 1}))
+  end
+
+  test "decoding WritePropertyMultiple rejects the OPTIONAL read selector" do
+    assert {:error, :invalid_property_identifier} =
+             WritePropertyMultiple.from_apdu(write_request_apdu(tagged: {0, <<0x50>>, 1}))
+  end
+
   test "encoding WritePropertyMultiple" do
     assert {:ok,
             %ConfirmedServiceRequest{
@@ -280,6 +303,59 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
                invoke_id: 1,
                max_segments: 4
              )
+  end
+
+  test "encoding WritePropertyMultiple rejects the ALL read selector" do
+    assert {:error, :invalid_property_identifier} =
+             WritePropertyMultiple.to_apdu(write_request([:all]), [])
+  end
+
+  test "encoding WritePropertyMultiple rejects the REQUIRED read selector" do
+    assert {:error, :invalid_property_identifier} =
+             WritePropertyMultiple.to_apdu(write_request([:required]), [])
+  end
+
+  test "encoding WritePropertyMultiple rejects the OPTIONAL read selector" do
+    assert {:error, :invalid_property_identifier} =
+             WritePropertyMultiple.to_apdu(write_request([:optional]), [])
+  end
+
+  test "encoding WritePropertyMultiple rejects the numeric ALL property identifier" do
+    property = %{@property | property_identifier: 0x08}
+
+    assert {:error, :invalid_property_identifier} =
+             WritePropertyMultiple.to_apdu(write_request([property]), [])
+  end
+
+  test "encoding WritePropertyMultiple rejects the numeric REQUIRED property identifier" do
+    property = %{@property | property_identifier: 0x69}
+
+    assert {:error, :invalid_property_identifier} =
+             WritePropertyMultiple.to_apdu(write_request([property]), [])
+  end
+
+  test "encoding WritePropertyMultiple rejects the numeric OPTIONAL property identifier" do
+    property = %{@property | property_identifier: 0x50}
+
+    assert {:error, :invalid_property_identifier} =
+             WritePropertyMultiple.to_apdu(write_request([property]), [])
+  end
+
+  test "encoding WritePropertyMultiple rejects a missing property value" do
+    property = %{@property | property_value: nil}
+
+    assert {:error, :missing_value_for_write} =
+             WritePropertyMultiple.to_apdu(write_request([property]), [])
+  end
+
+  test "encoding WritePropertyMultiple rejects an empty list of properties" do
+    assert {:error, :invalid_empty_properties} =
+             WritePropertyMultiple.to_apdu(write_request([]), [])
+  end
+
+  test "encoding WritePropertyMultiple rejects an empty list of write access specifications" do
+    assert {:error, :invalid_empty_list} =
+             WritePropertyMultiple.to_apdu(%WritePropertyMultiple{list: []}, [])
   end
 
   test "encoding WritePropertyMultiple preserves segmented_response_accepted=false" do
@@ -404,5 +480,24 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyMultipleTest do
                invoke_id: 1,
                max_segments: 4
              )
+  end
+
+  defp write_request(properties) do
+    %WritePropertyMultiple{
+      list: [%AccessSpecification{object_identifier: @object_identifier, properties: properties}]
+    }
+  end
+
+  defp write_request_apdu(property_tags) do
+    %ConfirmedServiceRequest{
+      segmented_response_accepted: true,
+      max_apdu: 1476,
+      max_segments: 4,
+      invoke_id: 1,
+      sequence_number: nil,
+      proposed_window_size: nil,
+      service: :write_property_multiple,
+      parameters: [tagged: {0, <<0, 128, 0, 5>>, 4}, constructed: {1, property_tags, 0}]
+    }
   end
 end

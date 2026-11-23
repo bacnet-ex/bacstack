@@ -112,11 +112,18 @@ defmodule BACnet.Protocol.Services.WritePropertyMultiple do
           case AccessSpecification.parse(tags) do
             {:ok, {item, rest}} ->
               cond do
-                Enum.any?(item.properties, fn
-                  %AccessSpecification.Property{property_value: nil} -> true
-                  _other -> false
-                end) ->
-                  {:halt, {:error, :missing_value_for_write}}
+                err =
+                    Enum.find_value(item.properties, fn
+                      atom when is_atom(atom) ->
+                        {:error, :invalid_property_identifier}
+
+                      %AccessSpecification.Property{property_value: nil} ->
+                        {:error, :missing_value_for_write}
+
+                      _other ->
+                        nil
+                    end) ->
+                  {:halt, err}
 
                 rest == [] ->
                   {:halt, {:ok, [item | acc]}}
@@ -156,12 +163,39 @@ defmodule BACnet.Protocol.Services.WritePropertyMultiple do
           {:ok, Protocol.APDU.ConfirmedServiceRequest.t()}
           | {:error, term()}
   def to_apdu(%__MODULE__{} = service, request_data) do
-    with {:ok, parameters} <-
+    with nil <- if(service.list == [], do: {:error, :invalid_empty_list}),
+         {:ok, parameters} <-
            Enum.reduce_while(service.list, {:ok, []}, fn
-             ras, {:ok, acc} ->
-               case AccessSpecification.encode(ras) do
-                 {:ok, encoded} -> {:cont, {:ok, [encoded | acc]}}
-                 term -> {:halt, term}
+             %AccessSpecification{properties: []}, _acc ->
+               {:halt, {:error, :invalid_empty_properties}}
+
+             %AccessSpecification{} = ras, {:ok, acc} ->
+               case Enum.find_value(ras.properties, fn
+                      atom when is_atom(atom) ->
+                        {:error, :invalid_property_identifier}
+
+                      %AccessSpecification.Property{property_identifier: id}
+                      when id in [
+                             Constants.macro_by_name(:property_identifier, :all),
+                             Constants.macro_by_name(:property_identifier, :required),
+                             Constants.macro_by_name(:property_identifier, :optional)
+                           ] ->
+                        {:error, :invalid_property_identifier}
+
+                      %AccessSpecification.Property{property_value: nil} ->
+                        {:error, :missing_value_for_write}
+
+                      _other ->
+                        nil
+                    end) do
+                 nil ->
+                   case AccessSpecification.encode(ras) do
+                     {:ok, encoded} -> {:cont, {:ok, [encoded | acc]}}
+                     term -> {:halt, term}
+                   end
+
+                 err ->
+                   {:halt, err}
                end
            end) do
       req = %Protocol.APDU.ConfirmedServiceRequest{
