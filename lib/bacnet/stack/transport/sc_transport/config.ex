@@ -1,5 +1,13 @@
 if BACstack.MixProject.sc_enabled?() do
   defmodule BACnet.Stack.Transport.ScTransport.Config do
+    alias BACnet.Protocol.SecureConnect.BVLC
+    alias BACnet.Protocol.SecureConnect.Settings
+    alias BACnet.Stack.Transport.ScTransport.Audit
+
+    @timers Enum.map(Settings.timers(), fn {_property, {option, default, range}} ->
+              {option, {default, range}}
+            end)
+
     @moduledoc """
     Validates and normalizes configuration shared by BACnet/SC nodes and hubs.
 
@@ -15,26 +23,11 @@ if BACstack.MixProject.sc_enabled?() do
 
     | Option | Default | Range | Unit |
     | --- | ---: | --- | --- |
-    | `:min_reconnect_time` | 10 | 2–300 | seconds |
-    | `:max_reconnect_time` | 600 | 2–600 | seconds |
-    | `:connect_wait_timeout` | 10 | 5–300 | seconds |
-    | `:disconnect_wait_timeout` | 10 | 5–300 | seconds |
-    | `:heartbeat_timeout` | 300 | 3–300 | seconds |
+    #{Enum.map_join(@timers, "\n", fn {option, {default, range}} -> "| `#{inspect(option)}` | #{default} | #{range.first}–#{range.last} | seconds |" end)}
 
     Reconnect timers apply to the `BACnet.Stack.Transport.ScTransport.Node`
     connector. Session timers apply to both node and hub connections.
     """
-
-    alias BACnet.Protocol.SecureConnect.BVLC
-    alias BACnet.Stack.Transport.ScTransport.Audit
-
-    @timers [
-      min_reconnect_time: {10, 2..300},
-      max_reconnect_time: {600, 2..600},
-      connect_wait_timeout: {10, 5..300},
-      disconnect_wait_timeout: {10, 5..300},
-      heartbeat_timeout: {300, 3..300}
-    ]
 
     @typedoc """
     Options passed to `node/1` or `hub/1`.
@@ -84,6 +77,7 @@ if BACstack.MixProject.sc_enabled?() do
             required(:credentials) => BACnet.Stack.Transport.ScTransport.Credentials.t(),
             required(:port) => :inet.port_number(),
             required(:path) => String.t(),
+            required(:crl_check) => term(),
             required(:audit) => Audit.config() | nil,
             required(:connect_wait_timeout) => pos_integer(),
             required(:disconnect_wait_timeout) => pos_integer(),
@@ -167,6 +161,7 @@ if BACstack.MixProject.sc_enabled?() do
           config
           |> Map.put_new(:ip, {0, 0, 0, 0})
           |> Map.put_new(:path, "/")
+          |> Map.put_new(:crl_check, false)
           |> Map.put(:audit, audit)
 
         {:ok, config}

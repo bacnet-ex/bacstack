@@ -59,6 +59,57 @@ defmodule BACnet.Test.Protocol.Services.ReinitializeDeviceTest do
              })
   end
 
+  test "decoding ReinitializeDevice rejects an empty password" do
+    assert {:error, :invalid_empty_password} =
+             ReinitializeDevice.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :reinitialize_device,
+               parameters: [
+                 tagged: {0, <<1>>, 1},
+                 tagged: {1, <<0>>, 1}
+               ]
+             })
+  end
+
+  test "decoding ReinitializeDevice rejects a password with 21 characters" do
+    assert {:error, :password_too_long} =
+             ReinitializeDevice.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :reinitialize_device,
+               parameters: [
+                 tagged: {0, <<1>>, 1},
+                 tagged: {1, <<0, "abcdefghijklmnopqrstu">>, 22}
+               ]
+             })
+  end
+
+  test "decoding ReinitializeDevice rejects invalid UTF-8 in the password" do
+    assert {:error, :invalid_password} =
+             ReinitializeDevice.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :reinitialize_device,
+               parameters: [
+                 tagged: {0, <<1>>, 1},
+                 tagged: {1, <<0, 255>>, 2}
+               ]
+             })
+  end
+
   test "decoding ReinitializeDevice invalid unknown tag encoding" do
     assert {:error, :unknown_tag_encoding} =
              ReinitializeDevice.from_apdu(%ConfirmedServiceRequest{
@@ -167,6 +218,45 @@ defmodule BACnet.Test.Protocol.Services.ReinitializeDeviceTest do
                invoke_id: 1,
                max_segments: 4
              )
+  end
+
+  test "encoding ReinitializeDevice accepts a password with 20 multibyte characters" do
+    password = String.duplicate("ä", 20)
+    encoded_password = <<0, password::binary>>
+
+    assert {:ok,
+            %ConfirmedServiceRequest{
+              parameters: [tagged: {0, <<1>>, 1}, tagged: {1, ^encoded_password, 41}]
+            }} =
+             ReinitializeDevice.to_apdu(
+               %ReinitializeDevice{reinitialized_state: :warmstart, password: password},
+               []
+             )
+  end
+
+  test "encoding ReinitializeDevice rejects an empty password" do
+    assert {:error, :invalid_empty_password} =
+             ReinitializeDevice.to_apdu(
+               %ReinitializeDevice{reinitialized_state: :warmstart, password: ""},
+               []
+             )
+  end
+
+  test "encoding ReinitializeDevice rejects invalid UTF-8 in the password" do
+    assert {:error, :invalid_password} =
+             ReinitializeDevice.to_apdu(
+               %ReinitializeDevice{reinitialized_state: :warmstart, password: <<255>>},
+               []
+             )
+  end
+
+  test "encoding ReinitializeDevice rejects an invalid password type" do
+    assert_raise ArgumentError, fn ->
+      ReinitializeDevice.to_apdu(
+        %ReinitializeDevice{reinitialized_state: :warmstart, password: :hello},
+        []
+      )
+    end
   end
 
   test "encoding ReinitializeDevice unknown state" do

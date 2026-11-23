@@ -231,7 +231,7 @@ defmodule BACnet.Protocol.FaultParameters do
         with {:ok, {:unsigned_integer, vendor_id}} <-
                ApplicationTags.unfold_to_type(:unsigned_integer, vendor_id_raw),
              :ok <-
-               if(ApplicationTags.valid_int?(vendor_id, 16),
+               if(ApplicationTags.valid_uint?(vendor_id, 16),
                  do: :ok,
                  else: {:error, :invalid_vendor_id_value}
                ),

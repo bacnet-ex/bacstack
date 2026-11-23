@@ -308,7 +308,8 @@ defmodule BACstack.MixProject do
           BACnet.Protocol.SecureConnect.FailedConnectionRequest,
           BACnet.Protocol.SecureConnect.Health,
           BACnet.Protocol.SecureConnect.HubConnection,
-          BACnet.Protocol.SecureConnect.HubFunctionConnection
+          BACnet.Protocol.SecureConnect.HubFunctionConnection,
+          BACnet.Protocol.SecureConnect.Settings
         ],
         Stack: [
           ~r"Stack\.[^.]+$",

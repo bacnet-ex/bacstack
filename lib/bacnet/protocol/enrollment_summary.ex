@@ -54,7 +54,7 @@ defmodule BACnet.Protocol.EnrollmentSummary do
         _opts \\ []
       ) do
     with :ok <-
-           if(ApplicationTags.valid_int?(summary.priority, 8),
+           if(ApplicationTags.valid_uint?(summary.priority, 8),
              do: :ok,
              else: {:error, :invalid_priority_value}
            ),
@@ -106,7 +106,7 @@ defmodule BACnet.Protocol.EnrollmentSummary do
         | rest
       ] ->
         with :ok <-
-               if(ApplicationTags.valid_int?(priority, 8),
+               if(ApplicationTags.valid_uint?(priority, 8),
                  do: :ok,
                  else: {:error, :invalid_priority_value}
                ),

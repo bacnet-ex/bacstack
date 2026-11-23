@@ -132,7 +132,7 @@ defmodule BACnet.Protocol.Services.GetEnrollmentSummary do
                      {:ok, {:unsigned_integer, pid}} <-
                        ApplicationTags.unfold_to_type(:unsigned_integer, process),
                      :ok <-
-                       if(ApplicationTags.valid_int?(pid, 32),
+                       if(ApplicationTags.valid_uint?(pid, 32),
                          do: :ok,
                          else: {:error, :invalid_process_identifier_value}
                        ),
@@ -348,7 +348,7 @@ defmodule BACnet.Protocol.Services.GetEnrollmentSummary do
        )
        when is_integer(pid) and pid >= 0 do
     with :ok <-
-           if(ApplicationTags.valid_int?(pid, 32),
+           if(ApplicationTags.valid_uint?(pid, 32),
              do: :ok,
              else: {:error, :invalid_process_identifier_value}
            ),

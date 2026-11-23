@@ -53,6 +53,7 @@ if BACstack.MixProject.sc_enabled?() do
     alias BACnet.Protocol.Constants
     alias BACnet.Protocol.ObjectIdentifier
     alias BACnet.Protocol.ObjectsUtility
+    alias BACnet.Protocol.SecureConnect.Settings
 
     alias BACnet.Protocol.ObjectExecution.Context
     alias BACnet.Protocol.ObjectExecution.Lifecycle
@@ -88,18 +89,7 @@ if BACstack.MixProject.sc_enabled?() do
       atomic_write_file: AtomicWriteFile,
       reinitialize_device: ReinitializeDevice
     }
-    @writable [
-      :network_number,
-      :sc_primary_hub_uri,
-      :sc_failover_hub_uri,
-      :sc_minimum_reconnect_time,
-      :sc_maximum_reconnect_time,
-      :sc_connect_wait_timeout,
-      :sc_disconnect_wait_timeout,
-      :sc_heartbeat_timeout,
-      :sc_hub_function_enable,
-      :sc_hub_function_accept_uris
-    ]
+    @writable [:network_number | Settings.port_properties()]
     @file_limit 65_536
 
     @typep source :: %{

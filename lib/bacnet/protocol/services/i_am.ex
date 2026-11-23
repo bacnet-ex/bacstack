@@ -91,7 +91,7 @@ defmodule BACnet.Protocol.Services.IAm do
         {:unsigned_integer, vendor_id} | _tail
       ] ->
         with :ok <-
-               if(ApplicationTags.valid_int?(vendor_id, 16),
+               if(ApplicationTags.valid_uint?(vendor_id, 16),
                  do: :ok,
                  else: {:error, :invalid_vendor_id_value}
                ),
@@ -140,7 +140,7 @@ defmodule BACnet.Protocol.Services.IAm do
       when is_integer(apdu) and apdu >= 0 and
              is_integer(vendor) and vendor >= 0 do
     with :ok <-
-           if(ApplicationTags.valid_int?(vendor, 16),
+           if(ApplicationTags.valid_uint?(vendor, 16),
              do: :ok,
              else: {:error, :invalid_vendor_id_value}
            ),

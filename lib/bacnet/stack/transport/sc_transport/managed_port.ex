@@ -236,7 +236,7 @@ if BACstack.MixProject.sc_enabled?() do
 
       alias BACnet.Stack.Transport.ScTransport.ManagedPort
 
-      @derive {Inspect, except: [:snapshot, :authorize, :hub_audit]}
+      @derive {Inspect, except: [:snapshot, :runtime, :authorize, :hub_audit]}
 
       @typedoc """
       Managed objects, persisted configuration, owned endpoints, and authorization policy.
@@ -244,6 +244,7 @@ if BACstack.MixProject.sc_enabled?() do
       @type t :: %__MODULE__{
               path: Path.t(),
               snapshot: ManagedPort.snapshot(),
+              runtime: ManagedPort.runtime_config(),
               device: Device.t() | nil,
               port: NetworkPort.t() | nil,
               files: %{ManagedPort.file_role() => File.t()} | nil,
@@ -260,6 +261,7 @@ if BACstack.MixProject.sc_enabled?() do
       @fields [
         :path,
         :snapshot,
+        :runtime,
         :device,
         :port,
         :files,
@@ -285,6 +287,12 @@ if BACstack.MixProject.sc_enabled?() do
     Starts a managed port linked to the caller. On the first start it validates
     and persists the bootstrap settings. On later starts it loads the snapshot
     before opening the node and optional hub.
+
+    Set `:recover_expired_certificate` to `true` for a local startup recovery
+    when the active certificate has expired and a replacement is already
+    staged. The port validates the staged credentials with the active settings
+    and persists them before opening any connections. Pending property writes
+    still require activation.
     """
     @spec start_link(Keyword.t()) :: GenServer.on_start()
     def start_link(opts) do
@@ -346,9 +354,10 @@ if BACstack.MixProject.sc_enabled?() do
            {:ok, path} <- Store.open(opts[:storage_dir]),
            {:ok, snapshot, new?} <- Store.load(path, opts),
            :ok <- Hosted.check_snapshot(hosted, snapshot),
+           {:ok, snapshot, runtime, persist?} <-
+             startup_runtime(snapshot, hub_audit, new?, opts[:recover_expired_certificate]),
            {:ok, device, port} <- initialize_objects(opts, snapshot, hosted),
-           {:ok, runtime} <- runtime_config(snapshot, :active, hub_audit),
-           :ok <- Store.initialize(path, snapshot, new?),
+           :ok <- Store.initialize(path, snapshot, persist?),
            {:ok, hub} <- start_hub(runtime.hub),
            {:ok, node} <- Node.open(self(), runtime.node),
            {:ok, store} <- SegmentsStore.start_link([]),
@@ -358,6 +367,7 @@ if BACstack.MixProject.sc_enabled?() do
          %State{
            path: path,
            snapshot: snapshot,
+           runtime: runtime,
            device: device,
            port: port,
            files: nil,
@@ -372,6 +382,24 @@ if BACstack.MixProject.sc_enabled?() do
          }}
       else
         {:error, reason} -> {:stop, reason}
+      end
+    end
+
+    @spec startup_runtime(snapshot(), Keyword.t() | nil, boolean(), term()) ::
+            {:ok, snapshot(), runtime_config(), boolean()} | {:error, term()}
+    defp startup_runtime(snapshot, hub_audit, new?, recover?) do
+      case runtime_config(snapshot, :active, hub_audit) do
+        {:ok, runtime} ->
+          {:ok, snapshot, runtime, new?}
+
+        {:error, {:operational_certificate_file, :security, :certificate_expired}}
+        when recover? == true and not new? and is_map_key(snapshot.uploads, :operational) ->
+          with {:ok, runtime} <- runtime_config(%{snapshot | pending: %{}}, :proposed, hub_audit) do
+            {:ok, Store.promote_credentials(snapshot, runtime.key), runtime, true}
+          end
+
+        error ->
+          error
       end
     end
 
@@ -503,7 +531,14 @@ if BACstack.MixProject.sc_enabled?() do
       case Store.write(state.path, snapshot) do
         :ok ->
           if state.hub, do: GenServer.call(state.hub, {:set_vmac, vmac})
-          {:noreply, %{state | snapshot: snapshot}}
+
+          runtime = %{
+            state.runtime
+            | node: Keyword.put(state.runtime.node, :vmac, vmac),
+              hub: state.runtime.hub && Keyword.put(state.runtime.hub, :vmac, vmac)
+          }
+
+          {:noreply, %{state | snapshot: snapshot, runtime: runtime}}
 
         {:error, _reason} ->
           {:stop, :vmac_persistence_failed, state}

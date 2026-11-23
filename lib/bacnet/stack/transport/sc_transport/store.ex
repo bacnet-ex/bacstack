@@ -18,20 +18,13 @@ if BACstack.MixProject.sc_enabled?() do
 
     alias BACnet.Protocol.BACnetArray
     alias BACnet.Protocol.SecureConnect.BVLC
+    alias BACnet.Protocol.SecureConnect.Settings
     alias BACnet.Stack.Transport.ScTransport.Config
     alias BACnet.Stack.Transport.ScTransport.Credentials
     alias BACnet.Stack.Transport.ScTransport.ManagedPort
 
     @file_roles [:operational, :issuer_1, :issuer_2, :csr]
-    @setting_map [
-      sc_primary_hub_uri: :primary_hub_uri,
-      sc_failover_hub_uri: :failover_hub_uri,
-      sc_minimum_reconnect_time: :min_reconnect_time,
-      sc_maximum_reconnect_time: :max_reconnect_time,
-      sc_connect_wait_timeout: :connect_wait_timeout,
-      sc_disconnect_wait_timeout: :disconnect_wait_timeout,
-      sc_heartbeat_timeout: :heartbeat_timeout
-    ]
+    @setting_map Settings.connector_options()
 
     @typep config_mode :: :active | :proposed
 
@@ -144,6 +137,20 @@ if BACstack.MixProject.sc_enabled?() do
     @spec initialize(Path.t(), ManagedPort.snapshot(), boolean()) :: :ok | {:error, term()}
     def initialize(path, snapshot, true), do: write(path, snapshot)
     def initialize(_path, _snapshot, false), do: :ok
+
+    @doc false
+    @spec promote_credentials(ManagedPort.snapshot(), binary()) :: ManagedPort.snapshot()
+    def promote_credentials(snapshot, key) do
+      %{
+        snapshot
+        | certificates: Map.merge(snapshot.certificates, snapshot.uploads),
+          uploads: %{},
+          file_dates: Map.merge(snapshot.file_dates, snapshot.upload_dates),
+          upload_dates: %{},
+          active_key: key,
+          activation: nil
+      }
+    end
 
     @doc """
     Validates the active or proposed snapshot and returns the options needed

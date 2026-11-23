@@ -65,10 +65,22 @@ defmodule BACnet.Protocol.Services.Ack.ReadRangeAck do
            ),
          {:ok, property, rest} <-
            pattern_extract_tags(rest, {:tagged, {1, _t, _l}}, :enumerated, false),
+         property_atom = Constants.by_value(:property_identifier, property, property),
+         :ok <-
+           (if property_atom in [:all, :required, :optional] do
+              {:error, :invalid_property_identifier}
+            else
+              :ok
+            end),
          {:ok, array_index, rest} <-
            pattern_extract_tags(rest, {:tagged, {2, _t, _l}}, :unsigned_integer, true),
-         {:ok, {first, last, more}, rest} <-
+         {:ok, result_flags, rest} <-
            pattern_extract_tags(rest, {:tagged, {3, _t, _l}}, :bitstring, false),
+         {:ok, {first, last, more}} <-
+           if(tuple_size(result_flags) == 3,
+             do: {:ok, result_flags},
+             else: {:error, :invalid_result_flags}
+           ),
          {:ok, item_count, rest} <-
            pattern_extract_tags(rest, {:tagged, {4, _t, _l}}, :unsigned_integer, false),
          {:ok, {:constructed, {5, item_data, _len}}, rest} <-
@@ -76,13 +88,15 @@ defmodule BACnet.Protocol.Services.Ack.ReadRangeAck do
          {:ok, first_seq_num, _rest} <-
            pattern_extract_tags(rest, {:tagged, {6, _t, _l}}, :unsigned_integer, true),
          :ok <-
-           if(first_seq_num == nil or ApplicationTags.valid_int?(first_seq_num, 32),
+           if(
+             first_seq_num == nil or
+               (item_count > 0 and ApplicationTags.valid_uint?(first_seq_num, 32)),
              do: :ok,
              else: {:error, :invalid_first_sequence_number_value}
            ) do
       struc = %__MODULE__{
         object_identifier: obj,
-        property_identifier: Constants.by_value(:property_identifier, property, property),
+        property_identifier: property_atom,
         property_array_index: array_index,
         result_flags: %ResultFlags{
           first_item: first,
@@ -114,9 +128,20 @@ defmodule BACnet.Protocol.Services.Ack.ReadRangeAck do
 
   def to_apdu(%__MODULE__{} = ack, invoke_id) when invoke_id in 0..255 do
     with :ok <-
+           (if ack.property_identifier in [:all, :required, :optional] do
+              {:error, :invalid_property_identifier}
+            else
+              :ok
+            end),
+         :ok <-
+           if(ack.item_count == 0 and ack.first_sequence_number != nil,
+             do: {:error, :invalid_first_sequence_number_value},
+             else: :ok
+           ),
+         :ok <-
            if(
              ack.first_sequence_number == nil or
-               ApplicationTags.valid_int?(ack.first_sequence_number, 32),
+               ApplicationTags.valid_uint?(ack.first_sequence_number, 32),
              do: :ok,
              else: {:error, :invalid_first_sequence_number_value}
            ),

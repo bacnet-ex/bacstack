@@ -1211,8 +1211,8 @@ defmodule BACnet.Test.Stack.Transport.ScTransport.IntegrationTest do
       end)
 
     assert logs =~ "Sending npdu message 312 from VMAC 020000000002 to VMAC 020000000003"
-    assert logs =~ "Queued npdu message 312 from VMAC 020000000002 (Device UUID"
-    assert logs =~ "to VMAC 020000000003 (eligible recipients 1)"
+    assert logs =~ "Routed npdu message 312 from VMAC 020000000002 (Device UUID"
+    assert logs =~ "to VMAC 020000000003 (queued 1, queue drops 0)"
     assert logs =~ "Received npdu message 312 from VMAC 020000000002 to VMAC 020000000003"
 
     assert {:error, :invalid_bvlc} =
@@ -1580,14 +1580,57 @@ defmodule BACnet.Test.Stack.Transport.ScTransport.IntegrationTest do
     stop_test_fixtures()
   end
 
+  test "applies WebSocket path and CRL policy changes to the running listener", context do
+    opts = hub_opts(context, 0, @hub)
+    hub = start_supervised!({Hub, opts})
+    port = Hub.port(hub)
+    listener = :sys.get_state(hub).listener
+    original = start_node(context, uri(port), nil, @peer, <<2::128>>, self())
+    eventually(fn -> Node.status(original).active == :primary end)
+
+    path_opts = Keyword.put(opts, :path, "/sc")
+    assert :ok = Hub.reconfigure(hub, path_opts)
+    assert Hub.port(hub) == port
+    assert :primary == Node.status(original).active
+
+    updated = start_node(context, uri(port) <> "sc", nil, @managed, <<3::128>>, self())
+    eventually(fn -> Node.status(updated).active == :primary end)
+
+    rejected = start_node(context, uri(port), nil, <<2, 0, 0, 0, 0, 4>>, <<4::128>>, self())
+    eventually(fn -> match?(%{primary: %{error: {:http_status, 404}}}, Node.status(rejected)) end)
+
+    assert :ok = Hub.reconfigure(hub, Keyword.put(path_opts, :crl_check, :peer))
+    assert Hub.port(hub) == port
+
+    assert :proplists.get_value(:crl_check, :ranch.get_transport_options(listener).socket_opts) ==
+             :peer
+
+    eventually(fn -> Node.status(updated).active == nil end)
+
+    assert :ok = Hub.reconfigure(hub, path_opts)
+
+    assert :proplists.get_value(:crl_check, :ranch.get_transport_options(listener).socket_opts) ==
+             false
+
+    eventually(fn -> Node.status(updated).active == :primary end)
+
+    stop_test_fixtures()
+  end
+
   test "records a handshake timeout and restores the listener after a failed rebind", context do
     options = hub_opts(context, 0, @hub)
     hub = start_supervised!(Supervisor.child_spec({Hub, options}, restart: :temporary))
     port = Hub.port(hub)
     {:ok, occupied} = :gen_tcp.listen(0, ip: @loopback)
     {:ok, {_address, occupied_port}} = :inet.sockname(occupied)
-    assert {:error, _reason} = Hub.reconfigure(hub, Keyword.put(options, :port, occupied_port))
+    listener = :sys.get_state(hub).listener
+    dispatch = :cowboy.get_env(listener, :dispatch)
+    next = Keyword.merge(options, port: occupied_port, path: "/sc", crl_check: :peer)
+    assert {:error, _reason} = Hub.reconfigure(hub, next)
     assert Hub.port(hub) == port
+    assert :cowboy.get_env(listener, :dispatch) == dispatch
+    original_socket_opts = :ranch.get_transport_options(listener).socket_opts
+    assert :proplists.get_value(:crl_check, original_socket_opts) == false
     :ok = :gen_tcp.close(occupied)
 
     remote = {@loopback, 40_000}

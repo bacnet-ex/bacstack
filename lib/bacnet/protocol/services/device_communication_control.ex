@@ -109,7 +109,7 @@ defmodule BACnet.Protocol.Services.DeviceCommunicationControl do
              true
            ),
          :ok <-
-           if(time_duration == nil or ApplicationTags.valid_int?(time_duration, 16),
+           if(time_duration == nil or ApplicationTags.valid_uint?(time_duration, 16),
              do: :ok,
              else: {:error, :invalid_time_duration_value}
            ),
@@ -123,13 +123,25 @@ defmodule BACnet.Protocol.Services.DeviceCommunicationControl do
            ),
          {:ok, password, _rest} <-
            pattern_extract_tags(rest, {:tagged, {2, _t, _l}}, :character_string, true) do
-      event = %__MODULE__{
-        state: state_c,
-        time_duration: time_duration,
-        password: password
-      }
+      cond do
+        password == "" ->
+          {:error, :invalid_empty_password}
 
-      {:ok, event}
+        password != nil and (not is_binary(password) or not String.valid?(password)) ->
+          {:error, :invalid_password}
+
+        is_binary(password) and String.length(password) > 20 ->
+          {:error, :password_too_long}
+
+        true ->
+          event = %__MODULE__{
+            state: state_c,
+            time_duration: time_duration,
+            password: password
+          }
+
+          {:ok, event}
+      end
     else
       {:error, :missing_pattern} -> {:error, :invalid_request_parameters}
       {:error, _err} = err -> err
@@ -152,7 +164,7 @@ defmodule BACnet.Protocol.Services.DeviceCommunicationControl do
     with :ok <-
            if(
              service.time_duration == nil or
-               ApplicationTags.valid_int?(service.time_duration, 16),
+               ApplicationTags.valid_uint?(service.time_duration, 16),
              do: :ok,
              else: {:error, :invalid_time_duration_value}
            ),
@@ -176,17 +188,24 @@ defmodule BACnet.Protocol.Services.DeviceCommunicationControl do
          {:ok, password} <-
            (if service.password do
               cond do
-                is_binary(service.password) and byte_size(service.password) > 20 ->
+                not is_binary(service.password) ->
+                  raise ArgumentError,
+                        "Invalid password, expected string, got: " <> inspect(service.password)
+
+                service.password == "" ->
+                  {:error, :invalid_empty_password}
+
+                not String.valid?(service.password) ->
+                  {:error, :invalid_password}
+
+                String.length(service.password) > 20 ->
                   {:error, :password_too_long}
 
-                is_binary(service.password) and String.valid?(service.password) ->
+                true ->
                   with {:ok, password, _header} <-
                          ApplicationTags.encode_value({:character_string, service.password}) do
                     {:ok, {:tagged, {2, password, byte_size(password)}}}
                   end
-
-                true ->
-                  {:error, :invalid_password}
               end
             else
               {:ok, nil}

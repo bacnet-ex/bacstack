@@ -49,7 +49,7 @@ defmodule BACnet.Protocol.GroupChannelValue do
           {:ok, ApplicationTags.encoding_list()} | {:error, term()}
   def encode(%__MODULE__{} = value, _opts \\ []) do
     with :ok <-
-           if(ApplicationTags.valid_int?(value.channel, 16),
+           if(ApplicationTags.valid_uint?(value.channel, 16),
              do: :ok,
              else: {:error, :invalid_channel_value}
            ),
@@ -93,7 +93,7 @@ defmodule BACnet.Protocol.GroupChannelValue do
     with {:ok, channel, rest} <-
            pattern_extract_tags(tags, {:tagged, {0, _t, _l}}, :unsigned_integer, false),
          :ok <-
-           if(ApplicationTags.valid_int?(channel, 16),
+           if(ApplicationTags.valid_uint?(channel, 16),
              do: :ok,
              else: {:error, :invalid_channel_value}
            ),

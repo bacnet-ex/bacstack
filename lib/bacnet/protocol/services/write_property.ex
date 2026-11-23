@@ -112,15 +112,26 @@ defmodule BACnet.Protocol.Services.WriteProperty do
            ),
          {:ok, property, rest} <-
            pattern_extract_tags(rest, {:tagged, {1, _t, _l}}, :enumerated, false),
+         prop_identifier = Constants.by_value(:property_identifier, property, property),
+         :ok <-
+           (if prop_identifier in [:all, :required, :optional] do
+              {:error, :invalid_property_identifier}
+            else
+              :ok
+            end),
          {:ok, array_index, rest} <-
            pattern_extract_tags(rest, {:tagged, {2, _t, _l}}, :unsigned_integer, true),
          {:ok, {:constructed, {3, value, _l}}, rest} <-
            pattern_extract_tags(rest, {:constructed, {3, _t, _l}}, nil, false),
          {:ok, priority, _rest} <-
-           pattern_extract_tags(rest, {:tagged, {4, _t, _l}}, :unsigned_integer, true) do
+           pattern_extract_tags(rest, {:tagged, {4, _t, _l}}, :unsigned_integer, true),
+         nil <-
+           if(priority != nil and (priority < 1 or priority > 16),
+             do: {:error, :invalid_priority}
+           ) do
       readprop = %__MODULE__{
         object_identifier: object,
-        property_identifier: Constants.by_value(:property_identifier, property, property),
+        property_identifier: prop_identifier,
         property_array_index: array_index,
         property_value:
           if(is_list(value),
@@ -150,7 +161,13 @@ defmodule BACnet.Protocol.Services.WriteProperty do
           {:ok, Protocol.APDU.ConfirmedServiceRequest.t()}
           | {:error, term()}
   def to_apdu(%__MODULE__{} = service, request_data) do
-    with {:ok, object_identifier, _header} <-
+    with :ok <-
+           (if service.property_identifier in [:all, :required, :optional] do
+              {:error, :invalid_property_identifier}
+            else
+              :ok
+            end),
+         {:ok, object_identifier, _header} <-
            ApplicationTags.encode_value({:object_identifier, service.object_identifier}),
          {:ok, property_identifier, _header} <-
            ApplicationTags.encode_value(
@@ -170,9 +187,13 @@ defmodule BACnet.Protocol.Services.WriteProperty do
             end),
          {:ok, priority} <-
            (if service.priority do
-              with {:ok, priority, _header} <-
-                     ApplicationTags.encode_value({:unsigned_integer, service.priority}) do
-                {:ok, {:tagged, {4, priority, byte_size(priority)}}}
+              if service.priority < 1 or service.priority > 16 do
+                {:error, :invalid_priority}
+              else
+                with {:ok, priority, _header} <-
+                       ApplicationTags.encode_value({:unsigned_integer, service.priority}) do
+                  {:ok, {:tagged, {4, priority, byte_size(priority)}}}
+                end
               end
             else
               {:ok, nil}

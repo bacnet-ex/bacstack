@@ -61,7 +61,10 @@ if BACstack.MixProject.sc_enabled?() do
     | `:write_diagnostic` | The invoke ID, service, and reason when the worker can identify a write but cannot decode or assemble its details. |
 
     The `routing` field is `{:queued, count}`, `:no_recipient`,
-    `:invalid_source`, or `:missing_destination`. A queued recipient
+    `:invalid_source`, or `:missing_destination`. A full egress queue reports
+    `:egress_queue_full` if all recipients were dropped or
+    `{:partially_queued, queued, dropped}` if some broadcast recipients were
+    queued. A queued recipient
     can still drop the frame before sending it, for example if the frame
     exceeds its advertised receive limits.
 
@@ -185,7 +188,12 @@ if BACstack.MixProject.sc_enabled?() do
       A hub routing decision. The recipient connection can still drop a queued frame.
       """
       @type routing ::
-              :invalid_source | :missing_destination | :no_recipient | {:queued, pos_integer()}
+              :invalid_source
+              | :missing_destination
+              | :no_recipient
+              | :egress_queue_full
+              | {:queued, pos_integer()}
+              | {:partially_queued, pos_integer(), pos_integer()}
 
       @typedoc """
       Metadata common to raw frames, write attempts, results, and diagnostics.

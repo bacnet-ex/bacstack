@@ -88,6 +88,24 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeTest do
              })
   end
 
+  test "decoding ReadRange rejects a property array index of zero" do
+    assert {:error, :invalid_array_index} =
+             ReadRange.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :read_range,
+               parameters: [
+                 tagged: {0, <<5, 0, 0, 1>>, 4},
+                 tagged: {1, <<131>>, 1},
+                 tagged: {2, <<0>>, 1}
+               ]
+             })
+  end
+
   test "decoding ReadRange by sequence number" do
     assert {:ok,
             %ReadRange{
@@ -116,6 +134,24 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeTest do
                       unsigned_integer: 5,
                       signed_integer: 12
                     ], 0}
+               ]
+             })
+  end
+
+  test "decoding ReadRange rejects a reference sequence number above Unsigned32" do
+    assert {:error, :seq_number_too_large} =
+             ReadRange.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :read_range,
+               parameters: [
+                 tagged: {0, <<5, 0, 0, 1>>, 4},
+                 tagged: {1, <<131>>, 1},
+                 constructed: {6, [unsigned_integer: 4_294_967_296, signed_integer: 1], 0}
                ]
              })
   end
@@ -174,6 +210,27 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeTest do
                       },
                       signed_integer: 4
                     ], 0}
+               ]
+             })
+  end
+
+  test "decoding ReadRange by time rejects a wildcard in reference time" do
+    date = %BACnetDate{year: 1998, month: 3, day: 23, weekday: 1}
+    time = %BACnetTime{hour: 19, minute: 52, second: :unspecified, hundredth: 0}
+
+    assert {:error, :invalid_unspecific_datetime} =
+             ReadRange.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :read_range,
+               parameters: [
+                 tagged: {0, <<5, 0, 0, 1>>, 4},
+                 tagged: {1, <<131>>, 1},
+                 constructed: {7, [date: date, time: time, signed_integer: 1], 0}
                ]
              })
   end
@@ -599,6 +656,19 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeTest do
              )
   end
 
+  test "encoding ReadRange rejects a property array index of zero" do
+    assert {:error, :invalid_array_index} =
+             ReadRange.to_apdu(
+               %ReadRange{
+                 object_identifier: %ObjectIdentifier{type: :trend_log, instance: 1},
+                 property_identifier: :log_buffer,
+                 property_array_index: 0,
+                 range: nil
+               },
+               []
+             )
+  end
+
   test "encoding ReadRange by sequence number" do
     assert {:ok,
             %ConfirmedServiceRequest{
@@ -632,6 +702,19 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeTest do
                },
                invoke_id: 1,
                max_segments: 4
+             )
+  end
+
+  test "encoding ReadRange rejects a reference sequence number above Unsigned32" do
+    assert {:error, :seq_number_too_large} =
+             ReadRange.to_apdu(
+               %ReadRange{
+                 object_identifier: %ObjectIdentifier{type: :trend_log, instance: 1},
+                 property_identifier: :log_buffer,
+                 property_array_index: nil,
+                 range: {:by_seq_number, {4_294_967_296, 1}}
+               },
+               []
              )
   end
 
@@ -694,6 +777,24 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeTest do
                },
                invoke_id: 1,
                max_segments: 4
+             )
+  end
+
+  test "encoding ReadRange by time rejects a wildcard in reference time" do
+    reference_time = %BACnetDateTime{
+      date: %BACnetDate{year: 1998, month: 3, day: 23, weekday: 1},
+      time: %BACnetTime{hour: 19, minute: 52, second: :unspecified, hundredth: 0}
+    }
+
+    assert {:error, :invalid_unspecific_datetime} =
+             ReadRange.to_apdu(
+               %ReadRange{
+                 object_identifier: %ObjectIdentifier{type: :trend_log, instance: 1},
+                 property_identifier: :log_buffer,
+                 property_array_index: nil,
+                 range: {:by_time, {reference_time, 1}}
+               },
+               []
              )
   end
 

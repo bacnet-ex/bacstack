@@ -106,6 +106,57 @@ defmodule BACnet.Test.Protocol.Services.DeviceCommunicationControlTest do
              })
   end
 
+  test "decoding DeviceCommunicationControl rejects an empty password" do
+    assert {:error, :invalid_empty_password} =
+             DeviceCommunicationControl.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :device_communication_control,
+               parameters: [
+                 tagged: {1, <<1>>, 1},
+                 tagged: {2, <<0>>, 1}
+               ]
+             })
+  end
+
+  test "decoding DeviceCommunicationControl rejects a password with 21 characters" do
+    assert {:error, :password_too_long} =
+             DeviceCommunicationControl.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :device_communication_control,
+               parameters: [
+                 tagged: {1, <<1>>, 1},
+                 tagged: {2, <<0, "abcdefghijklmnopqrstu">>, 22}
+               ]
+             })
+  end
+
+  test "decoding DeviceCommunicationControl rejects invalid UTF-8 in the password" do
+    assert {:error, :invalid_password} =
+             DeviceCommunicationControl.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :device_communication_control,
+               parameters: [
+                 tagged: {1, <<1>>, 1},
+                 tagged: {2, <<0, 255>>, 2}
+               ]
+             })
+  end
+
   test "decoding DeviceCommunicationControl invalid data" do
     assert {:error, :unknown_character_string_encoding} =
              DeviceCommunicationControl.from_apdu(%ConfirmedServiceRequest{
@@ -292,6 +343,36 @@ defmodule BACnet.Test.Protocol.Services.DeviceCommunicationControlTest do
              )
   end
 
+  test "encoding DeviceCommunicationControl accepts a password with 20 multibyte characters" do
+    password = String.duplicate("ä", 20)
+    encoded_password = <<0, password::binary>>
+
+    assert {:ok,
+            %ConfirmedServiceRequest{
+              parameters: [tagged: {1, <<1>>, 1}, tagged: {2, ^encoded_password, 41}]
+            }} =
+             DeviceCommunicationControl.to_apdu(
+               %DeviceCommunicationControl{
+                 state: :disable,
+                 time_duration: nil,
+                 password: password
+               },
+               []
+             )
+  end
+
+  test "encoding DeviceCommunicationControl rejects an empty password" do
+    assert {:error, :invalid_empty_password} =
+             DeviceCommunicationControl.to_apdu(
+               %DeviceCommunicationControl{
+                 state: :disable,
+                 time_duration: nil,
+                 password: ""
+               },
+               []
+             )
+  end
+
   test "encoding DeviceCommunicationControl invalid password length" do
     assert {:error, :password_too_long} =
              DeviceCommunicationControl.to_apdu(
@@ -319,16 +400,17 @@ defmodule BACnet.Test.Protocol.Services.DeviceCommunicationControlTest do
   end
 
   test "encoding DeviceCommunicationControl invalid password type" do
-    assert {:error, :invalid_password} =
-             DeviceCommunicationControl.to_apdu(
-               %DeviceCommunicationControl{
-                 state: :disable,
-                 time_duration: nil,
-                 password: :hello
-               },
-               invoke_id: 1,
-               max_segments: 4
-             )
+    assert_raise ArgumentError, fn ->
+      DeviceCommunicationControl.to_apdu(
+        %DeviceCommunicationControl{
+          state: :disable,
+          time_duration: nil,
+          password: :hello
+        },
+        invoke_id: 1,
+        max_segments: 4
+      )
+    end
   end
 
   test "encoding DeviceCommunicationControl unknown state" do

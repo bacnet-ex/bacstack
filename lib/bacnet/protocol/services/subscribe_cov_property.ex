@@ -131,7 +131,7 @@ defmodule BACnet.Protocol.Services.SubscribeCovProperty do
              false
            ),
          :ok <-
-           if(ApplicationTags.valid_int?(process_identifier, 32),
+           if(ApplicationTags.valid_uint?(process_identifier, 32),
              do: :ok,
              else: {:error, :invalid_process_identifier_value}
            ),
@@ -181,7 +181,7 @@ defmodule BACnet.Protocol.Services.SubscribeCovProperty do
           | {:error, term()}
   def to_apdu(%__MODULE__{} = service, request_data) do
     with :ok <-
-           if(ApplicationTags.valid_int?(service.process_identifier, 32),
+           if(ApplicationTags.valid_uint?(service.process_identifier, 32),
              do: :ok,
              else: {:error, :invalid_process_identifier_value}
            ),

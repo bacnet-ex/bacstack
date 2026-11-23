@@ -228,6 +228,7 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
   alias BACnet.Protocol.SecureConnect.Health
   alias BACnet.Protocol.SecureConnect.HubConnection
   alias BACnet.Protocol.SecureConnect.HubFunctionConnection
+  alias BACnet.Protocol.SecureConnect.Settings
   alias BACnet.Protocol.VmacEntry
 
   require Constants
@@ -706,28 +707,28 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
       annotation: [required_when: &sc_port?/2]
     )
 
-    field(:sc_minimum_reconnect_time, 2..300,
-      default: 10,
+    field(:sc_minimum_reconnect_time, Settings.min_reconnect_time(),
+      default: Settings.timer_default(:sc_minimum_reconnect_time),
       annotation: [required_when: &sc_port?/2]
     )
 
-    field(:sc_maximum_reconnect_time, 2..600,
-      default: 600,
+    field(:sc_maximum_reconnect_time, Settings.max_reconnect_time(),
+      default: Settings.timer_default(:sc_maximum_reconnect_time),
       annotation: [required_when: &sc_port?/2]
     )
 
-    field(:sc_connect_wait_timeout, 5..300,
-      default: 10,
+    field(:sc_connect_wait_timeout, Settings.connect_wait_timeout(),
+      default: Settings.timer_default(:sc_connect_wait_timeout),
       annotation: [required_when: &sc_port?/2]
     )
 
-    field(:sc_disconnect_wait_timeout, 5..300,
-      default: 10,
+    field(:sc_disconnect_wait_timeout, Settings.disconnect_wait_timeout(),
+      default: Settings.timer_default(:sc_disconnect_wait_timeout),
       annotation: [required_when: &sc_port?/2]
     )
 
-    field(:sc_heartbeat_timeout, 3..300,
-      default: 300,
+    field(:sc_heartbeat_timeout, Settings.heartbeat_timeout(),
+      default: Settings.timer_default(:sc_heartbeat_timeout),
       annotation: [required_when: &sc_port?/2]
     )
 
@@ -806,49 +807,41 @@ defmodule BACnet.Protocol.ObjectTypes.NetworkPort do
     end
   end
 
-  @pending_properties [
-    :sc_primary_hub_uri,
-    :sc_failover_hub_uri,
-    :sc_minimum_reconnect_time,
-    :sc_maximum_reconnect_time,
-    :sc_connect_wait_timeout,
-    :sc_disconnect_wait_timeout,
-    :sc_heartbeat_timeout,
-    :sc_hub_function_enable,
-    :sc_hub_function_accept_uris,
-    :bacnet_ip_global_address,
-    :bacnet_ip_mode,
-    :bacnet_ip_multicast_address,
-    :bacnet_ip_nat_traversal,
-    :bacnet_ip_udp_port,
-    :bacnet_ipv6_mode,
-    :bacnet_ipv6_multicast_address,
-    :bacnet_ipv6_udp_port,
-    :bbmd_accept_fd_registrations,
-    :bbmd_broadcast_distribution_table,
-    :fd_bbmd_address,
-    :fd_subscription_lifetime,
-    :ip_address,
-    :ip_default_gateway,
-    :ip_dhcp_enable,
-    :ip_dns_server,
-    :ip_subnet_mask,
-    :ipv6_address,
-    :ipv6_auto_addressing_enable,
-    :ipv6_default_gateway,
-    :ipv6_dns_server,
-    :ipv6_prefix_length,
-    :ipv6_zone_index,
-    :link_speed,
-    :link_speed_autonegotiate,
-    :mac_address,
-    :max_info_frames,
-    :max_master,
-    :network_interface_name,
-    :network_number,
-    :reference_port,
-    :virtual_mac_address_table
-  ]
+  @pending_properties Settings.port_properties() ++
+                        [
+                          :bacnet_ip_global_address,
+                          :bacnet_ip_mode,
+                          :bacnet_ip_multicast_address,
+                          :bacnet_ip_nat_traversal,
+                          :bacnet_ip_udp_port,
+                          :bacnet_ipv6_mode,
+                          :bacnet_ipv6_multicast_address,
+                          :bacnet_ipv6_udp_port,
+                          :bbmd_accept_fd_registrations,
+                          :bbmd_broadcast_distribution_table,
+                          :fd_bbmd_address,
+                          :fd_subscription_lifetime,
+                          :ip_address,
+                          :ip_default_gateway,
+                          :ip_dhcp_enable,
+                          :ip_dns_server,
+                          :ip_subnet_mask,
+                          :ipv6_address,
+                          :ipv6_auto_addressing_enable,
+                          :ipv6_default_gateway,
+                          :ipv6_dns_server,
+                          :ipv6_prefix_length,
+                          :ipv6_zone_index,
+                          :link_speed,
+                          :link_speed_autonegotiate,
+                          :mac_address,
+                          :max_info_frames,
+                          :max_master,
+                          :network_interface_name,
+                          :network_number,
+                          :reference_port,
+                          :virtual_mac_address_table
+                        ]
   @configuration_properties [:network_number_quality | @pending_properties]
   @commands [
     :generate_csr_file,

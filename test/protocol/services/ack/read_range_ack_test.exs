@@ -17,6 +17,16 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeAckTest do
   @moduletag :service
   @moduletag :service_ack
 
+  @empty_ack %ReadRangeAck{
+    object_identifier: %ObjectIdentifier{type: :trend_log, instance: 1},
+    property_identifier: :log_buffer,
+    property_array_index: nil,
+    result_flags: %ResultFlags{first_item: true, last_item: true, more_items: false},
+    item_count: 0,
+    item_data: [],
+    first_sequence_number: nil
+  }
+
   doctest ReadRangeAck
 
   test "decoding ReadRangeAck" do
@@ -171,7 +181,7 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeAckTest do
               },
               item_count: 0,
               item_data: [],
-              first_sequence_number: 79_201
+              first_sequence_number: nil
             }} =
              ReadRangeAck.from_apdu(%ComplexACK{
                invoke_id: 0,
@@ -184,8 +194,7 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeAckTest do
                  tagged: {2, "a", 1},
                  tagged: {3, <<5, 192>>, 2},
                  tagged: {4, <<0>>, 1},
-                 constructed: {5, [], 0},
-                 tagged: {6, <<1, 53, 97>>, 3}
+                 constructed: {5, [], 0}
                ]
              })
   end
@@ -225,6 +234,67 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeAckTest do
                invoke_id: 0,
                service: :unconfirmed_service_request
              })
+  end
+
+  test "decoding ReadRangeAck rejects eight result flag bits" do
+    apdu =
+      read_range_apdu(
+        tagged: {1, <<131>>, 1},
+        tagged: {3, <<0, 192>>, 2},
+        tagged: {4, <<0>>, 1},
+        constructed: {5, [], 0}
+      )
+
+    assert {:error, :invalid_result_flags} = ReadRangeAck.from_apdu(apdu)
+  end
+
+  test "decoding ReadRangeAck rejects a first sequence number with zero items" do
+    apdu =
+      read_range_apdu(
+        tagged: {1, <<131>>, 1},
+        tagged: {3, <<5, 192>>, 2},
+        tagged: {4, <<0>>, 1},
+        constructed: {5, [], 0},
+        tagged: {6, <<1, 53, 97>>, 3}
+      )
+
+    assert {:error, :invalid_first_sequence_number_value} = ReadRangeAck.from_apdu(apdu)
+  end
+
+  test "decoding ReadRangeAck rejects the ALL property identifier" do
+    apdu =
+      read_range_apdu(
+        tagged: {1, <<0x08>>, 1},
+        tagged: {3, <<5, 192>>, 2},
+        tagged: {4, <<0>>, 1},
+        constructed: {5, [], 0}
+      )
+
+    assert {:error, :invalid_property_identifier} = ReadRangeAck.from_apdu(apdu)
+  end
+
+  test "decoding ReadRangeAck rejects the REQUIRED property identifier" do
+    apdu =
+      read_range_apdu(
+        tagged: {1, <<0x69>>, 1},
+        tagged: {3, <<5, 192>>, 2},
+        tagged: {4, <<0>>, 1},
+        constructed: {5, [], 0}
+      )
+
+    assert {:error, :invalid_property_identifier} = ReadRangeAck.from_apdu(apdu)
+  end
+
+  test "decoding ReadRangeAck rejects the OPTIONAL property identifier" do
+    apdu =
+      read_range_apdu(
+        tagged: {1, <<0x50>>, 1},
+        tagged: {3, <<5, 192>>, 2},
+        tagged: {4, <<0>>, 1},
+        constructed: {5, [], 0}
+      )
+
+    assert {:error, :invalid_property_identifier} = ReadRangeAck.from_apdu(apdu)
   end
 
   test "decoding ReadRangeAck invalid first seq number" do
@@ -436,8 +506,7 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeAckTest do
                 tagged: {2, "a", 1},
                 tagged: {3, <<5, 192>>, 2},
                 tagged: {4, <<0>>, 1},
-                constructed: {5, [], 0},
-                tagged: {6, <<1, 53, 97>>, 3}
+                constructed: {5, [], 0}
               ]
             }} =
              ReadRangeAck.to_apdu(
@@ -455,7 +524,7 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeAckTest do
                  },
                  item_count: 0,
                  item_data: [],
-                 first_sequence_number: 79_201
+                 first_sequence_number: nil
                },
                55
              )
@@ -669,12 +738,32 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeAckTest do
                    last_item: true,
                    more_items: false
                  },
-                 item_count: 0,
-                 item_data: [],
+                 item_count: 1,
+                 item_data: [Encoding.create!({:unsigned_integer, 7})],
                  first_sequence_number: 79_201_214_421_124
                },
                55
              )
+  end
+
+  test "encoding ReadRangeAck rejects a first sequence number with zero items" do
+    assert {:error, :invalid_first_sequence_number_value} =
+             ReadRangeAck.to_apdu(%{@empty_ack | first_sequence_number: 79_201})
+  end
+
+  test "encoding ReadRangeAck rejects the ALL property identifier" do
+    assert {:error, :invalid_property_identifier} =
+             ReadRangeAck.to_apdu(%{@empty_ack | property_identifier: :all})
+  end
+
+  test "encoding ReadRangeAck rejects the REQUIRED property identifier" do
+    assert {:error, :invalid_property_identifier} =
+             ReadRangeAck.to_apdu(%{@empty_ack | property_identifier: :required})
+  end
+
+  test "encoding ReadRangeAck rejects the OPTIONAL property identifier" do
+    assert {:error, :invalid_property_identifier} =
+             ReadRangeAck.to_apdu(%{@empty_ack | property_identifier: :optional})
   end
 
   test "ReadRangeAck with 0 primitive items survives a wire round trip" do
@@ -763,5 +852,15 @@ defmodule BACnet.Test.Protocol.Services.ReadRangeAckTest do
     assert decoded_record.timestamp == record.timestamp
     assert decoded_record.status_flags == nil
     assert %Encoding{type: :unsigned_integer, value: 7} = decoded_record.log_datum
+  end
+
+  defp read_range_apdu(payload) do
+    %ComplexACK{
+      invoke_id: 0,
+      sequence_number: nil,
+      proposed_window_size: nil,
+      service: :read_range,
+      payload: [{:tagged, {0, <<5, 0, 0, 1>>, 4}} | payload]
+    }
   end
 end

@@ -19,6 +19,55 @@ defmodule BACnet.Test.Stack.Transport.ScTransport.ActivationTest do
     %{ca: ca, ca_key: ca_key, ca_pem: X509.Certificate.to_pem(ca)}
   end
 
+  test "activates replacement credentials even after the running certificate expires", context do
+    managed = start_managed(context)
+    {expired, replacement} = stage_renewal(managed, context)
+    state = :sys.get_state(managed)
+
+    assert {:error, {:operational_certificate_file, :security, :certificate_expired}} =
+             Store.runtime_config(state.snapshot, :active)
+
+    assert :ok = ManagedPort.activate(managed)
+
+    assert {:ok, %{certificates: %{operational: ^replacement}, uploads: uploads}} =
+             Store.read(state.path)
+
+    assert uploads == %{}
+    assert state.snapshot.certificates.operational == expired
+    assert :ok = stop_supervised(ManagedPort)
+  end
+
+  test "recovers a staged certificate on explicit startup and preserves pending settings",
+       context do
+    opts = managed_options(context, [], [])
+    managed = start_supervised!({ManagedPort, opts})
+    %{path: path} = stage_local_setting(managed, :network_number, 12)
+    {expired, replacement} = stage_renewal(managed, context)
+    assert :ok = stop_supervised(ManagedPort)
+    assert {:error, _reason} = start_supervised({ManagedPort, opts})
+
+    assert {:ok, %{certificates: %{operational: ^expired}, uploads: %{operational: ^replacement}}} =
+             Store.read(path)
+
+    opts = Keyword.put(opts, :recover_expired_certificate, true)
+    recovered = start_supervised!({ManagedPort, opts})
+
+    assert {:ok,
+            %{
+              certificates: %{operational: ^replacement},
+              uploads: uploads,
+              active: active,
+              pending: %{network_number: 12}
+            }} = Store.read(path)
+
+    assert uploads == %{}
+    assert active.network_number == 0
+
+    assert :ok = ManagedPort.activate(recovered)
+    assert {:ok, %{active: %{network_number: 12}}} = Store.read(path)
+    assert :ok = stop_supervised(ManagedPort)
+  end
+
   test "restores the pending snapshot on reply failure and activates it offline", context do
     managed = start_managed(context)
 
@@ -170,23 +219,49 @@ defmodule BACnet.Test.Stack.Transport.ScTransport.ActivationTest do
   end
 
   defp start_managed(context, hub \\ [], transport \\ []) do
+    start_supervised!({ManagedPort, managed_options(context, hub, transport)})
+  end
+
+  defp managed_options(context, hub, transport) do
     {cert, key} = certificate(context, "Local activation")
     directory = Path.join(System.tmp_dir!(), "bacstack-sc-#{System.unique_integer([:positive])}")
     on_exit(fn -> File.rm_rf(directory) end)
 
-    start_supervised!(
-      {ManagedPort,
-       storage_dir: directory,
-       device_instance: 123,
-       port_instance: 1,
-       file_instances: @file_ids,
-       vendor_id: 0,
-       certificate_pem: cert,
-       private_key_pem: key,
-       issuer_pems: [context.ca_pem],
-       hub: Keyword.merge([ip: @loopback, port: 0, enabled: false], hub),
-       transport: transport}
-    )
+    [
+      storage_dir: directory,
+      device_instance: 123,
+      port_instance: 1,
+      file_instances: @file_ids,
+      vendor_id: 0,
+      certificate_pem: cert,
+      private_key_pem: key,
+      issuer_pems: [context.ca_pem],
+      hub: Keyword.merge([ip: @loopback, port: 0, enabled: false], hub),
+      transport: transport
+    ]
+  end
+
+  defp stage_renewal(managed, context) do
+    validity = X509.Certificate.Validity.new(~U[2000-01-01 00:00:00Z], ~U[2001-01-01 00:00:00Z])
+    {expired, old_key} = certificate(context, "Expired certificate", validity: validity)
+    {replacement, new_key} = certificate(context, "Replacement certificate")
+
+    :sys.replace_state(managed, fn state ->
+      {:ok, port} = NetworkPort.stage_external_change(state.port)
+
+      snapshot = %{
+        state.snapshot
+        | certificates: %{state.snapshot.certificates | operational: expired},
+          active_key: old_key,
+          uploads: %{operational: replacement},
+          csr_key: new_key
+      }
+
+      :ok = Store.write(state.path, snapshot)
+      %{state | snapshot: snapshot, port: port}
+    end)
+
+    {expired, replacement}
   end
 
   defp stage_local_setting(managed, property, value) do
@@ -198,7 +273,7 @@ defmodule BACnet.Test.Stack.Transport.ScTransport.ActivationTest do
     end)
   end
 
-  defp certificate(context, name) do
+  defp certificate(context, name, opts \\ []) do
     key = X509.PrivateKey.new_ec(:secp256r1)
 
     certificate =
@@ -207,7 +282,7 @@ defmodule BACnet.Test.Stack.Transport.ScTransport.ActivationTest do
         "/CN=#{name}",
         context.ca,
         context.ca_key,
-        template: :server
+        Keyword.put(opts, :template, :server)
       )
 
     {X509.Certificate.to_pem(certificate), X509.PrivateKey.to_pem(key)}

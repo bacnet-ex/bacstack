@@ -833,7 +833,7 @@ defmodule BACnet.Protocol.NotificationParameters do
         with {:ok, {:unsigned_integer, vendor_id}} <-
                ApplicationTags.unfold_to_type(:unsigned_integer, vendor_id_raw),
              :ok <-
-               if(ApplicationTags.valid_int?(vendor_id, 16),
+               if(ApplicationTags.valid_uint?(vendor_id, 16),
                  do: :ok,
                  else: {:error, :invalid_vendor_id_value}
                ),
@@ -867,14 +867,14 @@ defmodule BACnet.Protocol.NotificationParameters do
              {:ok, {:unsigned_integer, prev_notification}} <-
                ApplicationTags.unfold_to_type(:unsigned_integer, prev_notification_raw),
              :ok <-
-               if(ApplicationTags.valid_int?(prev_notification, 32),
+               if(ApplicationTags.valid_uint?(prev_notification, 32),
                  do: :ok,
                  else: {:error, :invalid_previous_notification_value}
                ),
              {:ok, {:unsigned_integer, current_notification}} <-
                ApplicationTags.unfold_to_type(:unsigned_integer, current_notification_raw),
              :ok <-
-               if(ApplicationTags.valid_int?(current_notification, 32),
+               if(ApplicationTags.valid_uint?(current_notification, 32),
                  do: :ok,
                  else: {:error, :invalid_current_notification_value}
                ) do
@@ -1399,10 +1399,10 @@ defmodule BACnet.Protocol.NotificationParameters do
     with true <- is_struct(params.buffer_property, DeviceObjectPropertyRef),
          true <-
            is_integer(params.previous_notification) and params.previous_notification >= 0 and
-             ApplicationTags.valid_int?(params.previous_notification, 32),
+             ApplicationTags.valid_uint?(params.previous_notification, 32),
          true <-
            is_integer(params.current_notification) and params.current_notification >= 0 and
-             ApplicationTags.valid_int?(params.current_notification, 32),
+             ApplicationTags.valid_uint?(params.current_notification, 32),
          {:ok, bufferobj} <- DeviceObjectPropertyRef.encode(params.buffer_property, opts),
          {:ok, previous_notification, _header} <-
            ApplicationTags.encode_value({:unsigned_integer, params.previous_notification}, opts),

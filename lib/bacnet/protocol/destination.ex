@@ -76,8 +76,8 @@ defmodule BACnet.Protocol.Destination do
   def encode(%__MODULE__{} = destination, _opts \\ []) do
     with :ok <-
            if(
-             destination.process_identifier >= 0 and
-               ApplicationTags.valid_int?(destination.process_identifier, 32),
+             is_integer(destination.process_identifier) and
+               ApplicationTags.valid_uint?(destination.process_identifier, 32),
              do: :ok,
              else: {:error, :invalid_process_identifier_value}
            ),
@@ -115,7 +115,7 @@ defmodule BACnet.Protocol.Destination do
         | rest
       ] ->
         with :ok <-
-               if(ApplicationTags.valid_int?(process_id, 32),
+               if(ApplicationTags.valid_uint?(process_id, 32),
                  do: :ok,
                  else: {:error, :invalid_process_identifier_value}
                ),

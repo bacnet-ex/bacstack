@@ -84,8 +84,10 @@ if BACstack.MixProject.sc_enabled?() do
     `status/1` reports established peers and up to 32 recent BVLC admission
     failures, newest first. A later failure from the same remote IP replaces
     its earlier entry. A Connect wait timeout is recorded as `TIMEOUT` (30).
-    `reconfigure/2` updates the listener and retires
-    sessions if the operational certificate changes or a site issuer is
+    Each peer can have 64 frames awaiting its WebSocket. Further frames for
+    that peer are dropped and counted in `status/1` as `egress_drops`.
+    `reconfigure/2` updates the listener and retires sessions if the
+    operational certificate or CRL policy changes, or a site issuer is
     removed. Issuer additions can keep established sessions in service.
     `restart_connections/1` requests that the peers disconnect while leaving
     the listener available. `close/1` suspends acceptance, waits for sessions
@@ -109,6 +111,7 @@ if BACstack.MixProject.sc_enabled?() do
     use GenServer
 
     @audit_counters %{queue_drops: 0, sink_failures: 0, correlation_losses: 0}
+    @egress_limit 64
 
     defmodule Session do
       @moduledoc """
@@ -164,14 +167,20 @@ if BACstack.MixProject.sc_enabled?() do
 
       Connections are the sessions that completed registration, with the peer
       identity and time of connection. Failures are listed newest first.
+      `egress_drops` counts recipient frames dropped since startup when that
+      peer already had 64 frames awaiting processing by its WebSocket.
       """
 
       @typedoc """
       Registered sessions and recent failed inbound connection requests.
       """
-      @type t :: %__MODULE__{connections: [Session.t()], failed: [Failure.t()]}
+      @type t :: %__MODULE__{
+              connections: [Session.t()],
+              failed: [Failure.t()],
+              egress_drops: non_neg_integer()
+            }
 
-      @fields [:connections, :failed]
+      @fields [:connections, :failed, :egress_drops]
       @enforce_keys @fields
       defstruct @fields
     end
@@ -209,6 +218,10 @@ if BACstack.MixProject.sc_enabled?() do
               listener: reference(),
               listener_monitor: reference(),
               sessions: %{pid() => Session.t()},
+              by_vmac: %{BVLC.vmac() => pid()},
+              by_uuid: %{<<_::128>> => pid()},
+              egress: %{pid() => MapSet.t(reference())},
+              egress_drops: non_neg_integer(),
               failed: [Failure.t()],
               drain: [GenServer.from()] | nil,
               admissions_held: boolean(),
@@ -225,6 +238,10 @@ if BACstack.MixProject.sc_enabled?() do
         :listener,
         :listener_monitor,
         :sessions,
+        :by_vmac,
+        :by_uuid,
+        :egress,
+        :egress_drops,
         :failed,
         :drain,
         :admissions_held,
@@ -292,9 +309,10 @@ if BACstack.MixProject.sc_enabled?() do
     def close(hub), do: GenServer.call(hub, :drain, :infinity)
 
     @doc """
-    Updates the TLS listener. Sessions normally retire when required by a
-    credential change. Pass `false` to retain existing sessions and hold new
-    BACnet/SC admissions until `finish_reconfigure/2` releases them.
+    Updates the TLS listener and WebSocket path for new connections. Sessions
+    normally retire when the operational certificate, issuer trust, or CRL
+    policy requires a new handshake. Pass `false` to retain existing sessions
+    and hold new BACnet/SC admissions until `finish_reconfigure/2` releases them.
     """
     @spec reconfigure(GenServer.server(), Config.options(), boolean()) :: :ok | {:error, term()}
     def reconfigure(hub, opts, retire_sessions? \\ true) do
@@ -337,6 +355,10 @@ if BACstack.MixProject.sc_enabled?() do
              listener: listener,
              listener_monitor: Process.monitor(pid),
              sessions: %{},
+             by_vmac: %{},
+             by_uuid: %{},
+             egress: %{},
+             egress_drops: 0,
              failed: [],
              drain: nil,
              admissions_held: hold?,
@@ -361,9 +383,7 @@ if BACstack.MixProject.sc_enabled?() do
 
       local? =
         state.config.device_uuid == hub_uuid and state.config.vmac == hub_vmac and
-          Enum.any?(state.sessions, fn {_pid, session} ->
-            match?(%{vmac: ^local_vmac, uuid: ^hub_uuid}, session.peer)
-          end)
+          match?(%{peer: %{uuid: ^hub_uuid}}, state.sessions[state.by_vmac[local_vmac]])
 
       {:reply, local?, state}
     end
@@ -404,7 +424,8 @@ if BACstack.MixProject.sc_enabled?() do
       peers =
         for {_pid, %Session{peer: peer} = session} <- state.sessions, peer, do: session
 
-      {:reply, %Status{connections: peers, failed: state.failed}, state}
+      {:reply,
+       %Status{connections: peers, failed: state.failed, egress_drops: state.egress_drops}, state}
     end
 
     def handle_call(:audit_status, _from, state) do
@@ -468,40 +489,28 @@ if BACstack.MixProject.sc_enabled?() do
     end
 
     def handle_call({:register, pid, peer}, _from, state) do
-      active = Enum.filter(state.sessions, fn {_pid, session} -> session.peer end)
-
-      occupied? =
-        Enum.any?(active, fn {_pid, session} ->
-          session.peer.vmac == peer.vmac and session.peer.uuid != peer.uuid
-        end)
-
+      occupant = state.sessions[state.by_vmac[peer.vmac]]
+      occupied? = occupant != nil and occupant.peer.uuid != peer.uuid
       reserved? = peer.vmac == state.config.vmac and peer.uuid != state.config.device_uuid
 
       if reserved? or occupied? do
         code = BVLC.error_code(:node_duplicate_vmac)
         {:reply, {:error, code}, record_failure(state, state.sessions[pid], peer, code)}
       else
-        sessions =
-          Enum.reduce(active, state.sessions, fn {old_pid, session}, sessions ->
-            if session.peer.uuid == peer.uuid do
-              log_debug(fn ->
-                "BacScHub: Replacing the session from #{describe_peer(session.remote, session.peer)}"
-              end)
-
-              Connection.disconnect(old_pid)
-              Map.put(sessions, old_pid, %{session | peer: nil})
-            else
-              sessions
-            end
-          end)
-
-        session = %{sessions[pid] | peer: peer, connected_at: DateTime.utc_now()}
+        state = retire_replaced_session(state, state.by_uuid[peer.uuid])
+        session = %{state.sessions[pid] | peer: peer, connected_at: DateTime.utc_now()}
 
         log_debug(fn ->
           "BacScHub: Registered #{describe_peer(session.remote, peer)}"
         end)
 
-        {:reply, :ok, %{state | sessions: Map.put(sessions, pid, session)}}
+        {:reply, :ok,
+         %{
+           state
+           | sessions: Map.put(state.sessions, pid, session),
+             by_vmac: Map.put(state.by_vmac, peer.vmac, pid),
+             by_uuid: Map.put(state.by_uuid, peer.uuid, pid)
+         }}
       end
     end
 
@@ -513,11 +522,15 @@ if BACstack.MixProject.sc_enabled?() do
     def handle_call({:reconfigure, config, retire_sessions?}, _from, state) do
       log_debug("BacScHub: Received listener reconfigure request")
 
-      case replace_tls(state.listener, state.config, config) do
+      case reconfigure_listener(state.listener, state.config, config) do
         :ok ->
           if retire_sessions? and
-               reconnect_required?(state.config.credentials, config.credentials) do
-            log_debug("BacScHub: Retiring sessions after a change to the trusted credentials")
+               (state.config.crl_check != config.crl_check or
+                  reconnect_required?(state.config.credentials, config.credentials)) do
+            log_debug(
+              "BacScHub: Retiring sessions after a change to the TLS credentials or policy"
+            )
+
             Enum.each(state.sessions, fn {pid, _session} -> Connection.disconnect(pid) end)
           end
 
@@ -548,7 +561,7 @@ if BACstack.MixProject.sc_enabled?() do
     def handle_call({:route, ingress, frame}, _from, state) do
       case Map.get(state.sessions, ingress) do
         %Session{peer: %{vmac: _vmac}} = session ->
-          {decision, destination} = route(state.sessions, ingress, session, frame)
+          {state, decision, destination} = route(state, ingress, session, frame)
           {:reply, :ok, observe_route(state, session, destination, frame, decision)}
 
         _stale ->
@@ -558,6 +571,23 @@ if BACstack.MixProject.sc_enabled?() do
     end
 
     @doc false
+    def handle_info({:sc_egress_done, pid, credit}, state) do
+      case Map.fetch(state.egress, pid) do
+        {:ok, credits} ->
+          remaining = MapSet.delete(credits, credit)
+
+          egress =
+            if MapSet.size(remaining) == 0,
+              do: Map.delete(state.egress, pid),
+              else: Map.put(state.egress, pid, remaining)
+
+          {:noreply, %{state | egress: egress}}
+
+        :error ->
+          {:noreply, state}
+      end
+    end
+
     def handle_info(
           {:sc_audit_complete, worker, kind, failures, losses},
           %{audit: %{worker: worker}} = state
@@ -622,7 +652,14 @@ if BACstack.MixProject.sc_enabled?() do
             "BacScHub: Disconnected #{describe_peer(session.remote, session.peer)}"
           end)
 
-          state = update_in(state.sessions, &Map.delete(&1, pid))
+          state = forget_peer(state, session.peer)
+
+          state = %{
+            state
+            | sessions: Map.delete(state.sessions, pid),
+              egress: Map.delete(state.egress, pid)
+          }
+
           if map_size(state.sessions) == 0, do: finish_drain(state), else: {:noreply, state}
 
         _other ->
@@ -678,12 +715,31 @@ if BACstack.MixProject.sc_enabled?() do
 
     @spec start_listener(reference(), Config.hub_config()) :: {:ok, pid()} | {:error, term()}
     defp start_listener(listener, config) do
-      dispatch = :cowboy_router.compile([{:_, [{config.path, __MODULE__.WebSocket, self()}]}])
+      with {:ok, dispatch} <- compile_dispatch(config.path) do
+        :cowboy.start_tls(listener, transport_options(config), %{
+          protocols: [:http],
+          env: %{dispatch: dispatch}
+        })
+      end
+    end
 
-      :cowboy.start_tls(listener, transport_options(config), %{
-        protocols: [:http],
-        env: %{dispatch: dispatch}
-      })
+    @spec compile_dispatch(String.t()) :: {:ok, term()} | {:error, :invalid_hub_path}
+    defp compile_dispatch(path) do
+      {:ok, :cowboy_router.compile([{:_, [{path, __MODULE__.WebSocket, self()}]}])}
+    rescue
+      _error -> {:error, :invalid_hub_path}
+    end
+
+    @spec reconfigure_listener(reference(), Config.hub_config(), Config.hub_config()) ::
+            :ok | {:error, term()}
+    defp reconfigure_listener(listener, %{path: path} = old, %{path: path} = new),
+      do: replace_tls(listener, old, new)
+
+    defp reconfigure_listener(listener, old, new) do
+      with {:ok, dispatch} <- compile_dispatch(new.path),
+           :ok <- replace_tls(listener, old, new) do
+        :cowboy.set_env(listener, :dispatch, dispatch)
+      end
     end
 
     @spec transport_options(Config.hub_config()) :: %{
@@ -709,7 +765,8 @@ if BACstack.MixProject.sc_enabled?() do
            %{credentials: credentials} = new
          )
          when old.port == new.port and old.connect_wait_timeout == new.connect_wait_timeout and
-                :erlang.map_get(:ip, old) == :erlang.map_get(:ip, new),
+                :erlang.map_get(:ip, old) == :erlang.map_get(:ip, new) and
+                old.crl_check == new.crl_check,
          do: :ok
 
     defp replace_tls(listener, old, config) do
@@ -768,35 +825,63 @@ if BACstack.MixProject.sc_enabled?() do
       end)
     end
 
-    @spec route(%{pid() => Session.t()}, pid(), Session.t(), BVLC.t()) ::
-            {Audit.Event.routing(), Session.t() | nil}
-    defp route(_sessions, ingress, session, %BVLC{source: address} = frame)
+    @spec retire_replaced_session(State.t(), pid() | nil) :: State.t()
+    defp retire_replaced_session(state, nil), do: state
+
+    defp retire_replaced_session(state, pid) do
+      session = state.sessions[pid]
+
+      log_debug(fn ->
+        "BacScHub: Replacing the session from #{describe_peer(session.remote, session.peer)}"
+      end)
+
+      Connection.disconnect(pid)
+      state = forget_peer(state, session.peer)
+      put_in(state.sessions[pid].peer, nil)
+    end
+
+    @spec forget_peer(State.t(), BVLC.peer() | nil) :: State.t()
+    defp forget_peer(state, nil), do: state
+
+    defp forget_peer(state, peer) do
+      %{
+        state
+        | by_vmac: Map.delete(state.by_vmac, peer.vmac),
+          by_uuid: Map.delete(state.by_uuid, peer.uuid)
+      }
+    end
+
+    @spec route(State.t(), pid(), Session.t(), BVLC.t()) ::
+            {State.t(), Audit.Event.routing(), Session.t() | nil}
+    defp route(state, ingress, session, %BVLC{source: address} = frame)
          when not is_nil(address) do
       log_debug(fn ->
         "BacScHub: Dropped #{frame.function} message #{frame.id} from " <>
           "#{describe_peer(session.remote, session.peer)} containing a source VMAC"
       end)
 
-      if response = BVLC.nak(%{frame | source: nil}, BVLC.error_code(:parameter_out_of_range)),
-        do: Connection.transmit(ingress, response)
+      response = BVLC.nak(%{frame | source: nil}, BVLC.error_code(:parameter_out_of_range))
+      {state, _queued} = queue_frame(state, ingress, response)
 
-      {:invalid_source, nil}
+      {state, :invalid_source, nil}
     end
 
-    defp route(_sessions, ingress, session, %BVLC{destination: nil} = frame) do
+    defp route(state, ingress, session, %BVLC{destination: nil} = frame) do
       log_debug(fn ->
         "BacScHub: Dropped #{frame.function} message #{frame.id} from " <>
           "#{describe_peer(session.remote, session.peer)} with no destination VMAC"
       end)
 
-      if response = BVLC.nak(frame, BVLC.error_code(:parameter_out_of_range)),
-        do: Connection.transmit(ingress, response)
+      response = BVLC.nak(frame, BVLC.error_code(:parameter_out_of_range))
+      {state, _queued} = queue_frame(state, ingress, response)
 
-      {:missing_destination, nil}
+      {state, :missing_destination, nil}
     end
 
-    defp route(sessions, ingress, session, %BVLC{destination: destination} = frame) do
+    defp route(state, ingress, session, %BVLC{destination: destination} = frame) do
       broadcast? = destination == BVLC.broadcast()
+      unicast = state.by_vmac[destination]
+      recipients = if broadcast?, do: Map.values(state.by_vmac), else: List.wrap(unicast)
 
       forwarded = %{
         frame
@@ -804,26 +889,49 @@ if BACstack.MixProject.sc_enabled?() do
           destination: if(broadcast?, do: destination)
       }
 
-      {count, target} =
-        Enum.reduce(sessions, {0, nil}, fn
-          {pid, %{peer: %{vmac: vmac}} = recipient}, {count, _target}
-          when pid != ingress and (broadcast? or vmac == destination) ->
-            Connection.transmit(pid, forwarded)
-            {count + 1, if(broadcast?, do: nil, else: recipient)}
-
-          _other, result ->
+      {updated, queued} =
+        Enum.reduce(recipients, {state, 0}, fn
+          ^ingress, result ->
             result
+
+          pid, {state, count} ->
+            {state, added} = queue_frame(state, pid, forwarded)
+            {state, count + added}
         end)
 
-      log_debug(fn ->
-        action = if count == 0, do: "Dropped", else: "Queued"
+      dropped = updated.egress_drops - state.egress_drops
+      target = if queued == 1 and unicast, do: state.sessions[unicast]
 
-        "BacScHub: #{action} #{frame.function} message #{frame.id} from " <>
+      log_debug(fn ->
+        "BacScHub: Routed #{frame.function} message #{frame.id} from " <>
           "#{describe_peer(session.remote, session.peer)} to VMAC #{Base.encode16(destination)} " <>
-          "(eligible recipients #{count})"
+          "(queued #{queued}, queue drops #{dropped})"
       end)
 
-      {if(count == 0, do: :no_recipient, else: {:queued, count}), target}
+      decision =
+        case {queued, dropped} do
+          {0, 0} -> :no_recipient
+          {0, _dropped} -> :egress_queue_full
+          {queued, 0} -> {:queued, queued}
+          {queued, dropped} -> {:partially_queued, queued, dropped}
+        end
+
+      {updated, decision, target}
+    end
+
+    @spec queue_frame(State.t(), pid(), BVLC.t() | nil) :: {State.t(), 0 | 1}
+    defp queue_frame(state, _pid, nil), do: {state, 0}
+
+    defp queue_frame(state, pid, frame) do
+      credits = Map.get_lazy(state.egress, pid, &MapSet.new/0)
+
+      if MapSet.size(credits) < @egress_limit do
+        credit = make_ref()
+        Connection.forward(pid, frame, credit)
+        {put_in(state.egress[pid], MapSet.put(credits, credit)), 1}
+      else
+        {%{state | egress_drops: state.egress_drops + 1}, 0}
+      end
     end
 
     @spec start_audit(Audit.config() | nil, boolean()) :: State.audit_state() | nil
@@ -1019,6 +1127,17 @@ if BACstack.MixProject.sc_enabled?() do
       @doc false
       @spec websocket_info(term(), term()) :: term()
       def websocket_info({:sc_send, frame}, state), do: {[frame], state}
+
+      def websocket_info({:sc_forward, session, frame, hub, credit}, {session, _monitor} = state) do
+        # Cowboy processes the returned send command before the next WebSocket callback.
+        send(self(), {:sc_forwarded, hub, credit})
+        {[frame], state}
+      end
+
+      def websocket_info({:sc_forwarded, hub, credit}, {session, _monitor} = state) do
+        send(hub, {:sc_egress_done, session, credit})
+        {:ok, state}
+      end
 
       def websocket_info({:DOWN, monitor, :process, pid, _reason}, {pid, monitor} = state),
         do: {:stop, state}

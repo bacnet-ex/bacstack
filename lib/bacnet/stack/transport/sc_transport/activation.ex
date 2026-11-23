@@ -30,10 +30,17 @@ if BACstack.MixProject.sc_enabled?() do
     @spec run(ManagedPort.state(), operation(), (-> :ok | {:error, term()})) ::
             {:ok, ManagedPort.state()} | {:error, term(), ManagedPort.state()}
     def run(state, operation, acknowledge) do
-      with {:ok, previous} <- ManagedPort.runtime_config(state.snapshot, :active, state.hub_audit),
-           {:ok, next} <- ManagedPort.runtime_config(state.snapshot, :proposed, state.hub_audit),
+      previous = state.runtime
+
+      with {:ok, next} <- ManagedPort.runtime_config(state.snapshot, :proposed, state.hub_audit),
            {:ok, port} <- ManagedPort.commit_port(state.port, operation),
            {:ok, hub} <- prepare_hub(state.hub, previous.hub, next.hub) do
+        next =
+          update_in(
+            next.node,
+            &Keyword.put(&1, :status_receiver, previous.node[:status_receiver])
+          )
+
         proposed = promote(state.snapshot, next.key)
 
         case Store.write(state.path, proposed) do
@@ -41,7 +48,7 @@ if BACstack.MixProject.sc_enabled?() do
             case acknowledge(acknowledge) do
               :ok ->
                 commit_runtime(state, hub, previous, next, operation)
-                {:ok, %{state | snapshot: proposed, port: port, hub: hub}}
+                {:ok, %{state | snapshot: proposed, runtime: next, port: port, hub: hub}}
 
               {:error, reason} ->
                 :ok = restore_snapshot(state)
@@ -67,15 +74,9 @@ if BACstack.MixProject.sc_enabled?() do
     @spec promote(ManagedPort.snapshot(), binary()) :: ManagedPort.snapshot()
     defp promote(snapshot, key) do
       %{
-        snapshot
+        Store.promote_credentials(snapshot, key)
         | active: Map.merge(snapshot.active, snapshot.pending),
-          pending: %{},
-          certificates: Map.merge(snapshot.certificates, snapshot.uploads),
-          uploads: %{},
-          file_dates: Map.merge(snapshot.file_dates, snapshot.upload_dates),
-          upload_dates: %{},
-          active_key: key,
-          activation: nil
+          pending: %{}
       }
     end
 
@@ -142,6 +143,7 @@ if BACstack.MixProject.sc_enabled?() do
       retire_hub? =
         is_pid(state.hub) and
           (restart? or is_nil(hub) or
+             previous.hub[:crl_check] != next.hub[:crl_check] or
              Hub.reconnect_required?(previous.hub[:credentials], next.hub[:credentials]))
 
       cond do

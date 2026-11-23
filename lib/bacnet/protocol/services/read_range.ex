@@ -70,6 +70,9 @@ defmodule BACnet.Protocol.Services.ReadRange do
 
   alias BACnet.Protocol
   alias BACnet.Protocol.ApplicationTags
+  alias BACnet.Protocol.BACnetDate
+  alias BACnet.Protocol.BACnetDateTime
+  alias BACnet.Protocol.BACnetTime
   alias BACnet.Protocol.Constants
 
   import Protocol.Utility, only: [pattern_extract_tags: 4]
@@ -93,7 +96,7 @@ defmodule BACnet.Protocol.Services.ReadRange do
              {reference_seq_number :: ApplicationTags.unsigned32(),
               count :: ApplicationTags.signed16()}}
           | {:by_time,
-             {reference_time :: Protocol.BACnetDateTime.t(), count :: ApplicationTags.signed16()}}
+             {reference_time :: BACnetDateTime.t(), count :: ApplicationTags.signed16()}}
 
   @typedoc """
   Parameters for the Read Range service.
@@ -104,7 +107,7 @@ defmodule BACnet.Protocol.Services.ReadRange do
   @type t :: %__MODULE__{
           object_identifier: Protocol.ObjectIdentifier.t(),
           property_identifier: Constants.property_identifier() | non_neg_integer(),
-          property_array_index: non_neg_integer() | nil,
+          property_array_index: pos_integer() | nil,
           range: range() | nil
         }
 
@@ -157,7 +160,7 @@ defmodule BACnet.Protocol.Services.ReadRange do
            ),
          {:ok, property, rest} <-
            pattern_extract_tags(rest, {:tagged, {1, _t, _l}}, :enumerated, false),
-         prop_identifier <- Constants.by_value(:property_identifier, property, property),
+         prop_identifier = Constants.by_value(:property_identifier, property, property),
          :ok <-
            (if prop_identifier in [:all, :required, :optional] do
               {:error, :invalid_property_identifier}
@@ -166,6 +169,7 @@ defmodule BACnet.Protocol.Services.ReadRange do
             end),
          {:ok, array_index, rest} <-
            pattern_extract_tags(rest, {:tagged, {2, _t, _l}}, :unsigned_integer, true),
+         nil <- if(array_index == 0, do: {:error, :invalid_array_index}),
          {:ok, range} <- parse_range(rest) do
       readrange = %__MODULE__{
         object_identifier: object,
@@ -209,11 +213,15 @@ defmodule BACnet.Protocol.Services.ReadRange do
            ),
          {:ok, array_index} <-
            (if service.property_array_index do
-              with {:ok, array_index, _header} <-
-                     ApplicationTags.encode_value(
-                       {:unsigned_integer, service.property_array_index}
-                     ) do
-                {:ok, {:tagged, {2, array_index, byte_size(array_index)}}}
+              if service.property_array_index == 0 do
+                {:error, :invalid_array_index}
+              else
+                with {:ok, array_index, _header} <-
+                       ApplicationTags.encode_value(
+                         {:unsigned_integer, service.property_array_index}
+                       ) do
+                  {:ok, {:tagged, {2, array_index, byte_size(array_index)}}}
+                end
               end
             else
               {:ok, nil}
@@ -265,8 +273,13 @@ defmodule BACnet.Protocol.Services.ReadRange do
            ], _len}}
          | _rest
        ])
-       when is_valid_count(count),
-       do: {:ok, {:by_seq_number, {seq_number, count}}}
+       when is_valid_count(count) do
+    if ApplicationTags.valid_uint?(seq_number, 32) do
+      {:ok, {:by_seq_number, {seq_number, count}}}
+    else
+      {:error, :seq_number_too_large}
+    end
+  end
 
   defp parse_range([
          {:constructed,
@@ -278,8 +291,13 @@ defmodule BACnet.Protocol.Services.ReadRange do
            ], _len}}
          | _rest
        ])
-       when is_valid_count(count),
-       do: {:ok, {:by_time, {%Protocol.BACnetDateTime{date: ref_date, time: ref_time}, count}}}
+       when is_valid_count(count) do
+    if BACnetDate.fully_specific?(ref_date) and BACnetTime.specific?(ref_time) do
+      {:ok, {:by_time, {%BACnetDateTime{date: ref_date, time: ref_time}, count}}}
+    else
+      {:error, :invalid_unspecific_datetime}
+    end
+  end
 
   # range missing
   defp parse_range([]), do: {:ok, nil}
@@ -296,14 +314,22 @@ defmodule BACnet.Protocol.Services.ReadRange do
 
   defp encode_range({:by_seq_number, {ref_seq_number, count}})
        when is_integer(ref_seq_number) and is_valid_count(count) do
-    {:ok, {:constructed, {6, [unsigned_integer: ref_seq_number, signed_integer: count], 0}}}
+    if ApplicationTags.valid_uint?(ref_seq_number, 32) do
+      {:ok, {:constructed, {6, [unsigned_integer: ref_seq_number, signed_integer: count], 0}}}
+    else
+      {:error, :seq_number_too_large}
+    end
   end
 
-  defp encode_range({:by_time, {%Protocol.BACnetDateTime{} = ref_datetime, count}})
+  defp encode_range({:by_time, {%BACnetDateTime{} = ref_datetime, count}})
        when is_valid_count(count) do
-    {:ok,
-     {:constructed,
-      {7, [date: ref_datetime.date, time: ref_datetime.time, signed_integer: count], 0}}}
+    if BACnetDateTime.fully_specific?(ref_datetime) do
+      {:ok,
+       {:constructed,
+        {7, [date: ref_datetime.date, time: ref_datetime.time, signed_integer: count], 0}}}
+    else
+      {:error, :invalid_unspecific_datetime}
+    end
   end
 
   defp encode_range(_term), do: {:error, :invalid_range}

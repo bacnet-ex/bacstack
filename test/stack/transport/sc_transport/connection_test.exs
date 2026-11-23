@@ -178,6 +178,39 @@ defmodule BACnet.Test.Stack.Transport.ScTransport.ConnectionTest do
     assert_receive {:sc_connection, ^connection, {:closed, :closed}}
   end
 
+  test "releases a forwarded frame credit after the WebSocket send callback" do
+    connection = open()
+    establish(connection, 65_535, 1497)
+    adapter = {connection, make_ref()}
+    owner = self()
+    credit = make_ref()
+    frame = frame(:npdu, <<1, 0>>)
+
+    assert :ok = Connection.forward(connection, frame, credit)
+    assert_receive {:sc_forward, ^connection, {:binary, binary}, ^owner, ^credit} = message
+    assert {:ok, ^frame} = BVLC.decode(binary)
+    assert {[{:binary, ^binary}], ^adapter} = Hub.WebSocket.websocket_info(message, adapter)
+    refute_received {:sc_egress_done, ^connection, ^credit}
+    assert_receive {:sc_forwarded, ^owner, ^credit} = sent
+    assert {:ok, ^adapter} = Hub.WebSocket.websocket_info(sent, adapter)
+    assert_receive {:sc_egress_done, ^connection, ^credit}
+
+    oversize_credit = make_ref()
+
+    assert :ok =
+             Connection.forward(
+               connection,
+               %{frame | payload: :binary.copy(<<0>>, 1498)},
+               oversize_credit
+             )
+
+    assert_receive {:sc_egress_done, ^connection, ^oversize_credit}
+    refute_received {:sc_forward, ^connection, _, ^owner, ^oversize_credit}
+
+    # Finish the session while the test's log capture is still active.
+    assert :ok = GenServer.stop(connection)
+  end
+
   test "reports why the client transport closed before any BACnet disconnect exchange" do
     credentials = make_credentials()
     config = Map.put(@config, :credentials, credentials)

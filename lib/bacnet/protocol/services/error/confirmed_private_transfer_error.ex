@@ -62,7 +62,7 @@ defmodule BACnet.Protocol.Services.Error.ConfirmedPrivateTransferError do
              false
            ),
          :ok <-
-           if(ApplicationTags.valid_int?(vendor_id, 16),
+           if(ApplicationTags.valid_uint?(vendor_id, 16),
              do: :ok,
              else: {:error, :invalid_vendor_id_value}
            ),
@@ -98,7 +98,7 @@ defmodule BACnet.Protocol.Services.Error.ConfirmedPrivateTransferError do
 
   def to_apdu(%__MODULE__{} = error, invoke_id) when invoke_id in 0..255 do
     with :ok <-
-           if(ApplicationTags.valid_int?(error.vendor_id, 16),
+           if(ApplicationTags.valid_uint?(error.vendor_id, 16),
              do: :ok,
              else: {:error, :invalid_vendor_id_value}
            ),

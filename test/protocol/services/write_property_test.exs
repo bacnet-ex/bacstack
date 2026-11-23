@@ -10,6 +10,14 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyTest do
   @moduletag :apdu
   @moduletag :service
 
+  @write_property %WriteProperty{
+    object_identifier: %ObjectIdentifier{type: :analog_value, instance: 1},
+    property_identifier: :present_value,
+    property_array_index: nil,
+    property_value: Encoding.create!({:real, 180.0}),
+    priority: 10
+  }
+
   doctest WriteProperty
 
   test "get name" do
@@ -106,6 +114,29 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyTest do
                  tagged: {4, "\n", 1}
                ]
              })
+  end
+
+  test "decoding WriteProperty rejects priority 0" do
+    assert {:error, :invalid_priority} = WriteProperty.from_apdu(write_property_apdu(0x55, 0))
+  end
+
+  test "decoding WriteProperty rejects priority 17" do
+    assert {:error, :invalid_priority} = WriteProperty.from_apdu(write_property_apdu(0x55, 17))
+  end
+
+  test "decoding WriteProperty rejects the ALL property identifier" do
+    assert {:error, :invalid_property_identifier} =
+             WriteProperty.from_apdu(write_property_apdu(0x08, 10))
+  end
+
+  test "decoding WriteProperty rejects the REQUIRED property identifier" do
+    assert {:error, :invalid_property_identifier} =
+             WriteProperty.from_apdu(write_property_apdu(0x69, 10))
+  end
+
+  test "decoding WriteProperty rejects the OPTIONAL property identifier" do
+    assert {:error, :invalid_property_identifier} =
+             WriteProperty.from_apdu(write_property_apdu(0x50, 10))
   end
 
   test "decoding WriteProperty with priority array index" do
@@ -288,6 +319,31 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyTest do
              )
   end
 
+  test "encoding WriteProperty rejects priority 0" do
+    assert {:error, :invalid_priority} =
+             WriteProperty.to_apdu(%{@write_property | priority: 0}, [])
+  end
+
+  test "encoding WriteProperty rejects priority 17" do
+    assert {:error, :invalid_priority} =
+             WriteProperty.to_apdu(%{@write_property | priority: 17}, [])
+  end
+
+  test "encoding WriteProperty rejects the ALL property identifier" do
+    assert {:error, :invalid_property_identifier} =
+             WriteProperty.to_apdu(%{@write_property | property_identifier: :all}, [])
+  end
+
+  test "encoding WriteProperty rejects the REQUIRED property identifier" do
+    assert {:error, :invalid_property_identifier} =
+             WriteProperty.to_apdu(%{@write_property | property_identifier: :required}, [])
+  end
+
+  test "encoding WriteProperty rejects the OPTIONAL property identifier" do
+    assert {:error, :invalid_property_identifier} =
+             WriteProperty.to_apdu(%{@write_property | property_identifier: :optional}, [])
+  end
+
   test "encoding WriteProperty with property array index" do
     assert {:ok,
             %ConfirmedServiceRequest{
@@ -413,5 +469,23 @@ defmodule BACnet.Test.Protocol.Services.WritePropertyTest do
                invoke_id: 1,
                max_segments: 4
              )
+  end
+
+  defp write_property_apdu(property_identifier, priority) do
+    %ConfirmedServiceRequest{
+      segmented_response_accepted: true,
+      max_apdu: 1476,
+      max_segments: 4,
+      invoke_id: 1,
+      sequence_number: nil,
+      proposed_window_size: nil,
+      service: :write_property,
+      parameters: [
+        tagged: {0, <<0, 128, 0, 1>>, 4},
+        tagged: {1, <<property_identifier>>, 1},
+        constructed: {3, {:real, 180.0}, 0},
+        tagged: {4, <<priority>>, 1}
+      ]
+    }
   end
 end

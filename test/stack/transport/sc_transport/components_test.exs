@@ -1,5 +1,9 @@
 defmodule BACnet.Test.Stack.Transport.ScTransport.ComponentsTest do
+  alias BACnet.Protocol.BACnetArray
+  alias BACnet.Protocol.ObjectIdentifier
+  alias BACnet.Protocol.ObjectTypes.NetworkPort
   alias BACnet.Protocol.SecureConnect.BVLC
+  alias BACnet.Protocol.SecureConnect.Settings
   alias BACnet.Stack.Transport.ScTransport.Config
   alias BACnet.Stack.Transport.ScTransport.Credentials
   alias BACnet.Stack.Transport.ScTransport.Store
@@ -10,6 +14,58 @@ defmodule BACnet.Test.Stack.Transport.ScTransport.ComponentsTest do
 
   @vmac <<2, 0, 0, 0, 0, 1>>
   @uuid <<1::size(128)>>
+
+  test "shares SC timer defaults and limits between Network Port and runtime configuration" do
+    assert {:ok, port} =
+             NetworkPort.create(
+               1,
+               "SC Port",
+               %{
+                 network_type: :sc,
+                 protocol_level: :bacnet_application,
+                 mac_address: @vmac,
+                 max_bvlc_length_accepted: BVLC.max_bvlc(),
+                 max_npdu_length_accepted: BVLC.max_npdu(),
+                 operational_certificate_file: %ObjectIdentifier{type: :file, instance: 10},
+                 issuer_certificate_files:
+                   BACnetArray.from_list(
+                     [
+                       %ObjectIdentifier{type: :file, instance: 11},
+                       %ObjectIdentifier{type: :file, instance: 12}
+                     ],
+                     true
+                   ),
+                 certificate_signing_request_file: %ObjectIdentifier{type: :file, instance: 13}
+               },
+               revision: 24,
+               supports_sc_hub: true
+             )
+
+    assert {:ok, active} = NetworkPort.active_configuration(port)
+    runtime = Store.put_transport_settings([], active)
+    assert Enum.all?(Settings.port_properties(), &NetworkPort.property_writable?(port, &1))
+
+    for {property, {option, default, range}} <- Settings.timers() do
+      assert Map.fetch!(active, property) == default
+      assert Keyword.fetch!(runtime, option) == default
+      assert Map.fetch!(Config.defaults(), option) == default
+
+      for value <- [range.first, range.last] do
+        assert Config.timer_valid?(option, value)
+        assert {:ok, changed} = NetworkPort.update_property(port, property, value)
+        assert changed.changes_pending
+        assert Map.fetch!(changed, property) == value
+        assert {:ok, ^active} = NetworkPort.active_configuration(changed)
+      end
+
+      for value <- [range.first - 1, range.last + 1] do
+        refute Config.timer_valid?(option, value)
+
+        assert {:error, {:invalid_property_type, ^property}} =
+                 NetworkPort.update_property(port, property, value)
+      end
+    end
+  end
 
   test "BVLC checks header addressing, flags, and options before applying payload rules" do
     assert {:error, 147, nil} = BVLC.decode(<<1, 8, 1::size(16), 2>>)

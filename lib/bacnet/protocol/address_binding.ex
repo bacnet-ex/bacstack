@@ -65,7 +65,7 @@ defmodule BACnet.Protocol.AddressBinding do
         _opts \\ []
       )
       when is_integer(net) and is_binary(mac) do
-    if net >= 0 and ApplicationTags.valid_int?(net, 16) do
+    if ApplicationTags.valid_uint?(net, 16) do
       params = [
         {:object_identifier, access_spec.device_identifier},
         {:unsigned_integer, net},
@@ -92,7 +92,7 @@ defmodule BACnet.Protocol.AddressBinding do
         {:octet_string, mac}
         | rest
       ] ->
-        if ApplicationTags.valid_int?(net, 16) do
+        if ApplicationTags.valid_uint?(net, 16) do
           addr = %__MODULE__{
             device_identifier: dev,
             network: net,

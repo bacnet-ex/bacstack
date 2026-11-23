@@ -101,7 +101,7 @@ defmodule BACnet.Protocol.Services.WriteGroup do
              false
            ),
          :ok <-
-           if(ApplicationTags.valid_int?(group_number, 32),
+           if(ApplicationTags.valid_uint?(group_number, 32),
              do: :ok,
              else: {:error, :invalid_group_number_value}
            ),
@@ -140,7 +140,7 @@ defmodule BACnet.Protocol.Services.WriteGroup do
           | {:error, term()}
   def to_apdu(%__MODULE__{} = service, _request_data) do
     with :ok <-
-           if(ApplicationTags.valid_int?(service.group_number, 32),
+           if(ApplicationTags.valid_uint?(service.group_number, 32),
              do: :ok,
              else: {:error, :invalid_group_number_value}
            ),

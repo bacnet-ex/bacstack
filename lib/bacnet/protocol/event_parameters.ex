@@ -328,8 +328,7 @@ defmodule BACnet.Protocol.EventParameters do
 
   def encode(%BufferReady{} = params, opts) do
     with true <-
-           is_integer(params.threshold) and params.threshold >= 0 and
-             ApplicationTags.valid_int?(params.threshold, 32),
+           is_integer(params.threshold) and ApplicationTags.valid_uint?(params.threshold, 32),
          true <- is_integer(params.previous_count) and params.previous_count >= 0,
          {:ok, threshold, _header} <-
            ApplicationTags.encode_value({:unsigned_integer, params.threshold}, opts),
@@ -798,7 +797,7 @@ defmodule BACnet.Protocol.EventParameters do
         with {:ok, {:unsigned_integer, vendor_id}} <-
                ApplicationTags.unfold_to_type(:unsigned_integer, vendor_id_raw),
              :ok <-
-               if(ApplicationTags.valid_int?(vendor_id, 16),
+               if(ApplicationTags.valid_uint?(vendor_id, 16),
                  do: :ok,
                  else: {:error, :invalid_vendor_id_value}
                ),
@@ -832,7 +831,7 @@ defmodule BACnet.Protocol.EventParameters do
              {:ok, {:unsigned_integer, previous_count}} <-
                ApplicationTags.unfold_to_type(:unsigned_integer, previous_count_raw),
              :ok <-
-               if(ApplicationTags.valid_int?(previous_count, 32),
+               if(ApplicationTags.valid_uint?(previous_count, 32),
                  do: :ok,
                  else: {:error, :invalid_previous_count_value}
                ) do

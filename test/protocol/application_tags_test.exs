@@ -1097,4 +1097,124 @@ defmodule BACnet.Test.Protocol.ApplicationTagsTest do
     assert false == ApplicationTags.valid_int?(-(2 ** 65), 64)
     assert false == ApplicationTags.valid_int?(2 ** 65, 64)
   end
+
+  test "valid_sint?/2 checks the 8-bit signed bounds" do
+    assert true == ApplicationTags.valid_sint?(-128, 8)
+    assert true == ApplicationTags.valid_sint?(0, 8)
+    assert true == ApplicationTags.valid_sint?(127, 8)
+    assert false == ApplicationTags.valid_sint?(-129, 8)
+    assert false == ApplicationTags.valid_sint?(128, 8)
+  end
+
+  test "valid_uint?/2 checks the 8-bit unsigned bounds" do
+    assert true == ApplicationTags.valid_uint?(0, 8)
+    assert true == ApplicationTags.valid_uint?(255, 8)
+    assert false == ApplicationTags.valid_uint?(-1, 8)
+    assert false == ApplicationTags.valid_uint?(256, 8)
+  end
+
+  test "valid_sint?/2 checks the 16-bit signed bounds" do
+    assert true == ApplicationTags.valid_sint?(-32_768, 16)
+    assert true == ApplicationTags.valid_sint?(0, 16)
+    assert true == ApplicationTags.valid_sint?(32_767, 16)
+    assert false == ApplicationTags.valid_sint?(-32_769, 16)
+    assert false == ApplicationTags.valid_sint?(32_768, 16)
+  end
+
+  test "valid_uint?/2 checks the 16-bit unsigned bounds" do
+    assert true == ApplicationTags.valid_uint?(0, 16)
+    assert true == ApplicationTags.valid_uint?(65_535, 16)
+    assert false == ApplicationTags.valid_uint?(-1, 16)
+    assert false == ApplicationTags.valid_uint?(65_536, 16)
+  end
+
+  test "valid_sint?/2 checks the 24-bit signed bounds" do
+    assert true == ApplicationTags.valid_sint?(-(2 ** 23), 24)
+    assert true == ApplicationTags.valid_sint?(0, 24)
+    assert true == ApplicationTags.valid_sint?(2 ** 23 - 1, 24)
+    assert false == ApplicationTags.valid_sint?(-(2 ** 23) - 1, 24)
+    assert false == ApplicationTags.valid_sint?(2 ** 23, 24)
+  end
+
+  test "valid_uint?/2 checks the 24-bit unsigned bounds" do
+    assert true == ApplicationTags.valid_uint?(0, 24)
+    assert true == ApplicationTags.valid_uint?(2 ** 24 - 1, 24)
+    assert false == ApplicationTags.valid_uint?(-1, 24)
+    assert false == ApplicationTags.valid_uint?(2 ** 24, 24)
+  end
+
+  test "valid_sint?/2 checks the 32-bit signed bounds" do
+    assert true == ApplicationTags.valid_sint?(-(2 ** 31), 32)
+    assert true == ApplicationTags.valid_sint?(0, 32)
+    assert true == ApplicationTags.valid_sint?(2 ** 31 - 1, 32)
+    assert false == ApplicationTags.valid_sint?(-(2 ** 31) - 1, 32)
+    assert false == ApplicationTags.valid_sint?(2 ** 31, 32)
+  end
+
+  test "valid_uint?/2 checks the 32-bit unsigned bounds" do
+    assert true == ApplicationTags.valid_uint?(0, 32)
+    assert true == ApplicationTags.valid_uint?(2 ** 32 - 1, 32)
+    assert false == ApplicationTags.valid_uint?(-1, 32)
+    assert false == ApplicationTags.valid_uint?(2 ** 32, 32)
+  end
+
+  test "valid_sint?/2 checks the 40-bit signed bounds" do
+    assert true == ApplicationTags.valid_sint?(-(2 ** 39), 40)
+    assert true == ApplicationTags.valid_sint?(0, 40)
+    assert true == ApplicationTags.valid_sint?(2 ** 39 - 1, 40)
+    assert false == ApplicationTags.valid_sint?(-(2 ** 39) - 1, 40)
+    assert false == ApplicationTags.valid_sint?(2 ** 39, 40)
+  end
+
+  test "valid_uint?/2 checks the 40-bit unsigned bounds" do
+    assert true == ApplicationTags.valid_uint?(0, 40)
+    assert true == ApplicationTags.valid_uint?(2 ** 40 - 1, 40)
+    assert false == ApplicationTags.valid_uint?(-1, 40)
+    assert false == ApplicationTags.valid_uint?(2 ** 40, 40)
+  end
+
+  test "valid_sint?/2 checks the 48-bit signed bounds" do
+    assert true == ApplicationTags.valid_sint?(-(2 ** 47), 48)
+    assert true == ApplicationTags.valid_sint?(0, 48)
+    assert true == ApplicationTags.valid_sint?(2 ** 47 - 1, 48)
+    assert false == ApplicationTags.valid_sint?(-(2 ** 47) - 1, 48)
+    assert false == ApplicationTags.valid_sint?(2 ** 47, 48)
+  end
+
+  test "valid_uint?/2 checks the 48-bit unsigned bounds" do
+    assert true == ApplicationTags.valid_uint?(0, 48)
+    assert true == ApplicationTags.valid_uint?(2 ** 48 - 1, 48)
+    assert false == ApplicationTags.valid_uint?(-1, 48)
+    assert false == ApplicationTags.valid_uint?(2 ** 48, 48)
+  end
+
+  test "valid_sint?/2 checks the 56-bit signed bounds" do
+    assert true == ApplicationTags.valid_sint?(-(2 ** 55), 56)
+    assert true == ApplicationTags.valid_sint?(0, 56)
+    assert true == ApplicationTags.valid_sint?(2 ** 55 - 1, 56)
+    assert false == ApplicationTags.valid_sint?(-(2 ** 55) - 1, 56)
+    assert false == ApplicationTags.valid_sint?(2 ** 55, 56)
+  end
+
+  test "valid_uint?/2 checks the 56-bit unsigned bounds" do
+    assert true == ApplicationTags.valid_uint?(0, 56)
+    assert true == ApplicationTags.valid_uint?(2 ** 56 - 1, 56)
+    assert false == ApplicationTags.valid_uint?(-1, 56)
+    assert false == ApplicationTags.valid_uint?(2 ** 56, 56)
+  end
+
+  test "valid_sint?/2 checks the 64-bit signed bounds" do
+    assert true == ApplicationTags.valid_sint?(-(2 ** 63), 64)
+    assert true == ApplicationTags.valid_sint?(0, 64)
+    assert true == ApplicationTags.valid_sint?(2 ** 63 - 1, 64)
+    assert false == ApplicationTags.valid_sint?(-(2 ** 63) - 1, 64)
+    assert false == ApplicationTags.valid_sint?(2 ** 63, 64)
+  end
+
+  test "valid_uint?/2 checks the 64-bit unsigned bounds" do
+    assert true == ApplicationTags.valid_uint?(0, 64)
+    assert true == ApplicationTags.valid_uint?(2 ** 64 - 1, 64)
+    assert false == ApplicationTags.valid_uint?(-1, 64)
+    assert false == ApplicationTags.valid_uint?(2 ** 64, 64)
+  end
 end

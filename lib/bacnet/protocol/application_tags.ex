@@ -940,18 +940,46 @@ defmodule BACnet.Protocol.ApplicationTags do
 
   @doc """
   Checks whether the given integer fits into the given integer size in bits.
+
+  This function performs both signed and unsigned check,
+  calling `valid_sint?/2` and `valid_uint?/2` internally.
   """
   @spec valid_int?(integer(), 8 | 16 | 24 | 32 | 40 | 48 | 56 | 64) :: boolean()
   def valid_int?(integer, size)
+
+  for size <- 8..64//8 do
+    def valid_int?(integer, unquote(size)) when is_integer(integer) do
+      valid_sint?(integer, unquote(size)) or valid_uint?(integer, unquote(size))
+    end
+  end
+
+  @doc """
+  Checks whether the given signed integer fits into the given integer size in bits.
+  """
+  @spec valid_sint?(integer(), 8 | 16 | 24 | 32 | 40 | 48 | 56 | 64) :: boolean()
+  def valid_sint?(integer, size)
 
   for size <- 8..64//8 do
     sized_uint = :erlang.binary_to_integer(:binary.copy("1", size), 2)
     sized_int = Integer.floor_div(sized_uint, 2)
     neg_sized_int = trunc(sized_int * -1) - 1
 
-    def valid_int?(integer, unquote(size)) when is_integer(integer) do
-      (integer >= 0 and integer <= unquote(sized_uint)) or
-        (integer >= unquote(neg_sized_int) and integer <= unquote(sized_int))
+    def valid_sint?(integer, unquote(size)) when is_integer(integer) do
+      integer >= unquote(neg_sized_int) and integer <= unquote(sized_int)
+    end
+  end
+
+  @doc """
+  Checks whether the given unsigned integer fits into the given integer size in bits.
+  """
+  @spec valid_uint?(integer(), 8 | 16 | 24 | 32 | 40 | 48 | 56 | 64) :: boolean()
+  def valid_uint?(integer, size)
+
+  for size <- 8..64//8 do
+    sized_uint = :erlang.binary_to_integer(:binary.copy("1", size), 2)
+
+    def valid_uint?(integer, unquote(size)) when is_integer(integer) do
+      integer >= 0 and integer <= unquote(sized_uint)
     end
   end
 

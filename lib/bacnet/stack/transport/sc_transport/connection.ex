@@ -138,7 +138,11 @@ if BACstack.MixProject.sc_enabled?() do
     frame must fit within the peer’s advertised receive limits.
     """
     @spec transmit(pid(), BVLC.t()) :: :ok
-    def transmit(pid, frame), do: GenServer.cast(pid, {:transmit, frame})
+    def transmit(pid, frame), do: GenServer.cast(pid, {:transmit, frame, nil})
+
+    @doc false
+    @spec forward(pid(), BVLC.t(), reference()) :: :ok
+    def forward(pid, frame, credit), do: GenServer.cast(pid, {:transmit, frame, credit})
 
     @doc """
     Requests graceful disconnection. The session waits for a correlated
@@ -237,60 +241,44 @@ if BACstack.MixProject.sc_enabled?() do
 
     def handle_call({:send_frame, frame}, _from, %{phase: phase} = state)
         when phase in [:connected, :probing] do
-      case encoded_for_peer(state, frame) do
-        {:ok, binary} ->
-          log_outbound(state, frame)
-          emit(state, {:binary, binary})
-          {:reply, :ok, state}
-
-        {:error, reason} ->
-          log_event(state, fn -> "Rejected BVLC send due to #{reason}" end)
-          {:reply, {:error, reason}, state}
-      end
+      {:reply, send_frame(state, frame), state}
     end
 
-    def handle_call({:send_frame, _frame}, _from, state) do
+    def handle_call({:send_npdu, destination, npdu, options}, _from, %{phase: phase} = state)
+        when phase in [:connected, :probing] do
+      {frame, state} = allocate(state, :npdu, npdu)
+      frame = %{frame | destination: destination, data_options: options}
+      {:reply, send_frame(state, frame), state}
+    end
+
+    def handle_call(request, _from, state) when elem(request, 0) in [:send_frame, :send_npdu] do
       log_event(state, "Rejected BVLC send before connection was ready")
       {:reply, {:error, :not_connected}, state}
     end
 
-    def handle_call({:send_npdu, destination, npdu, options}, _from, %{phase: phase} = state) do
-      if phase in [:connected, :probing] do
-        {frame, state} = allocate(state, :npdu, npdu)
-        frame = %{frame | destination: destination, data_options: options}
-
-        case encoded_for_peer(state, frame) do
-          {:ok, binary} ->
-            log_outbound(state, frame)
-            emit(state, {:binary, binary})
-            {:reply, :ok, state}
-
-          {:error, reason} ->
-            log_event(state, fn -> "Rejected NPDU send due to #{reason}" end)
-            {:reply, {:error, reason}, state}
-        end
-      else
-        log_event(state, "Rejected NPDU send before connection was ready")
-        {:reply, {:error, :not_connected}, state}
-      end
-    end
-
     @doc false
-    def handle_cast({:transmit, frame}, %{phase: phase} = state)
+    def handle_cast({:transmit, frame, credit}, %{phase: phase} = state)
         when phase in [:connected, :probing] do
       log_event(state, fn -> "Received #{frame.function} message #{frame.id} for forwarding" end)
 
       case encoded_for_peer(state, frame) do
         {:ok, binary} ->
-          emit(state, {:binary, binary})
+          emit_forwarded(state, {:binary, binary}, credit)
 
         {:error, reason} ->
           log_debug(fn ->
             "BacScConnection: Skipped #{frame.function} message #{frame.id} for peer VMAC " <>
               "#{Base.encode16(state.peer.vmac)} due to #{reason}"
           end)
+
+          release_egress(state, credit)
       end
 
+      {:noreply, state}
+    end
+
+    def handle_cast({:transmit, _frame, credit}, state) do
+      release_egress(state, credit)
       {:noreply, state}
     end
 
@@ -671,13 +659,24 @@ if BACstack.MixProject.sc_enabled?() do
       {frame, %{state | next_id: rem(state.next_id + 1, 65_536)}}
     end
 
-    @spec log_outbound(State.t(), BVLC.t()) :: :ok
-    defp log_outbound(state, frame) do
-      log_debug(fn ->
-        "BacScConnection: Sending #{frame.function} message #{frame.id} from VMAC " <>
-          "#{Base.encode16(state.config.vmac)} to VMAC #{Base.encode16(frame.destination || state.peer.vmac)} " <>
-          "through peer VMAC #{Base.encode16(state.peer.vmac)}"
-      end)
+    @spec send_frame(State.t(), BVLC.t()) ::
+            :ok | {:error, :peer_npdu_too_long | :peer_bvlc_too_long}
+    defp send_frame(state, frame) do
+      case encoded_for_peer(state, frame) do
+        {:ok, binary} ->
+          log_debug(fn ->
+            "BacScConnection: Sending #{frame.function} message #{frame.id} from VMAC " <>
+              "#{Base.encode16(state.config.vmac)} to VMAC #{Base.encode16(frame.destination || state.peer.vmac)} " <>
+              "through peer VMAC #{Base.encode16(state.peer.vmac)}"
+          end)
+
+          emit(state, {:binary, binary})
+          :ok
+
+        {:error, reason} = error ->
+          log_event(state, fn -> "Rejected BVLC send due to #{reason}" end)
+          error
+      end
     end
 
     @spec encoded_for_peer(State.t(), BVLC.t()) ::
@@ -713,6 +712,16 @@ if BACstack.MixProject.sc_enabled?() do
          do: :gun.ws_send(socket, stream, frame)
 
     defp emit(_state, _frame), do: :ok
+
+    @spec emit_forwarded(State.t(), tuple(), reference() | nil) :: term()
+    defp emit_forwarded(state, frame, nil), do: emit(state, frame)
+
+    defp emit_forwarded(%{role: {:server, socket}} = state, frame, credit),
+      do: send(socket, {:sc_forward, self(), frame, state.owner, credit})
+
+    @spec release_egress(State.t(), reference() | nil) :: term()
+    defp release_egress(_state, nil), do: :ok
+    defp release_egress(state, credit), do: send(state.owner, {:sc_egress_done, self(), credit})
 
     @spec close(State.t(), non_neg_integer(), term()) :: {:noreply, State.t()}
     defp close(state, code, reason) do

@@ -106,7 +106,7 @@ defmodule BACnet.Protocol.Services.Common do
              false
            ),
          :ok <-
-           if(ApplicationTags.valid_int?(process_identifier, 32),
+           if(ApplicationTags.valid_uint?(process_identifier, 32),
              do: :ok,
              else: {:error, :invalid_process_identifier_value}
            ),
@@ -148,7 +148,7 @@ defmodule BACnet.Protocol.Services.Common do
       when is_struct(service, Services.ConfirmedCovNotification) or
              is_struct(service, Services.UnconfirmedCovNotification) do
     with :ok <-
-           if(ApplicationTags.valid_int?(service.process_identifier, 32),
+           if(ApplicationTags.valid_uint?(service.process_identifier, 32),
              do: :ok,
              else: {:error, :invalid_process_identifier_value}
            ),
@@ -198,7 +198,7 @@ defmodule BACnet.Protocol.Services.Common do
              false
            ),
          :ok <-
-           if(ApplicationTags.valid_int?(process_identifier, 32),
+           if(ApplicationTags.valid_uint?(process_identifier, 32),
              do: :ok,
              else: {:error, :invalid_process_identifier_value}
            ),
@@ -214,7 +214,7 @@ defmodule BACnet.Protocol.Services.Common do
          {:ok, priority, rest} <-
            pattern_extract_tags(rest, {:tagged, {5, _t, _l}}, :unsigned_integer, false),
          :ok <-
-           if(ApplicationTags.valid_int?(priority, 8),
+           if(ApplicationTags.valid_uint?(priority, 8),
              do: :ok,
              else: {:error, :invalid_priority_value}
            ),
@@ -317,12 +317,12 @@ defmodule BACnet.Protocol.Services.Common do
       when is_struct(service, Services.ConfirmedEventNotification) or
              is_struct(service, Services.UnconfirmedEventNotification) do
     with :ok <-
-           if(ApplicationTags.valid_int?(service.process_identifier, 32),
+           if(ApplicationTags.valid_uint?(service.process_identifier, 32),
              do: :ok,
              else: {:error, :invalid_process_identifier_value}
            ),
          :ok <-
-           if(ApplicationTags.valid_int?(service.priority, 8),
+           if(ApplicationTags.valid_uint?(service.priority, 8),
              do: :ok,
              else: {:error, :invalid_priority_value}
            ),
@@ -454,7 +454,7 @@ defmodule BACnet.Protocol.Services.Common do
              false
            ),
          :ok <-
-           if(ApplicationTags.valid_int?(vendor, 16),
+           if(ApplicationTags.valid_uint?(vendor, 16),
              do: :ok,
              else: {:error, :invalid_vendor_id_value}
            ),
@@ -496,7 +496,7 @@ defmodule BACnet.Protocol.Services.Common do
       when is_struct(service, Services.ConfirmedPrivateTransfer) or
              is_struct(service, Services.UnconfirmedPrivateTransfer) do
     with :ok <-
-           if(ApplicationTags.valid_int?(service.vendor_id, 16),
+           if(ApplicationTags.valid_uint?(service.vendor_id, 16),
              do: :ok,
              else: {:error, :invalid_vendor_id_value}
            ),

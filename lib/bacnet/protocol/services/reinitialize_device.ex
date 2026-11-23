@@ -110,12 +110,24 @@ defmodule BACnet.Protocol.Services.ReinitializeDevice do
            ),
          {:ok, password, _rest} <-
            pattern_extract_tags(rest, {:tagged, {1, _t, _l}}, :character_string, true) do
-      event = %__MODULE__{
-        reinitialized_state: state_c,
-        password: password
-      }
+      cond do
+        password == "" ->
+          {:error, :invalid_empty_password}
 
-      {:ok, event}
+        password != nil and (not is_binary(password) or not String.valid?(password)) ->
+          {:error, :invalid_password}
+
+        is_binary(password) and String.length(password) > 20 ->
+          {:error, :password_too_long}
+
+        true ->
+          event = %__MODULE__{
+            reinitialized_state: state_c,
+            password: password
+          }
+
+          {:ok, event}
+      end
     else
       {:error, :missing_pattern} -> {:error, :invalid_request_parameters}
       {:error, _err} = err -> err
@@ -145,13 +157,25 @@ defmodule BACnet.Protocol.Services.ReinitializeDevice do
            ApplicationTags.encode_value({:enumerated, state_c}),
          {:ok, password} <-
            (if service.password do
-              if byte_size(service.password) > 20 do
-                {:error, :password_too_long}
-              else
-                with {:ok, password, _header} <-
-                       ApplicationTags.encode_value({:character_string, service.password}) do
-                  {:ok, [{:tagged, {1, password, byte_size(password)}}]}
-                end
+              cond do
+                not is_binary(service.password) ->
+                  raise ArgumentError,
+                        "Invalid password, expected string, got: " <> inspect(service.password)
+
+                service.password == "" ->
+                  {:error, :invalid_empty_password}
+
+                not String.valid?(service.password) ->
+                  {:error, :invalid_password}
+
+                String.length(service.password) > 20 ->
+                  {:error, :password_too_long}
+
+                true ->
+                  with {:ok, password, _header} <-
+                         ApplicationTags.encode_value({:character_string, service.password}) do
+                    {:ok, [{:tagged, {1, password, byte_size(password)}}]}
+                  end
               end
             else
               {:ok, []}
