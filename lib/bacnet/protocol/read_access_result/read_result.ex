@@ -12,6 +12,9 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResult do
   This per-property success-or-error granularity is what allows Read Property
   Multiple to return useful information even when some of the requested
   properties are invalid or temporarily unavailable.
+
+  Each result identifies a concrete property. `:all`, `:required`, and
+  `:optional` are request selectors expanded by the server (Clause 15.7.2).
   """
 
   alias BACnet.Protocol.ApplicationTags
@@ -21,6 +24,15 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResult do
 
   import BACnet.Protocol.Utility, only: [pattern_extract_tags: 4]
   require Constants
+
+  @property_selectors [
+    :all,
+    :required,
+    :optional,
+    Constants.macro_by_name(:property_identifier, :all),
+    Constants.macro_by_name(:property_identifier, :required),
+    Constants.macro_by_name(:property_identifier, :optional)
+  ]
 
   @typedoc """
   The result of reading one property as part of a Read Property Multiple response (value or error).
@@ -47,7 +59,11 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResult do
   @spec encode(t(), Keyword.t()) ::
           {:ok, ApplicationTags.encoding_list()} | {:error, term()}
   def encode(%__MODULE__{} = result, _opts \\ []) do
-    with {:ok, property_identifier, _header} <-
+    with nil <-
+           if(result.property_identifier in @property_selectors,
+             do: {:error, :invalid_property_identifier}
+           ),
+         {:ok, property_identifier, _header} <-
            ApplicationTags.encode_value(
              {:enumerated,
               Constants.by_name_atom(:property_identifier, result.property_identifier)}
@@ -79,9 +95,13 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResult do
                 end
 
               result.property_value ->
-                with {:ok, value} <-
-                       Encoding.to_encoding(result.property_value),
-                     do: {:ok, {:constructed, {4, value, 0}}}
+                if result.error do
+                  {:error, :invalid_value_and_error}
+                else
+                  with {:ok, value} <-
+                         Encoding.to_encoding(result.property_value),
+                       do: {:ok, {:constructed, {4, value, 0}}}
+                end
 
               true ->
                 {:ok, nil}
@@ -124,6 +144,11 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResult do
   def parse(tags) when is_list(tags) do
     with {:ok, property, rest} <-
            pattern_extract_tags(tags, {:tagged, {2, _t, _l}}, :enumerated, false),
+         prop_identifier = Constants.by_value(:property_identifier, property, property),
+         nil <-
+           if(prop_identifier in @property_selectors,
+             do: {:error, :invalid_property_identifier}
+           ),
          {:ok, array_index, rest} <-
            pattern_extract_tags(rest, {:tagged, {3, _t, _l}}, :unsigned_integer, true),
          {:ok, value, rest} <-
@@ -143,7 +168,7 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResult do
               :ok
             end) do
       result = %__MODULE__{
-        property_identifier: Constants.by_value(:property_identifier, property, property),
+        property_identifier: prop_identifier,
         property_array_index: array_index,
         property_value:
           cond do
@@ -168,6 +193,9 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResult do
   """
   @spec valid?(t()) :: boolean()
   def valid?(t)
+
+  def valid?(%__MODULE__{property_identifier: property}) when property in @property_selectors,
+    do: false
 
   def valid?(
         %__MODULE__{

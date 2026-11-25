@@ -162,6 +162,17 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyMultipleAckTest do
              })
   end
 
+  test "decoding ReadPropertyMultipleAck empty results" do
+    assert {:error, :invalid_service_ack} =
+             ReadPropertyMultipleAck.from_apdu(%ComplexACK{
+               invoke_id: 0,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :read_property_multiple,
+               payload: []
+             })
+  end
+
   test "decoding ReadPropertyMultipleAck invalid missing pattern" do
     assert {:error, :invalid_service_ack} =
              ReadPropertyMultipleAck.from_apdu(%ComplexACK{
@@ -454,6 +465,11 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyMultipleAckTest do
                  }
                ]
              })
+  end
+
+  test "encoding ReadPropertyMultipleAck rejects an empty list of read access results" do
+    assert {:error, :invalid_empty_results} =
+             ReadPropertyMultipleAck.to_apdu(%ReadPropertyMultipleAck{results: []})
   end
 
   test "encoding ReadPropertyMultipleAck invalid invoke_id" do

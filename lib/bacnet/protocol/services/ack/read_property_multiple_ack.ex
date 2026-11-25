@@ -108,6 +108,10 @@ defmodule BACnet.Protocol.Services.Ack.ReadPropertyMultipleAck do
     end
   end
 
+  defp encode_results(tags)
+
+  defp encode_results([]), do: {:error, :invalid_empty_results}
+
   defp encode_results(results) do
     result =
       Enum.reduce_while(results, {:ok, []}, fn item, {:ok, acc} ->

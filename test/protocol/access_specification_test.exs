@@ -97,6 +97,14 @@ defmodule BACnet.Protocol.AccessSpecificationTest do
              })
   end
 
+  test "encode access specification with empty property references" do
+    assert {:error, :invalid_empty_list} =
+             AccessSpecification.encode(%AccessSpecification{
+               object_identifier: %ObjectIdentifier{type: :analog_input, instance: 24},
+               properties: []
+             })
+  end
+
   test "valid access specification" do
     assert true ==
              AccessSpecification.valid?(%AccessSpecification{

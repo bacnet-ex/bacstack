@@ -664,6 +664,16 @@ defmodule BACnet.BeamTypes do
     {:list, map_beam_typespec_data(type, env, spec_module, opts)}
   end
 
+  # Non-empty list type (i.e. [tuple(), ...])
+  defp map_beam_typespec_data({:type, _line, :nonempty_list, [type]}, env, spec_module, opts) do
+    validator =
+      quote do
+        &match?([_val | _tl], &1)
+      end
+
+    {:with_validator, {:list, map_beam_typespec_data(type, env, spec_module, opts)}, validator}
+  end
+
   # Generic type (such as boolean, integer, float, etc.)
   defp map_beam_typespec_data({:type, _line, subtype, subtypes}, env, _spec_module, opts)
        when subtypes == [] or subtypes == :any do

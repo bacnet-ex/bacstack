@@ -1721,6 +1721,14 @@ defmodule BACnet.Test.Support.Protocol.ObjectsUtilityTestHelper do
   end
 
   defp amend_struct_spec_for_cause(
+         %ReadResult{property_identifier: id} = struct,
+         cause
+       )
+       when id in [:all, :required, :optional] do
+    amend_struct_spec_for_cause(%{struct | property_identifier: :present_value}, cause)
+  end
+
+  defp amend_struct_spec_for_cause(
          %ReadResult{property_value: value, error: %BACnetError{}} = struct,
          _cause
        )

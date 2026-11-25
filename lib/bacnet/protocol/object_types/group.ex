@@ -26,8 +26,8 @@ defmodule BACnet.Protocol.ObjectTypes.Group do
   Members reside in the same device as the Group. Access specifications have no device field,
   and the module passes local references to the host. The host needs to resolve them in that
   device, without rerouting an unresolved member to a remote device. An unavailable object or
-  property produces an access error when read - configuration does not perform I/O to check
-  whether members are currently accessible.
+  property produces an access error for each concrete property reference. Configuration does
+  not perform I/O to check whether members are currently accessible.
 
   A Group may refer to another Group's metadata, but cannot refer to `present_value` of a
   Group or Global Group. `ALL` and `REQUIRED` selectors on those object types are also
@@ -85,9 +85,9 @@ defmodule BACnet.Protocol.ObjectTypes.Group do
 
   For indexed entries, use `{property_identifier, array_index}` as the key.
   Put `{:error, reason}` in the map when an individual property fails.
-  Return `{:error, reason}` directly when the whole operation fails. Group
-  builds the BACnet result from those values and errors. An empty map adds
-  no entries to the result.
+  Return `{:error, reason}` directly when the whole operation fails before concrete properties
+  can be identified. A whole-selection error or an empty map adds no property entries to that
+  member's result. Group continues with any other references and members.
 
   The host's property-service layer needs to select from the member's actual property catalog:
 
@@ -280,9 +280,10 @@ defmodule BACnet.Protocol.ObjectTypes.Group do
   @doc """
   Reconstructs `present_value` for each read that includes it, without scheduling work.
 
-  Member failures become per-property BACnet errors in a successful result. Retain that result
-  and read its value before servicing the next operation. Other triggers perform no member I/O
-  and preserve runtime state. The module documentation defines the read callback contract.
+  Failures of concrete property reads become per-property BACnet errors in a successful result.
+  Retain that result and read its value before servicing the next operation. Other triggers
+  perform no member I/O and preserve runtime state. The module documentation defines the read
+  callback contract.
   """
   @impl BACnet.Protocol.ObjectsBehaviour
   @spec execute(t(), Context.t()) :: {:ok, Result.t(t())} | {:error, term()}
@@ -454,8 +455,8 @@ defmodule BACnet.Protocol.ObjectTypes.Group do
           property_result(ref, response)
         end)
 
-      {:error, reason} ->
-        [property_result(reference, {:error, reason})]
+      {:error, _reason} ->
+        []
 
       _other ->
         raise ArgumentError, "Group multiple-property reads must return a property-value map"

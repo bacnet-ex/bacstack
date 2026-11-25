@@ -57,3 +57,9 @@ defmodule BACnet.Test.Support.Protocol.BeamTypesSupport.StructTypesLiteralNumber
 
   defstruct [:world]
 end
+
+defmodule BACnet.Test.Support.Protocol.BeamTypesSupport.StructTypesNonEmptyList do
+  @type t :: %__MODULE__{world: [5, ...]}
+
+  defstruct [:world]
+end

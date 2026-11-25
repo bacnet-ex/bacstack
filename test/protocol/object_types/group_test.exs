@@ -197,18 +197,21 @@ defmodule BACnet.Test.Protocol.ObjectTypes.GroupTest do
     assert [%ReadAccessResult{results: []}] = stored.object.present_value
   end
 
-  test "an unavailable selection retains its access error and following reads continue" do
+  test "an unavailable selection adds no entries and following reads continue" do
     stored =
       read(
-        object([member(2, [:all, property(:object_name)])]),
+        object([member(2, [:all, property(:object_name)]), member(3, [:required])]),
         fn _reference -> {:ok, "Recovered"} end,
-        fn _reference, [:all] -> {:error, :unknown_object} end
+        fn _reference, [_selector] -> {:error, :unknown_object} end
       )
 
-    assert [error, success] = hd(stored.object.present_value).results
-    assert error.property_identifier == :all
-    assert error.error == %BACnetError{class: :object, code: :unknown_object}
+    assert [%ReadAccessResult{results: [success]} = mixed, %ReadAccessResult{results: []} = empty] =
+             stored.object.present_value
+
+    assert success.property_identifier == :object_name
     assert success.property_value.value == "Recovered"
+    assert {:ok, _tags} = ReadAccessResult.encode(mixed)
+    assert {:ok, _tags} = ReadAccessResult.encode(empty)
   end
 
   test "per-property failures do not abort following properties or members" do

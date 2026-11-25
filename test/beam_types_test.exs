@@ -864,6 +864,23 @@ defmodule BACnet.BeamTypesTest do
              )
   end
 
+  test "resolve struct types non-empty list" do
+    assert %{world: {:with_validator, {:list, {:literal, 5}}, val_ast}} =
+             BeamTypes.resolve_struct_type(
+               BeamTypesSupport.StructTypesNonEmptyList,
+               :t,
+               __ENV__
+             )
+
+    # Evaluate validator AST to test the validator function
+    {val_fn, _binding} = Code.eval_quoted(val_ast)
+
+    assert val_fn.([:a])
+    assert val_fn.([:a, :b])
+    refute val_fn.([])
+    refute val_fn.(:a)
+  end
+
   test "resolve struct types type not found" do
     assert_raise CompileError,
                  ~r"beam_types_test\.exs:\d+: Unable to resolve type \"String.t2\"",

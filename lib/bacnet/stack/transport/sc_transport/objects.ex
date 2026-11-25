@@ -10,6 +10,8 @@ if BACstack.MixProject.sc_enabled?() do
     certificate Files without publishing private keys.
     """
 
+    alias BACnet.Protocol.AccessSpecification
+    alias BACnet.Protocol.AccessSpecification.Property
     alias BACnet.Protocol.ApplicationTags.Encoding
     alias BACnet.Protocol.BACnetArray
     alias BACnet.Protocol.BACnetDateTime
@@ -221,37 +223,43 @@ if BACstack.MixProject.sc_enabled?() do
 
     @doc """
     Builds a result for one ReadPropertyMultiple object selection.
+
+    A missing object produces an access error for each explicitly named
+    property. If the request contains only selectors, returns the object error
+    because there are no concrete properties to include in the result.
     """
-    @spec read_access_result(ManagedPort.state(), BACnet.Protocol.AccessSpecification.t()) ::
-            ReadAccessResult.t()
+    @spec read_access_result(ManagedPort.state(), AccessSpecification.t()) ::
+            ReadAccessResult.t() | {:error, term()}
     def read_access_result(state, spec) do
       id = canonical_id(state, spec.object_identifier)
 
-      results =
-        case get_object(state, id) do
-          {:ok, object} ->
-            Enum.flat_map(spec.properties, fn selector ->
-              Enum.map(select_properties(object, selector), fn {property, index} ->
-                read_result(property, index, read_value(object, id, property, index))
-              end)
-            end)
+      case get_object(state, id) do
+        {:ok, object} ->
+          results =
+            for selector <- spec.properties,
+                {property, index} <- select_properties(object, selector) do
+              read_result(property, index, read_value(object, id, property, index))
+            end
 
-          {:error, reason} ->
-            Enum.map(spec.properties, fn
-              %{property_identifier: property, property_array_index: index} ->
-                read_result(property, index, {:error, reason})
+          %ReadAccessResult{object_identifier: id, results: results}
 
-              property ->
-                read_result(property, nil, {:error, reason})
-            end)
-        end
+        {:error, _reason} = error ->
+          results =
+            for %Property{property_identifier: property, property_array_index: index} <-
+                  spec.properties do
+              read_result(property, index, error)
+            end
 
-      %ReadAccessResult{object_identifier: id, results: results}
+          case results do
+            [] -> error
+            [_result | _rest] -> %ReadAccessResult{object_identifier: id, results: results}
+          end
+      end
     end
 
     @spec select_properties(
             object(),
-            BACnet.Protocol.AccessSpecification.Property.t() | :all | :required | :optional
+            Property.t() | :all | :required | :optional
           ) :: [{property(), array_index()}]
     defp select_properties(_object, %{property_identifier: property, property_array_index: index}),
          do: [{property, index}]

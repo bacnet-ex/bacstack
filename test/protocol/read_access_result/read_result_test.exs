@@ -234,6 +234,134 @@ defmodule BACnet.Protocol.ReadAccessResult.ReadResultTest do
              })
   end
 
+  test "encode read result rejects both property value and access error" do
+    assert {:error, :invalid_value_and_error} =
+             ReadResult.encode(%ReadResult{
+               property_identifier: :present_value,
+               property_array_index: nil,
+               property_value: Encoding.create!({:enumerated, 1}),
+               error: %BACnetError{class: :property, code: :unknown_property}
+             })
+  end
+
+  test "decode read result rejects the all selector" do
+    assert {:error, :invalid_property_identifier} =
+             ReadResult.parse(
+               tagged: {2, <<0x08>>, 1},
+               constructed: {4, {:enumerated, 1}, 0}
+             )
+  end
+
+  test "decode read result rejects the required selector" do
+    assert {:error, :invalid_property_identifier} =
+             ReadResult.parse(
+               tagged: {2, <<0x69>>, 1},
+               constructed: {4, {:enumerated, 1}, 0}
+             )
+  end
+
+  test "decode read result rejects the optional selector" do
+    assert {:error, :invalid_property_identifier} =
+             ReadResult.parse(
+               tagged: {2, <<0x50>>, 1},
+               constructed: {4, {:enumerated, 1}, 0}
+             )
+  end
+
+  test "encode read result rejects the all selector (:all)" do
+    assert {:error, :invalid_property_identifier} =
+             ReadResult.encode(%ReadResult{
+               property_identifier: :all,
+               property_array_index: nil,
+               property_value: Encoding.create!({:enumerated, 1}),
+               error: nil
+             })
+  end
+
+  test "encode read result rejects the all selector (8)" do
+    assert {:error, :invalid_property_identifier} =
+             ReadResult.encode(%ReadResult{
+               property_identifier: 0x08,
+               property_array_index: nil,
+               property_value: Encoding.create!({:enumerated, 1}),
+               error: nil
+             })
+  end
+
+  test "encode read result rejects the required selector (:required)" do
+    assert {:error, :invalid_property_identifier} =
+             ReadResult.encode(%ReadResult{
+               property_identifier: :required,
+               property_array_index: nil,
+               property_value: Encoding.create!({:enumerated, 1}),
+               error: nil
+             })
+  end
+
+  test "encode read result rejects the required selector (105)" do
+    assert {:error, :invalid_property_identifier} =
+             ReadResult.encode(%ReadResult{
+               property_identifier: 0x69,
+               property_array_index: nil,
+               property_value: Encoding.create!({:enumerated, 1}),
+               error: nil
+             })
+  end
+
+  test "encode read result rejects the optional selector (:optional)" do
+    assert {:error, :invalid_property_identifier} =
+             ReadResult.encode(%ReadResult{
+               property_identifier: :optional,
+               property_array_index: nil,
+               property_value: Encoding.create!({:enumerated, 1}),
+               error: nil
+             })
+  end
+
+  test "encode read result rejects the optional selector (80)" do
+    assert {:error, :invalid_property_identifier} =
+             ReadResult.encode(%ReadResult{
+               property_identifier: 0x50,
+               property_array_index: nil,
+               property_value: Encoding.create!({:enumerated, 1}),
+               error: nil
+             })
+  end
+
+  test "rejects selectors in access errors" do
+    error = %BACnetError{class: :object, code: :unknown_object}
+
+    for {selector, id} <- [all: 8, required: 105, optional: 80] do
+      tags = [tagged: {2, <<id>>, 1}, constructed: {5, [enumerated: 1, enumerated: 31], 0}]
+
+      result = %ReadResult{
+        property_identifier: selector,
+        property_array_index: nil,
+        property_value: nil,
+        error: error
+      }
+
+      assert {:error, :invalid_property_identifier} = ReadResult.encode(result)
+
+      assert {:error, :invalid_property_identifier} =
+               ReadResult.encode(%{result | property_identifier: id})
+
+      assert {:error, :invalid_property_identifier} = ReadResult.parse(tags)
+      refute ReadResult.valid?(result)
+      refute ReadResult.valid?(%{result | property_identifier: id})
+
+      value = Encoding.create!({:enumerated, 1})
+      refute ReadResult.valid?(%{result | property_value: value, error: nil})
+
+      refute ReadResult.valid?(%{
+               result
+               | property_identifier: id,
+                 property_value: [],
+                 error: nil
+             })
+    end
+  end
+
   test "valid read result" do
     assert true ==
              ReadResult.valid?(%ReadResult{

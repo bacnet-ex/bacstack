@@ -18,6 +18,10 @@ if BACstack.MixProject.sc_enabled?() do
     recent inbound connection failures, and the validation result for pending
     settings and credentials as BACnet property values. ReadPropertyMultiple
     can return a property-level error alongside other values from the same request.
+    For an unknown object, these errors identify the explicitly requested
+    properties. A selector-only reference to an unknown object is omitted from
+    a mixed acknowledgment. If every reference is of this kind, the service
+    returns an `:unknown_object` error.
 
     The port's authorization function must return `true` for property writes,
     ReinitializeDevice operations, and access to certificate file contents.
@@ -53,6 +57,7 @@ if BACstack.MixProject.sc_enabled?() do
     alias BACnet.Protocol.Constants
     alias BACnet.Protocol.ObjectIdentifier
     alias BACnet.Protocol.ObjectsUtility
+    alias BACnet.Protocol.ReadAccessResult
     alias BACnet.Protocol.SecureConnect.Settings
 
     alias BACnet.Protocol.ObjectExecution.Context
@@ -275,16 +280,23 @@ if BACstack.MixProject.sc_enabled?() do
     end
 
     defp dispatch(state, %ReadPropertyMultiple{} = request, apdu) do
-      results = Enum.map(request.list, &Objects.read_access_result(state, &1))
+      {results, errors} =
+        request.list
+        |> Enum.map(&Objects.read_access_result(state, &1))
+        |> Enum.split_with(&is_struct(&1, ReadAccessResult))
 
-      with {:ok, response} <-
-             ReadPropertyMultipleAck.to_apdu(
-               %ReadPropertyMultipleAck{
-                 results: results
-               },
-               apdu.invoke_id
-             ) do
-        {:ok, response, state}
+      case {results, errors} do
+        {[], [error | _rest]} ->
+          error
+
+        {results, _errors} ->
+          with {:ok, response} <-
+                 ReadPropertyMultipleAck.to_apdu(
+                   %ReadPropertyMultipleAck{results: results},
+                   apdu.invoke_id
+                 ) do
+            {:ok, response, state}
+          end
       end
     end
 

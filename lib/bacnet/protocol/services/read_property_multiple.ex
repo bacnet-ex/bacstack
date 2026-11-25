@@ -57,6 +57,7 @@ defmodule BACnet.Protocol.Services.ReadPropertyMultiple do
   """
 
   alias BACnet.Protocol
+  alias BACnet.Protocol.AccessSpecification
   alias BACnet.Protocol.Constants
 
   require Constants
@@ -70,7 +71,7 @@ defmodule BACnet.Protocol.Services.ReadPropertyMultiple do
   to be read atomically in a single request. The response is a Read Property Multiple ACK.
   """
   @type t :: %__MODULE__{
-          list: [Protocol.AccessSpecification.t()]
+          list: [AccessSpecification.t()]
         }
 
   @fields [:list]
@@ -105,17 +106,31 @@ defmodule BACnet.Protocol.Services.ReadPropertyMultiple do
         } = request
       ) do
     result =
-      Enum.reduce_while(1..100_000//1, {request.parameters, []}, fn
-        _iter, {tags, acc} ->
-          case Protocol.AccessSpecification.parse(tags) do
-            {:ok, {item, []}} -> {:halt, {:ok, [item | acc]}}
-            {:ok, {item, rest}} -> {:cont, {rest, [item | acc]}}
-            {:error, _term} = term -> {:halt, term}
+      Enum.reduce_while(1..100_000//1, {:ok, {request.parameters, []}}, fn
+        _iter, {:ok, {tags, acc}} ->
+          case AccessSpecification.parse(tags) do
+            {:ok, {%AccessSpecification{} = item, rest}} ->
+              if Enum.find_value(item.properties, fn
+                   %AccessSpecification.Property{property_value: val, priority: prio}
+                   when val != nil or prio != nil ->
+                     true
+
+                   _other ->
+                     false
+                 end) do
+                {:halt, {:error, :invalid_specification_for_read}}
+              else
+                op = if rest == [], do: :halt, else: :cont
+                {op, {:ok, {rest, [item | acc]}}}
+              end
+
+            {:error, _term} = term ->
+              {:halt, term}
           end
       end)
 
     case result do
-      {:ok, list} ->
+      {:ok, {_rest, list}} ->
         readprop = %__MODULE__{
           list: Enum.reverse(list)
         }
@@ -140,12 +155,24 @@ defmodule BACnet.Protocol.Services.ReadPropertyMultiple do
           {:ok, Protocol.APDU.ConfirmedServiceRequest.t()}
           | {:error, term()}
   def to_apdu(%__MODULE__{} = service, request_data) do
-    with {:ok, parameters} <-
+    with nil <- if(service.list == [], do: {:error, :invalid_empty_list}),
+         {:ok, parameters} <-
            Enum.reduce_while(service.list, {:ok, []}, fn
-             ras, {:ok, acc} ->
-               case Protocol.AccessSpecification.encode(ras) do
-                 {:ok, encoded} -> {:cont, {:ok, [encoded | acc]}}
-                 term -> {:halt, term}
+             %AccessSpecification{} = ras, {:ok, acc} ->
+               if Enum.find_value(ras.properties, fn
+                    %AccessSpecification.Property{property_value: val, priority: prio}
+                    when val != nil or prio != nil ->
+                      true
+
+                    _other ->
+                      false
+                  end) do
+                 {:halt, {:error, :invalid_specification_for_read}}
+               else
+                 case AccessSpecification.encode(ras) do
+                   {:ok, encoded} -> {:cont, {:ok, [encoded | acc]}}
+                   term -> {:halt, term}
+                 end
                end
            end) do
       req = %Protocol.APDU.ConfirmedServiceRequest{

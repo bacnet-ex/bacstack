@@ -1848,7 +1848,26 @@ defmodule BACnet.Test.Stack.Transport.ScTransport.IntegrationTest do
     assert {:ok, %{results: [known, unknown]}} = ReadPropertyMultipleAck.from_apdu(response)
     assert known.object_identifier == device_id
     assert Enum.any?(known.results, &(&1.property_identifier == :property_list))
-    assert Enum.all?(unknown.results, &(&1.error.code == :unknown_object))
+    assert unknown.object_identifier == absent
+
+    assert [
+             %{
+               property_identifier: :property_list,
+               error: %{class: :object, code: :unknown_object}
+             }
+           ] = unknown.results
+
+    missing = %AccessSpecification{object_identifier: absent, properties: [:all]}
+    readable = %AccessSpecification{object_identifier: wildcard, properties: [:required]}
+
+    assert {:ok, %APDU.Error{class: :object, code: :unknown_object}} =
+             request(client, @managed, %ReadPropertyMultiple{list: [missing]})
+
+    assert {:ok, response} =
+             request(client, @managed, %ReadPropertyMultiple{list: [missing, readable]})
+
+    assert {:ok, %{results: [%{object_identifier: ^device_id}]}} =
+             ReadPropertyMultipleAck.from_apdu(response)
 
     for {property, value, code} <- [
           {:sc_primary_hub_uri, {:character_string, "ws://localhost/"}, :value_out_of_range},

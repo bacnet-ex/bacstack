@@ -147,14 +147,22 @@ defmodule BACnet.Test.Stack.Transport.ScTransport.ObjectsTest do
     missing = %{
       request
       | object_identifier: @unknown,
-        properties: [%{attr | property_array_index: 2}, :all]
+        properties: [:all, %{attr | property_array_index: 2}, :required, :optional]
     }
 
-    assert %{results: [indexed, selector]} = Objects.read_access_result(state, missing)
+    assert %{object_identifier: @unknown, results: [indexed]} =
+             Objects.read_access_result(state, missing)
+
+    assert indexed.property_identifier == :object_name
     assert indexed.property_array_index == 2
-    assert indexed.error.code == :unknown_object
-    assert selector.property_identifier == :all
-    assert selector.error.code == :unknown_object
+    assert %{class: :object, code: :unknown_object} = indexed.error
+
+    assert {:error, {:object, :unknown_object}} =
+             Objects.read_access_result(state, %{
+               missing
+               | properties: [:all, :required, :optional]
+             })
+
     assert :ok = stop_supervised(ManagedPort)
   end
 

@@ -1,6 +1,7 @@
 defmodule BACnet.Test.Protocol.Services.ReadPropertyMultipleTest do
   alias BACnet.Protocol.AccessSpecification
   alias BACnet.Protocol.APDU.ConfirmedServiceRequest
+  alias BACnet.Protocol.ApplicationTags.Encoding
   alias BACnet.Protocol.ObjectIdentifier
   alias BACnet.Protocol.Services.Protocol, as: ServicesProtocol
   alias BACnet.Protocol.Services.ReadPropertyMultiple
@@ -324,6 +325,95 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyMultipleTest do
                invoke_id: 1,
                max_segments: 4
              )
+  end
+
+  test "decoding ReadPropertyMultiple rejects property value" do
+    assert {:error, :invalid_specification_for_read} =
+             ReadPropertyMultiple.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :read_property_multiple,
+               parameters: [
+                 tagged: {0, <<0, 0, 0, 16>>, 4},
+                 constructed: {1, [tagged: {0, "U", 1}, constructed: {2, {:real, 42.0}, 0}], 0}
+               ]
+             })
+  end
+
+  test "decoding ReadPropertyMultiple rejects property value and priority" do
+    assert {:error, :invalid_specification_for_read} =
+             ReadPropertyMultiple.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :read_property_multiple,
+               parameters: [
+                 tagged: {0, <<0, 0, 0, 16>>, 4},
+                 constructed:
+                   {1,
+                    [
+                      tagged: {0, "U", 1},
+                      constructed: {2, {:real, 42.0}, 0},
+                      tagged: {3, <<8>>, 1}
+                    ], 0}
+               ]
+             })
+  end
+
+  test "encoding ReadPropertyMultiple rejects property value" do
+    assert {:error, :invalid_specification_for_read} =
+             ReadPropertyMultiple.to_apdu(
+               %ReadPropertyMultiple{
+                 list: [
+                   %AccessSpecification{
+                     object_identifier: %ObjectIdentifier{type: :analog_input, instance: 16},
+                     properties: [
+                       %AccessSpecification.Property{
+                         property_identifier: :present_value,
+                         property_array_index: nil,
+                         priority: nil,
+                         property_value: Encoding.create!({:real, 42.0})
+                       }
+                     ]
+                   }
+                 ]
+               },
+               []
+             )
+  end
+
+  test "encoding ReadPropertyMultiple rejects property value and priority" do
+    assert {:error, :invalid_specification_for_read} =
+             ReadPropertyMultiple.to_apdu(
+               %ReadPropertyMultiple{
+                 list: [
+                   %AccessSpecification{
+                     object_identifier: %ObjectIdentifier{type: :analog_input, instance: 16},
+                     properties: [
+                       %AccessSpecification.Property{
+                         property_identifier: :present_value,
+                         property_array_index: nil,
+                         priority: 8,
+                         property_value: Encoding.create!({:real, 42.0})
+                       }
+                     ]
+                   }
+                 ]
+               },
+               []
+             )
+  end
+
+  test "encoding ReadPropertyMultiple rejects an empty list of read access specifications" do
+    assert {:error, :invalid_empty_list} =
+             ReadPropertyMultiple.to_apdu(%ReadPropertyMultiple{list: []}, [])
   end
 
   test "encoding ReadPropertyMultiple preserves segmented_response_accepted=false" do

@@ -31,7 +31,7 @@ defmodule BACnet.Protocol.AccessSpecification do
   """
   @type t :: %__MODULE__{
           object_identifier: ObjectIdentifier.t(),
-          properties: [Property.t() | :all | :required | :optional]
+          properties: [Property.t() | :all | :required | :optional, ...]
         }
 
   @fields [
@@ -142,7 +142,12 @@ defmodule BACnet.Protocol.AccessSpecification do
     end
   end
 
-  defp encode_access_spec_property_list(properties) do
+  @spec encode_access_spec_property_list(list()) :: {:ok, term()} | {:error, term()}
+  defp encode_access_spec_property_list(properties)
+
+  defp encode_access_spec_property_list([]), do: {:error, :invalid_empty_list}
+
+  defp encode_access_spec_property_list(properties) when is_list(properties) do
     result =
       Enum.reduce_while(properties, {:ok, []}, fn
         property, {:ok, acc} ->
