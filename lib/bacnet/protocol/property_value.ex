@@ -68,12 +68,19 @@ defmodule BACnet.Protocol.PropertyValue do
   """
   @spec encode(t(), Keyword.t()) :: {:ok, ApplicationTags.encoding_list()} | {:error, term()}
   def encode(%__MODULE__{} = property, opts \\ []) do
-    with {:ok, propident, _header} <-
-           ApplicationTags.encode_value(
-             {:enumerated,
-              Constants.by_name_atom(:property_identifier, property.property_identifier)},
-             opts
+    prop_identifier = Constants.by_name_atom(:property_identifier, property.property_identifier)
+
+    with nil <-
+           if(
+             prop_identifier in [
+               Constants.macro_by_name(:property_identifier, :all),
+               Constants.macro_by_name(:property_identifier, :required),
+               Constants.macro_by_name(:property_identifier, :optional)
+             ],
+             do: {:error, :invalid_property_identifier}
            ),
+         {:ok, propident, _header} <-
+           ApplicationTags.encode_value({:enumerated, prop_identifier}, opts),
          {:ok, propindex, _header} <-
            (if property.property_array_index do
               ApplicationTags.encode_value(
@@ -156,6 +163,12 @@ defmodule BACnet.Protocol.PropertyValue do
   def parse(tags) when is_list(tags) do
     with {:ok, property_identifier, prop} <-
            pattern_extract_tags(tags, {:tagged, {0, _t, _l}}, :enumerated, false),
+         prop_identifier =
+           Constants.by_value(:property_identifier, property_identifier, property_identifier),
+         nil <-
+           if(prop_identifier in [:all, :required, :optional],
+             do: {:error, :invalid_property_identifier}
+           ),
          {:ok, prop_array_index, prop} <-
            pattern_extract_tags(prop, {:tagged, {1, _t, _l}}, :unsigned_integer, true),
          {:ok, {:constructed, {2, value, _l}}, prop} <-
@@ -167,8 +180,7 @@ defmodule BACnet.Protocol.PropertyValue do
              do: {:error, :invalid_priority}
            ) do
       propvalue = %__MODULE__{
-        property_identifier:
-          Constants.by_value(:property_identifier, property_identifier, property_identifier),
+        property_identifier: prop_identifier,
         property_array_index: prop_array_index,
         property_value:
           if(is_list(value),

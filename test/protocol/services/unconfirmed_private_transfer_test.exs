@@ -48,6 +48,30 @@ defmodule BACnet.Test.Protocol.Services.UnconfirmedPrivateTransferTest do
              })
   end
 
+  test "decoding UnconfirmedPrivateTransfer with a single service parameter" do
+    assert {:ok,
+            %UnconfirmedPrivateTransfer{
+              vendor_id: 25,
+              service_number: 8,
+              parameters: [
+                %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :unsigned_integer,
+                  value: 42
+                }
+              ]
+            }} =
+             UnconfirmedPrivateTransfer.from_apdu(%UnconfirmedServiceRequest{
+               service: :unconfirmed_private_transfer,
+               parameters: [
+                 tagged: {0, <<25>>, 1},
+                 tagged: {1, <<8>>, 1},
+                 constructed: {2, {:unsigned_integer, 42}, 0}
+               ]
+             })
+  end
+
   test "decoding UnconfirmedPrivateTransfer empty params" do
     assert {:ok,
             %UnconfirmedPrivateTransfer{

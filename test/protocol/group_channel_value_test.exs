@@ -81,6 +81,24 @@ defmodule BACnet.Protocol.GroupChannelValueTest do
              )
   end
 
+  test "decode value rejects overriding priority 0" do
+    assert {:error, :invalid_priority} =
+             GroupChannelValue.parse(
+               tagged: {0, <<1, 12>>, 2},
+               tagged: {1, <<0>>, 1},
+               unsigned_integer: 1111
+             )
+  end
+
+  test "decode value rejects overriding priority 17" do
+    assert {:error, :invalid_priority} =
+             GroupChannelValue.parse(
+               tagged: {0, <<1, 12>>, 2},
+               tagged: {1, <<17>>, 1},
+               unsigned_integer: 1111
+             )
+  end
+
   test "decode invalid value invalid value" do
     assert {:error, :invalid_tags} =
              GroupChannelValue.parse(
@@ -161,6 +179,24 @@ defmodule BACnet.Protocol.GroupChannelValueTest do
                  type: :unsigned_integer,
                  value: 1111
                }
+             })
+  end
+
+  test "encode value rejects overriding priority 0" do
+    assert {:error, :invalid_priority} =
+             GroupChannelValue.encode(%GroupChannelValue{
+               channel: 268,
+               overriding_priority: 0,
+               value: Encoding.create!({:unsigned_integer, 1111})
+             })
+  end
+
+  test "encode value rejects overriding priority 17" do
+    assert {:error, :invalid_priority} =
+             GroupChannelValue.encode(%GroupChannelValue{
+               channel: 268,
+               overriding_priority: 17,
+               value: Encoding.create!({:unsigned_integer, 1111})
              })
   end
 

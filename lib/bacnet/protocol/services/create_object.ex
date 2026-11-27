@@ -76,7 +76,8 @@ defmodule BACnet.Protocol.Services.CreateObject do
   plus a list of initial PropertyValue settings to apply to the newly created object.
   """
   @type t :: %__MODULE__{
-          object_specifier: Protocol.ObjectIdentifier.t() | Constants.object_type(),
+          object_specifier:
+            Protocol.ObjectIdentifier.t() | Constants.object_type() | non_neg_integer(),
           initial_values: [Protocol.PropertyValue.t()]
         }
 
@@ -125,11 +126,7 @@ defmodule BACnet.Protocol.Services.CreateObject do
             0 ->
               with {:ok, {:enumerated, enum}} <-
                      ApplicationTags.unfold_to_type(:enumerated, object_specifier),
-                   do:
-                     (case Constants.by_value(:object_type, enum) do
-                        {:ok, _val} = val -> val
-                        :error -> {:error, {:unknown_object_type, enum}}
-                      end)
+                   do: {:ok, Constants.by_value(:object_type, enum, enum)}
 
             1 ->
               with {:ok, {:object_identifier, obj}} <-
@@ -184,14 +181,9 @@ defmodule BACnet.Protocol.Services.CreateObject do
         {1, ApplicationTags.encode_value({:object_identifier, service.object_specifier})}
       else
         result =
-          with {:ok, object_type_c} <-
-                 Constants.by_name_with_reason(
-                   :object_type,
-                   service.object_specifier,
-                   {:unknown_object_type, service.object_specifier}
-                 ) do
-            ApplicationTags.encode_value({:enumerated, object_type_c})
-          end
+          ApplicationTags.encode_value(
+            {:enumerated, Constants.by_name_atom(:object_type, service.object_specifier)}
+          )
 
         {0, result}
       end

@@ -53,6 +53,12 @@ defmodule BACnet.Protocol.GroupChannelValue do
              do: :ok,
              else: {:error, :invalid_channel_value}
            ),
+         nil <-
+           if(
+             value.overriding_priority != nil and
+               (value.overriding_priority < 1 or value.overriding_priority > 16),
+             do: {:error, :invalid_priority}
+           ),
          {:ok, channel, _header} <-
            ApplicationTags.encode_value({:unsigned_integer, value.channel}),
          {:ok, priority} <-
@@ -99,6 +105,12 @@ defmodule BACnet.Protocol.GroupChannelValue do
            ),
          {:ok, priority, rest} <-
            pattern_extract_tags(rest, {:tagged, {1, _t, _l}}, :unsigned_integer, true),
+         nil <-
+           if(
+             priority != nil and
+               (priority < 1 or priority > 16),
+             do: {:error, :invalid_priority}
+           ),
          {:ok, {value, rest}} <- parse_value(rest) do
       # TODO: Implement BACnetLightningCommand
       chanvalue = %__MODULE__{

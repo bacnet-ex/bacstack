@@ -54,6 +54,36 @@ defmodule BACnet.Test.Protocol.Services.ConfirmedPrivateTransferTest do
              })
   end
 
+  test "decoding ConfirmedPrivateTransfer with a single service parameter" do
+    assert {:ok,
+            %ConfirmedPrivateTransfer{
+              vendor_id: 25,
+              service_number: 8,
+              parameters: [
+                %BACnet.Protocol.ApplicationTags.Encoding{
+                  encoding: :primitive,
+                  extras: [],
+                  type: :unsigned_integer,
+                  value: 42
+                }
+              ]
+            }} =
+             ConfirmedPrivateTransfer.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :confirmed_private_transfer,
+               parameters: [
+                 tagged: {0, <<25>>, 1},
+                 tagged: {1, <<8>>, 1},
+                 constructed: {2, {:unsigned_integer, 42}, 0}
+               ]
+             })
+  end
+
   test "decoding ConfirmedPrivateTransfer empty params" do
     assert {:ok,
             %ConfirmedPrivateTransfer{

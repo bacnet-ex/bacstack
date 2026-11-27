@@ -55,8 +55,8 @@ defmodule BACnet.Test.Protocol.Services.WhoHasTest do
   test "decoding WhoHas with optionals" do
     assert {:ok,
             %WhoHas{
-              device_id_low_limit: 134_224_227,
-              device_id_high_limit: 167_778_659,
+              device_id_low_limit: 224_227,
+              device_id_high_limit: 778_659,
               object: %ObjectIdentifier{
                 type: :analog_input,
                 instance: 3
@@ -65,8 +65,66 @@ defmodule BACnet.Test.Protocol.Services.WhoHasTest do
              WhoHas.from_apdu(%UnconfirmedServiceRequest{
                service: :who_has,
                parameters: [
-                 tagged: {0, <<8, 0, 25, 99>>, 4},
-                 tagged: {1, <<10, 0, 25, 99>>, 4},
+                 tagged: {0, <<3, 107, 227>>, 3},
+                 tagged: {1, <<11, 225, 163>>, 3},
+                 tagged: {2, <<0, 0, 0, 3>>, 4}
+               ]
+             })
+  end
+
+  test "decoding WhoHas rejects an out-of-range high limit" do
+    assert {:error, :invalid_request_parameters} =
+             WhoHas.from_apdu(%UnconfirmedServiceRequest{
+               service: :who_has,
+               parameters: [
+                 tagged: {0, <<1>>, 1},
+                 tagged: {1, <<4_194_304::24>>, 3},
+                 tagged: {2, <<0, 0, 0, 3>>, 4}
+               ]
+             })
+  end
+
+  test "decoding WhoHas rejects ordered limits above the maximum" do
+    assert {:error, :invalid_request_parameters} =
+             WhoHas.from_apdu(%UnconfirmedServiceRequest{
+               service: :who_has,
+               parameters: [
+                 tagged: {0, <<4_194_304::24>>, 3},
+                 tagged: {1, <<4_194_305::24>>, 3},
+                 tagged: {2, <<0, 0, 0, 3>>, 4}
+               ]
+             })
+  end
+
+  test "decoding WhoHas rejects a low limit greater than the high limit" do
+    assert {:error, :invalid_request_parameters} =
+             WhoHas.from_apdu(%UnconfirmedServiceRequest{
+               service: :who_has,
+               parameters: [
+                 tagged: {0, <<2>>, 1},
+                 tagged: {1, <<1>>, 1},
+                 tagged: {2, <<0, 0, 0, 3>>, 4}
+               ]
+             })
+  end
+
+  test "decoding WhoHas rejects an object identifier followed by an object name" do
+    assert {:error, :invalid_request_parameters} =
+             WhoHas.from_apdu(%UnconfirmedServiceRequest{
+               service: :who_has,
+               parameters: [
+                 tagged: {2, <<0, 0, 0, 3>>, 4},
+                 tagged: {3, <<0, "OATemp">>, 7}
+               ]
+             })
+  end
+
+  test "decoding WhoHas rejects an object name followed by an object identifier" do
+    assert {:error, :invalid_request_parameters} =
+             WhoHas.from_apdu(%UnconfirmedServiceRequest{
+               service: :who_has,
+               parameters: [
+                 tagged: {3, <<0, "OATemp">>, 7},
                  tagged: {2, <<0, 0, 0, 3>>, 4}
                ]
              })

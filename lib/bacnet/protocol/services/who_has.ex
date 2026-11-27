@@ -32,12 +32,14 @@ defmodule BACnet.Protocol.Services.WhoHas do
 
   @behaviour Protocol.Services.Behaviour
 
+  @max_id Constants.macro_by_name(:asn1, :max_instance_and_property_id)
+
   @typedoc """
   Parameters for the Who-Has service (optional device range + object identifier or name).
   """
   @type t :: %__MODULE__{
-          device_id_low_limit: non_neg_integer() | nil,
-          device_id_high_limit: non_neg_integer() | nil,
+          device_id_low_limit: 0..unquote(@max_id) | nil,
+          device_id_high_limit: 0..unquote(@max_id) | nil,
           object: Protocol.ObjectIdentifier.t() | String.t()
         }
 
@@ -73,7 +75,7 @@ defmodule BACnet.Protocol.Services.WhoHas do
           service: @service_name
         } = request
       ) do
-    with {id_low, id_high, params} <-
+    with {:ok, {id_low, id_high, params}} <-
            (case request.parameters do
               [
                 {:tagged, {0, low_limit, low_length}},
@@ -81,17 +83,28 @@ defmodule BACnet.Protocol.Services.WhoHas do
               ] ->
                 <<id_low::size(^low_length)-unit(8)>> = low_limit
                 <<id_high::size(^high_length)-unit(8)>> = high_limit
-                {id_low, id_high, tail}
 
-              _term ->
-                {nil, nil, request.parameters}
+                if id_low in 0..@max_id and id_high in 0..@max_id and id_high >= id_low do
+                  {:ok, {id_low, id_high, tail}}
+                else
+                  {:error, :invalid_request_parameters}
+                end
+
+              [
+                {:tagged, {tag, _num, _len}} | _tail
+              ]
+              when tag in [0, 1] ->
+                {:error, :invalid_request_parameters}
+
+              rest ->
+                {:ok, {nil, nil, rest}}
             end),
          {:ok, {_type, object}} <-
            (case params do
-              [{:tagged, {2, object, _length}} | _tail] ->
+              [{:tagged, {2, object, _length}}] ->
                 ApplicationTags.unfold_to_type(:object_identifier, object)
 
-              [{:tagged, {3, object, _length}} | _tail] ->
+              [{:tagged, {3, object, _length}}] ->
                 ApplicationTags.unfold_to_type(:character_string, object)
 
               _else ->

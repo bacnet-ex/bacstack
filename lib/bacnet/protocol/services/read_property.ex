@@ -106,11 +106,16 @@ defmodule BACnet.Protocol.Services.ReadProperty do
            ),
          {:ok, property, rest} <-
            pattern_extract_tags(rest, {:tagged, {1, _t, _l}}, :enumerated, false),
+         prop_identifier = Constants.by_value(:property_identifier, property, property),
+         nil <-
+           if(prop_identifier in [:all, :required, :optional],
+             do: {:error, :invalid_property_identifier}
+           ),
          {:ok, array_index, _rest} <-
            pattern_extract_tags(rest, {:tagged, {2, _t, _l}}, :unsigned_integer, true) do
       readprop = %__MODULE__{
         object_identifier: object,
-        property_identifier: Constants.by_value(:property_identifier, property, property),
+        property_identifier: prop_identifier,
         property_array_index: array_index
       }
 
@@ -134,13 +139,21 @@ defmodule BACnet.Protocol.Services.ReadProperty do
           {:ok, Protocol.APDU.ConfirmedServiceRequest.t()}
           | {:error, term()}
   def to_apdu(%__MODULE__{} = service, request_data) do
-    with {:ok, object_identifier, _header} <-
+    prop_identifier = Constants.by_name_atom(:property_identifier, service.property_identifier)
+
+    with nil <-
+           if(
+             prop_identifier in [
+               Constants.macro_by_name(:property_identifier, :all),
+               Constants.macro_by_name(:property_identifier, :required),
+               Constants.macro_by_name(:property_identifier, :optional)
+             ],
+             do: {:error, :invalid_property_identifier}
+           ),
+         {:ok, object_identifier, _header} <-
            ApplicationTags.encode_value({:object_identifier, service.object_identifier}),
          {:ok, property_identifier, _header} <-
-           ApplicationTags.encode_value(
-             {:enumerated,
-              Constants.by_name_atom(:property_identifier, service.property_identifier)}
-           ),
+           ApplicationTags.encode_value({:enumerated, prop_identifier}),
          {:ok, array_index} <-
            (if service.property_array_index do
               with {:ok, array_index, _header} <-

@@ -104,6 +104,42 @@ defmodule BACnet.Test.Protocol.Services.ConfirmedTextMessageTest do
              })
   end
 
+  test "decoding ConfirmedTextMessage rejects a source identifier with a non-device object type" do
+    assert {:error, :invalid_object_identifier} =
+             ConfirmedTextMessage.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :confirmed_text_message,
+               parameters: [
+                 tagged: {0, <<0, 0, 0, 5>>, 4},
+                 tagged: {2, <<0>>, 1},
+                 tagged: {3, <<0, "Text">>, 5}
+               ]
+             })
+  end
+
+  test "decoding ConfirmedTextMessage rejects message priority 2" do
+    assert {:error, :invalid_priority} =
+             ConfirmedTextMessage.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :confirmed_text_message,
+               parameters: [
+                 tagged: {0, <<2, 0, 0, 5>>, 4},
+                 tagged: {2, <<2>>, 1},
+                 tagged: {3, <<0, "Text">>, 5}
+               ]
+             })
+  end
+
   test "decoding ConfirmedTextMessage invalid missing pattern" do
     assert {:error, :invalid_request_parameters} =
              ConfirmedTextMessage.from_apdu(%ConfirmedServiceRequest{
@@ -249,6 +285,38 @@ defmodule BACnet.Test.Protocol.Services.ConfirmedTextMessageTest do
                },
                invoke_id: 1,
                max_segments: 4
+             )
+  end
+
+  test "encoding ConfirmedTextMessage rejects a source identifier with a non-device object type" do
+    assert {:error, :invalid_object_identifier} =
+             ConfirmedTextMessage.to_apdu(
+               %ConfirmedTextMessage{
+                 source_device: %BACnet.Protocol.ObjectIdentifier{
+                   type: :analog_input,
+                   instance: 5
+                 },
+                 class: nil,
+                 priority: :normal,
+                 message: "Text"
+               },
+               []
+             )
+  end
+
+  test "encoding ConfirmedTextMessage rejects message priority 2" do
+    assert {:error, :invalid_priority} =
+             ConfirmedTextMessage.to_apdu(
+               %ConfirmedTextMessage{
+                 source_device: %BACnet.Protocol.ObjectIdentifier{
+                   type: :device,
+                   instance: 5
+                 },
+                 class: nil,
+                 priority: :other,
+                 message: "Text"
+               },
+               []
              )
   end
 

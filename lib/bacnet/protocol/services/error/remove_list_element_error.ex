@@ -9,6 +9,7 @@ defmodule BACnet.Protocol.Services.Error.RemoveListElementError do
   """
 
   alias BACnet.Protocol.APDU.Error
+  alias BACnet.Protocol.ApplicationTags
   alias BACnet.Protocol.Constants
 
   require Constants
@@ -42,14 +43,18 @@ defmodule BACnet.Protocol.Services.Error.RemoveListElementError do
   @spec from_apdu(Error.t()) :: {:ok, t()} | {:error, term()}
   def from_apdu(error)
 
-  def from_apdu(%Error{service: @service_name, payload: [unsigned_integer: element]} = error) do
-    err = %__MODULE__{
-      error_class: error.class,
-      error_code: error.code,
-      first_failed_element_number: element
-    }
+  def from_apdu(
+        %Error{service: @service_name, payload: [{:tagged, {1, _bytes, _len}} = payload]} = error
+      ) do
+    with {:ok, {_type, element}} <- ApplicationTags.unfold_to_type(:unsigned_integer, payload) do
+      err = %__MODULE__{
+        error_class: error.class,
+        error_code: error.code,
+        first_failed_element_number: element
+      }
 
-    {:ok, err}
+      {:ok, err}
+    end
   end
 
   def from_apdu(_error) do
@@ -63,15 +68,21 @@ defmodule BACnet.Protocol.Services.Error.RemoveListElementError do
   def to_apdu(error, invoke_id \\ 0)
 
   def to_apdu(%__MODULE__{} = error, invoke_id) when invoke_id in 0..255 do
-    new_error = %Error{
-      invoke_id: invoke_id,
-      service: @service_name,
-      class: error.error_class,
-      code: error.error_code,
-      payload: [unsigned_element: error.first_failed_element_number]
-    }
+    with {:ok, payload} <-
+           ApplicationTags.create_tag_encoding(
+             1,
+             {:unsigned_integer, error.first_failed_element_number}
+           ) do
+      new_error = %Error{
+        invoke_id: invoke_id,
+        service: @service_name,
+        class: error.error_class,
+        code: error.error_code,
+        payload: [payload]
+      }
 
-    {:ok, new_error}
+      {:ok, new_error}
+    end
   end
 
   def to_apdu(_error, _invoke_id) do

@@ -142,6 +142,93 @@ defmodule BACnet.Test.Protocol.Services.AddListElementTest do
              })
   end
 
+  test "decoding AddListElement rejects an empty list of elements" do
+    assert {:error, :invalid_empty_list} =
+             AddListElement.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :add_list_element,
+               parameters: [
+                 tagged: {0, <<2, 192, 0, 3>>, 4},
+                 tagged: {1, "5", 1},
+                 constructed: {3, [], 0}
+               ]
+             })
+  end
+
+  test "decoding AddListElement rejects ALL" do
+    assert {:error, :invalid_property_identifier} =
+             AddListElement.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :add_list_element,
+               parameters: [
+                 tagged: {0, <<2, 192, 0, 3>>, 4},
+                 tagged: {1, <<0x08>>, 1},
+                 constructed:
+                   {3,
+                    [
+                      tagged: {0, <<0, 0, 0, 15>>, 4},
+                      constructed: {1, [tagged: {0, "U", 1}], 0}
+                    ], 0}
+               ]
+             })
+  end
+
+  test "decoding AddListElement rejects REQUIRED" do
+    assert {:error, :invalid_property_identifier} =
+             AddListElement.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :add_list_element,
+               parameters: [
+                 tagged: {0, <<2, 192, 0, 3>>, 4},
+                 tagged: {1, <<0x69>>, 1},
+                 constructed:
+                   {3,
+                    [
+                      tagged: {0, <<0, 0, 0, 15>>, 4},
+                      constructed: {1, [tagged: {0, "U", 1}], 0}
+                    ], 0}
+               ]
+             })
+  end
+
+  test "decoding AddListElement rejects OPTIONAL" do
+    assert {:error, :invalid_property_identifier} =
+             AddListElement.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :add_list_element,
+               parameters: [
+                 tagged: {0, <<2, 192, 0, 3>>, 4},
+                 tagged: {1, <<0x50>>, 1},
+                 constructed:
+                   {3,
+                    [
+                      tagged: {0, <<0, 0, 0, 15>>, 4},
+                      constructed: {1, [tagged: {0, "U", 1}], 0}
+                    ], 0}
+               ]
+             })
+  end
+
   test "decoding AddListElement invalid APDU" do
     assert {:error, :invalid_request} =
              AddListElement.from_apdu(%ConfirmedServiceRequest{
@@ -252,6 +339,115 @@ defmodule BACnet.Test.Protocol.Services.AddListElementTest do
                },
                invoke_id: 1,
                max_segments: 4
+             )
+  end
+
+  test "encoding AddListElement rejects an empty list of elements" do
+    assert {:error, :invalid_empty_list} =
+             AddListElement.to_apdu(
+               %AddListElement{
+                 object_identifier: %ObjectIdentifier{type: :group, instance: 3},
+                 property_identifier: :list_of_group_members,
+                 property_array_index: nil,
+                 elements: []
+               },
+               []
+             )
+  end
+
+  test "encoding AddListElement rejects ALL" do
+    assert {:error, :invalid_property_identifier} =
+             AddListElement.to_apdu(
+               %AddListElement{
+                 object_identifier: %ObjectIdentifier{type: :group, instance: 3},
+                 property_identifier: :all,
+                 property_array_index: nil,
+                 elements: [
+                   Encoding.create!({:tagged, {0, <<0, 0, 0, 15>>, 4}}),
+                   Encoding.create!({:constructed, {1, [tagged: {0, "U", 1}], 0}})
+                 ]
+               },
+               []
+             )
+  end
+
+  test "encoding AddListElement rejects numeric ALL" do
+    assert {:error, :invalid_property_identifier} =
+             AddListElement.to_apdu(
+               %AddListElement{
+                 object_identifier: %ObjectIdentifier{type: :group, instance: 3},
+                 property_identifier: 0x08,
+                 property_array_index: nil,
+                 elements: [
+                   Encoding.create!({:tagged, {0, <<0, 0, 0, 15>>, 4}}),
+                   Encoding.create!({:constructed, {1, [tagged: {0, "U", 1}], 0}})
+                 ]
+               },
+               []
+             )
+  end
+
+  test "encoding AddListElement rejects REQUIRED" do
+    assert {:error, :invalid_property_identifier} =
+             AddListElement.to_apdu(
+               %AddListElement{
+                 object_identifier: %ObjectIdentifier{type: :group, instance: 3},
+                 property_identifier: :required,
+                 property_array_index: nil,
+                 elements: [
+                   Encoding.create!({:tagged, {0, <<0, 0, 0, 15>>, 4}}),
+                   Encoding.create!({:constructed, {1, [tagged: {0, "U", 1}], 0}})
+                 ]
+               },
+               []
+             )
+  end
+
+  test "encoding AddListElement rejects numeric REQUIRED" do
+    assert {:error, :invalid_property_identifier} =
+             AddListElement.to_apdu(
+               %AddListElement{
+                 object_identifier: %ObjectIdentifier{type: :group, instance: 3},
+                 property_identifier: 0x69,
+                 property_array_index: nil,
+                 elements: [
+                   Encoding.create!({:tagged, {0, <<0, 0, 0, 15>>, 4}}),
+                   Encoding.create!({:constructed, {1, [tagged: {0, "U", 1}], 0}})
+                 ]
+               },
+               []
+             )
+  end
+
+  test "encoding AddListElement rejects OPTIONAL" do
+    assert {:error, :invalid_property_identifier} =
+             AddListElement.to_apdu(
+               %AddListElement{
+                 object_identifier: %ObjectIdentifier{type: :group, instance: 3},
+                 property_identifier: :optional,
+                 property_array_index: nil,
+                 elements: [
+                   Encoding.create!({:tagged, {0, <<0, 0, 0, 15>>, 4}}),
+                   Encoding.create!({:constructed, {1, [tagged: {0, "U", 1}], 0}})
+                 ]
+               },
+               []
+             )
+  end
+
+  test "encoding AddListElement rejects numeric OPTIONAL" do
+    assert {:error, :invalid_property_identifier} =
+             AddListElement.to_apdu(
+               %AddListElement{
+                 object_identifier: %ObjectIdentifier{type: :group, instance: 3},
+                 property_identifier: 0x50,
+                 property_array_index: nil,
+                 elements: [
+                   Encoding.create!({:tagged, {0, <<0, 0, 0, 15>>, 4}}),
+                   Encoding.create!({:constructed, {1, [tagged: {0, "U", 1}], 0}})
+                 ]
+               },
+               []
              )
   end
 

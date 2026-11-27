@@ -85,6 +85,10 @@ defmodule BACnet.Protocol.Services.WriteGroup do
 
   @doc """
   Converts the given Unconfirmed Service Request into a Write Group Service.
+
+  This function returns `{:error, :ignore}` when the group number zero is used.
+  Clause 15.11.1.1.1 specifies that control group zero should not be used
+  and should be ignored. As such, this is not a hard error.
   """
   @spec from_apdu(Protocol.APDU.UnconfirmedServiceRequest.t()) ::
           {:ok, t()} | {:error, term()}
@@ -100,6 +104,7 @@ defmodule BACnet.Protocol.Services.WriteGroup do
              :unsigned_integer,
              false
            ),
+         nil <- if(group_number == 0, do: {:error, :ignore}),
          :ok <-
            if(ApplicationTags.valid_uint?(group_number, 32),
              do: :ok,
@@ -107,6 +112,10 @@ defmodule BACnet.Protocol.Services.WriteGroup do
            ),
          {:ok, write_priority, rest} <-
            pattern_extract_tags(rest, {:tagged, {1, _c, _l}}, :unsigned_integer, false),
+         nil <-
+           if(write_priority < 1 or write_priority > 16,
+             do: {:error, :invalid_write_priority}
+           ),
          {:ok, {:constructed, {2, raw_changelist, _l}}, rest} <-
            pattern_extract_tags(rest, {:constructed, {2, _c, _l}}, nil, false),
          {:ok, changelist} <- parse_changelist(raw_changelist),
@@ -140,10 +149,15 @@ defmodule BACnet.Protocol.Services.WriteGroup do
           | {:error, term()}
   def to_apdu(%__MODULE__{} = service, _request_data) do
     with :ok <-
-           if(ApplicationTags.valid_uint?(service.group_number, 32),
+           if(service.group_number > 0 and ApplicationTags.valid_uint?(service.group_number, 32),
              do: :ok,
              else: {:error, :invalid_group_number_value}
            ),
+         nil <-
+           if(service.write_priority < 1 or service.write_priority > 16,
+             do: {:error, :invalid_write_priority}
+           ),
+         nil <- if(service.changelist == [], do: {:error, :invalid_changelist}),
          {:ok, group_number, _header} <-
            ApplicationTags.encode_value({:unsigned_integer, service.group_number}),
          {:ok, write_priority, _header} <-

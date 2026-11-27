@@ -92,7 +92,7 @@ defmodule BACnet.Protocol.Services.WhoIs do
                 <<id_low::size(^low_length)-unit(8)>> = low_limit
                 <<id_high::size(^high_length)-unit(8)>> = high_limit
 
-                if id_low in 0..@max_id and id_high in 0..@max_id do
+                if id_low in 0..@max_id and id_high in 0..@max_id and id_high >= id_low do
                   {:ok, {id_low, id_high}}
                 else
                   {:error, :invalid_request_parameters}

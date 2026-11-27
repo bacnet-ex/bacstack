@@ -48,6 +48,18 @@ defmodule BACnet.Test.Protocol.Services.IHaveTest do
              })
   end
 
+  test "decoding IHave rejects a device identifier with a non-device object type" do
+    assert {:error, :invalid_request_parameters} =
+             IHave.from_apdu(%UnconfirmedServiceRequest{
+               service: :i_have,
+               parameters: [
+                 object_identifier: %ObjectIdentifier{type: :analog_output, instance: 8},
+                 object_identifier: %ObjectIdentifier{type: :analog_input, instance: 3},
+                 character_string: "OATemp"
+               ]
+             })
+  end
+
   test "decoding IHave invalid missing pattern" do
     assert {:error, :invalid_request_parameters} =
              IHave.from_apdu(%UnconfirmedServiceRequest{
@@ -103,6 +115,19 @@ defmodule BACnet.Test.Protocol.Services.IHaveTest do
                },
                []
              )
+  end
+
+  test "encoding IHave rejects a device identifier with a non-device object type" do
+    assert_raise FunctionClauseError, fn ->
+      IHave.to_apdu(
+        %IHave{
+          device: %ObjectIdentifier{type: :analog_output, instance: 8},
+          object: %ObjectIdentifier{type: :analog_input, instance: 3},
+          object_name: "OATemp"
+        },
+        []
+      )
+    end
   end
 
   test "encoding IHave invalid object name" do

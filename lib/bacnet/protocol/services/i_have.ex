@@ -73,7 +73,7 @@ defmodule BACnet.Protocol.Services.IHave do
       ) do
     case request.parameters do
       [
-        {:object_identifier, %Protocol.ObjectIdentifier{} = device_identifier},
+        {:object_identifier, %Protocol.ObjectIdentifier{type: :device} = device_identifier},
         {:object_identifier, %Protocol.ObjectIdentifier{} = object_identifier},
         {:character_string, name} | _tail
       ] ->
@@ -104,7 +104,7 @@ defmodule BACnet.Protocol.Services.IHave do
           | {:error, term()}
   def to_apdu(
         %__MODULE__{
-          device: %Protocol.ObjectIdentifier{} = device,
+          device: %Protocol.ObjectIdentifier{type: :device} = device,
           object: %Protocol.ObjectIdentifier{} = object,
           object_name: object_name
         } = _service,

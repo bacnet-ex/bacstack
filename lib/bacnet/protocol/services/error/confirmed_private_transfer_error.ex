@@ -70,7 +70,7 @@ defmodule BACnet.Protocol.Services.Error.ConfirmedPrivateTransferError do
            pattern_extract_tags(rest, {:tagged, {2, _t, _l}}, :unsigned_integer, false),
          params <-
            (case rest do
-              [{:constructed, {3, params, 0}} | _tl] -> params
+              [{:constructed, {3, params, 0}} | _tl] -> List.wrap(params)
               _else -> nil
             end) do
       err = %__MODULE__{

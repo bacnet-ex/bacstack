@@ -246,7 +246,7 @@ defmodule BACnet.Protocol.Services.Common do
          from_state =
            (case from_state_raw do
               nil ->
-                {:ok, nil}
+                nil
 
               _term ->
                 Constants.by_value(
@@ -260,7 +260,7 @@ defmodule BACnet.Protocol.Services.Common do
          to_state =
            (case to_state_raw do
               nil ->
-                {:ok, nil}
+                nil
 
               _term ->
                 Constants.by_value(
@@ -468,7 +468,7 @@ defmodule BACnet.Protocol.Services.Common do
         parameters:
           case parameters do
             {:constructed, {2, params, _l}} ->
-              Enum.map(params, &ApplicationTags.Encoding.create!(&1))
+              Enum.map(List.wrap(params), &ApplicationTags.Encoding.create!(&1))
 
             _else ->
               nil
@@ -556,6 +556,7 @@ defmodule BACnet.Protocol.Services.Common do
              :object_identifier,
              false
            ),
+         nil <- if(source_device.type != :device, do: {:error, :invalid_object_identifier}),
          {:ok, message_class_raw, rest} <-
            pattern_extract_tags(rest, {:constructed, {1, _c, _l}}, nil, true),
          {:ok, message_class} <-
@@ -586,12 +587,13 @@ defmodule BACnet.Protocol.Services.Common do
             end),
          {:ok, message_priority, rest} <-
            pattern_extract_tags(rest, {:tagged, {2, _c, _l}}, :enumerated, false),
+         {:ok, msg_priority} <- enum_to_priority(message_priority),
          {:ok, message, _rest} <-
            pattern_extract_tags(rest, {:tagged, {3, _c, _l}}, :character_string, false) do
       textmsg = %{
         source_device: source_device,
         class: message_class,
-        priority: enum_to_priority(message_priority),
+        priority: msg_priority,
         message: message
       }
 
@@ -615,7 +617,9 @@ defmodule BACnet.Protocol.Services.Common do
   def encode_text_message(request, _opts \\ [])
       when is_struct(request, Services.ConfirmedTextMessage) or
              is_struct(request, Services.UnconfirmedTextMessage) do
-    with {:ok, device, _header} <-
+    with nil <-
+           if(request.source_device.type != :device, do: {:error, :invalid_object_identifier}),
+         {:ok, device, _header} <-
            ApplicationTags.encode_value({:object_identifier, request.source_device}),
          {:ok, message_class} <-
            (case request.class do
@@ -638,8 +642,9 @@ defmodule BACnet.Protocol.Services.Common do
                     term
                 end
             end),
+         {:ok, msg_priority} <- priority_to_enum(request.priority),
          {:ok, priority, _header} <-
-           ApplicationTags.encode_value({:enumerated, priority_to_enum(request.priority)}),
+           ApplicationTags.encode_value({:enumerated, msg_priority}),
          {:ok, message, _header} <-
            ApplicationTags.encode_value({:character_string, request.message}) do
       parameters = [
@@ -659,11 +664,13 @@ defmodule BACnet.Protocol.Services.Common do
 
   ### Helpers ###
 
-  @spec enum_to_priority(0 | 1) :: :normal | :urgent
-  defp enum_to_priority(0), do: :normal
-  defp enum_to_priority(1), do: :urgent
+  @spec enum_to_priority(0 | 1) :: {:ok, :normal | :urgent} | {:error, term()}
+  defp enum_to_priority(0), do: {:ok, :normal}
+  defp enum_to_priority(1), do: {:ok, :urgent}
+  defp enum_to_priority(_rest), do: {:error, :invalid_priority}
 
-  @spec priority_to_enum(:normal | :urgent) :: 0 | 1
-  defp priority_to_enum(:normal), do: 0
-  defp priority_to_enum(:urgent), do: 1
+  @spec priority_to_enum(:normal | :urgent) :: {:ok, 0 | 1} | {:error, term()}
+  defp priority_to_enum(:normal), do: {:ok, 0}
+  defp priority_to_enum(:urgent), do: {:ok, 1}
+  defp priority_to_enum(_rest), do: {:error, :invalid_priority}
 end

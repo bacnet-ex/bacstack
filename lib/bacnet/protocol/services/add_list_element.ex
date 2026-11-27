@@ -42,7 +42,7 @@ defmodule BACnet.Protocol.Services.AddListElement do
   | The element value is out of range for the property. | PROPERTY | VALUE_OUT_OF_RANGE |
   | The specified property is currently not modifiable by the requester. | PROPERTY | WRITE_ACCESS_DENIED |
   | There is not enough free memory for the element. | RESOURCES | NO_SPACE_TO_ADD_LIST_ELEMENT |
-  | The property or specified array element is not a list. | RESOURCES | PROPERTY_IS_NOT_A_LIST |
+  | The property or specified array element is not a list. | SERVICES | PROPERTY_IS_NOT_A_LIST |
   | An array index is provided but the property is not an array. | PROPERTY | PROPERTY_IS_NOT_AN_ARRAY |
   | An array index is provided that is outside the range existing in the property. | PROPERTY | INVALID_ARRAY_INDEX |
   """
@@ -66,7 +66,7 @@ defmodule BACnet.Protocol.Services.AddListElement do
           object_identifier: Protocol.ObjectIdentifier.t(),
           property_identifier: Constants.property_identifier() | non_neg_integer(),
           property_array_index: non_neg_integer() | nil,
-          elements: [ApplicationTags.Encoding.t()]
+          elements: [ApplicationTags.Encoding.t(), ...]
         }
 
   @fields [
@@ -114,13 +114,19 @@ defmodule BACnet.Protocol.Services.AddListElement do
            ),
          {:ok, property, rest} <-
            pattern_extract_tags(rest, {:tagged, {1, _t, _l}}, :enumerated, false),
+         prop_identifier = Constants.by_value(:property_identifier, property, property),
+         nil <-
+           if(prop_identifier in [:all, :required, :optional],
+             do: {:error, :invalid_property_identifier}
+           ),
          {:ok, array_index, rest} <-
            pattern_extract_tags(rest, {:tagged, {2, _t, _l}}, :unsigned_integer, true),
          {:ok, {:constructed, {3, elements, _l}}, _rest} <-
-           pattern_extract_tags(rest, {:constructed, {3, _t, _l}}, nil, false) do
+           pattern_extract_tags(rest, {:constructed, {3, _t, _l}}, nil, false),
+         nil <- if(elements == [], do: {:error, :invalid_empty_list}) do
       add_list = %__MODULE__{
         object_identifier: object,
-        property_identifier: Constants.by_value(:property_identifier, property, property),
+        property_identifier: prop_identifier,
         property_array_index: array_index,
         elements: Enum.map(List.wrap(elements), &ApplicationTags.Encoding.create!/1)
       }
@@ -145,13 +151,22 @@ defmodule BACnet.Protocol.Services.AddListElement do
           {:ok, Protocol.APDU.ConfirmedServiceRequest.t()}
           | {:error, term()}
   def to_apdu(%__MODULE__{elements: elements} = service, request_data) when is_list(elements) do
-    with {:ok, object_identifier, _header} <-
+    prop_identifier = Constants.by_name_atom(:property_identifier, service.property_identifier)
+
+    with nil <-
+           if(
+             prop_identifier in [
+               Constants.macro_by_name(:property_identifier, :all),
+               Constants.macro_by_name(:property_identifier, :required),
+               Constants.macro_by_name(:property_identifier, :optional)
+             ],
+             do: {:error, :invalid_property_identifier}
+           ),
+         nil <- if(elements == [], do: {:error, :invalid_empty_list}),
+         {:ok, object_identifier, _header} <-
            ApplicationTags.encode_value({:object_identifier, service.object_identifier}),
          {:ok, property_identifier, _header} <-
-           ApplicationTags.encode_value(
-             {:enumerated,
-              Constants.by_name_atom(:property_identifier, service.property_identifier)}
-           ),
+           ApplicationTags.encode_value({:enumerated, prop_identifier}),
          {:ok, array_index} <-
            (if service.property_array_index do
               with {:ok, array_index, _header} <-

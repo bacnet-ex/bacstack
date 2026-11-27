@@ -168,6 +168,93 @@ defmodule BACnet.Test.Protocol.Services.RemoveListElementTest do
              })
   end
 
+  test "decoding RemoveListElement rejects an empty list of elements" do
+    assert {:error, :invalid_empty_list} =
+             RemoveListElement.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :remove_list_element,
+               parameters: [
+                 tagged: {0, <<2, 192, 0, 3>>, 4},
+                 tagged: {1, "5", 1},
+                 constructed: {3, [], 0}
+               ]
+             })
+  end
+
+  test "decoding RemoveListElement rejects ALL" do
+    assert {:error, :invalid_property_identifier} =
+             RemoveListElement.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :remove_list_element,
+               parameters: [
+                 tagged: {0, <<2, 192, 0, 3>>, 4},
+                 tagged: {1, <<0x08>>, 1},
+                 constructed:
+                   {3,
+                    [
+                      tagged: {0, <<0, 0, 0, 15>>, 4},
+                      constructed: {1, [tagged: {0, "U", 1}], 0}
+                    ], 0}
+               ]
+             })
+  end
+
+  test "decoding RemoveListElement rejects REQUIRED" do
+    assert {:error, :invalid_property_identifier} =
+             RemoveListElement.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :remove_list_element,
+               parameters: [
+                 tagged: {0, <<2, 192, 0, 3>>, 4},
+                 tagged: {1, <<0x69>>, 1},
+                 constructed:
+                   {3,
+                    [
+                      tagged: {0, <<0, 0, 0, 15>>, 4},
+                      constructed: {1, [tagged: {0, "U", 1}], 0}
+                    ], 0}
+               ]
+             })
+  end
+
+  test "decoding RemoveListElement rejects OPTIONAL" do
+    assert {:error, :invalid_property_identifier} =
+             RemoveListElement.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :remove_list_element,
+               parameters: [
+                 tagged: {0, <<2, 192, 0, 3>>, 4},
+                 tagged: {1, <<0x50>>, 1},
+                 constructed:
+                   {3,
+                    [
+                      tagged: {0, <<0, 0, 0, 15>>, 4},
+                      constructed: {1, [tagged: {0, "U", 1}], 0}
+                    ], 0}
+               ]
+             })
+  end
+
   test "decoding RemoveListElement invalid APDU" do
     assert {:error, :invalid_request} =
              RemoveListElement.from_apdu(%ConfirmedServiceRequest{
@@ -301,6 +388,115 @@ defmodule BACnet.Test.Protocol.Services.RemoveListElementTest do
                },
                invoke_id: 1,
                max_segments: 4
+             )
+  end
+
+  test "encoding RemoveListElement rejects an empty list of elements" do
+    assert {:error, :invalid_empty_list} =
+             RemoveListElement.to_apdu(
+               %RemoveListElement{
+                 object_identifier: %ObjectIdentifier{type: :group, instance: 3},
+                 property_identifier: :list_of_group_members,
+                 property_array_index: nil,
+                 elements: []
+               },
+               []
+             )
+  end
+
+  test "encoding RemoveListElement rejects ALL" do
+    assert {:error, :invalid_property_identifier} =
+             RemoveListElement.to_apdu(
+               %RemoveListElement{
+                 object_identifier: %ObjectIdentifier{type: :group, instance: 3},
+                 property_identifier: :all,
+                 property_array_index: nil,
+                 elements: [
+                   Encoding.create!({:tagged, {0, <<0, 0, 0, 15>>, 4}}),
+                   Encoding.create!({:constructed, {1, [tagged: {0, "U", 1}], 0}})
+                 ]
+               },
+               []
+             )
+  end
+
+  test "encoding RemoveListElement rejects numeric ALL" do
+    assert {:error, :invalid_property_identifier} =
+             RemoveListElement.to_apdu(
+               %RemoveListElement{
+                 object_identifier: %ObjectIdentifier{type: :group, instance: 3},
+                 property_identifier: 0x08,
+                 property_array_index: nil,
+                 elements: [
+                   Encoding.create!({:tagged, {0, <<0, 0, 0, 15>>, 4}}),
+                   Encoding.create!({:constructed, {1, [tagged: {0, "U", 1}], 0}})
+                 ]
+               },
+               []
+             )
+  end
+
+  test "encoding RemoveListElement rejects REQUIRED" do
+    assert {:error, :invalid_property_identifier} =
+             RemoveListElement.to_apdu(
+               %RemoveListElement{
+                 object_identifier: %ObjectIdentifier{type: :group, instance: 3},
+                 property_identifier: :required,
+                 property_array_index: nil,
+                 elements: [
+                   Encoding.create!({:tagged, {0, <<0, 0, 0, 15>>, 4}}),
+                   Encoding.create!({:constructed, {1, [tagged: {0, "U", 1}], 0}})
+                 ]
+               },
+               []
+             )
+  end
+
+  test "encoding RemoveListElement rejects numeric REQUIRED" do
+    assert {:error, :invalid_property_identifier} =
+             RemoveListElement.to_apdu(
+               %RemoveListElement{
+                 object_identifier: %ObjectIdentifier{type: :group, instance: 3},
+                 property_identifier: 0x69,
+                 property_array_index: nil,
+                 elements: [
+                   Encoding.create!({:tagged, {0, <<0, 0, 0, 15>>, 4}}),
+                   Encoding.create!({:constructed, {1, [tagged: {0, "U", 1}], 0}})
+                 ]
+               },
+               []
+             )
+  end
+
+  test "encoding RemoveListElement rejects OPTIONAL" do
+    assert {:error, :invalid_property_identifier} =
+             RemoveListElement.to_apdu(
+               %RemoveListElement{
+                 object_identifier: %ObjectIdentifier{type: :group, instance: 3},
+                 property_identifier: :optional,
+                 property_array_index: nil,
+                 elements: [
+                   Encoding.create!({:tagged, {0, <<0, 0, 0, 15>>, 4}}),
+                   Encoding.create!({:constructed, {1, [tagged: {0, "U", 1}], 0}})
+                 ]
+               },
+               []
+             )
+  end
+
+  test "encoding RemoveListElement rejects numeric OPTIONAL" do
+    assert {:error, :invalid_property_identifier} =
+             RemoveListElement.to_apdu(
+               %RemoveListElement{
+                 object_identifier: %ObjectIdentifier{type: :group, instance: 3},
+                 property_identifier: 0x50,
+                 property_array_index: nil,
+                 elements: [
+                   Encoding.create!({:tagged, {0, <<0, 0, 0, 15>>, 4}}),
+                   Encoding.create!({:constructed, {1, [tagged: {0, "U", 1}], 0}})
+                 ]
+               },
+               []
              )
   end
 

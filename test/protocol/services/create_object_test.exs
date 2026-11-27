@@ -113,8 +113,8 @@ defmodule BACnet.Test.Protocol.Services.CreateObjectTest do
              })
   end
 
-  test "decoding CreateObject with invalid object type" do
-    assert {:error, {:unknown_object_type, 255}} =
+  test "decoding CreateObject with the first proprietary object type" do
+    assert {:ok, %CreateObject{object_specifier: 128, initial_values: []}} =
              CreateObject.from_apdu(%ConfirmedServiceRequest{
                segmented_response_accepted: true,
                max_apdu: 1476,
@@ -124,7 +124,23 @@ defmodule BACnet.Test.Protocol.Services.CreateObjectTest do
                proposed_window_size: nil,
                service: :create_object,
                parameters: [
-                 constructed: {0, {:tagged, {0, <<255>>, 1}}, 0}
+                 constructed: {0, {:tagged, {0, <<0x80>>, 1}}, 0}
+               ]
+             })
+  end
+
+  test "decoding CreateObject with the last proprietary object type" do
+    assert {:ok, %CreateObject{object_specifier: 1023, initial_values: []}} =
+             CreateObject.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :create_object,
+               parameters: [
+                 constructed: {0, {:tagged, {0, <<0x03, 0xFF>>, 2}}, 0}
                ]
              })
   end
@@ -145,6 +161,60 @@ defmodule BACnet.Test.Protocol.Services.CreateObjectTest do
   #              ]
   #            })
   # end
+
+  test "decoding CreateObject rejects ALL in the list of initial values" do
+    assert {:error, :invalid_property_identifier} =
+             CreateObject.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :create_object,
+               parameters: [
+                 constructed: {0, {:tagged, {0, "\n", 1}}, 0},
+                 constructed:
+                   {1, [tagged: {0, <<0x08>>, 1}, constructed: {2, {:enumerated, 0}, 0}], 0}
+               ]
+             })
+  end
+
+  test "decoding CreateObject rejects REQUIRED in the list of initial values" do
+    assert {:error, :invalid_property_identifier} =
+             CreateObject.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :create_object,
+               parameters: [
+                 constructed: {0, {:tagged, {0, "\n", 1}}, 0},
+                 constructed:
+                   {1, [tagged: {0, <<0x69>>, 1}, constructed: {2, {:enumerated, 0}, 0}], 0}
+               ]
+             })
+  end
+
+  test "decoding CreateObject rejects OPTIONAL in the list of initial values" do
+    assert {:error, :invalid_property_identifier} =
+             CreateObject.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :create_object,
+               parameters: [
+                 constructed: {0, {:tagged, {0, "\n", 1}}, 0},
+                 constructed:
+                   {1, [tagged: {0, <<0x50>>, 1}, constructed: {2, {:enumerated, 0}, 0}], 0}
+               ]
+             })
+  end
 
   test "decoding CreateObject invalid missing pattern" do
     assert {:error, :invalid_request_parameters} =
@@ -231,6 +301,24 @@ defmodule BACnet.Test.Protocol.Services.CreateObjectTest do
              )
   end
 
+  test "encoding CreateObject with the first proprietary object type" do
+    assert {:ok,
+            %ConfirmedServiceRequest{
+              service: :create_object,
+              parameters: [constructed: {0, {:tagged, {0, <<0x80>>, 1}}, 0}]
+            }} =
+             CreateObject.to_apdu(%CreateObject{object_specifier: 128, initial_values: []}, [])
+  end
+
+  test "encoding CreateObject with the last proprietary object type" do
+    assert {:ok,
+            %ConfirmedServiceRequest{
+              service: :create_object,
+              parameters: [constructed: {0, {:tagged, {0, <<0x03, 0xFF>>, 2}}, 0}]
+            }} =
+             CreateObject.to_apdu(%CreateObject{object_specifier: 1023, initial_values: []}, [])
+  end
+
   test "encoding CreateObject with object identifier" do
     assert {:ok,
             %ConfirmedServiceRequest{
@@ -264,6 +352,114 @@ defmodule BACnet.Test.Protocol.Services.CreateObjectTest do
                },
                invoke_id: 1,
                max_segments: 4
+             )
+  end
+
+  test "encoding CreateObject rejects ALL in the list of initial values" do
+    assert {:error, :invalid_property_identifier} =
+             CreateObject.to_apdu(
+               %CreateObject{
+                 object_specifier: :file,
+                 initial_values: [
+                   %PropertyValue{
+                     property_identifier: :all,
+                     property_array_index: nil,
+                     property_value: Encoding.create!({:enumerated, 0}),
+                     priority: nil
+                   }
+                 ]
+               },
+               []
+             )
+  end
+
+  test "encoding CreateObject rejects numeric ALL in the list of initial values" do
+    assert {:error, :invalid_property_identifier} =
+             CreateObject.to_apdu(
+               %CreateObject{
+                 object_specifier: :file,
+                 initial_values: [
+                   %PropertyValue{
+                     property_identifier: 0x08,
+                     property_array_index: nil,
+                     property_value: Encoding.create!({:enumerated, 0}),
+                     priority: nil
+                   }
+                 ]
+               },
+               []
+             )
+  end
+
+  test "encoding CreateObject rejects REQUIRED in the list of initial values" do
+    assert {:error, :invalid_property_identifier} =
+             CreateObject.to_apdu(
+               %CreateObject{
+                 object_specifier: :file,
+                 initial_values: [
+                   %PropertyValue{
+                     property_identifier: :required,
+                     property_array_index: nil,
+                     property_value: Encoding.create!({:enumerated, 0}),
+                     priority: nil
+                   }
+                 ]
+               },
+               []
+             )
+  end
+
+  test "encoding CreateObject rejects numeric REQUIRED in the list of initial values" do
+    assert {:error, :invalid_property_identifier} =
+             CreateObject.to_apdu(
+               %CreateObject{
+                 object_specifier: :file,
+                 initial_values: [
+                   %PropertyValue{
+                     property_identifier: 0x69,
+                     property_array_index: nil,
+                     property_value: Encoding.create!({:enumerated, 0}),
+                     priority: nil
+                   }
+                 ]
+               },
+               []
+             )
+  end
+
+  test "encoding CreateObject rejects OPTIONAL in the list of initial values" do
+    assert {:error, :invalid_property_identifier} =
+             CreateObject.to_apdu(
+               %CreateObject{
+                 object_specifier: :file,
+                 initial_values: [
+                   %PropertyValue{
+                     property_identifier: :optional,
+                     property_array_index: nil,
+                     property_value: Encoding.create!({:enumerated, 0}),
+                     priority: nil
+                   }
+                 ]
+               },
+               []
+             )
+  end
+
+  test "encoding CreateObject rejects numeric OPTIONAL in the list of initial values" do
+    assert {:error, :invalid_property_identifier} =
+             CreateObject.to_apdu(
+               %CreateObject{
+                 object_specifier: :file,
+                 initial_values: [
+                   %PropertyValue{
+                     property_identifier: 0x50,
+                     property_array_index: nil,
+                     property_value: Encoding.create!({:enumerated, 0}),
+                     priority: nil
+                   }
+                 ]
+               },
+               []
              )
   end
 

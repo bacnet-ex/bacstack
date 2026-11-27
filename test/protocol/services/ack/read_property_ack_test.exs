@@ -103,6 +103,51 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyAckTest do
              })
   end
 
+  test "decoding ReadPropertyAck rejects ALL" do
+    assert {:error, :invalid_property_identifier} =
+             ReadPropertyAck.from_apdu(%ComplexACK{
+               invoke_id: 0,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :read_property,
+               payload: [
+                 tagged: {0, <<0, 0, 0, 5>>, 4},
+                 tagged: {1, <<0x08>>, 1},
+                 constructed: {3, {:real, 72.3}, 0}
+               ]
+             })
+  end
+
+  test "decoding ReadPropertyAck rejects REQUIRED" do
+    assert {:error, :invalid_property_identifier} =
+             ReadPropertyAck.from_apdu(%ComplexACK{
+               invoke_id: 0,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :read_property,
+               payload: [
+                 tagged: {0, <<0, 0, 0, 5>>, 4},
+                 tagged: {1, <<0x69>>, 1},
+                 constructed: {3, {:real, 72.3}, 0}
+               ]
+             })
+  end
+
+  test "decoding ReadPropertyAck rejects OPTIONAL" do
+    assert {:error, :invalid_property_identifier} =
+             ReadPropertyAck.from_apdu(%ComplexACK{
+               invoke_id: 0,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :read_property,
+               payload: [
+                 tagged: {0, <<0, 0, 0, 5>>, 4},
+                 tagged: {1, <<0x50>>, 1},
+                 constructed: {3, {:real, 72.3}, 0}
+               ]
+             })
+  end
+
   test "decoding ReadPropertyAck invalid missing pattern" do
     assert {:error, :invalid_service_ack} =
              ReadPropertyAck.from_apdu(%ComplexACK{
@@ -265,6 +310,66 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyAckTest do
                  type: :real,
                  value: 72.3
                }
+             })
+  end
+
+  test "encoding ReadPropertyAck rejects ALL" do
+    assert {:error, :invalid_property_identifier} =
+             ReadPropertyAck.to_apdu(%ReadPropertyAck{
+               object_identifier: %ObjectIdentifier{type: :analog_input, instance: 5},
+               property_identifier: :all,
+               property_array_index: nil,
+               property_value: Encoding.create!({:real, 72.3})
+             })
+  end
+
+  test "encoding ReadPropertyAck rejects numeric ALL" do
+    assert {:error, :invalid_property_identifier} =
+             ReadPropertyAck.to_apdu(%ReadPropertyAck{
+               object_identifier: %ObjectIdentifier{type: :analog_input, instance: 5},
+               property_identifier: 0x08,
+               property_array_index: nil,
+               property_value: Encoding.create!({:real, 72.3})
+             })
+  end
+
+  test "encoding ReadPropertyAck rejects REQUIRED" do
+    assert {:error, :invalid_property_identifier} =
+             ReadPropertyAck.to_apdu(%ReadPropertyAck{
+               object_identifier: %ObjectIdentifier{type: :analog_input, instance: 5},
+               property_identifier: :required,
+               property_array_index: nil,
+               property_value: Encoding.create!({:real, 72.3})
+             })
+  end
+
+  test "encoding ReadPropertyAck rejects numeric REQUIRED" do
+    assert {:error, :invalid_property_identifier} =
+             ReadPropertyAck.to_apdu(%ReadPropertyAck{
+               object_identifier: %ObjectIdentifier{type: :analog_input, instance: 5},
+               property_identifier: 0x69,
+               property_array_index: nil,
+               property_value: Encoding.create!({:real, 72.3})
+             })
+  end
+
+  test "encoding ReadPropertyAck rejects OPTIONAL" do
+    assert {:error, :invalid_property_identifier} =
+             ReadPropertyAck.to_apdu(%ReadPropertyAck{
+               object_identifier: %ObjectIdentifier{type: :analog_input, instance: 5},
+               property_identifier: :optional,
+               property_array_index: nil,
+               property_value: Encoding.create!({:real, 72.3})
+             })
+  end
+
+  test "encoding ReadPropertyAck rejects numeric OPTIONAL" do
+    assert {:error, :invalid_property_identifier} =
+             ReadPropertyAck.to_apdu(%ReadPropertyAck{
+               object_identifier: %ObjectIdentifier{type: :analog_input, instance: 5},
+               property_identifier: 0x50,
+               property_array_index: nil,
+               property_value: Encoding.create!({:real, 72.3})
              })
   end
 

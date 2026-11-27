@@ -142,6 +142,30 @@ defmodule BACnet.Protocol.PropertyValueTest do
              )
   end
 
+  test "decode property value rejects ALL as property identifier" do
+    assert {:error, :invalid_property_identifier} =
+             PropertyValue.parse(
+               tagged: {0, <<0x08>>, 1},
+               constructed: {2, {:enumerated, 0}, 0}
+             )
+  end
+
+  test "decode property value rejects REQUIRED as property identifier" do
+    assert {:error, :invalid_property_identifier} =
+             PropertyValue.parse(
+               tagged: {0, <<0x69>>, 1},
+               constructed: {2, {:enumerated, 0}, 0}
+             )
+  end
+
+  test "decode property value rejects OPTIONAL as property identifier" do
+    assert {:error, :invalid_property_identifier} =
+             PropertyValue.parse(
+               tagged: {0, <<0x50>>, 1},
+               constructed: {2, {:enumerated, 0}, 0}
+             )
+  end
+
   test "decode property value missing pattern error" do
     assert {:error, :invalid_tags} =
              PropertyValue.parse(
@@ -304,6 +328,66 @@ defmodule BACnet.Protocol.PropertyValueTest do
                property_array_index: 20,
                property_value: Encoding.create!({:enumerated, 0}),
                priority: 5
+             })
+  end
+
+  test "encode property value rejects ALL as property identifier" do
+    assert {:error, :invalid_property_identifier} =
+             PropertyValue.encode(%PropertyValue{
+               property_identifier: :all,
+               property_array_index: nil,
+               property_value: Encoding.create!({:enumerated, 0}),
+               priority: nil
+             })
+  end
+
+  test "encode property value rejects numeric ALL as property identifier" do
+    assert {:error, :invalid_property_identifier} =
+             PropertyValue.encode(%PropertyValue{
+               property_identifier: 0x08,
+               property_array_index: nil,
+               property_value: Encoding.create!({:enumerated, 0}),
+               priority: nil
+             })
+  end
+
+  test "encode property value rejects REQUIRED as property identifier" do
+    assert {:error, :invalid_property_identifier} =
+             PropertyValue.encode(%PropertyValue{
+               property_identifier: :required,
+               property_array_index: nil,
+               property_value: Encoding.create!({:enumerated, 0}),
+               priority: nil
+             })
+  end
+
+  test "encode property value rejects numeric REQUIRED as property identifier" do
+    assert {:error, :invalid_property_identifier} =
+             PropertyValue.encode(%PropertyValue{
+               property_identifier: 0x69,
+               property_array_index: nil,
+               property_value: Encoding.create!({:enumerated, 0}),
+               priority: nil
+             })
+  end
+
+  test "encode property value rejects OPTIONAL as property identifier" do
+    assert {:error, :invalid_property_identifier} =
+             PropertyValue.encode(%PropertyValue{
+               property_identifier: :optional,
+               property_array_index: nil,
+               property_value: Encoding.create!({:enumerated, 0}),
+               priority: nil
+             })
+  end
+
+  test "encode property value rejects numeric OPTIONAL as property identifier" do
+    assert {:error, :invalid_property_identifier} =
+             PropertyValue.encode(%PropertyValue{
+               property_identifier: 0x50,
+               property_array_index: nil,
+               property_value: Encoding.create!({:enumerated, 0}),
+               priority: nil
              })
   end
 

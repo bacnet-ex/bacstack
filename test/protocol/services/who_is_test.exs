@@ -81,6 +81,14 @@ defmodule BACnet.Test.Protocol.Services.WhoIsTest do
              })
   end
 
+  test "decoding WhoIs rejects a low limit greater than the high limit" do
+    assert {:error, :invalid_request_parameters} =
+             WhoIs.from_apdu(%UnconfirmedServiceRequest{
+               service: :who_is,
+               parameters: [tagged: {0, <<2>>, 1}, tagged: {1, <<1>>, 1}]
+             })
+  end
+
   test "encoding WhoIs" do
     assert {:ok,
             %UnconfirmedServiceRequest{

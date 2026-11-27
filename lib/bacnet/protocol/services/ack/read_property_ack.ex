@@ -58,13 +58,18 @@ defmodule BACnet.Protocol.Services.Ack.ReadPropertyAck do
            ),
          {:ok, property, rest} <-
            pattern_extract_tags(rest, {:tagged, {1, _t, _l}}, :enumerated, false),
+         prop_identifier = Constants.by_value(:property_identifier, property, property),
+         nil <-
+           if(prop_identifier in [:all, :required, :optional],
+             do: {:error, :invalid_property_identifier}
+           ),
          {:ok, array_index, rest} <-
            pattern_extract_tags(rest, {:tagged, {2, _t, _l}}, :unsigned_integer, true),
          {:ok, {:constructed, {3, value, _l}}, _rest} <-
            pattern_extract_tags(rest, {:constructed, {3, _t, _l}}, nil, false) do
       struc = %__MODULE__{
         object_identifier: obj,
-        property_identifier: Constants.by_value(:property_identifier, property, property),
+        property_identifier: prop_identifier,
         property_array_index: array_index,
         property_value:
           if(is_list(value),
@@ -95,12 +100,21 @@ defmodule BACnet.Protocol.Services.Ack.ReadPropertyAck do
   def to_apdu(ack, invoke_id \\ 0)
 
   def to_apdu(%__MODULE__{} = ack, invoke_id) when invoke_id in 0..255 do
-    with {:ok, obj, _header} <-
+    prop_identifier = Constants.by_name_atom(:property_identifier, ack.property_identifier)
+
+    with nil <-
+           if(
+             prop_identifier in [
+               Constants.macro_by_name(:property_identifier, :all),
+               Constants.macro_by_name(:property_identifier, :required),
+               Constants.macro_by_name(:property_identifier, :optional)
+             ],
+             do: {:error, :invalid_property_identifier}
+           ),
+         {:ok, obj, _header} <-
            ApplicationTags.encode_value({:object_identifier, ack.object_identifier}),
          {:ok, property, _header} <-
-           ApplicationTags.encode_value(
-             {:enumerated, Constants.by_name_atom(:property_identifier, ack.property_identifier)}
-           ),
+           ApplicationTags.encode_value({:enumerated, prop_identifier}),
          {:ok, array_index} <-
            (if ack.property_array_index do
               with {:ok, index, _header} <-

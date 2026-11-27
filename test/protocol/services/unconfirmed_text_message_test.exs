@@ -86,6 +86,30 @@ defmodule BACnet.Test.Protocol.Services.UnconfirmedTextMessageTest do
              })
   end
 
+  test "decoding UnconfirmedTextMessage rejects a source identifier with a non-device object type" do
+    assert {:error, :invalid_object_identifier} =
+             UnconfirmedTextMessage.from_apdu(%UnconfirmedServiceRequest{
+               service: :unconfirmed_text_message,
+               parameters: [
+                 tagged: {0, <<0, 0, 0, 5>>, 4},
+                 tagged: {2, <<0>>, 1},
+                 tagged: {3, <<0, "Text">>, 5}
+               ]
+             })
+  end
+
+  test "decoding UnconfirmedTextMessage rejects message priority 2" do
+    assert {:error, :invalid_priority} =
+             UnconfirmedTextMessage.from_apdu(%UnconfirmedServiceRequest{
+               service: :unconfirmed_text_message,
+               parameters: [
+                 tagged: {0, <<2, 0, 0, 5>>, 4},
+                 tagged: {2, <<2>>, 1},
+                 tagged: {3, <<0, "Text">>, 5}
+               ]
+             })
+  end
+
   test "decoding UnconfirmedTextMessage invalid missing pattern" do
     assert {:error, :invalid_request_parameters} =
              UnconfirmedTextMessage.from_apdu(%UnconfirmedServiceRequest{
@@ -190,6 +214,38 @@ defmodule BACnet.Test.Protocol.Services.UnconfirmedTextMessageTest do
                  class: "null",
                  priority: :urgent,
                  message: "PM required for PUMP347"
+               },
+               []
+             )
+  end
+
+  test "encoding UnconfirmedTextMessage rejects a source identifier with a non-device object type" do
+    assert {:error, :invalid_object_identifier} =
+             UnconfirmedTextMessage.to_apdu(
+               %UnconfirmedTextMessage{
+                 source_device: %BACnet.Protocol.ObjectIdentifier{
+                   type: :analog_input,
+                   instance: 5
+                 },
+                 class: nil,
+                 priority: :normal,
+                 message: "Text"
+               },
+               []
+             )
+  end
+
+  test "encoding UnconfirmedTextMessage rejects message priority 2" do
+    assert {:error, :invalid_priority} =
+             UnconfirmedTextMessage.to_apdu(
+               %UnconfirmedTextMessage{
+                 source_device: %BACnet.Protocol.ObjectIdentifier{
+                   type: :device,
+                   instance: 5
+                 },
+                 class: nil,
+                 priority: :other,
+                 message: "Text"
                },
                []
              )

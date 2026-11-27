@@ -44,6 +44,57 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyTest do
              })
   end
 
+  test "decoding ReadProperty rejects ALL" do
+    assert {:error, :invalid_property_identifier} =
+             ReadProperty.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :read_property,
+               parameters: [
+                 tagged: {0, <<0, 64, 0, 101>>, 4},
+                 tagged: {1, <<0x08>>, 1}
+               ]
+             })
+  end
+
+  test "decoding ReadProperty rejects REQUIRED" do
+    assert {:error, :invalid_property_identifier} =
+             ReadProperty.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :read_property,
+               parameters: [
+                 tagged: {0, <<0, 64, 0, 101>>, 4},
+                 tagged: {1, <<0x69>>, 1}
+               ]
+             })
+  end
+
+  test "decoding ReadProperty rejects OPTIONAL" do
+    assert {:error, :invalid_property_identifier} =
+             ReadProperty.from_apdu(%ConfirmedServiceRequest{
+               segmented_response_accepted: true,
+               max_apdu: 1476,
+               max_segments: 4,
+               invoke_id: 1,
+               sequence_number: nil,
+               proposed_window_size: nil,
+               service: :read_property,
+               parameters: [
+                 tagged: {0, <<0, 64, 0, 101>>, 4},
+                 tagged: {1, <<0x50>>, 1}
+               ]
+             })
+  end
+
   test "decoding ReadProperty invalid unknown tag encoding" do
     assert {:error, :unknown_tag_encoding} =
              ReadProperty.from_apdu(%ConfirmedServiceRequest{
@@ -146,6 +197,78 @@ defmodule BACnet.Test.Protocol.Services.ReadPropertyTest do
                },
                invoke_id: 1,
                max_segments: 4
+             )
+  end
+
+  test "encoding ReadProperty rejects ALL" do
+    assert {:error, :invalid_property_identifier} =
+             ReadProperty.to_apdu(
+               %ReadProperty{
+                 object_identifier: %ObjectIdentifier{type: :analog_output, instance: 101},
+                 property_identifier: :all,
+                 property_array_index: nil
+               },
+               []
+             )
+  end
+
+  test "encoding ReadProperty rejects numeric ALL" do
+    assert {:error, :invalid_property_identifier} =
+             ReadProperty.to_apdu(
+               %ReadProperty{
+                 object_identifier: %ObjectIdentifier{type: :analog_output, instance: 101},
+                 property_identifier: 0x08,
+                 property_array_index: nil
+               },
+               []
+             )
+  end
+
+  test "encoding ReadProperty rejects REQUIRED" do
+    assert {:error, :invalid_property_identifier} =
+             ReadProperty.to_apdu(
+               %ReadProperty{
+                 object_identifier: %ObjectIdentifier{type: :analog_output, instance: 101},
+                 property_identifier: :required,
+                 property_array_index: nil
+               },
+               []
+             )
+  end
+
+  test "encoding ReadProperty rejects numeric REQUIRED" do
+    assert {:error, :invalid_property_identifier} =
+             ReadProperty.to_apdu(
+               %ReadProperty{
+                 object_identifier: %ObjectIdentifier{type: :analog_output, instance: 101},
+                 property_identifier: 0x69,
+                 property_array_index: nil
+               },
+               []
+             )
+  end
+
+  test "encoding ReadProperty rejects OPTIONAL" do
+    assert {:error, :invalid_property_identifier} =
+             ReadProperty.to_apdu(
+               %ReadProperty{
+                 object_identifier: %ObjectIdentifier{type: :analog_output, instance: 101},
+                 property_identifier: :optional,
+                 property_array_index: nil
+               },
+               []
+             )
+  end
+
+  test "encoding ReadProperty rejects numeric OPTIONAL" do
+    assert {:error, :invalid_property_identifier} =
+             ReadProperty.to_apdu(
+               %ReadProperty{
+                 object_identifier: %ObjectIdentifier{type: :analog_output, instance: 101},
+                 property_identifier: 0x50,
+                 property_array_index: nil
+               },
+               []
              )
   end
 

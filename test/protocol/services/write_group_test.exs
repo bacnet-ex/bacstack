@@ -210,6 +210,42 @@ defmodule BACnet.Test.Protocol.Services.WriteGroupTest do
              })
   end
 
+  test "decoding WriteGroup rejects a zero group number" do
+    assert {:error, :ignore} =
+             WriteGroup.from_apdu(%UnconfirmedServiceRequest{
+               service: :write_group,
+               parameters: [
+                 tagged: {0, <<0>>, 1},
+                 tagged: {1, <<8>>, 1},
+                 constructed: {2, [tagged: {0, <<1, 12>>, 2}, unsigned_integer: 1111], 0}
+               ]
+             })
+  end
+
+  test "decoding WriteGroup rejects write priority 0" do
+    assert {:error, :invalid_write_priority} =
+             WriteGroup.from_apdu(%UnconfirmedServiceRequest{
+               service: :write_group,
+               parameters: [
+                 tagged: {0, <<23>>, 1},
+                 tagged: {1, <<0>>, 1},
+                 constructed: {2, [tagged: {0, <<1, 12>>, 2}, unsigned_integer: 1111], 0}
+               ]
+             })
+  end
+
+  test "decoding WriteGroup rejects write priority 17" do
+    assert {:error, :invalid_write_priority} =
+             WriteGroup.from_apdu(%UnconfirmedServiceRequest{
+               service: :write_group,
+               parameters: [
+                 tagged: {0, <<23>>, 1},
+                 tagged: {1, <<17>>, 1},
+                 constructed: {2, [tagged: {0, <<1, 12>>, 2}, unsigned_integer: 1111], 0}
+               ]
+             })
+  end
+
   test "decoding WriteGroup invalid APDU" do
     assert {:error, :invalid_request} =
              WriteGroup.from_apdu(%UnconfirmedServiceRequest{
@@ -422,6 +458,76 @@ defmodule BACnet.Test.Protocol.Services.WriteGroupTest do
                      }
                    }
                  ],
+                 inhibit_delay: nil
+               },
+               []
+             )
+  end
+
+  test "encoding WriteGroup rejects a zero group number" do
+    assert {:error, :invalid_group_number_value} =
+             WriteGroup.to_apdu(
+               %WriteGroup{
+                 group_number: 0,
+                 write_priority: 8,
+                 changelist: [
+                   %GroupChannelValue{
+                     channel: 268,
+                     overriding_priority: nil,
+                     value: Encoding.create!({:unsigned_integer, 1111})
+                   }
+                 ],
+                 inhibit_delay: nil
+               },
+               []
+             )
+  end
+
+  test "encoding WriteGroup rejects write priority 0" do
+    assert {:error, :invalid_write_priority} =
+             WriteGroup.to_apdu(
+               %WriteGroup{
+                 group_number: 23,
+                 write_priority: 0,
+                 changelist: [
+                   %GroupChannelValue{
+                     channel: 268,
+                     overriding_priority: nil,
+                     value: Encoding.create!({:unsigned_integer, 1111})
+                   }
+                 ],
+                 inhibit_delay: nil
+               },
+               []
+             )
+  end
+
+  test "encoding WriteGroup rejects write priority 17" do
+    assert {:error, :invalid_write_priority} =
+             WriteGroup.to_apdu(
+               %WriteGroup{
+                 group_number: 23,
+                 write_priority: 17,
+                 changelist: [
+                   %GroupChannelValue{
+                     channel: 268,
+                     overriding_priority: nil,
+                     value: Encoding.create!({:unsigned_integer, 1111})
+                   }
+                 ],
+                 inhibit_delay: nil
+               },
+               []
+             )
+  end
+
+  test "encoding WriteGroup rejects an empty changelist" do
+    assert {:error, :invalid_changelist} =
+             WriteGroup.to_apdu(
+               %WriteGroup{
+                 group_number: 23,
+                 write_priority: 8,
+                 changelist: [],
                  inhibit_delay: nil
                },
                []
