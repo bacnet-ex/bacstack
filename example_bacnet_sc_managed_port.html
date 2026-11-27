@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.5">
+    <meta name="project" content="bacstack v0.1.0-dev.2">
+
+
+    <title>Example: Bacnet Sc Managed Port — bacstack v0.1.0-dev.2</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-RXHHCTJW.css" />
+
+    <script defer src="dist/sidebar_items-551B503D.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-LBCGAQQV.js"></script>
+<!-- Markdown for details HTML tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+<!-- Sortable tables -->
+<style>
+  table th {
+    cursor: pointer;
+  }
+
+  table th[aria-sort="ascending"] span::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+
+  table th[aria-sort="descending"] span::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+    margin-left: 5px;
+  }
+</style>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="BACnet.html" class="sidebar-projectName" translate="no">
+bacstack
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0-dev.2
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-extra" id="main" data-type="extras">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of bacstack</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>Example: Bacnet Sc Managed Port</h1>
+
+
+
+      <a href="https://github.com/bacnet-ex/bacstack/blob/master/examples/bacnet_sc_managed_port.exs#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+<!--t: Example: Bacnet Sc Managed Port --><!--s: examples/bacnet_sc_managed_port.exs --><p>This example issues temporary certificates and starts a standalone ManagedPort
+and a discovery node on a loopback BACnet/SC hub. The discovery node sends
+Who-Is, then prints the device instance, VMAC, and APDU limit from the reply.</p><p>Code (taken from file <code class="inline">examples/bacnet_sc_managed_port.exs</code>):</p><pre><code class="makeup elixir" translate="no"><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.APDU</span><span class="w">
+</span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.Services.IAm</span><span class="w">
+</span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Protocol.Services.WhoIs</span><span class="w">
+</span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Stack.Transport.ScTransport.Credentials</span><span class="w">
+</span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Stack.Transport.ScTransport.Hub</span><span class="w">
+</span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Stack.Transport.ScTransport.ManagedPort</span><span class="w">
+</span><span class="kn">alias</span><span class="w"> </span><span class="nc">BACnet.Stack.Transport.ScTransport.Node</span><span class="p">,</span><span class="w"> </span><span class="ss">as</span><span class="p">:</span><span class="w"> </span><span class="nc">ScNode</span><span class="w">
+
+</span><span class="n">ca_key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">X509.PrivateKey</span><span class="o">.</span><span class="n">new_ec</span><span class="p" data-group-id="group-1">(</span><span class="ss">:secp256r1</span><span class="p" data-group-id="group-1">)</span><span class="w">
+</span><span class="n">ca</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">X509.Certificate</span><span class="o">.</span><span class="n">self_signed</span><span class="p" data-group-id="group-2">(</span><span class="n">ca_key</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/CN=Managed BACnet SC demo CA&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">template</span><span class="p">:</span><span class="w"> </span><span class="ss">:root_ca</span><span class="p" data-group-id="group-2">)</span><span class="w">
+</span><span class="n">issuer_pem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">X509.Certificate</span><span class="o">.</span><span class="n">to_pem</span><span class="p" data-group-id="group-3">(</span><span class="n">ca</span><span class="p" data-group-id="group-3">)</span><span class="w">
+
+</span><span class="n">issue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k" data-group-id="group-4">fn</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+  </span><span class="n">key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">X509.PrivateKey</span><span class="o">.</span><span class="n">new_ec</span><span class="p" data-group-id="group-5">(</span><span class="ss">:secp256r1</span><span class="p" data-group-id="group-5">)</span><span class="w">
+
+  </span><span class="n">cert</span><span class="w"> </span><span class="o">=</span><span class="w">
+    </span><span class="nc">X509.Certificate</span><span class="o">.</span><span class="n">new</span><span class="p" data-group-id="group-6">(</span><span class="nc">X509.PublicKey</span><span class="o">.</span><span class="n">derive</span><span class="p" data-group-id="group-7">(</span><span class="n">key</span><span class="p" data-group-id="group-7">)</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/CN=</span><span class="si" data-group-id="group-8">#{</span><span class="n">name</span><span class="si" data-group-id="group-8">}</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ca</span><span class="p">,</span><span class="w"> </span><span class="n">ca_key</span><span class="p">,</span><span class="w"> </span><span class="ss">template</span><span class="p">:</span><span class="w"> </span><span class="ss">:server</span><span class="p" data-group-id="group-6">)</span><span class="w">
+
+  </span><span class="p" data-group-id="group-9">{</span><span class="nc">X509.Certificate</span><span class="o">.</span><span class="n">to_pem</span><span class="p" data-group-id="group-10">(</span><span class="n">cert</span><span class="p" data-group-id="group-10">)</span><span class="p">,</span><span class="w"> </span><span class="nc">X509.PrivateKey</span><span class="o">.</span><span class="n">to_pem</span><span class="p" data-group-id="group-11">(</span><span class="n">key</span><span class="p" data-group-id="group-11">)</span><span class="p" data-group-id="group-9">}</span><span class="w">
+</span><span class="k" data-group-id="group-4">end</span><span class="w">
+
+</span><span class="n">credentials</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k" data-group-id="group-12">fn</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+  </span><span class="p" data-group-id="group-13">{</span><span class="n">certificate</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="p" data-group-id="group-13">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">issue</span><span class="o">.</span><span class="p" data-group-id="group-14">(</span><span class="n">name</span><span class="p" data-group-id="group-14">)</span><span class="w">
+  </span><span class="p" data-group-id="group-15">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">credentials</span><span class="p" data-group-id="group-15">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Credentials</span><span class="o">.</span><span class="n">from_pem</span><span class="p" data-group-id="group-16">(</span><span class="n">certificate</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-17">[</span><span class="n">issuer_pem</span><span class="p" data-group-id="group-17">]</span><span class="p" data-group-id="group-16">)</span><span class="w">
+  </span><span class="n">credentials</span><span class="w">
+</span><span class="k" data-group-id="group-12">end</span><span class="w">
+
+</span><span class="n">storage_dir</span><span class="w"> </span><span class="o">=</span><span class="w">
+  </span><span class="nc">Path</span><span class="o">.</span><span class="n">join</span><span class="p" data-group-id="group-18">(</span><span class="w">
+    </span><span class="nc">System</span><span class="o">.</span><span class="n">tmp_dir!</span><span class="p" data-group-id="group-19">(</span><span class="p" data-group-id="group-19">)</span><span class="p">,</span><span class="w">
+    </span><span class="s">&quot;bacstack-sc-managed-&quot;</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="nc">Base</span><span class="o">.</span><span class="n">encode16</span><span class="p" data-group-id="group-20">(</span><span class="nc">:crypto</span><span class="o">.</span><span class="n">strong_rand_bytes</span><span class="p" data-group-id="group-21">(</span><span class="mi">8</span><span class="p" data-group-id="group-21">)</span><span class="p" data-group-id="group-20">)</span><span class="w">
+  </span><span class="p" data-group-id="group-18">)</span><span class="w">
+
+</span><span class="p" data-group-id="group-22">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">supervisor</span><span class="p" data-group-id="group-22">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Supervisor</span><span class="o">.</span><span class="n">start_link</span><span class="p" data-group-id="group-23">(</span><span class="p" data-group-id="group-24">[</span><span class="p" data-group-id="group-24">]</span><span class="p">,</span><span class="w"> </span><span class="ss">strategy</span><span class="p">:</span><span class="w"> </span><span class="ss">:one_for_one</span><span class="p" data-group-id="group-23">)</span><span class="w">
+
+</span><span class="k">try</span><span class="w"> </span><span class="k" data-group-id="group-25">do</span><span class="w">
+  </span><span class="p" data-group-id="group-26">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">hub</span><span class="p" data-group-id="group-26">}</span><span class="w"> </span><span class="o">=</span><span class="w">
+    </span><span class="nc">Supervisor</span><span class="o">.</span><span class="n">start_child</span><span class="p" data-group-id="group-27">(</span><span class="w">
+      </span><span class="n">supervisor</span><span class="p">,</span><span class="w">
+      </span><span class="p" data-group-id="group-28">{</span><span class="nc">Hub</span><span class="p">,</span><span class="w">
+       </span><span class="ss">ip</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-29">{</span><span class="mi">127</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="group-29">}</span><span class="p">,</span><span class="w">
+       </span><span class="ss">port</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+       </span><span class="ss">device_uuid</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-30">&lt;&lt;</span><span class="mi">1</span><span class="o">::</span><span class="mi">128</span><span class="p" data-group-id="group-30">&gt;&gt;</span><span class="p">,</span><span class="w">
+       </span><span class="ss">vmac</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-31">&lt;&lt;</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="group-31">&gt;&gt;</span><span class="p">,</span><span class="w">
+       </span><span class="ss">credentials</span><span class="p">:</span><span class="w"> </span><span class="n">credentials</span><span class="o">.</span><span class="p" data-group-id="group-32">(</span><span class="s">&quot;Demo hub&quot;</span><span class="p" data-group-id="group-32">)</span><span class="p" data-group-id="group-28">}</span><span class="w">
+    </span><span class="p" data-group-id="group-27">)</span><span class="w">
+
+  </span><span class="n">uri</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;wss://127.0.0.1:</span><span class="si" data-group-id="group-33">#{</span><span class="nc">Hub</span><span class="o">.</span><span class="n">port</span><span class="p" data-group-id="group-34">(</span><span class="n">hub</span><span class="p" data-group-id="group-34">)</span><span class="si" data-group-id="group-33">}</span><span class="s">/&quot;</span><span class="w">
+  </span><span class="p" data-group-id="group-35">{</span><span class="n">certificate</span><span class="p">,</span><span class="w"> </span><span class="n">private_key</span><span class="p" data-group-id="group-35">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">issue</span><span class="o">.</span><span class="p" data-group-id="group-36">(</span><span class="s">&quot;Standalone managed port&quot;</span><span class="p" data-group-id="group-36">)</span><span class="w">
+  </span><span class="n">device_instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">123</span><span class="w">
+
+  </span><span class="p" data-group-id="group-37">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">managed</span><span class="p" data-group-id="group-37">}</span><span class="w"> </span><span class="o">=</span><span class="w">
+    </span><span class="nc">Supervisor</span><span class="o">.</span><span class="n">start_child</span><span class="p" data-group-id="group-38">(</span><span class="w">
+      </span><span class="n">supervisor</span><span class="p">,</span><span class="w">
+      </span><span class="p" data-group-id="group-39">{</span><span class="nc">ManagedPort</span><span class="p">,</span><span class="w">
+       </span><span class="ss">mode</span><span class="p">:</span><span class="w"> </span><span class="ss">:standalone</span><span class="p">,</span><span class="w">
+       </span><span class="ss">storage_dir</span><span class="p">:</span><span class="w"> </span><span class="n">storage_dir</span><span class="p">,</span><span class="w">
+       </span><span class="ss">device_instance</span><span class="p">:</span><span class="w"> </span><span class="n">device_instance</span><span class="p">,</span><span class="w">
+       </span><span class="ss">device_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Standalone SC demo&quot;</span><span class="p">,</span><span class="w">
+       </span><span class="ss">port_instance</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+       </span><span class="ss">vendor_id</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+       </span><span class="ss">file_instances</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-40">%{</span><span class="ss">operational</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="ss">issuer_1</span><span class="p">:</span><span class="w"> </span><span class="mi">11</span><span class="p">,</span><span class="w"> </span><span class="ss">issuer_2</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w"> </span><span class="ss">csr</span><span class="p">:</span><span class="w"> </span><span class="mi">13</span><span class="p" data-group-id="group-40">}</span><span class="p">,</span><span class="w">
+       </span><span class="ss">certificate_pem</span><span class="p">:</span><span class="w"> </span><span class="n">certificate</span><span class="p">,</span><span class="w">
+       </span><span class="ss">private_key_pem</span><span class="p">:</span><span class="w"> </span><span class="n">private_key</span><span class="p">,</span><span class="w">
+       </span><span class="ss">issuer_pems</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-41">[</span><span class="n">issuer_pem</span><span class="p" data-group-id="group-41">]</span><span class="p">,</span><span class="w">
+       </span><span class="ss">transport</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-42">[</span><span class="ss">primary_hub_uri</span><span class="p">:</span><span class="w"> </span><span class="n">uri</span><span class="p" data-group-id="group-42">]</span><span class="p" data-group-id="group-39">}</span><span class="w">
+    </span><span class="p" data-group-id="group-38">)</span><span class="w">
+
+  </span><span class="p" data-group-id="group-43">%{</span><span class="ss">transport</span><span class="p">:</span><span class="w"> </span><span class="n">node</span><span class="p" data-group-id="group-43">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">ManagedPort</span><span class="o">.</span><span class="n">endpoints</span><span class="p" data-group-id="group-44">(</span><span class="n">managed</span><span class="p" data-group-id="group-44">)</span><span class="w">
+
+  </span><span class="p" data-group-id="group-45">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">requester</span><span class="p" data-group-id="group-45">}</span><span class="w"> </span><span class="o">=</span><span class="w">
+    </span><span class="nc">Supervisor</span><span class="o">.</span><span class="n">start_child</span><span class="p" data-group-id="group-46">(</span><span class="w">
+      </span><span class="n">supervisor</span><span class="p">,</span><span class="w">
+      </span><span class="nc">ScNode</span><span class="o">.</span><span class="n">child_spec</span><span class="p" data-group-id="group-47">(</span><span class="n">self</span><span class="p" data-group-id="group-48">(</span><span class="p" data-group-id="group-48">)</span><span class="p">,</span><span class="w">
+        </span><span class="ss">primary_hub_uri</span><span class="p">:</span><span class="w"> </span><span class="n">uri</span><span class="p">,</span><span class="w">
+        </span><span class="ss">device_uuid</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-49">&lt;&lt;</span><span class="mi">2</span><span class="o">::</span><span class="mi">128</span><span class="p" data-group-id="group-49">&gt;&gt;</span><span class="p">,</span><span class="w">
+        </span><span class="ss">vmac</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-50">&lt;&lt;</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p" data-group-id="group-50">&gt;&gt;</span><span class="p">,</span><span class="w">
+        </span><span class="ss">credentials</span><span class="p">:</span><span class="w"> </span><span class="n">credentials</span><span class="o">.</span><span class="p" data-group-id="group-51">(</span><span class="s">&quot;Discovery requester&quot;</span><span class="p" data-group-id="group-51">)</span><span class="w">
+      </span><span class="p" data-group-id="group-47">)</span><span class="w">
+    </span><span class="p" data-group-id="group-46">)</span><span class="w">
+
+  </span><span class="n">connected?</span><span class="w"> </span><span class="o">=</span><span class="w">
+    </span><span class="nc">Enum</span><span class="o">.</span><span class="n">any?</span><span class="p" data-group-id="group-52">(</span><span class="mi">1</span><span class="o">..</span><span class="mi">200</span><span class="p">,</span><span class="w"> </span><span class="k" data-group-id="group-53">fn</span><span class="w"> </span><span class="c">_attempt</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+      </span><span class="k">if</span><span class="w"> </span><span class="nc">ScNode</span><span class="o">.</span><span class="n">status</span><span class="p" data-group-id="group-54">(</span><span class="n">node</span><span class="p" data-group-id="group-54">)</span><span class="o">.</span><span class="n">active</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="ss">:primary</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="nc">ScNode</span><span class="o">.</span><span class="n">status</span><span class="p" data-group-id="group-55">(</span><span class="n">requester</span><span class="p" data-group-id="group-55">)</span><span class="o">.</span><span class="n">active</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="ss">:primary</span><span class="w"> </span><span class="k" data-group-id="group-56">do</span><span class="w">
+        </span><span class="no">true</span><span class="w">
+      </span><span class="k" data-group-id="group-56">else</span><span class="w">
+        </span><span class="nc">Process</span><span class="o">.</span><span class="n">sleep</span><span class="p" data-group-id="group-57">(</span><span class="mi">50</span><span class="p" data-group-id="group-57">)</span><span class="w">
+        </span><span class="no">false</span><span class="w">
+      </span><span class="k" data-group-id="group-56">end</span><span class="w">
+    </span><span class="k" data-group-id="group-53">end</span><span class="p" data-group-id="group-52">)</span><span class="w">
+
+  </span><span class="k">unless</span><span class="w"> </span><span class="n">connected?</span><span class="p">,</span><span class="w"> </span><span class="ss">do</span><span class="p">:</span><span class="w"> </span><span class="k">raise</span><span class="p" data-group-id="group-58">(</span><span class="s">&quot;The managed port and requester did not connect to </span><span class="si" data-group-id="group-59">#{</span><span class="n">uri</span><span class="si" data-group-id="group-59">}</span><span class="s">&quot;</span><span class="p" data-group-id="group-58">)</span><span class="w">
+
+  </span><span class="p" data-group-id="group-60">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">who_is</span><span class="p" data-group-id="group-60">}</span><span class="w"> </span><span class="o">=</span><span class="w">
+    </span><span class="nc">WhoIs</span><span class="o">.</span><span class="n">to_apdu</span><span class="p" data-group-id="group-61">(</span><span class="w">
+      </span><span class="p" data-group-id="group-62">%</span><span class="nc" data-group-id="group-62">WhoIs</span><span class="p" data-group-id="group-62">{</span><span class="ss">device_id_low_limit</span><span class="p">:</span><span class="w"> </span><span class="n">device_instance</span><span class="p">,</span><span class="w"> </span><span class="ss">device_id_high_limit</span><span class="p">:</span><span class="w"> </span><span class="n">device_instance</span><span class="p" data-group-id="group-62">}</span><span class="p">,</span><span class="w">
+      </span><span class="p" data-group-id="group-63">[</span><span class="p" data-group-id="group-63">]</span><span class="w">
+    </span><span class="p" data-group-id="group-61">)</span><span class="w">
+
+  </span><span class="ss">:ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">ScNode</span><span class="o">.</span><span class="n">send</span><span class="p" data-group-id="group-64">(</span><span class="n">requester</span><span class="p">,</span><span class="w"> </span><span class="nc">ScNode</span><span class="o">.</span><span class="n">get_broadcast_address</span><span class="p" data-group-id="group-65">(</span><span class="n">requester</span><span class="p" data-group-id="group-65">)</span><span class="p">,</span><span class="w"> </span><span class="n">who_is</span><span class="p" data-group-id="group-64">)</span><span class="w">
+  </span><span class="n">managed_vmac</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">ScNode</span><span class="o">.</span><span class="n">get_local_address</span><span class="p" data-group-id="group-66">(</span><span class="n">node</span><span class="p" data-group-id="group-66">)</span><span class="w">
+
+  </span><span class="k">receive</span><span class="w"> </span><span class="k" data-group-id="group-67">do</span><span class="w">
+    </span><span class="p" data-group-id="group-68">{</span><span class="ss">:bacnet_transport</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-69">{</span><span class="ss">:bacnet_sc</span><span class="p">,</span><span class="w"> </span><span class="nc">ScNode</span><span class="p" data-group-id="group-69">}</span><span class="p">,</span><span class="w"> </span><span class="o">^</span><span class="n">managed_vmac</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-70">{</span><span class="ss">:apdu</span><span class="p">,</span><span class="w"> </span><span class="c">_bvlc</span><span class="p">,</span><span class="w"> </span><span class="c">_npci</span><span class="p">,</span><span class="w"> </span><span class="n">raw</span><span class="p" data-group-id="group-70">}</span><span class="p">,</span><span class="w">
+     </span><span class="o">^</span><span class="n">requester</span><span class="p" data-group-id="group-68">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+      </span><span class="p" data-group-id="group-71">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">apdu</span><span class="p" data-group-id="group-71">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">APDU</span><span class="o">.</span><span class="n">decode</span><span class="p" data-group-id="group-72">(</span><span class="n">raw</span><span class="p" data-group-id="group-72">)</span><span class="w">
+      </span><span class="p" data-group-id="group-73">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="group-74">%</span><span class="nc" data-group-id="group-74">IAm</span><span class="p" data-group-id="group-74">{</span><span class="ss">device</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="group-75">%{</span><span class="ss">instance</span><span class="p">:</span><span class="w"> </span><span class="o">^</span><span class="n">device_instance</span><span class="p" data-group-id="group-75">}</span><span class="p">,</span><span class="w"> </span><span class="ss">max_apdu</span><span class="p">:</span><span class="w"> </span><span class="n">max_apdu</span><span class="p" data-group-id="group-74">}</span><span class="p" data-group-id="group-73">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">IAm</span><span class="o">.</span><span class="n">from_apdu</span><span class="p" data-group-id="group-76">(</span><span class="n">apdu</span><span class="p" data-group-id="group-76">)</span><span class="w">
+
+      </span><span class="nc">IO</span><span class="o">.</span><span class="n">puts</span><span class="p" data-group-id="group-77">(</span><span class="w">
+        </span><span class="s">&quot;Discovered Device </span><span class="si" data-group-id="group-78">#{</span><span class="n">device_instance</span><span class="si" data-group-id="group-78">}</span><span class="s"> at VMAC </span><span class="si" data-group-id="group-79">#{</span><span class="nc">Base</span><span class="o">.</span><span class="n">encode16</span><span class="p" data-group-id="group-80">(</span><span class="n">managed_vmac</span><span class="p" data-group-id="group-80">)</span><span class="si" data-group-id="group-79">}</span><span class="s"> (max APDU </span><span class="si" data-group-id="group-81">#{</span><span class="n">max_apdu</span><span class="si" data-group-id="group-81">}</span><span class="s">)&quot;</span><span class="w">
+      </span><span class="p" data-group-id="group-77">)</span><span class="w">
+  </span><span class="k" data-group-id="group-67">after</span><span class="w">
+    </span><span class="mi">2_000</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="k">raise</span><span class="p" data-group-id="group-82">(</span><span class="s">&quot;The standalone managed port did not respond to Who-Is&quot;</span><span class="p" data-group-id="group-82">)</span><span class="w">
+  </span><span class="k" data-group-id="group-67">end</span><span class="w">
+</span><span class="k" data-group-id="group-25">after</span><span class="w">
+  </span><span class="nc">Supervisor</span><span class="o">.</span><span class="n">stop</span><span class="p" data-group-id="group-83">(</span><span class="n">supervisor</span><span class="p" data-group-id="group-83">)</span><span class="w">
+  </span><span class="nc">File</span><span class="o">.</span><span class="n">rm_rf!</span><span class="p" data-group-id="group-84">(</span><span class="n">storage_dir</span><span class="p" data-group-id="group-84">)</span><span class="w">
+</span><span class="k" data-group-id="group-25">end</span></code></pre><p>This example can be run:</p><ul><li>if installed as dependency: <code class="inline">mix run deps/bacstack/examples/bacnet_sc_managed_port.exs</code></li><li>if working on bacstack: <code class="inline">mix run examples/bacnet_sc_managed_port.exs</code></li></ul>
+
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="example_bacnet_sc_certificates.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+Example: Bacnet Sc Certificates
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="example_who_is.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Example: Who Is
+        </span>
+      </a>
+
+  </div>
+</div>
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/bacstack/0.1.0-dev.2">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/bacstack/0.1.0-dev.2">Hex Preview</a>
+
+                (<a href="https://preview.hex.pm/preview/bacstack/0.1.0-dev.2/show/examples/bacnet_sc_managed_port.exs">current file</a>)
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.5) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+<!-- Markdown for details HTML tags & sortable tables -->
+<script>
+  class TableSortableColumns {
+    constructor(tableNode) {
+      this.tableNode = tableNode;
+      this.columnHeaders = tableNode.querySelectorAll('thead th');
+      this.sortColumns = [];
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (ch) {
+          ch.innerHTML += '<span aria-hidden="true"></span>';
+          this.sortColumns.push(i);
+          ch.setAttribute('data-column-index', i);
+          ch.addEventListener('click', this.handleClick.bind(this));
+        }
+      }
+    }
+
+    setColumnHeaderSort(columnIndex) {
+      if (typeof columnIndex === 'string') {
+        columnIndex = parseInt(columnIndex);
+      }
+
+      for (var i = 0; i < this.columnHeaders.length; i++) {
+        var ch = this.columnHeaders[i];
+
+        if (i === columnIndex) {
+          var value = ch.getAttribute('aria-sort');
+
+          if (value === 'ascending') {
+            ch.setAttribute('aria-sort', 'descending');
+            this.sortColumn(
+              columnIndex,
+              'descending',
+              ch.classList.contains('num')
+            );
+          } else {
+            ch.setAttribute('aria-sort', 'ascending');
+            this.sortColumn(
+              columnIndex,
+              'ascending',
+              ch.classList.contains('num')
+            );
+          }
+        } else if (ch.hasAttribute('aria-sort')) {
+          ch.removeAttribute('aria-sort');
+        }
+      }
+    }
+
+    sortColumn(columnIndex, sortValue, isNumber) {
+      function compareValues(a, b) {
+        isNumber = !isNaN(parseFloat(a.value)) && !isNaN(parseFloat(b.value))
+
+        if (sortValue === 'ascending') {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return a.value - b.value;
+            } else {
+              return a.value < b.value ? -1 : 1;
+            }
+          }
+        } else {
+          if (a.value === b.value) {
+            return 0;
+          } else {
+            if (isNumber) {
+              return b.value - a.value;
+            } else {
+              return a.value > b.value ? -1 : 1;
+            }
+          }
+        }
+      }
+
+      if (typeof isNumber !== 'boolean') {
+        isNumber = false;
+      }
+
+      var tbodyNode = this.tableNode.querySelector('tbody');
+      var rowNodes = [];
+      var dataCells = [];
+
+      var rowNode = tbodyNode.firstElementChild;
+
+      var index = 0;
+      while (rowNode) {
+        rowNodes.push(rowNode);
+
+        var rowCells = rowNode.querySelectorAll('th, td');
+        var dataCell = rowCells[columnIndex];
+        var data = {};
+
+        data.index = index;
+        data.value = dataCell.textContent.toLowerCase().trim();
+        if (isNumber) {
+          data.value = parseFloat(data.value);
+        }
+
+        dataCells.push(data);
+        rowNode = rowNode.nextElementSibling;
+        index += 1;
+      }
+
+      dataCells.sort(compareValues);
+
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.lastChild);
+      }
+
+      for (var i = 0; i < dataCells.length; i += 1) {
+        tbodyNode.appendChild(rowNodes[dataCells[i].index]);
+      }
+    }
+
+    handleClick(event) {
+      var target = event.currentTarget;
+      this.setColumnHeaderSort(target.getAttribute('data-column-index'));
+    }
+  }
+
+  var js_loaded = false;
+  var loaded_fired_before_ready = false;
+
+  var prepare_body = function () {
+    if (!js_loaded) return;
+
+    // This is the part where we load the <details> contents,
+    // parse it using markdown and push the HTML back
+    var converter = new showdown.Converter({});
+    converter.setFlavor('github');
+
+    var details = document.querySelectorAll('details');
+    for (var i = 0; i < details.length; i++) {
+      details[i].innerHTML = converter.makeHtml(details[i].innerHTML);
+    }
+
+    // Now apply sortable tables, because <details> could contain tables
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+      new TableSortableColumns(tables[i]);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    js_loaded = true;
+
+    if (loaded_fired_before_ready) {
+      loaded_fired_before_ready = false;
+      prepare_body();
+    }
+  });
+
+  window.addEventListener('exdoc:loaded', function () {
+    if (!js_loaded) {
+      loaded_fired_before_ready = true;
+      return;
+    }
+
+    prepare_body();
+  });
+</script>
+
+  </body>
+</html>
